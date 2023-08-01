@@ -1,0 +1,3 @@
+num_episodes: 50000
+max_steps_per_episode: 2500
+eval_frequency: 25

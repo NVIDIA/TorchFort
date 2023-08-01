@@ -1,0 +1,64 @@
+set(cart_pole_example_targets
+  train_cart_pole
+)
+
+add_library(environments STATIC)
+target_sources(environments
+  PRIVATE
+  env.cpp
+)
+
+add_executable(train_cart_pole)
+target_sources(train_cart_pole
+  PRIVATE
+  train.cpp
+)
+
+find_package(Python 3.6 COMPONENTS Interpreter Development REQUIRED)
+find_package(pybind11 CONFIG REQUIRED)
+pybind11_add_module(PyEnvironments py_env.cpp)
+target_link_libraries(PyEnvironments PRIVATE environments)
+
+foreach(tgt ${cart_pole_example_targets})
+  target_include_directories(${tgt}
+    PRIVATE
+    /opt/yaml-cpp/include
+    ${MPI_CXX_INCLUDE_PATH}
+    ${NVHPC_CUDA_INCLUDE_DIR}
+    ${Python_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}/include
+  )
+  target_link_libraries(${tgt} PRIVATE ${PROJECT_NAME})
+  target_link_libraries(${tgt} PRIVATE ${TORCH_LIBRARIES})
+  target_link_libraries(${tgt} PRIVATE ${Python_LIBRARIES})
+  target_link_libraries(${tgt} PRIVATE NVHPC::MPI_CXX)
+  target_link_libraries(${tgt} PRIVATE /opt/yaml-cpp/lib/libyaml-cpp.a)
+  target_link_libraries(${tgt} PRIVATE environments)
+  target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
+  target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
+endforeach()
+
+# installation
+# executable
+install(
+  TARGETS ${cart_pole_example_targets}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/examples/cpp/cart_pole
+)
+
+# python env
+install(
+  TARGETS PyEnvironments
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/examples/cpp/cart_pole/python
+)
+
+# config files
+install(
+  FILES ${CMAKE_CURRENT_SOURCE_DIR}/config.yaml ${CMAKE_CURRENT_SOURCE_DIR}/config_sim.yaml
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/examples/cpp/cart_pole
+)
+
+# python files
+install(
+  FILES ${CMAKE_CURRENT_SOURCE_DIR}/python/models.py ${CMAKE_CURRENT_SOURCE_DIR}/python/initialize_models.py ${CMAKE_CURRENT_SOURCE_DIR}/python/visualize.py
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/examples/cpp/cart_pole/python
+)

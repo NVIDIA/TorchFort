@@ -1,0 +1,15 @@
+---
+BasedOnStyle: LLVM
+ColumnLimit: 120
+CommentPragmas:  '^\\.+'
+DerivePointerAlignment: false
+Language: Cpp
+PointerAlignment: Left
+UseTab: Never
+AlignAfterOpenBracket: Align
+AlignTrailingComments: true
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine : false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+...

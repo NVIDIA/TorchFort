@@ -1,0 +1,19 @@
+# basic packages
+ruamel-yaml
+
+# pytorch and some dependencies
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.0.1
+torchvision==0.15.2
+torchaudio==2.0.2
+
+# training monitoring
+wandb
+
+# RL example visualization related
+pygame
+moviepy
+
+# Supervised learning example visualization related
+matplotlib
+h5py

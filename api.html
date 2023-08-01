@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TorchFort API &mdash; torchfort 2023 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/style.css" type="text/css" />
+      <link rel="stylesheet" href="_static/tabs.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="TorchFort Configuration Files" href="api/config.html" />
+    <link rel="prev" title="Usage Guide" href="usage.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" > 
+            <a href="index.html" class="icon icon-home"> torchfort
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+  <style>
+    /* Sidebar header (and topbar for mobile) */
+    .wy-side-nav-search, .wy-nav-top {
+      background: #76b900;
+    }
+
+    .wy-side-nav-search a:link, .wy-nav-top a:link {
+      color: #fff;
+    }
+    .wy-side-nav-search a:visited, .wy-nav-top a:visited {
+      color: #fff;
+    }
+    .wy-side-nav-search a:hover, .wy-nav-top a:hover {
+      color: #fff;
+    }
+
+    .wy-menu-vertical a:link, .wy-menu-vertical a:visited {
+      color: #d9d9d9
+    }
+
+    .wy-menu-vertical a:active {
+      background-color: #76b900
+    }
+
+    .wy-side-nav-search>div.version {
+      color: rgba(0, 0, 0, 0.3)
+    }
+  </style>
+  
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">TorchFort API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/config.html">TorchFort Configuration Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c_api.html">TorchFort C API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/f_api.html">TorchFort Fortran API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="extras.html">Extras</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">torchfort</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">TorchFort API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="torchfort-api">
+<span id="api-label"></span><h1>TorchFort API<a class="headerlink" href="#torchfort-api" title="Permalink to this heading">¶</a></h1>
+<p>The following sections describe the types and functions available in the TorchFort library for C/C++ and Fortran programs and
+the also the configuration file structure and available options.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/config.html">TorchFort Configuration Files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/config.html#common">Common</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/config.html#general-properties">General Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/config.html#optimizer-properties">Optimizer Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/config.html#learning-rate-schedule-properties">Learning Rate Schedule Properties</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api/config.html#supervised-learning">Supervised Learning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/config.html#model-properties">Model Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/config.html#loss-properties">Loss Properties</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api/config.html#reinforcement-learning">Reinforcement Learning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/config.html#reinforcement-learning-training-algorithm-properties">Reinforcement Learning Training Algorithm Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/config.html#replay-buffer-properties">Replay Buffer Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/config.html#action-properties">Action Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/config.html#policy-and-critic-properties">Policy and Critic Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/config.html#id1">Learning Rate Schedule Properties</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/c_api.html">TorchFort C API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c_api.html#general">General</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#types">Types</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-datatype-t">torchfort_datatype_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-result-t">torchfort_result_t</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#global-context-settings">Global Context Settings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-set-cudnn-benchmark">torchfort_set_cudnn_benchmark</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api/c_api.html#supervised-learning">Supervised Learning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#model-creation">Model Creation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-create-model">torchfort_create_model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-create-distributed-model">torchfort_create_distributed_model</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#model-training-inference">Model Training/Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-train">torchfort_train</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-inference">torchfort_inference</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#model-management">Model Management</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-save-model">torchfort_save_model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-load-model">torchfort_load_model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-save-checkpoint">torchfort_save_checkpoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-load-checkpoint">torchfort_load_checkpoint</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#weights-and-biases-logging">Weights and Biases Logging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-wandb-log-int">torchfort_wandb_log_int</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-wandb-log-float">torchfort_wandb_log_float</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-wandb-log-double">torchfort_wandb_log_double</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api/c_api.html#reinforcement-learning">Reinforcement Learning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#system-creation">System Creation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-create-system">torchfort_rl_off_policy_create_system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-create-distributed-system">torchfort_rl_off_policy_create_distributed_system</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#training-evaluation">Training/Evaluation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-train-step">torchfort_rl_off_policy_train_step</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-predict-explore">torchfort_rl_off_policy_predict_explore</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-predict">torchfort_rl_off_policy_predict</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-evaluate">torchfort_rl_off_policy_evaluate</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#system-management">System Management</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-update-replay-buffer">torchfort_rl_off_policy_update_replay_buffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-is-ready">torchfort_rl_off_policy_is_ready</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-save-checkpoint">torchfort_rl_off_policy_save_checkpoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-load-checkpoint">torchfort_rl_off_policy_load_checkpoint</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#id1">Weights and Biases Logging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-wandb-log-int">torchfort_rl_off_policy_wandb_log_int</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-wandb-log-float">torchfort_rl_off_policy_wandb_log_float</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-wandb-log-double">torchfort_rl_off_policy_wandb_log_double</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/f_api.html">TorchFort Fortran API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/f_api.html#general">General</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#types">Types</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-datatype">torchfort_datatype</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-result">torchfort_result</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#global-context-settings">Global Context Settings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-set-cudnn-benchmark">torchfort_set_cudnn_benchmark</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api/f_api.html#supervised-learning">Supervised Learning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#model-creation">Model Creation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-create-model">torchfort_create_model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-create-distributed-model">torchfort_create_distributed_model</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#model-training-inference">Model Training/Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-train">torchfort_train</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-inference">torchfort_inference</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#model-management">Model Management</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-save-model">torchfort_save_model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-load-model">torchfort_load_model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-save-checkpoint">torchfort_save_checkpoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-load-checkpoint">torchfort_load_checkpoint</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#weights-and-biases-logging">Weights and Biases Logging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-wandb-log-int">torchfort_wandb_log_int</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-wandb-log-float">torchfort_wandb_log_float</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-wandb-log-double">torchfort_wandb_log_double</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api/f_api.html#reinforcement-learning">Reinforcement Learning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#system-creation">System Creation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-create-system">torchfort_rl_off_policy_create_system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-create-distributed-system">torchfort_rl_off_policy_create_distributed_system</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#training-evaluation">Training/Evaluation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-train-step">torchfort_rl_off_policy_train_step</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-predict-explore">torchfort_rl_off_policy_predict_explore</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-predict">torchfort_rl_off_policy_predict</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-evaluate">torchfort_rl_off_policy_evaluate</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#system-management">System Management</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-update-replay-buffer">torchfort_rl_off_policy_update_replay_buffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-is-ready">torchfort_rl_off_policy_is_ready</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-save-checkpoint">torchfort_rl_off_policy_save_checkpoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-load-checkpoint">torchfort_rl_off_policy_load_checkpoint</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#id1">Weights and Biases Logging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-wandb-log-int">torchfort_rl_off_policy_wandb_log_int</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-wandb-log-float">torchfort_rl_off_policy_wandb_log_float</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-wandb-log-double">torchfort_rl_off_policy_wandb_log_double</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="usage.html" class="btn btn-neutral float-left" title="Usage Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api/config.html" class="btn btn-neutral float-right" title="TorchFort Configuration Files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, NVIDIA Corporation.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>  
+
+  <style>
+  a:link, a:visited {
+    color: #76b900;
+  }
+
+  a:hover {
+    color: #8c0;
+  }
+
+  .rst-content dl:not(.docutils) dt {
+    background: rgba(118, 185, 0, 0.1);
+    color: rgba(59,93,0,1);
+    border-top: solid 3px rgba(59,93,0,1);
+  }
+  </style>
+  
+
+</body>
+</html>

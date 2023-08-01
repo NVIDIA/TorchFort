@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TorchFort Configuration Files &mdash; torchfort 2023 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/tabs.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="TorchFort C API" href="c_api.html" />
+    <link rel="prev" title="TorchFort API" href="../api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" > 
+            <a href="../index.html" class="icon icon-home"> torchfort
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+  <style>
+    /* Sidebar header (and topbar for mobile) */
+    .wy-side-nav-search, .wy-nav-top {
+      background: #76b900;
+    }
+
+    .wy-side-nav-search a:link, .wy-nav-top a:link {
+      color: #fff;
+    }
+    .wy-side-nav-search a:visited, .wy-nav-top a:visited {
+      color: #fff;
+    }
+    .wy-side-nav-search a:hover, .wy-nav-top a:hover {
+      color: #fff;
+    }
+
+    .wy-menu-vertical a:link, .wy-menu-vertical a:visited {
+      color: #d9d9d9
+    }
+
+    .wy-menu-vertical a:active {
+      background-color: #76b900
+    }
+
+    .wy-side-nav-search>div.version {
+      color: rgba(0, 0, 0, 0.3)
+    }
+  </style>
+  
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">TorchFort API</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">TorchFort Configuration Files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#common">Common</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#general-properties">General Properties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#optimizer-properties">Optimizer Properties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#learning-rate-schedule-properties">Learning Rate Schedule Properties</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#supervised-learning">Supervised Learning</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-properties">Model Properties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#loss-properties">Loss Properties</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#reinforcement-learning">Reinforcement Learning</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#reinforcement-learning-training-algorithm-properties">Reinforcement Learning Training Algorithm Properties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#replay-buffer-properties">Replay Buffer Properties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#action-properties">Action Properties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#policy-and-critic-properties">Policy and Critic Properties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Learning Rate Schedule Properties</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="c_api.html">TorchFort C API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="f_api.html">TorchFort Fortran API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../extras.html">Extras</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">torchfort</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">TorchFort API</a></li>
+      <li class="breadcrumb-item active">TorchFort Configuration Files</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/config.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="torchfort-configuration-files">
+<span id="torchfort-config-ref"></span><h1>TorchFort Configuration Files<a class="headerlink" href="#torchfort-configuration-files" title="Permalink to this heading">¶</a></h1>
+<p>The TorchFort library relies on a user-defined YAML configuration file to define several aspects of the training procedure,
+with specific blocks to control:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>general properties</p></li>
+<li><p>model properties</p></li>
+<li><p>optimizer properties</p></li>
+<li><p>loss function properties</p></li>
+<li><p>learning rate schedule properties</p></li>
+</ul>
+</div></blockquote>
+<p>The following sections define each configuration block and available options.</p>
+<section id="common">
+<h2>Common<a class="headerlink" href="#common" title="Permalink to this heading">¶</a></h2>
+<p>The following sections list configuration file blocks common to supervised learning and reinforcement learning configuration files.</p>
+<section id="general-properties">
+<h3>General Properties<a class="headerlink" href="#general-properties" title="Permalink to this heading">¶</a></h3>
+<p>The block in the configuration file defining general properties takes the following structure:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">general</span><span class="p">:</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+</pre></div>
+</div>
+<p>The following table lists the available options:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 8%" />
+<col style="width: 74%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">report_frequency</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>frequency of reported TorchFort training/validation output lines to terminal (default = <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">enable_wandb_hook</span></code></p></td>
+<td><p>boolean</p></td>
+<td><p>flag to control whether wandb hook is active  (default = <code class="docutils literal notranslate"><span class="pre">false</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">verbose</span></code></p></td>
+<td><p>boolean</p></td>
+<td><p>flag to control verbose output from TorchFort (default = <code class="docutils literal notranslate"><span class="pre">false</span></code>)</p></td>
+</tr>
+</tbody>
+</table>
+<p>For more information about the wandb hook, see <a class="reference internal" href="../extras.html#wandb-support-ref"><span class="std std-ref">Weights and Biases Support</span></a>.</p>
+</section>
+<section id="optimizer-properties">
+<span id="optimizer-properties-ref"></span><h3>Optimizer Properties<a class="headerlink" href="#optimizer-properties" title="Permalink to this heading">¶</a></h3>
+<p>The block in the configuration file defining optimizer properties takes the following structure:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">optimizer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;optimizer_type&gt;</span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+</pre></div>
+</div>
+<p>The following table lists the available optimizer types:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 29%" />
+<col style="width: 71%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Optimizer Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sgd</span></code></p></td>
+<td><p>Stochastic Gradient Descent optimizer</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adam</span></code></p></td>
+<td><p>ADAM optimizer</p></td>
+</tr>
+</tbody>
+</table>
+<p>The following table lists the available options by optimizer type:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 8%" />
+<col style="width: 66%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Optimizer Type</p></th>
+<th class="head"><p>Option</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td rowspan="5"><p><code class="docutils literal notranslate"><span class="pre">sgd</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">learning_rate</span></code></p></td>
+<td><p>float</p></td>
+<td><p>learning rate (default = <code class="docutils literal notranslate"><span class="pre">0.001</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">momentum</span></code></p></td>
+<td><p>float</p></td>
+<td><p>mometum factor (default = <code class="docutils literal notranslate"><span class="pre">0.0</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dampening</span></code></p></td>
+<td><p>float</p></td>
+<td><p>dampening for momentum (default = <code class="docutils literal notranslate"><span class="pre">0.0</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">weight_decay</span></code></p></td>
+<td><p>float</p></td>
+<td><p>weight decay/L2 penalty (default = <code class="docutils literal notranslate"><span class="pre">0.0</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nesterov</span></code></p></td>
+<td><p>boolean</p></td>
+<td><p>enables Nesterov momentum (default = <code class="docutils literal notranslate"><span class="pre">false</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="6"><p><code class="docutils literal notranslate"><span class="pre">adam</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">learning_rate</span></code></p></td>
+<td><p>float</p></td>
+<td><p>learning rate (default = <code class="docutils literal notranslate"><span class="pre">0.001</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">beta1</span></code></p></td>
+<td><p>float</p></td>
+<td><p>coefficient used for computing running average of gradient (default = <code class="docutils literal notranslate"><span class="pre">0.9</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">beta2</span></code></p></td>
+<td><p>float</p></td>
+<td><p>coefficient use for computing running average of square of gradient (default = <code class="docutils literal notranslate"><span class="pre">0.999</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">weight_decay</span></code></p></td>
+<td><p>float</p></td>
+<td><p>weight decay/L2 penalty (default = <code class="docutils literal notranslate"><span class="pre">0.0</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">eps</span></code></p></td>
+<td><p>float</p></td>
+<td><p>term added to denominator to improve numerical stability (default = <code class="docutils literal notranslate"><span class="pre">1e-8</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">amsgrad</span></code></p></td>
+<td><p>boolean</p></td>
+<td><p>whether to use AMSGrad variant (default = <code class="docutils literal notranslate"><span class="pre">false</span></code>)</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="learning-rate-schedule-properties">
+<span id="lr-schedule-properties-ref"></span><h3>Learning Rate Schedule Properties<a class="headerlink" href="#learning-rate-schedule-properties" title="Permalink to this heading">¶</a></h3>
+<p>The block in the configuration file defining learning rate schedule properties takes the following structure:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">lr_scheduler</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;schedule_type&gt;</span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+</pre></div>
+</div>
+<p>The following table lists the available schedule types:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 88%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Schedule Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">step</span></code></p></td>
+<td><p>Decays learning rate by multiplicative factor every <code class="docutils literal notranslate"><span class="pre">step_size</span></code> training iterations</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">multistep</span></code></p></td>
+<td><p>Decays learning rate by multiplicative factor at user-defined training iteration milestones</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">polynomial</span></code></p></td>
+<td><p>Decays learning rate by polynomial function</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cosine_annealing</span></code></p></td>
+<td><p>Decays learning rate using cosine annealing schedule. See PyTorch documentation of
+<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.CosineAnnealingLR.html">torch.optim.lr_scheduler.CosineAnnealingLR</a> for more details.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The following table lists the available options by schedule type:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 54%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Schedule Type</p></th>
+<th class="head"><p>Option</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td rowspan="2"><p><code class="docutils literal notranslate"><span class="pre">step</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">step_size</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>Number of training steps between learning rate decay</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">gamma</span></code></p></td>
+<td><p>float</p></td>
+<td><p>Multiplicative factor of learning rate decay (default = <code class="docutils literal notranslate"><span class="pre">0.1</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td rowspan="2"><p><code class="docutils literal notranslate"><span class="pre">multistep</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">milestones</span></code></p></td>
+<td><p>list of integer</p></td>
+<td><p>Training step milestones for learning rate decay</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">gamma</span></code></p></td>
+<td><p>float</p></td>
+<td><p>Multiplicative factor of learning rate decay (default = <code class="docutils literal notranslate"><span class="pre">0.1</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td rowspan="2"><p><code class="docutils literal notranslate"><span class="pre">polynomial</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">total_iters</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>Number of training iterations to decay the learning rate</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power</span></code></p></td>
+<td><p>float</p></td>
+<td><p>The power of the polynomial (default = <code class="docutils literal notranslate"><span class="pre">1.0</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td rowspan="2"><p><code class="docutils literal notranslate"><span class="pre">cosine_annealing</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">eta_min</span></code></p></td>
+<td><p>float</p></td>
+<td><p>Minumum learning rate (default = <code class="docutils literal notranslate"><span class="pre">0.0</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">T_max</span></code></p></td>
+<td><p>float</p></td>
+<td><p>Maximum number of iterations for decay</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="supervised-learning">
+<h2>Supervised Learning<a class="headerlink" href="#supervised-learning" title="Permalink to this heading">¶</a></h2>
+<p>The following sections list configuration file blocks specific to supervised learning configuration files.</p>
+<section id="model-properties">
+<span id="model-properties-ref"></span><h3>Model Properties<a class="headerlink" href="#model-properties" title="Permalink to this heading">¶</a></h3>
+<p>The block in the configuration file defining model properties takes the following structure:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;model_type&gt;</span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+</pre></div>
+</div>
+<p>The following table lists the available model types:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 74%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Model Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">torchscript</span></code></p></td>
+<td><p>Load a model from an exported TorchScript file</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">mlp</span></code></p></td>
+<td><p>Use built-in MLP model</p></td>
+</tr>
+</tbody>
+</table>
+<p>The following table lists the available options by model type:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 7%" />
+<col style="width: 8%" />
+<col style="width: 78%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Model Type</p></th>
+<th class="head"><p>Option</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">torchscript</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">filename</span></code></p></td>
+<td><p>string</p></td>
+<td><p>path to TorchScript exported model file</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="2"><p><code class="docutils literal notranslate"><span class="pre">mlp</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">layer_sizes</span></code></p></td>
+<td><p>list of integers</p></td>
+<td><p>sequence of input/output sizes for linear layers e.g., <code class="docutils literal notranslate"><span class="pre">[16,</span> <span class="pre">32,</span> <span class="pre">4]</span></code> will create two linear layers with input/output of 16/32 for the first layer and 32/4 for the second layer.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dropout</span></code></p></td>
+<td><p>float</p></td>
+<td><p>probability of an element to be zeroed in dropout layers (default = <code class="docutils literal notranslate"><span class="pre">0.0</span></code>)</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="loss-properties">
+<h3>Loss Properties<a class="headerlink" href="#loss-properties" title="Permalink to this heading">¶</a></h3>
+<p>The block in the configuration file defining loss properties takes the following structure:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">loss</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;loss_type&gt;</span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+</pre></div>
+</div>
+<p>The following table lists the available loss types:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 32%" />
+<col style="width: 68%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Loss Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">l1</span></code></p></td>
+<td><p>L1/Mean Average Error</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">mse</span></code></p></td>
+<td><p>Mean Squared Error</p></td>
+</tr>
+</tbody>
+</table>
+<p>The following table lists the available options by loss type:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 10%" />
+<col style="width: 7%" />
+<col style="width: 76%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Loss Type</p></th>
+<th class="head"><p>Option</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">l1</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">reduction</span></code></p></td>
+<td><p>string</p></td>
+<td><p>Specifies type of reduction to apply to output. Can be either <code class="docutils literal notranslate"><span class="pre">none</span></code>, <code class="docutils literal notranslate"><span class="pre">mean</span></code> or <code class="docutils literal notranslate"><span class="pre">sum</span></code>. (default = <code class="docutils literal notranslate"><span class="pre">mean</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">mse</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">reduction</span></code></p></td>
+<td><p>string</p></td>
+<td><p>Specifies type of reduction to apply to output. Can be either <code class="docutils literal notranslate"><span class="pre">none</span></code>, <code class="docutils literal notranslate"><span class="pre">mean</span></code> or <code class="docutils literal notranslate"><span class="pre">sum</span></code>. (default = <code class="docutils literal notranslate"><span class="pre">mean</span></code>)</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="reinforcement-learning">
+<h2>Reinforcement Learning<a class="headerlink" href="#reinforcement-learning" title="Permalink to this heading">¶</a></h2>
+<p>The following sections list configuration file blocks specific to reinforcement learning system configuration files.</p>
+<section id="reinforcement-learning-training-algorithm-properties">
+<h3>Reinforcement Learning Training Algorithm Properties<a class="headerlink" href="#reinforcement-learning-training-algorithm-properties" title="Permalink to this heading">¶</a></h3>
+<p>The block in the configuration file defining algorithm properties takes the following structure:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">algorithm</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;algorithm_type&gt;</span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+</pre></div>
+</div>
+<p>The following table lists the available algorithm types:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Algorithm Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ddpg</span></code></p></td>
+<td><p>Deterministic Policy Gradient. See <a class="reference external" href="https://spinningup.openai.com/en/latest/algorithms/ddpg.html">DDPG documentation by OpenAI</a> for details</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">td3</span></code></p></td>
+<td><p>Twin Delayed DDPG. See <a class="reference external" href="https://spinningup.openai.com/en/latest/algorithms/td3.html">TD3 documentation by OpenAI</a> for details</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sac</span></code></p></td>
+<td><p>Soft Actor Critic. See <a class="reference external" href="https://spinningup.openai.com/en/latest/algorithms/sac.html">SAC documentation by OpenAI</a> for details</p></td>
+</tr>
+</tbody>
+</table>
+<p>The following table lists the available options by algorithm type:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 19%" />
+<col style="width: 8%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Algorithm Type</p></th>
+<th class="head"><p>Option</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td rowspan="5"><p><code class="docutils literal notranslate"><span class="pre">ddpg</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">batch_size</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>batch size used in training</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nstep</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>number of steps for N-step training</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nstep_reward_reduction</span></code></p></td>
+<td><p>string</p></td>
+<td><p>reduction mode for N-step training (see below)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">gamma</span></code></p></td>
+<td><p>float</p></td>
+<td><p>discount factor</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rho</span></code></p></td>
+<td><p>boolean</p></td>
+<td><p>weight average factor for target weights (in some frameworks called rho = 1-tau)</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="7"><p><code class="docutils literal notranslate"><span class="pre">td3</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">batch_size</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>batch size used in training</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nstep</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>number of steps for N-step training</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nstep_reward_reduction</span></code></p></td>
+<td><p>string</p></td>
+<td><p>reduction mode for N-step training (see below)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gamma</span></code></p></td>
+<td><p>float</p></td>
+<td><p>discount factor</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rho</span></code></p></td>
+<td><p>float</p></td>
+<td><p>weight average factor for target weights (in some frameworks called rho = 1-tau)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">num_critics</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>number of critic networks used</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">policy_lag</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>update frequency for the policy in units of critic updates</p></td>
+</tr>
+<tr class="row-even"><td rowspan="7"><p><code class="docutils literal notranslate"><span class="pre">sac</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">batch_size</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>batch size used in training</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nstep</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>number of steps for N-step training</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nstep_reward_reduction</span></code></p></td>
+<td><p>string</p></td>
+<td><p>reduction mode for N-step training (see below)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">gamma</span></code></p></td>
+<td><p>float</p></td>
+<td><p>discount factor</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alpha</span></code></p></td>
+<td><p>float</p></td>
+<td><p>entropy regularization coefficient</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rho</span></code></p></td>
+<td><p>boolean</p></td>
+<td><p>weight average factor for target weights (in some frameworks called rho = 1-tau)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">policy_lag</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>update frequency for the policy in units of value updates</p></td>
+</tr>
+</tbody>
+</table>
+<p>The parameter <code class="docutils literal notranslate"><span class="pre">nstep_reward_reduction</span></code> defines how the reward is accumulated over N-step rollouts. The options are summarized in a table below (<span class="math notranslate nohighlight">\(N\)</span> is the value from parameter <code class="docutils literal notranslate"><span class="pre">nstep</span></code> described above):</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 36%" />
+<col style="width: 64%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Reduction Mode</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sum</span></code> or <code class="docutils literal notranslate"><span class="pre">sum_no_skip</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(r = \sum_{i=1}^{N^\ast} \gamma^{i-1} r_i\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">mean</span></code> or <code class="docutils literal notranslate"><span class="pre">mean_no_skip</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(r = \sum_{i=1}^{N^\ast} \gamma^{i-1} r_i / N^\ast\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">weighted_mean</span></code> or <code class="docutils literal notranslate"><span class="pre">weighted_mean_no_skip</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(r = \sum_{i=1}^{N^\ast} \gamma^{i-1} r_i / (\sum_{k=1}^{N^\ast} \gamma^{k-1})\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>Here, the value of <span class="math notranslate nohighlight">\(N^\ast\)</span> depends on whether reduction with or without skip is being chosen. In case of the former, <span class="math notranslate nohighlight">\(N^\ast = N\)</span> and the replay buffer is searching for trajectories with <strong>at least</strong> <span class="math notranslate nohighlight">\(N\)</span> steps. If the trajectory terminates earlier, the sample is skipped and a new one is searched. If <strong>all trajectories are shorter</strong> than <span class="math notranslate nohighlight">\(N\)</span> steps, the replay buffer <strong>will never find</strong> a suitable sample.</p>
+<p>In this case, it is useful to use the modes with the additional suffix <code class="docutils literal notranslate"><span class="pre">_no_skip</span></code>. In this case, <span class="math notranslate nohighlight">\(N^{\ast}\)</span> in the formulas will be equal to the minimum of <span class="math notranslate nohighlight">\(N\)</span> and the number of steps needed to reach the end of the trajectory. The regular and no-skip modes are both useful in different occasions, so it is important to be clear about how the reward structure has to be designed in order to achieve the desired goals.</p>
+</section>
+<section id="replay-buffer-properties">
+<h3>Replay Buffer Properties<a class="headerlink" href="#replay-buffer-properties" title="Permalink to this heading">¶</a></h3>
+<p>The block in the configuration file defining algorithm properties takes the following structure:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">replay_buffer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;replay_buffer_type&gt;</span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+</pre></div>
+</div>
+<p>Currently, only type <code class="docutils literal notranslate"><span class="pre">uniform</span></code> is supported. The following table lists the available options:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 52%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Replay Buffer Type</p></th>
+<th class="head"><p>Option</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td rowspan="2"><p><code class="docutils literal notranslate"><span class="pre">uniform</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">min_size</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>Minimum number of samples before buffer is ready for training</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">max_size</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>Maximum capacity</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="action-properties">
+<h3>Action Properties<a class="headerlink" href="#action-properties" title="Permalink to this heading">¶</a></h3>
+<p>The block in the configuration file defining action properties takes the following structure:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">action</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;action_type&gt;</span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+</pre></div>
+</div>
+<p>The following table lists the available options for every action type for <code class="docutils literal notranslate"><span class="pre">ddpg</span></code> and <code class="docutils literal notranslate"><span class="pre">td3</span></code> algorithms:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 32%" />
+<col style="width: 13%" />
+<col style="width: 8%" />
+<col style="width: 47%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Action Type</p></th>
+<th class="head"><p>Option</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td rowspan="6"><p><code class="docutils literal notranslate"><span class="pre">space_noise</span></code> or <code class="docutils literal notranslate"><span class="pre">parameter_noise</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">a_low</span></code></p></td>
+<td><p>float</p></td>
+<td><p>lower bound for action value</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">a_high</span></code></p></td>
+<td><p>float</p></td>
+<td><p>upper bound for action value</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clip</span></code></p></td>
+<td><p>float</p></td>
+<td><p>clip value for training noise</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sigma_train</span></code></p></td>
+<td><p>float</p></td>
+<td><p>standard deviation for gaussian training noise</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sigma_explore</span></code></p></td>
+<td><p>float</p></td>
+<td><p>standard deviation for gaussian exploration noise</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adaptive</span></code></p></td>
+<td><p>bool</p></td>
+<td><p>flag to specify whether the standard deviation should be adaptive</p></td>
+</tr>
+<tr class="row-even"><td rowspan="8"><p><code class="docutils literal notranslate"><span class="pre">space_noise_ou</span></code> or <code class="docutils literal notranslate"><span class="pre">parameter_noise_ou</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">a_low</span></code></p></td>
+<td><p>float</p></td>
+<td><p>lower bound for action value</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">a_high</span></code></p></td>
+<td><p>float</p></td>
+<td><p>upper bound for action value</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clip</span></code></p></td>
+<td><p>float</p></td>
+<td><p>clip value for training noise</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sigma_train</span></code></p></td>
+<td><p>float</p></td>
+<td><p>standard deviation for Ornstein-Uhlenbeck training noise</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sigma_explore</span></code></p></td>
+<td><p>float</p></td>
+<td><p>standard deviation for Ornstein-Uhlenbeck exploration noise</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">xi</span></code></p></td>
+<td><p>float</p></td>
+<td><p>mean reversion parameter for Ornstein-Uhlenbeck noise</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dt</span></code></p></td>
+<td><p>float</p></td>
+<td><p>time-step parameter for Ornstein-Uhlenbeck noise</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adaptive</span></code></p></td>
+<td><p>bool</p></td>
+<td><p>flag to specify whether the standard deviation should be adaptive</p></td>
+</tr>
+</tbody>
+</table>
+<p>The meaning for most of these parameters should be evident from looking at the details of the implementations for the various RL algorithms linked above.
+However, some parameters require a more detailed explanation: in general, the suffix <code class="docutils literal notranslate"><span class="pre">_ou</span></code> refers to stateful noise of Ornstein-Uhlenbeck type with zero drift. This noise type is often used if correlation between time steps is desired and thus popular in reinforcement learning. Check out the <a class="reference external" href="https://en.wikipedia.org/wiki/Ornstein–Uhlenbeck_process">wikipedia page</a> for details.</p>
+<p>The prefix <code class="docutils literal notranslate"><span class="pre">space</span></code> refers to applying the noise to the predicted ation directly. For example, if <span class="math notranslate nohighlight">\(p\)</span> is our (deterministic) policy function, an exploration action using space noise type is obtained by computing</p>
+<div class="math notranslate nohighlight">
+\[\tilde{a} = \mathrm{clip}(p(\theta, s) + \mathcal{N}(0,\sigma_\mathrm{explore}), a_\mathrm{low}, a_\mathrm{high})\]</div>
+<p>for any input state <span class="math notranslate nohighlight">\(s\)</span> and policy weights <span class="math notranslate nohighlight">\(\theta\)</span>. In case of parameter noise, the noise will be applied to each weight of <span class="math notranslate nohighlight">\(p\)</span> instead. Hence, the noised action is computed  via</p>
+<div class="math notranslate nohighlight">
+\[\tilde{a} = \mathrm{clip}(p(\theta + \mathcal{N}(0,\sigma_\mathrm{explore}), s), a_\mathrm{low}, a_\mathrm{high})\]</div>
+<p>The parameter <code class="docutils literal notranslate"><span class="pre">adaptive</span></code> specifies whether the noise variance <span class="math notranslate nohighlight">\(\sigma\)</span> should be taken relative to the magnitude of the action magnitudes or weight magnitudes for space and parameter noise respectively. In terms of the former, this would mean that</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}a &amp;= p(\theta, s)\\\tilde{a} &amp;= \mathrm{clip}(a + \sigma_\mathrm{explore}\,\mathcal{N}(0,\|a\|), a_\mathrm{low}, a_\mathrm{high})\end{aligned}\end{align} \]</div>
+<p>and analogous for parameter noise.</p>
+<p>Whichever noise type and parameters are the best highly depends on the behavior of the environment and therefore we cannot give a general recommendation.</p>
+<p>For algorithm type <code class="docutils literal notranslate"><span class="pre">sac</span></code>, only action bounds are supported as the noise is built into the algorithm and cannot be customized.</p>
+</section>
+<section id="policy-and-critic-properties">
+<h3>Policy and Critic Properties<a class="headerlink" href="#policy-and-critic-properties" title="Permalink to this heading">¶</a></h3>
+<p>The block in the configuration file defining model properties for actor/policy and critic/value are similar to the supervised learning case (see <a class="reference internal" href="#model-properties-ref"><span class="std std-ref">Model Properties</span></a>). In this case, TorchFort supports different model properties for policy and critic. The block configuration looks as follows:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">critic_model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;critic_model_type&gt;</span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+
+<span class="nt">policy_model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;policy_model_type&gt;</span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+</pre></div>
+</div>
+<p>Refer to the <a class="reference internal" href="#model-properties-ref"><span class="std std-ref">Model Properties</span></a> for available model types and options.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For algorithms which use multiple critics networks such as TD3, the critic model is copied internally <code class="docutils literal notranslate"><span class="pre">num_critic</span></code> times and the weights are randomly initialized for each of these models independently.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In case of SAC algorithm, make sure that the policy network not only returns the mean actions value tensor but also the log probability sigma tensor. As an example see the policy function implementation of <a class="reference external" href="https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/sac/policies.py">stable baselines</a>.</p>
+</div>
+</section>
+<section id="id1">
+<h3>Learning Rate Schedule Properties<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
+<p>For reinforcement learning, TorchFort supports different learning rate schedules for policy and critic. The block configuration looks as follows:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">critic_lr_scheduler</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;schedule_type&gt;</span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+
+<span class="nt">policy_lr_scheduler</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;schedule_type&gt;</span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+</pre></div>
+</div>
+<p>Refer to the <a class="reference internal" href="#lr-schedule-properties-ref"><span class="std std-ref">Learning Rate Schedule Properties</span></a> for available scheduler types and options.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../api.html" class="btn btn-neutral float-left" title="TorchFort API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="c_api.html" class="btn btn-neutral float-right" title="TorchFort C API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, NVIDIA Corporation.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>  
+
+  <style>
+  a:link, a:visited {
+    color: #76b900;
+  }
+
+  a:hover {
+    color: #8c0;
+  }
+
+  .rst-content dl:not(.docutils) dt {
+    background: rgba(118, 185, 0, 0.1);
+    color: rgba(59,93,0,1);
+    border-top: solid 3px rgba(59,93,0,1);
+  }
+  </style>
+  
+
+</body>
+</html>

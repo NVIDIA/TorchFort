@@ -8,7 +8,7 @@ project(torchfort CXX Fortran)
 
 # Set TORCH_CUDA_ARCH_LIST string to match TORCHFORT_CUDA_CC_LIST
 foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
-  string(REPLACE "0" ".0" CUDA_CC_W_DOT ${CUDA_CC})
+    string(REGEX REPLACE "([0-9])$" ".\\1" CUDA_CC_W_DOT ${CUDA_CC})
   list(APPEND TORCH_CUDA_ARCH_LIST ${CUDA_CC_W_DOT})
 endforeach()
 list(JOIN TORCH_CUDA_ARCH_LIST " " TORCH_CUDA_ARCH_LIST)

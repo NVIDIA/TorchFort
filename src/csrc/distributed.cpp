@@ -95,7 +95,14 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
   CHECK_CUDA(cudaStreamWaitEvent(stream, event));
 
   auto count = torch::numel(tensor);
-  CHECK_NCCL(ncclAllReduce(tensor.data_ptr(), tensor.data_ptr(), count, get_nccl_dtype(tensor),
+  ncclDataType_t nccl_dtype;
+  if (torch::is_complex(tensor)) {
+    nccl_dtype = get_nccl_dtype(torch::view_as_real(tensor));
+    count *= 2;
+  } else {
+    nccl_dtype = get_nccl_dtype(tensor);
+  }
+  CHECK_NCCL(ncclAllReduce(tensor.data_ptr(), tensor.data_ptr(), count, nccl_dtype,
                            (average) ? ncclAvg : ncclSum, nccl_comm, stream));
 
   CHECK_CUDA(cudaEventRecord(event, stream));
@@ -114,7 +121,14 @@ void Comm::allreduce(const std::vector<torch::Tensor>& tensors, bool average) co
     }
 
     auto count = torch::numel(t);
-    CHECK_NCCL(ncclAllReduce(t.data_ptr(), t.data_ptr(), count, get_nccl_dtype(t), (average) ? ncclAvg : ncclSum,
+    ncclDataType_t nccl_dtype;
+    if (torch::is_complex(t)) {
+      nccl_dtype = get_nccl_dtype(torch::view_as_real(t));
+      count *= 2;
+    } else {
+      nccl_dtype = get_nccl_dtype(t);
+    }
+    CHECK_NCCL(ncclAllReduce(t.data_ptr(), t.data_ptr(), count, nccl_dtype, (average) ? ncclAvg : ncclSum,
                              nccl_comm, stream));
   }
   CHECK_NCCL(ncclGroupEnd());
@@ -140,13 +154,20 @@ void Comm::broadcast(torch::Tensor& tensor, int root) const {
     THROW_INVALID_USAGE("broadcast only supports GPU tensors for now.");
   }
   auto count = torch::numel(tensor);
+  ncclDataType_t nccl_dtype;
+  if (torch::is_complex(tensor)) {
+    nccl_dtype = get_nccl_dtype(torch::view_as_real(tensor));
+    count *= 2;
+  } else {
+    nccl_dtype = get_nccl_dtype(tensor);
+  }
 
   auto torch_stream = c10::cuda::getCurrentCUDAStream(tensor.device().index()).stream();
   CHECK_CUDA(cudaEventRecord(event, torch_stream));
   CHECK_CUDA(cudaStreamWaitEvent(stream, event));
 
   CHECK_NCCL(
-      ncclBroadcast(tensor.data_ptr(), tensor.data_ptr(), count, get_nccl_dtype(tensor), root, nccl_comm, stream));
+      ncclBroadcast(tensor.data_ptr(), tensor.data_ptr(), count, nccl_dtype, root, nccl_comm, stream));
 
   CHECK_CUDA(cudaEventRecord(event, stream));
   CHECK_CUDA(cudaStreamWaitEvent(torch_stream, event));

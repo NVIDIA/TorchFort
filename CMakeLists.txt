@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.0)
 set(CMAKE_CXX_STANDARD 17)
 
+# https://github.com/NVIDIA/TorchFort/issues/3
+cmake_policy(SET CMP0057 NEW)
+
+# __rdtsc() in torch not supported by nvc++. Use g++ for CXX files.
+set(CMAKE_CXX_COMPILER "g++")
+
 # User-options
 set(TORCHFORT_CUDA_CC_LIST "70;80" CACHE STRING "List of CUDA compute capabilities to build torchfort for.")
 

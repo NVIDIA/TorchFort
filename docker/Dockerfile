@@ -45,6 +45,7 @@ RUN pip3 install wandb ruamel-yaml h5py matplotlib pygame moviepy
 # install torchfort
 ENV FC=nvfortran
 ENV HDF5_ROOT=/opt/hdf5
+ENV YAML_CPP_ROOT=/opt/yaml-cpp
 COPY . /torchfort
 RUN cd /torchfort && mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/torchfort \

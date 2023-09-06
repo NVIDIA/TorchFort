@@ -74,7 +74,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${YAML_CPP_ROOT}/lib/libyaml-cpp.a
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
-    ${YAML_INCLUDE_DIRS}
+    ${YAML_CPP_ROOT}/include
     ${MPI_CXX_INCLUDE_PATH}
     ${TORCH_INCLUDE_DIRS}
     ${NVHPC_CUDA_INCLUDE_DIR}

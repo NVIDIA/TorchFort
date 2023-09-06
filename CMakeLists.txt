@@ -70,7 +70,7 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PRIVATE NVHPC::NCCL)
 target_link_libraries(${PROJECT_NAME} PRIVATE NVHPC::MPI_CXX)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${YAML_LIBRARY}/libyaml-cpp.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${YAML_CPP_ROOT}/lib/libyaml-cpp.a)
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE

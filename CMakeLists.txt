@@ -8,7 +8,7 @@ project(torchfort CXX Fortran)
 
 # Set TORCH_CUDA_ARCH_LIST string to match TORCHFORT_CUDA_CC_LIST
 foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
-  string(REPLACE "0" ".0" CUDA_CC_W_DOT ${CUDA_CC})
+    string(REGEX REPLACE "([0-9])$" ".\\1" CUDA_CC_W_DOT ${CUDA_CC})
   list(APPEND TORCH_CUDA_ARCH_LIST ${CUDA_CC_W_DOT})
 endforeach()
 list(JOIN TORCH_CUDA_ARCH_LIST " " TORCH_CUDA_ARCH_LIST)
@@ -21,7 +21,6 @@ list(APPEND CUF_GPU_ARG "cuda${NVHPC_CUDA_VERSION}")
 list(JOIN CUF_GPU_ARG "," CUF_GPU_ARG)
 
 find_package(Torch REQUIRED)
-find_package(MPI REQUIRED)
 find_package(NVHPC REQUIRED COMPONENTS MPI CUDA NCCL)
 string(REPLACE "/lib" "/include" NVHPC_NCCL_INCLUDE_DIR ${NVHPC_NCCL_LIBRARY_DIR})
 string(REPLACE "/lib64" "/include" NVHPC_CUDA_INCLUDE_DIR ${NVHPC_CUDA_LIBRARY_DIR})

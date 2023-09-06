@@ -22,7 +22,7 @@ target_link_libraries(PyEnvironments PRIVATE environments)
 foreach(tgt ${cart_pole_example_targets})
   target_include_directories(${tgt}
     PRIVATE
-    ${YAML_INCLUDE_DIRS}
+    ${YAML_CPP_ROOT}/include
     ${MPI_CXX_INCLUDE_PATH}
     ${NVHPC_CUDA_INCLUDE_DIR}
     ${Python_INCLUDE_DIRS}

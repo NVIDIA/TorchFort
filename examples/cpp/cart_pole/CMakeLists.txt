@@ -22,7 +22,7 @@ target_link_libraries(PyEnvironments PRIVATE environments)
 foreach(tgt ${cart_pole_example_targets})
   target_include_directories(${tgt}
     PRIVATE
-    /opt/yaml-cpp/include
+    ${YAML_CPP_ROOT}/include
     ${MPI_CXX_INCLUDE_PATH}
     ${NVHPC_CUDA_INCLUDE_DIR}
     ${Python_INCLUDE_DIRS}
@@ -32,7 +32,7 @@ foreach(tgt ${cart_pole_example_targets})
   target_link_libraries(${tgt} PRIVATE ${TORCH_LIBRARIES})
   target_link_libraries(${tgt} PRIVATE ${Python_LIBRARIES})
   target_link_libraries(${tgt} PRIVATE NVHPC::MPI_CXX)
-  target_link_libraries(${tgt} PRIVATE /opt/yaml-cpp/lib/libyaml-cpp.a)
+  target_link_libraries(${tgt} PRIVATE ${YAML_CPP_ROOT}/lib/libyaml-cpp.a)
   target_link_libraries(${tgt} PRIVATE environments)
   target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
   target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)

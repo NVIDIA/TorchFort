@@ -69,15 +69,15 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PRIVATE NVHPC::NCCL)
 target_link_libraries(${PROJECT_NAME} PRIVATE NVHPC::MPI_CXX)
-target_link_libraries(${PROJECT_NAME} PRIVATE /opt/yaml-cpp/lib/libyaml-cpp.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${YAML_CPP_ROOT}/lib/libyaml-cpp.a)
 
 target_include_directories(${PROJECT_NAME}
-   PRIVATE
-  /opt/yaml-cpp/include
-  ${MPI_CXX_INCLUDE_PATH}
-  ${TORCH_INCLUDE_DIRS}
-  ${NVHPC_CUDA_INCLUDE_DIR}
-  ${NVHPC_NCCL_INCLUDE_DIR}
+    PRIVATE
+    ${YAML_CPP_ROOT}/include
+    ${MPI_CXX_INCLUDE_PATH}
+    ${TORCH_INCLUDE_DIRS}
+    ${NVHPC_CUDA_INCLUDE_DIR}
+    ${NVHPC_NCCL_INCLUDE_DIR}
 )
 target_compile_definitions(${PROJECT_NAME} PRIVATE YAML_CPP_STATIC_DEFINE)
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)

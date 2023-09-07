@@ -49,6 +49,7 @@ COPY . /torchfort
 RUN cd /torchfort && mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/torchfort \
     -DNVHPC_CUDA_VERSION=11.8 \
+    -DYAML_CPP_ROOT=/opt/yaml-cpp \
     -DCMAKE_PREFIX_PATH="`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`;/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/cmake" \
     .. && \
     make -j install && \

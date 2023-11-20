@@ -33,6 +33,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <fstream>
 #include <unordered_map>
 
 #include <torch/torch.h>

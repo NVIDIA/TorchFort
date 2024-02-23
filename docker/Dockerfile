@@ -18,6 +18,8 @@ ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/nvshmem/lib:
 ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/math_libs/lib64:$LD_LIBRARY_PATH
 ENV CUDA_HOME /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/cuda
 
+RUN echo "source /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/12.3/hpcx/latest/hpcx-init.sh; hpcx_load" >>  /root/.bashrc
+
 # Install NCCL 2.20.3 for compatibility with PyTorch 2.2.1
 RUN cd /opt && \
     git clone --branch v2.20.3-1 https://github.com/NVIDIA/nccl.git && \
@@ -70,3 +72,5 @@ RUN cd /torchfort && mkdir build && cd build && \
     cd / && rm -rf torchfort
 ENV LD_LIBRARY_PATH /opt/torchfort/lib:${LD_LIBRARY_PATH}
 ENV LD_LIBRARY_PATH /usr/local/lib/python3.10/dist-packages/torch/lib:${LD_LIBRARY_PATH}
+
+ENTRYPOINT bash

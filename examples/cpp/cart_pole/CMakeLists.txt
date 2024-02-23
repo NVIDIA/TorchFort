@@ -23,7 +23,7 @@ foreach(tgt ${cart_pole_example_targets})
   target_include_directories(${tgt}
     PRIVATE
     ${YAML_CPP_ROOT}/include
-    ${MPI_CXX_INCLUDE_PATH}
+    ${MPI_CXX_INCLUDE_DIRS}
     ${NVHPC_CUDA_INCLUDE_DIR}
     ${Python_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}/include
@@ -31,7 +31,7 @@ foreach(tgt ${cart_pole_example_targets})
   target_link_libraries(${tgt} PRIVATE ${PROJECT_NAME})
   target_link_libraries(${tgt} PRIVATE ${TORCH_LIBRARIES})
   target_link_libraries(${tgt} PRIVATE ${Python_LIBRARIES})
-  target_link_libraries(${tgt} PRIVATE NVHPC::MPI_CXX)
+  target_link_libraries(${tgt} PRIVATE MPI::MPI_CXX)
   target_link_libraries(${tgt} PRIVATE ${YAML_CPP_ROOT}/lib/libyaml-cpp.a)
   target_link_libraries(${tgt} PRIVATE environments)
   target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)

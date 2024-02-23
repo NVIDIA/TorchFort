@@ -1,16 +1,29 @@
 cmake_minimum_required(VERSION 3.0)
 set(CMAKE_CXX_STANDARD 17)
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo)
+endif()
 
 # https://github.com/NVIDIA/TorchFort/issues/3
 cmake_policy(SET CMP0057 NEW)
 
+# User-defined build options
+set(TORCHFORT_CUDA_CC_LIST "70;80;90" CACHE STRING "List of CUDA compute capabilities to build torchfort for.")
+
 # __rdtsc() in torch not supported by nvc++. Use g++ for CXX files.
 set(CMAKE_CXX_COMPILER "g++")
 
-# User-options
-set(TORCHFORT_CUDA_CC_LIST "70;80" CACHE STRING "List of CUDA compute capabilities to build torchfort for.")
-
 project(torchfort CXX Fortran)
+
+# MPI
+find_package(MPI REQUIRED)
+
+# HPC SDK
+find_package(NVHPC REQUIRED COMPONENTS CUDA NCCL)
+string(REPLACE "/lib" "/include" NVHPC_NCCL_INCLUDE_DIR ${NVHPC_NCCL_LIBRARY_DIR})
+string(REPLACE "/lib64" "/include" NVHPC_CUDA_INCLUDE_DIR ${NVHPC_CUDA_LIBRARY_DIR})
+
+# PyTorch
 
 # Set TORCH_CUDA_ARCH_LIST string to match TORCHFORT_CUDA_CC_LIST
 foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
@@ -19,6 +32,9 @@ foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
 endforeach()
 list(JOIN TORCH_CUDA_ARCH_LIST " " TORCH_CUDA_ARCH_LIST)
 
+find_package(Torch REQUIRED)
+
+
 # Creating -gpu argument string for Fortran files
 foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
   list(APPEND CUF_GPU_ARG "cc${CUDA_CC}")
@@ -26,15 +42,10 @@ endforeach()
 list(APPEND CUF_GPU_ARG "cuda${NVHPC_CUDA_VERSION}")
 list(JOIN CUF_GPU_ARG "," CUF_GPU_ARG)
 
-find_package(Torch REQUIRED)
-find_package(NVHPC REQUIRED COMPONENTS MPI CUDA NCCL)
-string(REPLACE "/lib" "/include" NVHPC_NCCL_INCLUDE_DIR ${NVHPC_NCCL_LIBRARY_DIR})
-string(REPLACE "/lib64" "/include" NVHPC_CUDA_INCLUDE_DIR ${NVHPC_CUDA_LIBRARY_DIR})
-
 # Does not work
 #find_package(yaml-cpp REQUIRED)
 
-#c/c++ shared library
+# C/C++ shared library
 add_library(${PROJECT_NAME} SHARED)
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
@@ -64,7 +75,6 @@ target_sources(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/sac.cpp
 )
 
-# we want to compile those
 target_include_directories(${PROJECT_NAME}
   PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/include
@@ -74,13 +84,13 @@ target_include_directories(${PROJECT_NAME}
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PRIVATE NVHPC::NCCL)
-target_link_libraries(${PROJECT_NAME} PRIVATE NVHPC::MPI_CXX)
+target_link_libraries(${PROJECT_NAME} PRIVATE MPI::MPI_CXX)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${YAML_CPP_ROOT}/lib/libyaml-cpp.a)
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
     ${YAML_CPP_ROOT}/include
-    ${MPI_CXX_INCLUDE_PATH}
+    ${MPI_CXX_INCLUDE_DIRS}
     ${TORCH_INCLUDE_DIRS}
     ${NVHPC_CUDA_INCLUDE_DIR}
     ${NVHPC_NCCL_INCLUDE_DIR}
@@ -88,14 +98,12 @@ target_include_directories(${PROJECT_NAME}
 target_compile_definitions(${PROJECT_NAME} PRIVATE YAML_CPP_STATIC_DEFINE)
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
 
-# fortran library and module
+# Fortran library and module
 add_library("${PROJECT_NAME}_fort" SHARED)
 set_target_properties("${PROJECT_NAME}_fort" PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set_target_properties("${PROJECT_NAME}_fort" PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/include)
 target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -cuda -gpu=${CUF_GPU_ARG}>)
 
-
-# define public headers
 set(public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/include/torchfort.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/include/torchfort_rl.h

@@ -64,9 +64,10 @@ COPY . /torchfort
 RUN cd /torchfort && mkdir build && cd build && \
     CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/24.1/cuda \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/torchfort \
-    -DNVHPC_CUDA_VERSION=12.3 \
-    -DYAML_CPP_ROOT=/opt/yaml-cpp \
-    -DCMAKE_PREFIX_PATH="`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`;/opt/nvidia/hpc_sdk/Linux_x86_64/24.1/cmake" \
+    -DTORCHFORT_YAML_CPP_ROOT=/opt/yaml-cpp \
+    -DTORCHFORT_NCCL_ROOT=/opt/nccl/build \
+    -DTORCHFORT_BUILD_EXAMPLES=1 \
+    -DCMAKE_PREFIX_PATH="`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`" \
     .. && \
     make -j$(nproc) install && \
     cd / && rm -rf torchfort

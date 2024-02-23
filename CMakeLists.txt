@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.17) # for FindCUDAToolkit support
 set(CMAKE_CXX_STANDARD 17)
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo)
@@ -9,22 +9,75 @@ cmake_policy(SET CMP0057 NEW)
 
 # User-defined build options
 set(TORCHFORT_CUDA_CC_LIST "70;80;90" CACHE STRING "List of CUDA compute capabilities to build torchfort for.")
+set(TORCHFORT_NCCL_ROOT CACHE STRING "Path to search for NCCL installation. Default NVIDA HPC SDK provided NCCL version if available.")
+set(TORCHFORT_YAML_CPP_ROOT CACHE STRING "Path to search for yaml-cpp installation.")
+option(TORCHFORT_BUILD_FORTRAN "Build Fortran bindings" ON)
+option(TORCHFORT_BUILD_EXAMPLES "Build examples" OFF)
+
+# For backward-compatibility with existing variable
+if (YAML_CPP_ROOT)
+  set(TORCHFORT_YAML_CPP_ROOT ${YAML_CPP_ROOT})
+endif()
+
+if (NOT DEFINED TORCHFORT_YAML_CPP_ROOT)
+  message(FATAL_ERROR "Please set TORCHFORT_YAML_CPP_ROOT to yaml-cpp installation directory.")
+endif()
 
 # __rdtsc() in torch not supported by nvc++. Use g++ for CXX files.
 set(CMAKE_CXX_COMPILER "g++")
 
-project(torchfort CXX Fortran)
+if (TORCHFORT_BUILD_FORTRAN)
+  set(LANGS CXX Fortran)
+else()
+  set(LANGS CXX)
+endif()
+project(torchfort LANGUAGES ${LANGS})
 
 # MPI
 find_package(MPI REQUIRED)
 
+# CUDA
+find_package(CUDAToolkit REQUIRED)
+
 # HPC SDK
-find_package(NVHPC REQUIRED COMPONENTS CUDA NCCL)
-string(REPLACE "/lib" "/include" NVHPC_NCCL_INCLUDE_DIR ${NVHPC_NCCL_LIBRARY_DIR})
-string(REPLACE "/lib64" "/include" NVHPC_CUDA_INCLUDE_DIR ${NVHPC_CUDA_LIBRARY_DIR})
+# Locate and append NVHPC CMake configuration if available
+find_program(NVHPC_CXX_BIN "nvc++")
+if (NVHPC_CXX_BIN)
+  string(REPLACE "compilers/bin/nvc++" "cmake" NVHPC_CMAKE_DIR ${NVHPC_CXX_BIN})
+  set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${NVHPC_CMAKE_DIR}")
+  find_package(NVHPC)
+endif()
+if (NVHPC_FOUND)
+  message(STATUS "NVIDIA HPC SDK install located.")
+endif()
+
+# Get NCCL library (with optional override)
+if (TORCHFORT_NCCL_ROOT)
+  find_path(NCCL_INCLUDE_DIR REQUIRED
+    NAMES nccl.h
+    HINTS ${TORCHFORT_NCCL_ROOT}/include
+  )
+
+  find_library(NCCL_LIBRARY REQUIRED
+    NAMES nccl
+    HINTS ${TORCHFORT_NCCL_ROOT}/lib
+  )
+else()
+  if (NVHPC_FOUND)
+    find_package(NVHPC REQUIRED COMPONENTS NCCL)
+    find_library(NCCL_LIBRARY
+      NAMES nccl
+      HINTS ${NVHPC_NCCL_LIBRARY_DIR}
+    )
+    string(REPLACE "/lib" "/include" NCCL_INCLUDE_DIR ${NVHPC_NCCL_LIBRARY_DIR})
+  else()
+    message(FATAL_ERROR "Cannot find NCCL library. Please set TORCHFORT_NCCL_ROOT to NCCL installation directory.")
+  endif()
+endif()
+
+message(STATUS "Using NCCL library: ${NCCL_LIBRARY}")
 
 # PyTorch
-
 # Set TORCH_CUDA_ARCH_LIST string to match TORCHFORT_CUDA_CC_LIST
 foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
     string(REGEX REPLACE "([0-9])$" ".\\1" CUDA_CC_W_DOT ${CUDA_CC})
@@ -34,16 +87,17 @@ list(JOIN TORCH_CUDA_ARCH_LIST " " TORCH_CUDA_ARCH_LIST)
 
 find_package(Torch REQUIRED)
 
-
-# Creating -gpu argument string for Fortran files
-foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
-  list(APPEND CUF_GPU_ARG "cc${CUDA_CC}")
-endforeach()
-list(APPEND CUF_GPU_ARG "cuda${NVHPC_CUDA_VERSION}")
-list(JOIN CUF_GPU_ARG "," CUF_GPU_ARG)
-
-# Does not work
+# yaml-cpp
 #find_package(yaml-cpp REQUIRED)
+find_path(YAML_CPP_INCLUDE_DIR REQUIRED
+  NAMES yaml-cpp/yaml.h
+  HINTS ${TORCHFORT_YAML_CPP_ROOT}/include
+)
+find_library(YAML_CPP_LIBRARY REQUIRED
+  NAMES libyaml-cpp.a
+  HINTS ${TORCHFORT_YAML_CPP_ROOT}/lib
+)
+message(STATUS "Using yaml-cpp library: ${YAML_CPP_LIBRARY}")
 
 # C/C++ shared library
 add_library(${PROJECT_NAME} SHARED)
@@ -83,26 +137,21 @@ target_include_directories(${PROJECT_NAME}
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} PRIVATE NVHPC::NCCL)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${NCCL_LIBRARY})
 target_link_libraries(${PROJECT_NAME} PRIVATE MPI::MPI_CXX)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${YAML_CPP_ROOT}/lib/libyaml-cpp.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${YAML_CPP_LIBRARY})
+target_link_libraries(${PROJECT_NAME} PRIVATE CUDA::cudart)
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
-    ${YAML_CPP_ROOT}/include
+    ${YAML_CPP_INCLUDE_DIR}
     ${MPI_CXX_INCLUDE_DIRS}
     ${TORCH_INCLUDE_DIRS}
-    ${NVHPC_CUDA_INCLUDE_DIR}
-    ${NVHPC_NCCL_INCLUDE_DIR}
+    ${CUDAToolkit_INCLUDE_DIRS}
+    ${NCCL_INCLUDE_DIR}
 )
 target_compile_definitions(${PROJECT_NAME} PRIVATE YAML_CPP_STATIC_DEFINE)
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
-
-# Fortran library and module
-add_library("${PROJECT_NAME}_fort" SHARED)
-set_target_properties("${PROJECT_NAME}_fort" PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set_target_properties("${PROJECT_NAME}_fort" PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/include)
-target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -cuda -gpu=${CUF_GPU_ARG}>)
 
 set(public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/include/torchfort.h
@@ -111,22 +160,44 @@ set(public_headers
 )
 set_target_properties("${PROJECT_NAME}" PROPERTIES PUBLIC_HEADER "${public_headers}")
 
-target_sources("${PROJECT_NAME}_fort"
-  PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/fsrc/torchfort_m.F90
-)
-target_link_libraries(${PROJECT_NAME}_fort MPI::MPI_Fortran)
-
-# install the target and create export-set
 install(
-  TARGETS ${PROJECT_NAME} "${PROJECT_NAME}_fort"
+  TARGETS ${PROJECT_NAME}
   EXPORT "${PROJECT_NAME}Targets"
-  # except for public headers, as we want them to be inside a library folder
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include
   INCLUDES DESTINATION ${CMAKE_INSTALL_PREFIX}/include
 )
-# install Fortran module
-install(FILES ${CMAKE_BINARY_DIR}/include/torchfort.mod DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+
+# Fortran library and module
+if (TORCHFORT_BUILD_FORTRAN)
+
+  if (NOT CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
+    message(FATAL_ERROR "${CMAKE_Fortran_COMPILER_ID} Fortran support currently requires NVHPC compiler (nvfortran). Set TORCHFORT_BUILD_FORTRAN=0 to disable.")
+  endif()
+
+  # Creating -gpu argument string for Fortran files
+  foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
+    list(APPEND CUF_GPU_ARG "cc${CUDA_CC}")
+  endforeach()
+  list(APPEND CUF_GPU_ARG "cuda${NVHPC_CUDA_VERSION}")
+  list(JOIN CUF_GPU_ARG "," CUF_GPU_ARG)
+
+  add_library("${PROJECT_NAME}_fort" SHARED)
+  set_target_properties("${PROJECT_NAME}_fort" PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+  set_target_properties("${PROJECT_NAME}_fort" PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/include)
+  target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -cuda -gpu=${CUF_GPU_ARG}>)
+
+  target_sources("${PROJECT_NAME}_fort"
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/fsrc/torchfort_m.F90
+  )
+  target_link_libraries(${PROJECT_NAME}_fort MPI::MPI_Fortran)
+
+  install(
+    TARGETS "${PROJECT_NAME}_fort"
+  )
+  # install Fortran module
+  install(FILES ${CMAKE_BINARY_DIR}/include/torchfort.mod DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+endif()
 
 # install Python files
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/python/wandb_helper.py DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/python)
@@ -135,5 +206,12 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/python/wandb_helper.py DESTINATION
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/docs DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 # build examples
-add_subdirectory(examples/fortran/simulation)
-add_subdirectory(examples/cpp/cart_pole)
+if (TORCHFORT_BUILD_EXAMPLES)
+  add_subdirectory(examples/cpp/cart_pole)
+  if (TORCHFORT_BUILD_FORTRAN)
+    if (NOT CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
+      message(FATAL_ERROR "${CMAKE_Fortran_COMPILER_ID} Fortran support currently requires NVHPC compiler (nvfortran). Set TORCHFORT_BUILD_FORTRAN=0 to disable.")
+    endif()
+    add_subdirectory(examples/fortran/simulation)
+  endif()
+endif()

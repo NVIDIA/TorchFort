@@ -171,7 +171,7 @@ install(
 if (TORCHFORT_BUILD_FORTRAN)
 
   if (NOT CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-    message(FATAL_ERROR "${CMAKE_Fortran_COMPILER_ID} Fortran support currently requires NVHPC compiler (nvfortran). Set TORCHFORT_BUILD_FORTRAN=0 to disable.")
+    message(FATAL_ERROR "Fortran support currently requires NVHPC compiler (nvfortran). Set TORCHFORT_BUILD_FORTRAN=0 to disable.")
   endif()
 
   # Creating -gpu argument string for Fortran files

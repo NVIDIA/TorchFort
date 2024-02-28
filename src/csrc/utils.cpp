@@ -35,6 +35,7 @@
 #include <c10/core/Device.h>
 #include <torch/torch.h>
 
+#include "internal/defines.h"
 #include "internal/utils.h"
 
 namespace torchfort {
@@ -64,6 +65,20 @@ c10::Device get_device(int device_id) {
     device = c10::Device(torch::kCUDA, device_id);
   }
   return device;
+}
+
+int get_device_id(const void* ptr) {
+  cudaPointerAttributes attr;
+  CHECK_CUDA(cudaPointerGetAttributes(&attr, ptr));
+  switch (attr.type) {
+    case cudaMemoryTypeHost:
+    case cudaMemoryTypeUnregistered:
+      return -1;
+    case cudaMemoryTypeManaged:
+    case cudaMemoryTypeDevice:
+      return attr.device;
+  }
+  return -1;
 }
 
 std::string print_tensor_shape(torch::Tensor tensor) {

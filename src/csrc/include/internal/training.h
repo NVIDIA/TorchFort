@@ -58,11 +58,17 @@ void inference(const char* name, T* input, size_t input_dim, int64_t* input_shap
 
   torch::NoGradGuard no_grad;
 
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
+  int device_id = get_device_id(input);
+  if (get_device_id(output) != device_id) {
+    THROW_INVALID_USAGE("input and output arrays must reside on the same device.");
+  }
 
-  auto stream = c10::cuda::getStreamFromExternal(ext_stream, device_id);
-  c10::cuda::CUDAStreamGuard guard(stream);
+  c10::cuda::OptionalCUDAStreamGuard guard;
+  if (device_id >= 0) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, device_id);
+    guard.reset_stream(stream);
+  }
+
   auto input_tensor = get_tensor<L>(input, input_dim, input_shape, device_id);
   auto output_tensor = get_tensor<L>(output, output_dim, output_shape, device_id);
 
@@ -89,11 +95,17 @@ void train(const char* name, T* input, size_t input_dim, int64_t* input_shape, T
     THROW_INVALID_USAGE("Training requires a loss function, but loss block was missing in configuration file.");
   }
 
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
+  int device_id = get_device_id(input);
+  if (get_device_id(label) != device_id) {
+    THROW_INVALID_USAGE("input and label arrays must reside on the same device.");
+  }
 
-  auto stream = c10::cuda::getStreamFromExternal(ext_stream, device_id);
-  c10::cuda::CUDAStreamGuard guard(stream);
+  c10::cuda::OptionalCUDAStreamGuard guard;
+  if (device_id >= 0) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, device_id);
+    guard.reset_stream(stream);
+  }
+
   auto input_tensor = get_tensor<L>(input, input_dim, input_shape, device_id);
   auto label_tensor = get_tensor<L>(label, label_dim, label_shape, device_id);
 

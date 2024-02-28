@@ -38,6 +38,8 @@
 #include <c10/core/TensorOptions.h>
 #include <torch/torch.h>
 
+#include <cuda_runtime.h>
+
 #include "internal/exceptions.h"
 #include "internal/nvtx.h"
 
@@ -46,11 +48,14 @@ namespace torchfort {
 // Function to convert string to lowercase and remove whitespace
 std::string sanitize(std::string s);
 
-// functions to convert a string to a filename
+// Function to convert a string to a filename
 std::string filename_sanitize(std::string s);
 
 // Function to return c10 device from integer device id
 c10::Device get_device(int device_id);
+
+// Function to return integer device id from pointer
+int get_device_id(const void* ptr);
 
 template <typename T> torch::Dtype make_type() {
   if (std::is_same<T, float>::value) {

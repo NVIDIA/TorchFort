@@ -170,21 +170,24 @@ install(
 # Fortran library and module
 if (TORCHFORT_BUILD_FORTRAN)
 
-  if (NOT CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-    message(FATAL_ERROR "Fortran support currently requires NVHPC compiler (nvfortran). Set TORCHFORT_BUILD_FORTRAN=0 to disable.")
+  if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
+    # Creating -gpu argument string for nvfortran GPU compilation
+    foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
+      list(APPEND CUF_GPU_ARG "cc${CUDA_CC}")
+    endforeach()
+    list(APPEND CUF_GPU_ARG "cuda${NVHPC_CUDA_VERSION}")
+    list(JOIN CUF_GPU_ARG "," CUF_GPU_ARG)
   endif()
 
-  # Creating -gpu argument string for Fortran files
-  foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
-    list(APPEND CUF_GPU_ARG "cc${CUDA_CC}")
-  endforeach()
-  list(APPEND CUF_GPU_ARG "cuda${NVHPC_CUDA_VERSION}")
-  list(JOIN CUF_GPU_ARG "," CUF_GPU_ARG)
 
   add_library("${PROJECT_NAME}_fort" SHARED)
   set_target_properties("${PROJECT_NAME}_fort" PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
   set_target_properties("${PROJECT_NAME}_fort" PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/include)
-  target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -cuda -gpu=${CUF_GPU_ARG}>)
+  if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
+    target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
+  elseif (CMAKE_Fortrain_COMPILER_ID STREQUAL "GNU")
+    target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
+  endif()
 
   target_sources("${PROJECT_NAME}_fort"
     PRIVATE
@@ -209,9 +212,6 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/docs DESTINATION ${CMAKE_INSTALL_P
 if (TORCHFORT_BUILD_EXAMPLES)
   add_subdirectory(examples/cpp/cart_pole)
   if (TORCHFORT_BUILD_FORTRAN)
-    if (NOT CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-      message(FATAL_ERROR "${CMAKE_Fortran_COMPILER_ID} Fortran support currently requires NVHPC compiler (nvfortran). Set TORCHFORT_BUILD_FORTRAN=0 to disable.")
-    endif()
     add_subdirectory(examples/fortran/simulation)
   endif()
 endif()

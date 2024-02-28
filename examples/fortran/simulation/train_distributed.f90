@@ -48,7 +48,9 @@ end subroutine print_help_message
 
 program train_distributed
   use, intrinsic :: iso_fortran_env, only: real32, real64
+#ifdef ENABLE_OPENACC
   use openacc
+#endif
   use mpi
   use simulation
   use torchfort
@@ -70,7 +72,9 @@ program train_distributed
 
   integer :: rank, local_rank, nranks
   integer :: local_comm
-  integer(acc_device_kind) ::dev_type
+#ifdef ENABLE_OPENACC
+  integer(acc_device_kind) :: dev_type
+#endif
   integer, allocatable :: sendcounts(:), recvcounts(:)
   integer, allocatable :: sdispls(:), rdispls(:)
 
@@ -93,10 +97,12 @@ program train_distributed
   call MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, local_comm, istat)
   call MPI_Comm_rank(local_comm, local_rank, istat)
 
+#ifdef ENABLE_OPENACC
   ! assign GPUs by local rank
   dev_type = acc_get_device_type()
   call acc_set_device_num(local_rank, dev_type)
   call acc_init(dev_type)
+#endif
 
   if (nranks /= 2) then
     print*, "This example requires 2 GPUs to run. Exiting."

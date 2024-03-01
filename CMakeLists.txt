@@ -19,7 +19,7 @@ if (YAML_CPP_ROOT)
   set(TORCHFORT_YAML_CPP_ROOT ${YAML_CPP_ROOT})
 endif()
 
-if (NOT DEFINED TORCHFORT_YAML_CPP_ROOT)
+if (NOT TORCHFORT_YAML_CPP_ROOT)
   message(FATAL_ERROR "Please set TORCHFORT_YAML_CPP_ROOT to yaml-cpp installation directory.")
 endif()
 

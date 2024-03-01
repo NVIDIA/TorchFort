@@ -254,16 +254,16 @@ void SACSystem::printInfo() const {
 void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // policy
-  p_model_.comm = std::make_shared<Comm>();
-  p_model_.comm->initialize(mpi_comm);
+  p_model_.comm = std::make_shared<Comm>(mpi_comm);
+  p_model_.comm->initialize(device_.is_cuda());
   // critic
   for (auto& q_model : q_models_) {
-    q_model.comm = std::make_shared<Comm>();
-    q_model.comm->initialize(mpi_comm);
+    q_model.comm = std::make_shared<Comm>(mpi_comm);
+    q_model.comm->initialize(device_.is_cuda());
   }
   for (auto& q_model_target : q_models_target_) {
-    q_model_target.comm = std::make_shared<Comm>();
-    q_model_target.comm->initialize(mpi_comm);
+    q_model_target.comm = std::make_shared<Comm>(mpi_comm);
+    q_model_target.comm->initialize(device_.is_cuda());
   }
 
   // move to device before broadcasting

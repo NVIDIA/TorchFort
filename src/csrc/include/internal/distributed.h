@@ -39,10 +39,10 @@
 namespace torchfort {
 
 struct Comm {
-  void initialize(MPI_Comm mpi_comm);
+  void initialize(bool initialize_nccl = false);
   void finalize();
   void allreduce(torch::Tensor& tensor, bool average = false) const;
-  void allreduce(const std::vector<torch::Tensor>& tensors, bool average = false) const;
+  void allreduce(std::vector<torch::Tensor>& tensors, bool average = false) const;
   void allreduce(double& val, bool average = false) const;
   void allreduce(float& val, bool average = false) const;
   void broadcast(torch::Tensor& tensor, int root = 0) const;
@@ -50,9 +50,12 @@ struct Comm {
   int rank;
   int size;
   MPI_Comm mpi_comm;
-  ncclComm_t nccl_comm;
-  cudaStream_t stream;
-  cudaEvent_t event;
+  ncclComm_t nccl_comm = nullptr;
+  cudaStream_t stream = nullptr;
+  cudaEvent_t event = nullptr;
+  bool initialized = false;
+
+  Comm(MPI_Comm mpi_comm) : mpi_comm(mpi_comm) {};
 };
 
 } // namespace torchfort

@@ -113,18 +113,8 @@ torchfort_result_t torchfort_create_distributed_model(const char* name, const ch
     torchfort_create_model(name, config_fname);
 
     // Set up distributed communicator
-    models[name].comm = std::shared_ptr<Comm>(new Comm());
-    models[name].comm->initialize(mpi_comm);
+    models[name].comm = std::shared_ptr<Comm>(new Comm(mpi_comm));
 
-    // Move model to device before broadcast
-    int device_id;
-    CHECK_CUDA(cudaGetDevice(&device_id));
-    models[name].model->to(get_device(device_id));
-
-    // Broadcast initial model parameters from rank 0
-    for (auto& p : models[name].model->parameters()) {
-      models[name].comm->broadcast(p, 0);
-    }
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();

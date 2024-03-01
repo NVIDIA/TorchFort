@@ -105,7 +105,7 @@ program train_distributed
 #endif
 
   if (nranks /= 2) then
-    print*, "This example requires 2 GPUs to run. Exiting."
+    print*, "This example requires 2 ranks to run. Exiting."
     stop
   endif
 

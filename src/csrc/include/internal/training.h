@@ -114,6 +114,14 @@ void train(const char* name, T* input, size_t input_dim, int64_t* input_shape, T
   model->train();
   auto opt = models[name].optimizer.get();
 
+  if (models[name].comm && !models[name].comm->initialized) {
+    models[name].comm->initialize(device_id >= 0);
+    // Broadcast initial model parameters from rank 0
+    for (auto& p : models[name].model->parameters()) {
+      models[name].comm->broadcast(p, 0);
+    }
+  }
+
   // fwd pass
   auto results = model->forward(std::vector<torch::Tensor>{input_tensor});
   auto losses =

@@ -233,15 +233,15 @@ void DDPGSystem::printInfo() const {
 void DDPGSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // policy
-  p_model_.comm = std::make_shared<Comm>();
-  p_model_.comm->initialize(mpi_comm);
-  p_model_target_.comm = std::make_shared<Comm>();
-  p_model_target_.comm->initialize(mpi_comm);
+  p_model_.comm = std::make_shared<Comm>(mpi_comm);
+  p_model_.comm->initialize(device_.is_cuda());
+  p_model_target_.comm = std::make_shared<Comm>(mpi_comm);
+  p_model_target_.comm->initialize(device_.is_cuda());
   // critic
-  q_model_.comm = std::make_shared<Comm>();
-  q_model_.comm->initialize(mpi_comm);
-  q_model_target_.comm = std::make_shared<Comm>();
-  q_model_target_.comm->initialize(mpi_comm);
+  q_model_.comm = std::make_shared<Comm>(mpi_comm);
+  q_model_.comm->initialize(device_.is_cuda());
+  q_model_target_.comm = std::make_shared<Comm>(mpi_comm);
+  q_model_target_.comm->initialize(device_.is_cuda());
 
   // move to device before broadcasting
   // policy

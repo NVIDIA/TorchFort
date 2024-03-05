@@ -27,7 +27,7 @@ endif()
 set(CMAKE_CXX_COMPILER "g++")
 
 if (TORCHFORT_BUILD_FORTRAN)
-  set(LANGS CXX Fortran)
+  set(LANGS Fortran CXX)
 else()
   set(LANGS CXX)
 endif()
@@ -45,9 +45,7 @@ find_program(NVHPC_CXX_BIN "nvc++")
 if (NVHPC_CXX_BIN)
   string(REPLACE "compilers/bin/nvc++" "cmake" NVHPC_CMAKE_DIR ${NVHPC_CXX_BIN})
   set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${NVHPC_CMAKE_DIR}")
-  find_package(NVHPC)
-endif()
-if (NVHPC_FOUND)
+  set(NVHPC_AVAILABLE 1)
   message(STATUS "NVIDIA HPC SDK install located.")
 endif()
 
@@ -63,7 +61,7 @@ if (TORCHFORT_NCCL_ROOT)
     HINTS ${TORCHFORT_NCCL_ROOT}/lib
   )
 else()
-  if (NVHPC_FOUND)
+  if (NVHPC_AVAILABLE)
     find_package(NVHPC REQUIRED COMPONENTS NCCL)
     find_library(NCCL_LIBRARY
       NAMES nccl
@@ -187,6 +185,10 @@ if (TORCHFORT_BUILD_FORTRAN)
     target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
   elseif (CMAKE_Fortrain_COMPILER_ID STREQUAL "GNU")
     target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
+  endif()
+
+  if (CMAKE_Fortran_COMPILER MATCHES "ftn")
+    target_compile_definitions("${PROJECT_NAME}_fort" PRIVATE MPICH)
   endif()
 
   target_sources("${PROJECT_NAME}_fort"

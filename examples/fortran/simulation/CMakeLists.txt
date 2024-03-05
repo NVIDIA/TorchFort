@@ -1,4 +1,4 @@
-find_package(HDF5 REQUIRED COMPONENTS Fortran)
+find_package(HDF5 COMPONENTS Fortran REQUIRED)
 
 # If using nvfortran, build GPU examples which require OpenACC
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")

@@ -7,6 +7,7 @@ target_sources(environments
   PRIVATE
   env.cpp
 )
+set_property(TARGET environments PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_executable(train_cart_pole)
 target_sources(train_cart_pole

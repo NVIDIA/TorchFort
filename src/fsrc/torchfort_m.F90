@@ -469,7 +469,7 @@ contains
 #ifndef MPICH
     mpi_comm_c = MPI_Comm_f2c(comm)
 #else
-    mpi_comm_c = comm
+    mpi_comm_c%comm = comm%comm
 #endif
     res = torchfort_create_distributed_model_c([trim(mname), C_NULL_CHAR], [trim(fname), C_NULL_CHAR], &
                                                mpi_comm_c)
@@ -1029,13 +1029,12 @@ contains
     character(len=*) :: mname, fname
     type(MPI_F_Comm) :: comm
     integer(c_int) :: res
-
     type(MPI_C_Comm) :: mpi_comm_c
 
 #ifndef MPICH
     mpi_comm_c = MPI_Comm_f2c(comm)
 #else
-    mpi_comm_c = comm
+    mpi_comm_c%comm = comm%comm
 #endif
     res = torchfort_rl_off_policy_create_distributed_system_c([trim(mname), C_NULL_CHAR], &
                                                               [trim(fname), C_NULL_CHAR], &

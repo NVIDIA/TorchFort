@@ -34,7 +34,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include <c10/core/Device.h>
 #include <c10/core/TensorOptions.h>
 #include <torch/torch.h>
 
@@ -51,11 +50,14 @@ std::string sanitize(std::string s);
 // Function to convert a string to a filename
 std::string filename_sanitize(std::string s);
 
-// Function to return c10 device from integer device id
-c10::Device get_device(int device_id);
+// Function to return torch device from integer device id
+torch::Device get_device(int device_id);
 
-// Function to return integer device id from pointer
-int get_device_id(const void* ptr);
+// Function to return torch device from torchfort_device_t
+torch::Device get_device(torchfort_device_t device);
+
+// Function to return torch device from pointer
+torch::Device get_device(const void* ptr);
 
 template <typename T> torch::Dtype make_type() {
   if (std::is_same<T, float>::value) {
@@ -72,10 +74,10 @@ template <typename T> torch::Dtype make_type() {
 enum MemoryLayout { RowMajor = 0, ColMajor = 1 };
 
 template <MemoryLayout L, typename T>
-torch::Tensor get_tensor(T* tensor_ptr, size_t dim, int64_t* shape, int device_id) {
+torch::Tensor get_tensor(T* tensor_ptr, size_t dim, int64_t* shape) {
   torchfort::nvtx::rangePush("get_tensor");
   // Set tensor options
-  auto dev = get_device(device_id);
+  auto dev = get_device(tensor_ptr);
   torch::TensorOptions options = torch::TensorOptions().device(dev);
 
   // Get type

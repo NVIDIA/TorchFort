@@ -58,26 +58,21 @@ void inference(const char* name, T* input, size_t input_dim, int64_t* input_shap
 
   torch::NoGradGuard no_grad;
 
-  int device_id = get_device_id(input);
-  if (get_device_id(output) != device_id) {
-    THROW_INVALID_USAGE("input and output arrays must reside on the same device.");
-  }
-
   c10::cuda::OptionalCUDAStreamGuard guard;
-  if (device_id >= 0) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, device_id);
+  if (models[name].device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, models[name].device.index());
     guard.reset_stream(stream);
   }
 
-  auto input_tensor = get_tensor<L>(input, input_dim, input_shape, device_id);
-  auto output_tensor = get_tensor<L>(output, output_dim, output_shape, device_id);
+  auto input_tensor_in = get_tensor<L>(input, input_dim, input_shape);
+  auto output_tensor_in = get_tensor<L>(output, output_dim, output_shape);
+  auto input_tensor = input_tensor_in.to(models[name].device);
 
   auto model = models[name].model.get();
-  model->to(input_tensor.device());
   model->eval();
   auto results = model->forward(std::vector<torch::Tensor>{input_tensor});
 
-  output_tensor.copy_(results[0].reshape(output_tensor.sizes()));
+  output_tensor_in.copy_(results[0].reshape(output_tensor_in.sizes()));
   models[name].state->step_inference++;
   torchfort::nvtx::rangePop();
 }
@@ -95,32 +90,21 @@ void train(const char* name, T* input, size_t input_dim, int64_t* input_shape, T
     THROW_INVALID_USAGE("Training requires a loss function, but loss block was missing in configuration file.");
   }
 
-  int device_id = get_device_id(input);
-  if (get_device_id(label) != device_id) {
-    THROW_INVALID_USAGE("input and label arrays must reside on the same device.");
-  }
-
   c10::cuda::OptionalCUDAStreamGuard guard;
-  if (device_id >= 0) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, device_id);
+  if (models[name].device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, models[name].device.index());
     guard.reset_stream(stream);
   }
 
-  auto input_tensor = get_tensor<L>(input, input_dim, input_shape, device_id);
-  auto label_tensor = get_tensor<L>(label, label_dim, label_shape, device_id);
+  auto input_tensor_in = get_tensor<L>(input, input_dim, input_shape);
+  auto label_tensor_in = get_tensor<L>(label, label_dim, label_shape);
+  auto input_tensor = input_tensor_in.to(models[name].device);
+  auto label_tensor = label_tensor_in.to(models[name].device);
 
   auto model = models[name].model.get();
   model->to(input_tensor.device());
   model->train();
   auto opt = models[name].optimizer.get();
-
-  if (models[name].comm && !models[name].comm->initialized) {
-    models[name].comm->initialize(device_id >= 0);
-    // Broadcast initial model parameters from rank 0
-    for (auto& p : models[name].model->parameters()) {
-      models[name].comm->broadcast(p, 0);
-    }
-  }
 
   // fwd pass
   auto results = model->forward(std::vector<torch::Tensor>{input_tensor});

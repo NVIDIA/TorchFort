@@ -45,8 +45,7 @@ find_program(NVHPC_CXX_BIN "nvc++")
 if (NVHPC_CXX_BIN)
   string(REPLACE "compilers/bin/nvc++" "cmake" NVHPC_CMAKE_DIR ${NVHPC_CXX_BIN})
   set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${NVHPC_CMAKE_DIR}")
-  set(NVHPC_AVAILABLE 1)
-  message(STATUS "NVIDIA HPC SDK install located.")
+  find_package(NVHPC COMPONENTS "")
 endif()
 
 # Get NCCL library (with optional override)
@@ -61,7 +60,7 @@ if (TORCHFORT_NCCL_ROOT)
     HINTS ${TORCHFORT_NCCL_ROOT}/lib
   )
 else()
-  if (NVHPC_AVAILABLE)
+  if (NVHPC_FOUND)
     find_package(NVHPC REQUIRED COMPONENTS NCCL)
     find_library(NCCL_LIBRARY
       NAMES nccl

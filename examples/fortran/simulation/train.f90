@@ -32,6 +32,8 @@ subroutine print_help_message
   "options:\n"// &
   "\t--configfile\n" // &
   "\t\tTorchFort configuration file to use. (default: config_mlp_native.yaml) \n" // &
+  "\t--device\n" // &
+  "\t\tDevice to run model training/inference. (0 for CPU, 1 for GPU. default: GPU) \n" // &
   "\t--ntrain_steps\n" // &
   "\t\tNumber of training steps to run. (default: 100000) \n" // &
   "\t--nval_steps\n" // &
@@ -73,6 +75,8 @@ program train
   integer :: ntrain_steps = 100000
   integer :: nval_steps = 1000
   integer :: val_write_freq = 10
+  integer :: model_device_arg = 1
+  integer :: model_device = TORCHFORT_DEVICE_GPU
 
   logical :: skip_next
   character(len=256) :: arg
@@ -115,6 +119,18 @@ program train
         call get_command_argument(i+1, arg)
         read(arg, *) val_write_freq
         skip_next = .true.
+      case('--device')
+        call get_command_argument(i+1, arg)
+        read(arg, *) model_device_arg
+        if (model_device_arg == 0) then
+          model_device = TORCHFORT_DEVICE_CPU
+        elseif(model_device_arg == 1) then
+          model_device = TORCHFORT_DEVICE_GPU
+        else
+          print*, "Invalid device type argument."
+          call exit(1)
+        endif
+        skip_next = .true.
       case('-h')
         call print_help_message
         call exit(0)
@@ -126,6 +142,11 @@ program train
 
   print*, "Run settings:"
   print*, "\tconfigfile: ", trim(configfile)
+  if (model_device == TORCHFORT_DEVICE_CPU) then
+    print*, "\tdevice: cpu"
+  else
+    print*, "\tdevice: gpu"
+  endif
   if (load_ckpt) then
     print*, "\tcheckpoint_dir: ", trim(checkpoint_dir)
   else
@@ -159,7 +180,7 @@ program train
   if (istat /= TORCHFORT_RESULT_SUCCESS) stop
 
   ! setup the model
-  istat = torchfort_create_model("mymodel", configfile)
+  istat = torchfort_create_model("mymodel", configfile, model_device)
   if (istat /= TORCHFORT_RESULT_SUCCESS) stop
 
   ! load training checkpoint if requested

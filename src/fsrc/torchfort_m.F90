@@ -37,8 +37,14 @@ module torchfort
     enumerator :: TORCHFORT_DOUBLE = -2
   end enum
 
+  ! enum for torchfort supported device types
+  enum, bind(c) ! torchfort_device
+    enumerator :: TORCHFORT_DEVICE_CPU = -1
+    enumerator :: TORCHFORT_DEVICE_GPU = -2
+  end enum
+
   ! enum for torchfort return values
-  enum, bind(c) ! cudecompResult
+  enum, bind(c) ! torchfort_result
     enumerator :: TORCHFORT_RESULT_SUCCESS = 0
     enumerator :: TORCHFORT_RESULT_INVALID_USAGE = 1
     enumerator :: TORCHFORT_RESULT_NOT_SUPPORTED = 2
@@ -143,19 +149,21 @@ module torchfort
       integer(c_int) :: res
     end function torchfort_set_cudnn_benchmark_c
     
-    function torchfort_create_model_c(mname, fname) result(res) &
+    function torchfort_create_model_c(mname, fname, dev) result(res) &
       bind(C, name="torchfort_create_model")
       import
       character(kind=c_char) :: mname(*)
       character(kind=c_char) :: fname(*)
+      integer(c_int), value :: dev
       integer(c_int) :: res
     end function torchfort_create_model_c
 
-    function torchfort_create_distributed_model_c(mname, fname, mpi_comm) result(res) &
+    function torchfort_create_distributed_model_c(mname, fname, mpi_comm, dev) result(res) &
       bind(C, name="torchfort_create_distributed_model")
       import
       character(kind=c_char) :: mname(*)
       character(kind=c_char) :: fname(*)
+      integer(c_int), value :: dev
       type(MPI_C_Comm), value :: mpi_comm
       integer(c_int) :: res
     end function torchfort_create_distributed_model_c
@@ -428,40 +436,44 @@ contains
   end function torchfort_set_cudnn_benchmark
   
   ! Setup routines
-  function torchfort_create_model(mname, fname) result(res)
+  function torchfort_create_model(mname, fname, dev) result(res)
     character(len=*) :: mname, fname
+    integer(c_int) :: dev
     integer(c_int) :: res
-    res = torchfort_create_model_c([trim(mname), C_NULL_CHAR], [trim(fname), C_NULL_CHAR])
+    res = torchfort_create_model_c([trim(mname), C_NULL_CHAR], [trim(fname), C_NULL_CHAR], dev)
   end function torchfort_create_model
 
-  function torchfort_create_distributed_model_MPI_F(mname, fname, comm) result(res)
+  function torchfort_create_distributed_model_MPI_F(mname, fname, comm, dev) result(res)
     character(len=*) :: mname, fname
     integer :: comm
+    integer(c_int) :: dev
     integer(c_int) :: res
 
     type(MPI_F_Comm) :: mpi_comm_f
 
     mpi_comm_f%comm = comm
-    res = torchfort_create_distributed_model_type(mname, fname, mpi_comm_f)
+    res = torchfort_create_distributed_model_type(mname, fname, mpi_comm_f, dev)
   end function torchfort_create_distributed_model_MPI_F
 
-  function torchfort_create_distributed_model_MPI_F08(mname, fname, comm) result(res)
+  function torchfort_create_distributed_model_MPI_F08(mname, fname, comm, dev) result(res)
     type, bind(c) :: MPI_Comm
       integer :: MPI_VAL
     end type MPI_Comm
     character(len=*) :: mname, fname
     type(MPI_Comm) :: comm
+    integer(c_int) :: dev
     integer(c_int) :: res
 
     type(MPI_F_Comm) :: mpi_comm_f
 
     mpi_comm_f%comm = comm%MPI_VAL
-    res = torchfort_create_distributed_model_type(mname, fname, mpi_comm_f)
+    res = torchfort_create_distributed_model_type(mname, fname, mpi_comm_f, dev)
   end function torchfort_create_distributed_model_MPI_F08
 
-  function torchfort_create_distributed_model_type(mname, fname, comm) result(res)
+  function torchfort_create_distributed_model_type(mname, fname, comm, dev) result(res)
     character(len=*) :: mname, fname
     type(MPI_F_Comm) :: comm
+    integer(c_int) :: dev
     integer(c_int) :: res
 
     type(MPI_C_Comm) :: mpi_comm_c
@@ -472,7 +484,7 @@ contains
     mpi_comm_c%comm = comm%comm
 #endif
     res = torchfort_create_distributed_model_c([trim(mname), C_NULL_CHAR], [trim(fname), C_NULL_CHAR], &
-                                               mpi_comm_c)
+                                               mpi_comm_c, dev)
   end function torchfort_create_distributed_model_type
 
   ! W&B logging routines

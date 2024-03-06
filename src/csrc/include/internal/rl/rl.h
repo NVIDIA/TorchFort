@@ -96,11 +96,11 @@ static void update_replay_buffer(const char* name, T* state_old, T* state_new, s
   torch::NoGradGuard no_grad;
 
   // get tensors and copy:
-  auto state_old_tensor = get_tensor<L>(state_old, state_dim, state_shape, device_id)
+  auto state_old_tensor = get_tensor<L>(state_old, state_dim, state_shape)
                               .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto state_new_tensor = get_tensor<L>(state_new, state_dim, state_shape, device_id)
+  auto state_new_tensor = get_tensor<L>(state_new, state_dim, state_shape)
                               .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto action_old_tensor = get_tensor<L>(action_old, action_dim, action_shape, device_id)
+  auto action_old_tensor = get_tensor<L>(action_old, action_dim, action_shape)
                                .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
 
   rl_systems[name]->updateReplayBuffer(state_old_tensor, action_old_tensor, state_new_tensor,
@@ -119,9 +119,9 @@ static void predict_explore(const char* name, T* state, size_t state_dim, int64_
   c10::cuda::CUDAStreamGuard guard(stream);
 
   // create tensors
-  auto state_tensor = get_tensor<L>(state, state_dim, state_shape, device_id)
+  auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
                           .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto action_tensor = get_tensor<L>(action, action_dim, action_shape, device_id);
+  auto action_tensor = get_tensor<L>(action, action_dim, action_shape);
 
   // fwd pass
   auto tmpaction = rl_systems[name]->predictExplore(state_tensor).to(action_tensor.dtype());
@@ -141,9 +141,9 @@ static void predict(const char* name, T* state, size_t state_dim, int64_t* state
   c10::cuda::CUDAStreamGuard guard(stream);
 
   // create tensors
-  auto state_tensor = get_tensor<L>(state, state_dim, state_shape, device_id)
+  auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
                           .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto action_tensor = get_tensor<L>(action, action_dim, action_shape, device_id);
+  auto action_tensor = get_tensor<L>(action, action_dim, action_shape);
 
   // fwd pass
   auto tmpaction = rl_systems[name]->predict(state_tensor).to(action_tensor.dtype());
@@ -164,11 +164,11 @@ static void evaluate(const char* name, T* state, size_t state_dim, int64_t* stat
   c10::cuda::CUDAStreamGuard guard(stream);
 
   // create tensors
-  auto state_tensor = get_tensor<L>(state, state_dim, state_shape, device_id)
+  auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
                           .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto action_tensor = get_tensor<L>(action, action_dim, action_shape, device_id)
+  auto action_tensor = get_tensor<L>(action, action_dim, action_shape)
                            .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto reward_tensor = get_tensor<L>(reward, reward_dim, reward_shape, device_id);
+  auto reward_tensor = get_tensor<L>(reward, reward_dim, reward_shape);
 
   // fwd pass
   auto tmpreward = rl_systems[name]->evaluate(state_tensor, action_tensor).to(reward_tensor.dtype());

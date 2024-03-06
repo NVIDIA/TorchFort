@@ -32,7 +32,6 @@
 #include <regex>
 #include <string>
 
-#include <c10/core/Device.h>
 #include <torch/torch.h>
 
 #include "internal/defines.h"
@@ -59,26 +58,37 @@ std::string filename_sanitize(std::string s) {
   return s;
 }
 
-c10::Device get_device(int device_id) {
-  c10::Device device(torch::kCPU);
+torch::Device get_device(int device_id) {
+  torch::Device device(torch::kCPU);
   if (device_id >= 0) {
-    device = c10::Device(torch::kCUDA, device_id);
+    device = torch::Device(torch::kCUDA, device_id);
   }
   return device;
 }
 
-int get_device_id(const void* ptr) {
+torch::Device get_device(torchfort_device_t device) {
+  torch::Device device_torch(torch::kCPU);
+  if (device == TORCHFORT_DEVICE_GPU) {
+    int device_id;
+    CHECK_CUDA(cudaGetDevice(&device_id));
+    device_torch = torch::Device(torch::kCUDA, device_id);
+  }
+  return device_torch;
+}
+
+torch::Device get_device(const void* ptr) {
   cudaPointerAttributes attr;
   CHECK_CUDA(cudaPointerGetAttributes(&attr, ptr));
+  torch::Device device = torch::Device(torch::kCPU);
   switch (attr.type) {
     case cudaMemoryTypeHost:
     case cudaMemoryTypeUnregistered:
-      return -1;
+      device = torch::Device(torch::kCPU); break;
     case cudaMemoryTypeManaged:
     case cudaMemoryTypeDevice:
-      return attr.device;
+      device = torch::Device(torch::kCUDA); break;
   }
-  return -1;
+  return device;
 }
 
 std::string print_tensor_shape(torch::Tensor tensor) {

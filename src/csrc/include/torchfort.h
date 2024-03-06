@@ -59,20 +59,23 @@ extern "C" {
  *
  * @param[in] name A name to assign to the created model instance to use as a key for other TorchFort routines.
  * @param[in] config_fname The filesystem path to the user-defined model configuration file to use.
+ * @param[in] device Which device type to place and run the model on. For TORCHFORT_DEVICE_GPU, model will be placed on currently set GPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_create_model(const char* name, const char* config_fname);
+torchfort_result_t torchfort_create_model(const char* name, const char* config_fname, torchfort_device_t device);
 /**
  * @brief Creates a distributed data-parallel model from a provided configuration file.
  *
  * @param[in] name A name to assign to created model to use as a key for other TorchFort routines.
  * @param[in] config_fname The filesystem path to the user-defined model configuration file to use.
  * @param[in] mpi_comm MPI communicator to use to initialize NCCL communication library for data-parallel communication.
+ * @param[in] device Which device type to place and run the model on. For TORCHFORT_DEVICE_GPU, model will be placed on currently set GPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_create_distributed_model(const char* name, const char* config_fname, MPI_Comm mpi_comm);
+torchfort_result_t torchfort_create_distributed_model(const char* name, const char* config_fname, MPI_Comm mpi_comm,
+                                                      torchfort_device_t device);
 
 // Training and inference functions
 /**

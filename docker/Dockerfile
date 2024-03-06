@@ -69,7 +69,7 @@ RUN cd /torchfort && mkdir build && cd build && \
     -DTORCHFORT_BUILD_EXAMPLES=1 \
     -DCMAKE_PREFIX_PATH="`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`" \
     .. && \
-    make -j$(nproc) install && \
+    make VERBOSE=1 -j$(nproc) install && \
     cd / && rm -rf torchfort
 ENV LD_LIBRARY_PATH /opt/torchfort/lib:${LD_LIBRARY_PATH}
 ENV LD_LIBRARY_PATH /usr/local/lib/python3.10/dist-packages/torch/lib:${LD_LIBRARY_PATH}

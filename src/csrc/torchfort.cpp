@@ -74,8 +74,7 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
     // Setting up model
     if (config["model"]) {
       models[name].model = get_model(config["model"]);
-      models[name].device = get_device(device);
-      models[name].model->to(models[name].device);
+      models[name].model->to(get_device(device));
     } else {
       THROW_INVALID_USAGE("Missing model block in configuration file.");
     }
@@ -118,7 +117,7 @@ torchfort_result_t torchfort_create_distributed_model(const char* name, const ch
 
     // Set up distributed communicator
     models[name].comm = std::shared_ptr<Comm>(new Comm(mpi_comm));
-    models[name].comm->initialize(models[name].device.is_cuda());
+    models[name].comm->initialize(models[name].model->device().is_cuda());
 
     // Broadcast initial model parameters from rank 0
     for (auto& p : models[name].model->parameters()) {

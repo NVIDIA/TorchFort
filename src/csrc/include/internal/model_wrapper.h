@@ -60,10 +60,13 @@ public:
 
   void load(const std::string& fname);
 
+  torch::Device device() const;
+
 private:
   bool jit = false;
   std::shared_ptr<BaseModel> model;
   std::shared_ptr<torch::jit::Module> model_jit;
+  torch::Device device_ = torch::Device(torch::kCPU);
 };
 
 } // namespace torchfort

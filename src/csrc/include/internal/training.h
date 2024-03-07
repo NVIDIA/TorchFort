@@ -58,17 +58,18 @@ void inference(const char* name, T* input, size_t input_dim, int64_t* input_shap
 
   torch::NoGradGuard no_grad;
 
+  auto model = models[name].model.get();
+
   c10::cuda::OptionalCUDAStreamGuard guard;
-  if (models[name].device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, models[name].device.index());
+  if (model->device().is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model->device().index());
     guard.reset_stream(stream);
   }
 
   auto input_tensor_in = get_tensor<L>(input, input_dim, input_shape);
   auto output_tensor_in = get_tensor<L>(output, output_dim, output_shape);
-  auto input_tensor = input_tensor_in.to(models[name].device);
+  auto input_tensor = input_tensor_in.to(model->device());
 
-  auto model = models[name].model.get();
   model->eval();
   auto results = model->forward(std::vector<torch::Tensor>{input_tensor});
 
@@ -90,19 +91,19 @@ void train(const char* name, T* input, size_t input_dim, int64_t* input_shape, T
     THROW_INVALID_USAGE("Training requires a loss function, but loss block was missing in configuration file.");
   }
 
+  auto model = models[name].model.get();
+
   c10::cuda::OptionalCUDAStreamGuard guard;
-  if (models[name].device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, models[name].device.index());
+  if (model->device().is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model->device().index());
     guard.reset_stream(stream);
   }
 
   auto input_tensor_in = get_tensor<L>(input, input_dim, input_shape);
   auto label_tensor_in = get_tensor<L>(label, label_dim, label_shape);
-  auto input_tensor = input_tensor_in.to(models[name].device);
-  auto label_tensor = label_tensor_in.to(models[name].device);
+  auto input_tensor = input_tensor_in.to(model->device());
+  auto label_tensor = label_tensor_in.to(model->device());
 
-  auto model = models[name].model.get();
-  model->to(input_tensor.device());
   model->train();
   auto opt = models[name].optimizer.get();
 

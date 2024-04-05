@@ -233,20 +233,22 @@ module torchfort
     end function torchfort_rl_off_policy_wandb_log_double_c
     
     ! creation
-    function torchfort_rl_off_policy_create_system_c(mname, fname) result(res) &
+    function torchfort_rl_off_policy_create_system_c(mname, fname, model_dev, rb_dev) result(res) &
       bind(C, name="torchfort_rl_off_policy_create_system")
       import
       character(kind=c_char) :: mname(*)
       character(kind=c_char) :: fname(*)
+      integer(c_int), value :: model_dev, rb_dev
       integer(c_int) :: res
     end function torchfort_rl_off_policy_create_system_c
 
-    function torchfort_rl_off_policy_create_distributed_system_c(mname, fname, mpi_comm) result(res) &
+    function torchfort_rl_off_policy_create_distributed_system_c(mname, fname, mpi_comm, model_dev, rb_dev) result(res) &
       bind(C, name="torchfort_rl_off_policy_create_distributed_system")
       import
       character(kind=c_char) :: mname(*)
       character(kind=c_char) :: fname(*)
       type(MPI_C_Comm), value :: mpi_comm
+      integer(c_int), value :: model_dev, rb_dev
       integer(c_int) :: res
     end function torchfort_rl_off_policy_create_distributed_system_c
 
@@ -1006,40 +1008,44 @@ contains
   end function torchfort_rl_off_policy_wandb_log_double_int32step
   
   ! System creation routines
-  function torchfort_rl_off_policy_create_system(name, fname) result(res)
+  function torchfort_rl_off_policy_create_system(name, fname, model_dev, rb_dev) result(res)
     character(len=*) :: name, fname
     integer(c_int) :: res
-    res = torchfort_rl_off_policy_create_system_c([trim(name), C_NULL_CHAR], [trim(fname), C_NULL_CHAR])
+    integer(c_int) :: model_dev, rb_dev
+    res = torchfort_rl_off_policy_create_system_c([trim(name), C_NULL_CHAR], [trim(fname), C_NULL_CHAR], model_dev, rb_dev)
   end function torchfort_rl_off_policy_create_system
 
-  function torchfort_rl_off_policy_create_distributed_system_MPI_F(mname, fname, comm) result(res)
+  function torchfort_rl_off_policy_create_distributed_system_MPI_F(mname, fname, comm, model_dev, rb_dev) result(res)
     character(len=*) :: mname, fname
     integer :: comm
+    integer(c_int) :: model_dev, rb_dev
     integer(c_int) :: res
     
     type(MPI_F_Comm) :: mpi_comm_f
     
     mpi_comm_f%comm = comm
-    res = torchfort_rl_off_policy_create_distributed_system_type(mname, fname, mpi_comm_f)
+    res = torchfort_rl_off_policy_create_distributed_system_type(mname, fname, mpi_comm_f, model_dev, rb_dev)
   end function torchfort_rl_off_policy_create_distributed_system_MPI_F
 
-  function torchfort_rl_off_policy_create_distributed_system_MPI_F08(mname, fname, comm) result(res)
+  function torchfort_rl_off_policy_create_distributed_system_MPI_F08(mname, fname, comm, model_dev, rb_dev) result(res)
     type, bind(c) :: MPI_Comm
        integer :: MPI_VAL
     end type MPI_Comm
     character(len=*) :: mname, fname
     type(MPI_Comm) :: comm
+    integer(c_int) :: model_dev, rb_dev
     integer(c_int) :: res
     
     type(MPI_F_Comm) :: mpi_comm_f
     
     mpi_comm_f%comm = comm%MPI_VAL
-    res = torchfort_rl_off_policy_create_distributed_system_type(mname, fname, mpi_comm_f)
+    res = torchfort_rl_off_policy_create_distributed_system_type(mname, fname, mpi_comm_f, model_dev, rb_dev)
   end function torchfort_rl_off_policy_create_distributed_system_MPI_F08
 
-  function torchfort_rl_off_policy_create_distributed_system_type(mname, fname, comm) result(res)
+  function torchfort_rl_off_policy_create_distributed_system_type(mname, fname, comm, model_dev, rb_dev) result(res)
     character(len=*) :: mname, fname
     type(MPI_F_Comm) :: comm
+    integer(c_int) :: model_dev, rb_dev
     integer(c_int) :: res
     type(MPI_C_Comm) :: mpi_comm_c
 
@@ -1050,7 +1056,7 @@ contains
 #endif
     res = torchfort_rl_off_policy_create_distributed_system_c([trim(mname), C_NULL_CHAR], &
                                                               [trim(fname), C_NULL_CHAR], &
-                                                              mpi_comm_c)
+                                                              mpi_comm_c, model_dev, rb_dev)
   end function torchfort_rl_off_policy_create_distributed_system_type
 
   ! save and load routines

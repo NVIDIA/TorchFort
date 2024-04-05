@@ -59,7 +59,8 @@ std::unordered_map<std::string, std::shared_ptr<RLOffPolicySystem>> rl_systems;
 } // namespace rl
 } // namespace torchfort
 
-torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const char* config_fname) {
+torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const char* config_fname,
+							 torchfort_device_t model_device, torchfort_device_t rb_device) {
   using namespace torchfort;
 
   try {
@@ -72,11 +73,11 @@ torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const
         auto algorithm_type = sanitize(algorith_node["type"].as<std::string>());
 
         if (algorithm_type == "td3") {
-          rl::rl_systems[sanitize(name)] = std::make_shared<rl::TD3System>(name, config);
+          rl::rl_systems[sanitize(name)] = std::make_shared<rl::TD3System>(name, config, model_device, rb_device);
         } else if (algorithm_type == "sac") {
-          rl::rl_systems[sanitize(name)] = std::make_shared<rl::SACSystem>(name, config);
+          rl::rl_systems[sanitize(name)] = std::make_shared<rl::SACSystem>(name, config, model_device, rb_device);
         } else if (algorithm_type == "ddpg") {
-          rl::rl_systems[sanitize(name)] = std::make_shared<rl::DDPGSystem>(name, config);
+          rl::rl_systems[sanitize(name)] = std::make_shared<rl::DDPGSystem>(name, config, model_device, rb_device);
         } else {
           THROW_INVALID_USAGE(algorithm_type);
         }
@@ -93,12 +94,12 @@ torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char* name, const char* config_fname,
-                                                                     MPI_Comm mpi_comm) {
+torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char* name, const char* config_fname, MPI_Comm mpi_comm,
+								     torchfort_device_t model_device, torchfort_device_t rb_device) {
   using namespace torchfort;
 
   try {
-    torchfort_rl_off_policy_create_system(name, config_fname);
+    torchfort_rl_off_policy_create_system(name, config_fname, model_device, rb_device);
     rl::rl_systems[sanitize(name)]->initSystemComm(mpi_comm);
   } catch (const BaseException& e) {
     std::cerr << e.what();
@@ -147,15 +148,18 @@ torchfort_result_t torchfort_rl_off_policy_is_ready(const char* name, bool& read
 
 // train step
 torchfort_result_t torchfort_rl_off_policy_train_step(const char* name, float* p_loss_val, float* q_loss_val,
-                                                      cudaStream_t stream) {
+                                                      cudaStream_t ext_stream) {
   using namespace torchfort;
 
-  try {
-    int device_id;
-    CHECK_CUDA(cudaGetDevice(&device_id));
-    auto c10_stream = c10::cuda::getStreamFromExternal(stream, device_id);
-    c10::cuda::CUDAStreamGuard guard(c10_stream);
+  // TODO: we need to figure out what to do if RB and Model streams are different
+  c10::cuda::OptionalCUDAStreamGuard guard;
+  auto model_device = rl_systems[name]->modelDevice();
+  if (model_device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
+    guard.reset_stream(stream);
+  }
 
+  try {
     // perform a training step
     rl::rl_systems[name]->trainStep(*p_loss_val, *q_loss_val);
   } catch (const BaseException& e) {
@@ -176,7 +180,7 @@ torchfort_result_t torchfort_rl_off_policy_update_replay_buffer(const char* name
                                                                 void* action_old, size_t action_dim,
                                                                 int64_t* action_shape, const void* reward,
                                                                 bool final_state, torchfort_datatype_t dtype,
-                                                                cudaStream_t stream) {
+                                                                cudaStream_t ext_stream) {
   using namespace torchfort;
   try {
     switch (dtype) {
@@ -184,14 +188,14 @@ torchfort_result_t torchfort_rl_off_policy_update_replay_buffer(const char* name
       float reward_val = *reinterpret_cast<const float*>(reward);
       rl::update_replay_buffer<RowMajor>(name, reinterpret_cast<float*>(state_old), reinterpret_cast<float*>(state_new),
                                          state_dim, state_shape, reinterpret_cast<float*>(action_old), action_dim,
-                                         action_shape, reward_val, final_state, stream);
+                                         action_shape, reward_val, final_state, ext_stream);
       break;
     }
     case TORCHFORT_DOUBLE: {
       double reward_val = *reinterpret_cast<const double*>(reward);
       rl::update_replay_buffer<RowMajor>(
           name, reinterpret_cast<double*>(state_old), reinterpret_cast<double*>(state_new), state_dim, state_shape,
-          reinterpret_cast<double*>(action_old), action_dim, action_shape, reward_val, final_state, stream);
+          reinterpret_cast<double*>(action_old), action_dim, action_shape, reward_val, final_state, ext_stream);
       break;
     }
     default: {

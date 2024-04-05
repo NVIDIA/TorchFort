@@ -89,11 +89,9 @@ torch::Tensor SACPolicy::forwardDeterministic(torch::Tensor state) {
   return action;
 }
 
-SACSystem::SACSystem(const char* name, const YAML::Node& system_node) : device_(torch::Device(torch::kCPU)) {
-  // get device
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  device_ = get_device(device_id);
+SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
+		     torchfort_device_t model_device, torchfort_device_t rb_device)
+  : model_device_(get_device(model_device)), rb_device_(get_device(rb_device)) {
 
   // get basic parameters first
   auto algo_node = system_node["algorithm"];
@@ -150,7 +148,7 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node) : device_(
 
       // distinction between buffer types
       if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size);
+        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
       }
@@ -251,30 +249,38 @@ void SACSystem::printInfo() const {
   return;
 }
 
+torch::Device DDPGSystem::modelDevice() const {
+  return model_device_;
+}
+
+torch::Device DDPGSystem::rbDevice() const {
+  return rb_device_;
+}
+  
 void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // policy
   p_model_.comm = std::make_shared<Comm>(mpi_comm);
-  p_model_.comm->initialize(device_.is_cuda());
+  p_model_.comm->initialize(model_device_.is_cuda());
   // critic
   for (auto& q_model : q_models_) {
     q_model.comm = std::make_shared<Comm>(mpi_comm);
-    q_model.comm->initialize(device_.is_cuda());
+    q_model.comm->initialize(model_device_.is_cuda());
   }
   for (auto& q_model_target : q_models_target_) {
     q_model_target.comm = std::make_shared<Comm>(mpi_comm);
-    q_model_target.comm->initialize(device_.is_cuda());
+    q_model_target.comm->initialize(model_device_.is_cuda());
   }
 
   // move to device before broadcasting
   // policy
-  p_model_.model->to(device_);
+  p_model_.model->to(model_device_);
   // critic
   for (auto& q_model : q_models_) {
-    q_model.model->to(device_);
+    q_model.model->to(model_device_);
   }
   for (auto& q_model_target : q_models_target_) {
-    q_model_target.model->to(device_);
+    q_model_target.model->to(model_device_);
   }
 
   // Broadcast initial model parameters from rank 0
@@ -436,10 +442,6 @@ std::shared_ptr<Comm> SACSystem::getSystemComm_() { return system_comm_; }
 // do exploration step without knowledge about the state
 // for example, apply random action
 torch::Tensor SACSystem::explore(torch::Tensor action) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
@@ -450,17 +452,13 @@ torch::Tensor SACSystem::explore(torch::Tensor action) {
 }
 
 torch::Tensor SACSystem::predict(torch::Tensor state) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_.model->to(device_);
+  p_model_.model->to(model_device_);
   p_model_.model->eval();
-  state.to(device_);
+  state.to(model_device_);
 
   // do fwd pass
   auto action = (p_model_.model)->forwardDeterministic(state);
@@ -472,17 +470,13 @@ torch::Tensor SACSystem::predict(torch::Tensor state) {
 }
 
 torch::Tensor SACSystem::predictExplore(torch::Tensor state) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_.model->to(device_);
+  p_model_.model->to(model_device_);
   p_model_.model->eval();
-  state.to(device_);
+  state.to(model_device_);
 
   // do fwd pass
   torch::Tensor action, log_probs;
@@ -495,18 +489,14 @@ torch::Tensor SACSystem::predictExplore(torch::Tensor state) {
 }
 
 torch::Tensor SACSystem::evaluate(torch::Tensor state, torch::Tensor action) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  q_models_target_[0].model->to(device_);
+  q_models_target_[0].model->to(model_device_);
   q_models_target_[0].model->eval();
-  state.to(device_);
-  action.to(device_);
+  state.to(model_device_);
+  action.to(model_device_);
 
   // scale action
   auto action_scale = scale_action(action, a_low_, a_high_);
@@ -518,11 +508,6 @@ torch::Tensor SACSystem::evaluate(torch::Tensor state, torch::Tensor action) {
 }
 
 void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
-
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // increment train step counter first, this avoids an initial policy update at start
   train_step_count_++;
 
@@ -535,11 +520,11 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_, gamma_, nstep_, nstep_reward_reduction_);
 
     // upload to device
-    s.to(device_);
-    a.to(device_);
-    sp.to(device_);
-    r.to(device_);
-    d.to(device_);
+    s.to(model_device_);
+    a.to(model_device_);
+    sp.to(model_device_);
+    r.to(model_device_);
+    d.to(model_device_);
   }
 
   // train step

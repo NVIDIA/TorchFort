@@ -266,7 +266,7 @@ class TD3System : public RLOffPolicySystem, public std::enable_shared_from_this<
 
 public:
   // constructor
-  TD3System(const char* name, const YAML::Node& system_node);
+  TD3System(const char* name, const YAML::Node& system_node, torchfort_device_t model_device, torchfort_device_t rb_device);
 
   // init communicators
   void initSystemComm(MPI_Comm mpi_comm);
@@ -291,6 +291,10 @@ public:
   // info printing
   void printInfo() const;
 
+  // accessors
+  torch::Device modelDevice() const;
+  torch::Device rbDevice() const;
+
 private:
   // we need those accessors for logging
   std::shared_ptr<ModelState> getSystemState_();
@@ -301,7 +305,8 @@ private:
   torch::Tensor predictWithNoiseTrain_(torch::Tensor state);
 
   // device
-  torch::Device device_;
+  torch::Device model_device_;
+  torch::Device rb_device_;
 
   // models
   ModelPack p_model_, p_model_target_;

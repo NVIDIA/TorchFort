@@ -153,7 +153,7 @@ torchfort_result_t torchfort_rl_off_policy_train_step(const char* name, float* p
 
   // TODO: we need to figure out what to do if RB and Model streams are different
   c10::cuda::OptionalCUDAStreamGuard guard;
-  auto model_device = rl_systems[name]->modelDevice();
+  auto model_device = rl::rl_systems[name]->modelDevice();
   if (model_device.is_cuda()) {
     auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
     guard.reset_stream(stream);

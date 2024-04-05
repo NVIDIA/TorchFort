@@ -245,11 +245,11 @@ void TD3System::printInfo() const {
   return;
 }
 
-torch::Device DDPGSystem::modelDevice() const {
+torch::Device TD3System::modelDevice() const {
   return model_device_;
 }
 
-torch::Device DDPGSystem::rbDevice() const {
+torch::Device TD3System::rbDevice() const {
   return rb_device_;
 }
   

@@ -249,11 +249,11 @@ void SACSystem::printInfo() const {
   return;
 }
 
-torch::Device DDPGSystem::modelDevice() const {
+torch::Device SACSystem::modelDevice() const {
   return model_device_;
 }
 
-torch::Device DDPGSystem::rbDevice() const {
+torch::Device SACSystem::rbDevice() const {
   return rb_device_;
 }
   

@@ -49,6 +49,7 @@ public:
   Distribution() {}
   virtual torch::Tensor rsample() = 0;
   virtual torch::Tensor log_prob(torch::Tensor value) = 0;
+  virtual torch::Tensor entropy() = 0;
 };
 
 class NormalDistribution : public Distribution, public std::enable_shared_from_this<Distribution> {
@@ -64,6 +65,13 @@ public:
     auto var = torch::pow(sigma_, 2);
     auto log_sigma = sigma_.log();
     auto result = -torch::pow((value - mu_), 2) / (2 * var) - log_sigma - std::log(std::sqrt(2. * M_PI));
+
+    return result;
+  }
+
+  torch::Tensor entropy() {
+    auto log_sigma = sigma_.log();
+    auto result = log_sigma + 0.5 * (1. + std::log(2. * M_PI));
 
     return result;
   }

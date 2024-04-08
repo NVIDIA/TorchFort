@@ -55,7 +55,7 @@ namespace rl {
 // helper for AC policies
 class ACPolicy {
 public:
-  ACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma);
+  ACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma, bool squashed=false);
 
   // we expose those for convenience
   std::vector<torch::Tensor> parameters() const;
@@ -70,6 +70,7 @@ public:
   torch::Tensor forwardDeterministic(torch::Tensor state);
 
 protected:
+  bool squashed_;
   float log_sigma_min_;
   float log_sigma_max_;
   std::shared_ptr<ModelWrapper> p_mu_log_sigma_;

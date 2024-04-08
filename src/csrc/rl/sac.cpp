@@ -138,11 +138,15 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
   // get policy model hooks
   std::shared_ptr<ModelWrapper> p_model;
   if (system_node["policy_model"]) {
-    p_model = get_model(system_node["policy_model"]);
+    auto policy_node = system_node["policy_model"];
+    
+    // get basic policy parameters:
+    p_model = get_model(policy_node);
   } else {
     THROW_INVALID_USAGE("Missing policy_model block in configuration file.");
   }
-  p_model_.model = std::make_shared<ACPolicy>(std::move(p_model));
+  // SAC policies should always be squashed
+  p_model_.model = std::make_shared<ACPolicy>(std::move(p_model), /* squashed = */ true);
   p_model_.state = get_state("actor", system_node);
 
   // get optimizers

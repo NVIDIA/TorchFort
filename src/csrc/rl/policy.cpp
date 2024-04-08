@@ -39,8 +39,8 @@ namespace torchfort {
 
 namespace rl {
 
-ACPolicy::ACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma)
-    : p_mu_log_sigma_(p_mu_log_sigma), log_sigma_min_(-20.), log_sigma_max_(2.) {}
+  ACPolicy::ACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma, bool squashed)
+    : squashed_(squashed), p_mu_log_sigma_(p_mu_log_sigma), log_sigma_min_(-20.), log_sigma_max_(2.) {}
 
 std::vector<torch::Tensor> ACPolicy::parameters() const {
   std::vector<torch::Tensor> result = p_mu_log_sigma_->parameters();
@@ -74,10 +74,12 @@ std::tuple<torch::Tensor, torch::Tensor> ACPolicy::forwardNoise(torch::Tensor st
   auto action_log_prob = torch::sum(torch::flatten(pi_dist.log_prob(action), 1), 1, true);
 
   // account for squashing
-  action_log_prob =
+  if (squashed_) {
+    action_log_prob =
       action_log_prob -
       torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
-  action = torch::tanh(action);
+    action = torch::tanh(action);
+  }
 
   return std::make_tuple(action, action_log_prob);
 }

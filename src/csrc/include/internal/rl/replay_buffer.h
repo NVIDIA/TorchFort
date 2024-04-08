@@ -46,7 +46,7 @@ namespace torchfort {
 
 namespace rl {
 
-using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, float, float>;
+using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, float, bool>;
 
 enum RewardReductionMode { Sum = 1, Mean = 2, WeightedMean = 3, SumNoSkip = 4, MeanNoSkip = 5, WeightedMeanNoSkip = 6 };
 
@@ -217,7 +217,8 @@ public:
     auto options = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCPU);
     for (size_t index = 0; index < buffer_.size(); ++index) {
       torch::Tensor s, a, sp;
-      float r, d;
+      float r;
+      bool d;
       std::tie(s, a, sp, r, d) = buffer_.at(index);
       s_data.push_back(s.to(torch::kCPU));
       a_data.push_back(a.to(torch::kCPU));
@@ -271,7 +272,7 @@ public:
       auto a = a_data[index];
       auto sp = sp_data[index];
       float r = r_data[index].item<float>();
-      float d = d_data[index].item<float>();
+      bool d = d_data[index].item<bool>();
 
       // update buffer
       this->update(s, a, sp, r, d);

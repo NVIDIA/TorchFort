@@ -214,7 +214,8 @@ public:
     // create an ordered dict with the buffer contents:
     std::vector<torch::Tensor> s_data, a_data, sp_data;
     std::vector<torch::Tensor> r_data, d_data;
-    auto options = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCPU);
+    auto options_f = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCPU);
+    auto options_b = torch::TensorOptions().dtype(torch::kBool).device(torch::kCPU);
     for (size_t index = 0; index < buffer_.size(); ++index) {
       torch::Tensor s, a, sp;
       float r;
@@ -224,9 +225,9 @@ public:
       a_data.push_back(a.to(torch::kCPU));
       sp_data.push_back(sp.to(torch::kCPU));
 
-      auto rt = torch::from_blob(&r, {1}, options).clone();
+      auto rt = torch::from_blob(&r, {1}, options_f).clone();
       r_data.push_back(rt);
-      auto dt = torch::from_blob(&d, {1}, options).clone();
+      auto dt = torch::from_blob(&d, {1}, options_b).clone();
       d_data.push_back(dt);
     }
 

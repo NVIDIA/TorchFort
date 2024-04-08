@@ -39,56 +39,6 @@ namespace torchfort {
 
 namespace rl {
 
-SACPolicy::SACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma)
-    : p_mu_log_sigma_(p_mu_log_sigma), log_sigma_min_(-20.), log_sigma_max_(2.) {}
-
-std::vector<torch::Tensor> SACPolicy::parameters() const {
-  std::vector<torch::Tensor> result = p_mu_log_sigma_->parameters();
-  return result;
-}
-
-void SACPolicy::train() { p_mu_log_sigma_->train(); }
-
-void SACPolicy::eval() { p_mu_log_sigma_->eval(); }
-
-void SACPolicy::to(torch::Device device, bool non_blocking) { p_mu_log_sigma_->to(device, non_blocking); }
-
-void SACPolicy::save(const std::string& fname) const { p_mu_log_sigma_->save(fname); }
-
-void SACPolicy::load(const std::string& fname) { p_mu_log_sigma_->load(fname); }
-
-std::tuple<torch::Tensor, torch::Tensor> SACPolicy::forwardNoise(torch::Tensor state) {
-  // predict mu
-  auto fwd = p_mu_log_sigma_->forward(std::vector<torch::Tensor>{state});
-  auto& action_mu = fwd[0];
-  auto& action_log_sigma = fwd[1];
-  // predict sigma
-  auto action_sigma = torch::exp(torch::clamp(action_log_sigma, log_sigma_min_, log_sigma_max_));
-
-  // create distribution
-  auto pi_dist = NormalDistribution(action_mu, action_sigma);
-
-  // sample action and compute log prob
-  // do not squash yet
-  auto action = pi_dist.rsample();
-  auto action_log_prob = torch::sum(torch::flatten(pi_dist.log_prob(action), 1), 1, true);
-
-  // account for squashing
-  action_log_prob =
-      action_log_prob -
-      torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
-  action = torch::tanh(action);
-
-  return std::make_tuple(action, action_log_prob);
-}
-
-torch::Tensor SACPolicy::forwardDeterministic(torch::Tensor state) {
-  // predict mu is the only part
-  auto action = torch::tanh(p_mu_log_sigma_->forward(std::vector<torch::Tensor>{state})[0]);
-
-  return action;
-}
-
 SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
 		     torchfort_device_t model_device, torchfort_device_t rb_device)
   : model_device_(get_device(model_device)), rb_device_(get_device(rb_device)) {
@@ -192,7 +142,7 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
   } else {
     THROW_INVALID_USAGE("Missing policy_model block in configuration file.");
   }
-  p_model_.model = std::make_shared<SACPolicy>(std::move(p_model));
+  p_model_.model = std::make_shared<ACPolicy>(std::move(p_model));
   p_model_.state = get_state("actor", system_node);
 
   // get optimizers

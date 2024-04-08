@@ -40,6 +40,7 @@ namespace torchfort {
 struct ModelState {
   int64_t step_train;
   int64_t step_inference;
+  torch::Device device = torch::Device(torch::kCPU);
 
   // General option settings
   int32_t report_frequency;

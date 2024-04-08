@@ -129,13 +129,15 @@ std::vector<torch::Tensor> ModelWrapper::forward(const std::vector<torch::Tensor
 }
 
 void ModelWrapper::save(const std::string& fname) const {
-  model->to(torch::Device(torch::kCPU));
   if (jit) {
+    model_jit->to(torch::Device(torch::kCPU));
     model_jit->save(fname);
+    model_jit->to(device_);
   } else {
+    model->to(torch::Device(torch::kCPU));
     torch::save(model, fname);
+    model->to(device_);
   }
-  model->to(device_);
 }
 
 void ModelWrapper::load(const std::string& fname) {

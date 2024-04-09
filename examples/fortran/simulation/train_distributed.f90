@@ -32,8 +32,10 @@ subroutine print_help_message
   "options:\n"// &
   "\t--configfile\n" // &
   "\t\tTorchFort configuration file to use. (default: config_mlp_native.yaml) \n" // &
-  "\t--device\n" // &
-  "\t\tDevice to run model training/inference. (0 for CPU, 1 for GPU. default: GPU) \n" // &
+  "\t--simulation_device\n" // &
+  "\t\tDevice to run simulation on. (0 for CPU, 1 for GPU. default: GPU) \n" // &
+  "\t--train_device\n" // &
+  "\t\tDevice to run model training/inference on. (0 for CPU, 1 for GPU. default: GPU) \n" // &
   "\t--ntrain_steps\n" // &
   "\t\tNumber of training steps to run. (default: 100000) \n" // &
   "\t--nval_steps\n" // &
@@ -50,7 +52,7 @@ end subroutine print_help_message
 
 program train_distributed
   use, intrinsic :: iso_fortran_env, only: real32, real64
-#ifdef ENABLE_OPENACC
+#ifdef _OPENACC
   use openacc
 #endif
   use mpi
@@ -74,7 +76,7 @@ program train_distributed
 
   integer :: rank, local_rank, nranks
   integer :: local_comm
-#ifdef ENABLE_OPENACC
+#ifdef _OPENACC
   integer(acc_device_kind) :: dev_type
 #endif
   integer, allocatable :: sendcounts(:), recvcounts(:)
@@ -90,6 +92,7 @@ program train_distributed
   integer :: val_write_freq = 10
   integer :: model_device_arg = 1
   integer :: model_device = TORCHFORT_DEVICE_GPU
+  integer :: simulation_device = 1
 
   logical :: skip_next
   character(len=256) :: arg
@@ -100,13 +103,6 @@ program train_distributed
   call MPI_Comm_size(MPI_COMM_WORLD, nranks, istat)
   call MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, local_comm, istat)
   call MPI_Comm_rank(local_comm, local_rank, istat)
-
-#ifdef ENABLE_OPENACC
-  ! assign GPUs by local rank
-  dev_type = acc_get_device_type()
-  call acc_set_device_num(local_rank, dev_type)
-  call acc_init(dev_type)
-#endif
 
   if (nranks /= 2) then
     print*, "This example requires 2 ranks to run. Exiting."
@@ -151,7 +147,7 @@ program train_distributed
         call get_command_argument(i+1, arg)
         read(arg, *) val_write_freq
         skip_next = .true.
-      case('--device')
+      case('--train_device')
         call get_command_argument(i+1, arg)
         read(arg, *) model_device_arg
         if (model_device_arg == 0) then
@@ -159,7 +155,15 @@ program train_distributed
         elseif(model_device_arg == 1) then
           model_device = TORCHFORT_DEVICE_GPU
         else
-          print*, "Invalid device type argument."
+          print*, "Invalid train device type argument."
+          call exit(1)
+        endif
+        skip_next = .true.
+      case('--simulation_device')
+        call get_command_argument(i+1, arg)
+        read(arg, *) simulation_device
+        if (simulation_device /= 0 .and. simulation_device /= 1) then
+          print*, "Invalid simulation device type argument."
           call exit(1)
         endif
         skip_next = .true.
@@ -173,13 +177,34 @@ program train_distributed
     end select
   end do
 
+#ifndef _OPENACC
+  if (simulation_device == 1) then
+    print*, "OpenACC support required to run simulation on GPU."
+    call exit(1)
+  endif
+#endif
+#ifdef _OPENACC
+  if (simulation_device) then
+    ! assign GPUs by local rank
+    dev_type = acc_get_device_type()
+    call acc_set_device_num(local_rank, dev_type)
+    call acc_init(dev_type)
+  endif
+#endif
+
+
   if (rank == 0) then
     print*, "Run settings:"
     print*, "\tconfigfile: ", trim(configfile)
-    if (model_device == TORCHFORT_DEVICE_CPU) then
-      print*, "\tdevice: cpu"
+    if (simulation_device == 0) then
+      print*, "\tsimulation_device: cpu"
     else
-      print*, "\tdevice: gpu"
+      print*, "\tsimulation_device: gpu"
+    endif
+    if (model_device == TORCHFORT_DEVICE_CPU) then
+      print*, "\ttrain_device: cpu"
+    else
+      print*, "\ttrain_device: gpu"
     endif
     if (load_ckpt) then
       print*, "\tcheckpoint_dir: ", trim(checkpoint_dir)
@@ -242,23 +267,25 @@ program train_distributed
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
   endif
 
-  call init_simulation(n, dt, a, train_step_ckpt*batch_size*dt, rank, nranks)
+  call init_simulation(n, dt, a, train_step_ckpt*batch_size*dt, rank, nranks, simulation_device)
 
   ! run training
   if (rank == 0 .and. ntrain_steps >= 1) print*, "start training..."
-  !$acc data copyin(u, u_div, input, label, input_local, label_local)
+  !$acc data copyin(u, u_div, input, label, input_local, label_local) if(simulation_device)
   do i = 1, ntrain_steps
     do j = 1, batch_size * nranks
       call run_simulation_step(u, u_div)
-      !$acc kernels
+      !$acc kernels if(simulation_device) async
       input_local(:,:,1,j) = u
       label_local(:,:,1,j) = u_div
       !$acc end kernels
     end do
 
+    !$acc wait
+
     ! distribute local batch data across GPUs for data parallel training
     do j = 1, batch_size
-      !$acc host_data use_device(input_local, label_local, input, label)
+      !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device)
       call MPI_Alltoallv(input_local(:,:,1,j), sendcounts, sdispls, MPI_FLOAT, &
                          input(:,:,1,j), recvcounts, rdispls, MPI_FLOAT, &
                          MPI_COMM_WORLD, istat)
@@ -268,26 +295,30 @@ program train_distributed
       !$acc end host_data
     end do
 
-    !$acc host_data use_device(input, label)
+    !$acc wait
+    !$acc host_data use_device(input, label) if(simulation_device)
     istat = torchfort_train("mymodel", input, label, loss_val)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     !$acc end host_data
+    !$acc wait
   end do
   !$acc end data
   if (rank == 0 .and. ntrain_steps >= 1) print*, "final training loss: ", loss_val
 
   ! run inference
   if (rank == 0 .and. nval_steps >= 1) print*, "start validation..."
-  !$acc data copyin(u, u_div, input, label, input_local, label_local) copyout(output)
+  !$acc data copyin(u, u_div, input, label, input_local, label_local) copyout(output) if(simulation_device)
   do i = 1, nval_steps
     call run_simulation_step(u, u_div)
-    !$acc kernels
+    !$acc kernels async if(simulation_device)
     input_local(:,:,1,1) = u
     label_local(:,:,1,1) = u_div
     !$acc end kernels
 
+    !$acc wait
+
     ! gather sample on all GPUs
-    !$acc host_data use_device(input_local, label_local, input, label)
+    !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device)
     call MPI_Allgather(input_local(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        input(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        MPI_COMM_WORLD, istat)
@@ -296,12 +327,14 @@ program train_distributed
                        MPI_COMM_WORLD, istat)
     !$acc end host_data
 
-    !$acc host_data use_device(input, output)
+    !$acc wait
+    !$acc host_data use_device(input, output) if(simulation_device)
     istat = torchfort_inference("mymodel", input(:,:,1:1,1:1), output(:,:,1:1,1:1))
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     !$acc end host_data
+    !$acc wait
 
-    !$acc kernels
+    !$acc kernels if(simulation_device)
     mse = sum((label(:,:,1,1) - output(:,:,1,1))**2) / (n*n)
     !$acc end kernels
 

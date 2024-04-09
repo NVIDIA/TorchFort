@@ -48,13 +48,15 @@
 // rl stuff
 #include "internal/rl/noise_actor.h"
 #include "internal/rl/replay_buffer.h"
-#include "internal/rl/rl.h"
+#include "internal/rl/off_policy.h"
 #include "internal/rl/utils.h"
 
 namespace torchfort {
 
 namespace rl {
 
+namespace off_policy {
+    
 // implementing https://spinningup.openai.com/en/latest/algorithms/ddpg.html#pseudocode
 // we implement the update on a single batch with (s, a, r, s', d):
 // gamma is a tensor here to support multi-step delayed learning. Here, gamma^n
@@ -281,6 +283,8 @@ private:
   float a_low_, a_high_;
 };
 
+} // namespace off_policy
+  
 } // namespace rl
 
 } // namespace torchfort

@@ -32,25 +32,26 @@
 #include <torch/torch.h>
 
 #include "internal/exceptions.h"
-#include "internal/rl/td3.h"
+#include "internal/rl/off_policy/ddpg.h"
+#include "torchfort.h"
 
 namespace torchfort {
+
 namespace rl {
 
-TD3System::TD3System(const char* name, const YAML::Node& system_node,
-		     int model_device, int rb_device)
+namespace off_policy {
+
+DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node,
+		       int model_device, int rb_device)
   : RLOffPolicySystem(model_device, rb_device) {
-  
+
   // get basic parameters first
   auto algo_node = system_node["algorithm"];
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
-    std::set<std::string> supported_params{"batch_size", "num_critics", "policy_lag", "nstep", "nstep_reward_reduction",
-                                           "gamma", "rho"};
+    std::set<std::string> supported_params{"batch_size", "nstep", "nstep_reward_reduction", "gamma", "rho"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
-    num_critics_ = params.get_param<int>("num_critics", 2)[0];
-    policy_lag_ = params.get_param<int>("policy_lag")[0];
     gamma_ = params.get_param<float>("gamma")[0];
     rho_ = params.get_param<float>("rho")[0];
     nstep_ = params.get_param<int>("nstep", 1)[0];
@@ -141,29 +142,23 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node,
   }
 
   // general section
-  // resize critics vector
-  q_models_.resize(num_critics_);
-  q_models_target_.resize(num_critics_);
-
   // get value model hook
   if (system_node["critic_model"]) {
-    for (int i = 0; i < q_models_.size(); ++i) {
-      q_models_[i].model = get_model(system_node["critic_model"]);
-      q_models_[i].model->to(model_device_);
-      q_models_target_[i].model = get_model(system_node["critic_model"]);
-      q_models_target_[i].model->to(model_device_);
-      // change weights for models
-      init_parameters(q_models_[i].model);
-      // copy new parameters
-      copy_parameters(q_models_target_[i].model, q_models_[i].model);
-      // freeze weights for target
-      set_grad_state(q_models_target_[i].model, false);
-      // set state
-      std::string qname = "critic_" + std::to_string(i);
-      q_models_[i].state = get_state(qname.c_str(), system_node);
-      qname = "critic_target_" + std::to_string(i);
-      q_models_target_[i].state = get_state(qname.c_str(), system_node);
-    }
+    q_model_.model = get_model(system_node["critic_model"]);
+    q_model_.model->to(model_device_);
+    q_model_target_.model = get_model(system_node["critic_model"]);
+    q_model_target_.model->to(model_device_);
+    // change weights for models
+    init_parameters(q_model_.model);
+    // copy new parameters
+    copy_parameters(q_model_target_.model, q_model_.model);
+    // freeze weights for target
+    set_grad_state(q_model_target_.model, false);
+    // set state
+    std::string qname = "critic";
+    q_model_.state = get_state(qname.c_str(), system_node);
+    qname = "critic_target";
+    q_model_target_.state = get_state(qname.c_str(), system_node);
   } else {
     THROW_INVALID_USAGE("Missing critic_model block in configuration file.");
   }
@@ -190,9 +185,7 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node,
     // policy model
     p_model_.optimizer = get_optimizer(system_node["optimizer"], p_model_.model);
     // value model
-    for (auto& q_model : q_models_) {
-      q_model.optimizer = get_optimizer(system_node["optimizer"], q_model.model);
-    }
+    q_model_.optimizer = get_optimizer(system_node["optimizer"], q_model_.model);
   } else {
     THROW_INVALID_USAGE("Missing optimizer block in configuration file.");
   }
@@ -206,9 +199,7 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node,
   }
   // critic models
   if (system_node["critic_lr_scheduler"]) {
-    for (auto& q_model : q_models_) {
-      q_model.lr_scheduler = get_lr_scheduler(system_node["critic_lr_scheduler"], q_model.optimizer);
-    }
+    q_model_.lr_scheduler = get_lr_scheduler(system_node["critic_lr_scheduler"], q_model_.optimizer);
   } else {
     THROW_INVALID_USAGE("Missing critic_lr_scheduler block in configuration file.");
   }
@@ -224,11 +215,9 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node,
   return;
 }
 
-void TD3System::printInfo() const {
-  std::cout << "TD3 parameters:" << std::endl;
+void DDPGSystem::printInfo() const {
+  std::cout << "DDPG parameters:" << std::endl;
   std::cout << "batch_size = " << batch_size_ << std::endl;
-  std::cout << "num_critics = " << num_critics_ << std::endl;
-  std::cout << "policy_lag = " << policy_lag_ << std::endl;
   std::cout << "nstep = " << nstep_ << std::endl;
   std::cout << "reward_nstep_mode = " << nstep_reward_reduction_ << std::endl;
   std::cout << "gamma = " << gamma_ << std::endl;
@@ -245,15 +234,15 @@ void TD3System::printInfo() const {
   return;
 }
 
-torch::Device TD3System::modelDevice() const {
+torch::Device DDPGSystem::modelDevice() const {
   return model_device_;
 }
 
-torch::Device TD3System::rbDevice() const {
-  return rb_device_;
+torch::Device DDPGSystem::rbDevice() const {
+  return replay_buffer_->device();
 }
-  
-void TD3System::initSystemComm(MPI_Comm mpi_comm) {
+
+void DDPGSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // policy
   p_model_.comm = std::make_shared<Comm>(mpi_comm);
@@ -261,26 +250,18 @@ void TD3System::initSystemComm(MPI_Comm mpi_comm) {
   p_model_target_.comm = std::make_shared<Comm>(mpi_comm);
   p_model_target_.comm->initialize(model_device_.is_cuda());
   // critic
-  for (auto& q_model : q_models_) {
-    q_model.comm = std::make_shared<Comm>(mpi_comm);
-    q_model.comm->initialize(model_device_.is_cuda());
-  }
-  for (auto& q_model_target : q_models_target_) {
-    q_model_target.comm = std::make_shared<Comm>(mpi_comm);
-    q_model_target.comm->initialize(model_device_.is_cuda());
-  }
+  q_model_.comm = std::make_shared<Comm>(mpi_comm);
+  q_model_.comm->initialize(model_device_.is_cuda());
+  q_model_target_.comm = std::make_shared<Comm>(mpi_comm);
+  q_model_target_.comm->initialize(model_device_.is_cuda());
 
   // move to device before broadcasting
   // policy
   p_model_.model->to(model_device_);
   p_model_target_.model->to(model_device_);
   // critic
-  for (auto& q_model : q_models_) {
-    q_model.model->to(model_device_);
-  }
-  for (auto& q_model_target : q_models_target_) {
-    q_model_target.model->to(model_device_);
-  }
+  q_model_.model->to(model_device_);
+  q_model_target_.model->to(model_device_);
 
   // Broadcast initial model parameters from rank 0
   // policy
@@ -291,22 +272,16 @@ void TD3System::initSystemComm(MPI_Comm mpi_comm) {
     p_model_target_.comm->broadcast(p, 0);
   }
   // critic
-  for (auto& q_model : q_models_) {
-    for (auto& p : q_model.model->parameters()) {
-      q_model.comm->broadcast(p, 0);
-    }
+  for (auto& p : q_model_.model->parameters()) {
+    q_model_.comm->broadcast(p, 0);
   }
-  for (auto& q_model_target : q_models_target_) {
-    for (auto& p : q_model_target.model->parameters()) {
-      q_model_target.comm->broadcast(p, 0);
-    }
+  for (auto& p : q_model_target_.model->parameters()) {
+    q_model_target_.comm->broadcast(p, 0);
   }
-
-  return;
 }
 
-// saving checkpoints:
-void TD3System::saveCheckpoint(const std::string& checkpoint_dir) const {
+// Save checkpoint
+void DDPGSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
   using namespace torchfort;
   std::filesystem::path root_dir(checkpoint_dir);
 
@@ -317,7 +292,6 @@ void TD3System::saveCheckpoint(const std::string& checkpoint_dir) const {
     }
   }
 
-  // save the individual pieces
   // policy
   save_model_pack(p_model_, root_dir / "policy", true);
 
@@ -325,18 +299,10 @@ void TD3System::saveCheckpoint(const std::string& checkpoint_dir) const {
   save_model_pack(p_model_target_, root_dir / "policy_target", false);
 
   // critic
-  for (int i = 0; i < q_models_.size(); ++i) {
-    auto q_model = q_models_[i];
-    std::string subdir = "critic_" + std::to_string(i);
-    save_model_pack(q_model, root_dir / subdir, true);
-  }
+  save_model_pack(q_model_, root_dir / "critic", true);
 
   // critic target
-  for (int i = 0; i < q_models_target_.size(); ++i) {
-    auto q_model_target = q_models_target_[i];
-    std::string subdir = "critic_target_" + std::to_string(i);
-    save_model_pack(q_model_target, root_dir / subdir, false);
-  }
+  save_model_pack(q_model_target_, root_dir / "critic_target", false);
 
   // system state
   {
@@ -351,8 +317,7 @@ void TD3System::saveCheckpoint(const std::string& checkpoint_dir) const {
   }
 }
 
-// loading checkpoints:
-void TD3System::loadCheckpoint(const std::string& checkpoint_dir) {
+void DDPGSystem::loadCheckpoint(const std::string& checkpoint_dir) {
   using namespace torchfort;
   std::filesystem::path root_dir(checkpoint_dir);
 
@@ -363,18 +328,10 @@ void TD3System::loadCheckpoint(const std::string& checkpoint_dir) {
   load_model_pack(p_model_target_, root_dir / "policy_target", false);
 
   // critic
-  for (int i = 0; i < q_models_.size(); ++i) {
-    auto q_model = q_models_[i];
-    std::string subdir = "critic_" + std::to_string(i);
-    load_model_pack(q_model, root_dir / subdir, true);
-  }
+  load_model_pack(q_model_, root_dir / "critic", true);
 
   // critic target
-  for (int i = 0; i < q_models_target_.size(); ++i) {
-    auto q_model_target = q_models_target_[i];
-    std::string subdir = "critic_target_" + std::to_string(i);
-    load_model_pack(q_model_target, root_dir / subdir, false);
-  }
+  load_model_pack(q_model_target_, root_dir / "critic_target", false);
 
   // system state
   {
@@ -396,17 +353,17 @@ void TD3System::loadCheckpoint(const std::string& checkpoint_dir) {
 }
 
 // we should pass a tuple (s, a, s', r, d)
-void TD3System::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d) {
+void DDPGSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d) {
   replay_buffer_->update(s, a, sp, r, d);
 }
 
-bool TD3System::isReady() { return (replay_buffer_->isReady()); }
+bool DDPGSystem::isReady() { return (replay_buffer_->isReady()); }
 
-std::shared_ptr<ModelState> TD3System::getSystemState_() { return system_state_; }
+std::shared_ptr<ModelState> DDPGSystem::getSystemState_() { return system_state_; }
 
-std::shared_ptr<Comm> TD3System::getSystemComm_() { return system_comm_; }
+std::shared_ptr<Comm> DDPGSystem::getSystemComm_() { return system_comm_; }
 
-torch::Tensor TD3System::predictWithNoiseTrain_(torch::Tensor state) {
+torch::Tensor DDPGSystem::predictWithNoiseTrain_(torch::Tensor state) {
   // no grad guard
   torch::NoGradGuard no_grad;
 
@@ -425,7 +382,7 @@ torch::Tensor TD3System::predictWithNoiseTrain_(torch::Tensor state) {
 
 // do exploration step without knowledge about the state
 // for example, apply random action
-torch::Tensor TD3System::explore(torch::Tensor action) {
+torch::Tensor DDPGSystem::explore(torch::Tensor action) {
   // no grad guard
   torch::NoGradGuard no_grad;
 
@@ -435,7 +392,7 @@ torch::Tensor TD3System::explore(torch::Tensor action) {
   return result;
 }
 
-torch::Tensor TD3System::predict(torch::Tensor state) {
+torch::Tensor DDPGSystem::predict(torch::Tensor state) {
   // no grad guard
   torch::NoGradGuard no_grad;
 
@@ -453,7 +410,7 @@ torch::Tensor TD3System::predict(torch::Tensor state) {
   return action;
 }
 
-torch::Tensor TD3System::predictExplore(torch::Tensor state) {
+torch::Tensor DDPGSystem::predictExplore(torch::Tensor state) {
   // no grad guard
   torch::NoGradGuard no_grad;
 
@@ -471,29 +428,27 @@ torch::Tensor TD3System::predictExplore(torch::Tensor state) {
   return action;
 }
 
-torch::Tensor TD3System::evaluate(torch::Tensor state, torch::Tensor action) {
+torch::Tensor DDPGSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  q_models_target_[0].model->to(model_device_);
-  q_models_target_[0].model->eval();
+  q_model_target_.model->to(model_device_);
+  q_model_target_.model->eval();
   state = state.to(model_device_);
   action = action.to(model_device_);
 
   // do fwd pass
-  auto reward = (q_models_target_[0].model)->forward(std::vector<torch::Tensor>{state, action})[0];
+  auto reward = (q_model_target_.model)->forward(std::vector<torch::Tensor>{state, action})[0];
 
   return reward;
 }
 
-void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
+void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   // increment train step counter first, this avoids an initial policy update at start
   train_step_count_++;
 
-  // update policy?
-  bool update_policy = (train_step_count_ % policy_lag_ == 0);
-
+  // get samples from replay buffer
   torch::Tensor s, a, ap, sp, r, d;
   {
     torch::NoGradGuard no_grad;
@@ -513,14 +468,12 @@ void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
   }
 
   // train step
-  std::vector<float> q_loss_vals;
-  train_td3(p_model_, p_model_target_, q_models_, q_models_target_, s, sp, a, ap, r, d,
-            static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_vals, update_policy);
-
-  // compute average of q_loss_vals:
-  q_loss_val = std::accumulate(q_loss_vals.begin(), q_loss_vals.end(), decltype(q_loss_vals)::value_type(0)) /
-               float(q_loss_vals.size());
+  train_ddpg(p_model_, p_model_target_, q_model_, q_model_target_, s, sp, a, ap, r, d,
+             static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_val);
 }
 
+} // off_policy
+  
 } // namespace rl
+
 } // namespace torchfort

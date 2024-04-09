@@ -46,38 +46,42 @@
 #include "internal/setup.h"
 
 // rl stuff
-#include "internal/rl/noise_actor.h"
 #include "internal/rl/replay_buffer.h"
-#include "internal/rl/rl.h"
+#include "internal/rl/off_policy.h"
 #include "internal/rl/utils.h"
+#include "internal/rl/policy.h"
 
 namespace torchfort {
 
 namespace rl {
 
-// implementing https://spinningup.openai.com/en/latest/algorithms/td3.html#pseudocode
-// we implement the update on a single batch with (s, a, r, s', d):
-// gamma is a tensor here to support multi-step delayed learning. Here, gamma^n
-// is used where n is the number of delayed steps. since the episode can end in between,
-// not all samples have the same n in some cases. this should account for that
-// this routine is action scale agnostic, we just have to make sure that the scales produced by
-// the policies is the same as expected by the q-functions
+namespace off_policy {
+
+struct SACPolicyPack {
+  std::shared_ptr<ACPolicy> model;
+  std::shared_ptr<torch::optim::Optimizer> optimizer;
+  std::shared_ptr<BaseLRScheduler> lr_scheduler;
+  std::shared_ptr<BaseLoss> loss;
+  std::shared_ptr<Comm> comm;
+  std::shared_ptr<ModelState> state;
+};
+
+// implementing https://spinningup.openai.com/en/latest/algorithms/sac.html#pseudocode
 template <typename T>
-void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const std::vector<ModelPack>& q_models,
+void train_sac(const SACPolicyPack& p_model, const std::vector<ModelPack>& q_models,
                const std::vector<ModelPack>& q_models_target, torch::Tensor state_old_tensor,
-               torch::Tensor state_new_tensor, torch::Tensor action_old_tensor, torch::Tensor action_new_tensor,
-               torch::Tensor reward_tensor, torch::Tensor d_tensor, const T& gamma, const T& rho, T& p_loss_val,
-               std::vector<T>& q_loss_vals, bool update_policy) {
+               torch::Tensor state_new_tensor, torch::Tensor action_old_tensor, torch::Tensor reward_tensor,
+               torch::Tensor d_tensor, const T& alpha, const T& gamma, const T& rho, T& p_loss_val,
+               std::vector<T>& q_loss_vals) {
 
   // nvtx marker
-  torchfort::nvtx::rangePush("torchfort_train_td3");
+  torchfort::nvtx::rangePush("torchfort_train_sac");
 
   // sanity checks
   // batch size
   auto batch_size = state_old_tensor.size(0);
   assert(batch_size == state_new_tensor.size(0));
   assert(batch_size == action_old_tensor.size(0));
-  assert(batch_size == action_new_tensor.size(0));
   assert(batch_size == reward_tensor.size(0));
   assert(batch_size == d_tensor.size(0));
   // singleton dims
@@ -102,6 +106,10 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   torch::Tensor y_tensor;
   {
     torch::NoGradGuard no_grad;
+    torch::Tensor action_new_tensor, action_new_log_prob;
+    std::tie(action_new_tensor, action_new_log_prob) = p_model.model->forwardNoise(state_new_tensor);
+
+    // compute expected reward
     auto q_new_tensor =
         q_models_target[0].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
     for (int i = 1; i < q_models_target.size(); ++i) {
@@ -109,7 +117,7 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
           q_models_target[i].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
       q_new_tensor = torch::minimum(q_new_tensor, q_tmp_tensor);
     }
-    y_tensor = torch::Tensor(reward_tensor + q_new_tensor * gamma * (1. - d_tensor));
+    y_tensor = torch::Tensor(reward_tensor + (q_new_tensor - alpha * action_new_log_prob) * gamma * (1. - d_tensor));
   }
 
   // backward and update step
@@ -140,54 +148,58 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   }
 
   // policy function
-  if (update_policy) {
-    // freeze the q1model
-    set_grad_state(q_models[0].model, false);
-
-    // set p_model to train
-    p_model.model->train();
-    auto action_old_pred_tensor = p_model.model->forward(std::vector<torch::Tensor>{state_old_tensor})[0];
-    // just q1 is used
-    // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
-    auto p_loss_tensor = -torch::mean(
-        q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0]);
-    // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
-    // p_loss_tensor = -p_loss_tensor;
-
-    // bwd pass
-    p_model.optimizer->zero_grad();
-    p_loss_tensor.backward();
-
-    // allreduce (average) gradients (if running distributed)
-    if (p_model.comm) {
-      std::vector<torch::Tensor> grads;
-      grads.reserve(p_model.model->parameters().size());
-      for (const auto& p : p_model.model->parameters()) {
-        grads.push_back(p.grad());
-      }
-      p_model.comm->allreduce(grads, true);
-    }
-
-    // optimizer step
-    p_model.optimizer->step();
-    p_model.lr_scheduler->step();
-
-    // unfreeze the q1model
-    set_grad_state(q_models[0].model, true);
-
-    // save loss val
-    p_loss_val = p_loss_tensor.item<T>();
-  } else {
-    // make sure that the loss value is sane and not some garbage number
-    p_loss_val = static_cast<T>(0.);
+  // freeze the q_models
+  for (const auto& q_model : q_models) {
+    set_grad_state(q_model.model, false);
   }
 
-  // do polyak averaging: only if we also trained the policy
-  if (update_policy) {
-    for (int i = 0; i < q_models_target.size(); ++i) {
-      polyak_update<T>(q_models_target[i].model, q_models[i].model, rho);
+  // set p_model to train
+  p_model.model->train();
+
+  torch::Tensor action_old_pred_tensor, action_old_pred_log_prob;
+  std::tie(action_old_pred_tensor, action_old_pred_log_prob) = (p_model.model)->forwardNoise(state_old_tensor);
+
+  // just q1 is used
+  // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
+  auto q_tens = q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0];
+  for (int i = 1; i < q_models_target.size(); ++i) {
+    auto q_tmp_tensor =
+        q_models_target[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+    q_tens = torch::minimum(q_tens, q_tmp_tensor);
+  }
+  torch::Tensor p_loss_tensor = -torch::mean(q_tens - action_old_pred_log_prob * alpha);
+  // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
+  // p_loss_tensor = -p_loss_tensor;
+
+  // bwd pass
+  p_model.optimizer->zero_grad();
+  p_loss_tensor.backward();
+
+  // allreduce (average) gradients (if running distributed)
+  if (p_model.comm) {
+    std::vector<torch::Tensor> grads;
+    grads.reserve(p_model.model->parameters().size());
+    for (const auto& p : p_model.model->parameters()) {
+      grads.push_back(p.grad());
     }
-    polyak_update<T>(p_model_target.model, p_model.model, rho);
+    p_model.comm->allreduce(grads, true);
+  }
+
+  // optimizer step
+  p_model.optimizer->step();
+  p_model.lr_scheduler->step();
+
+  // unfreeze the qmodels
+  for (const auto& q_model : q_models) {
+    set_grad_state(q_model.model, true);
+  }
+
+  // save loss val
+  p_loss_val = p_loss_tensor.item<T>();
+
+  // do polyak averaging: only if we also trained the policy
+  for (int i = 0; i < q_models_target.size(); ++i) {
+    polyak_update<T>(q_models_target[i].model, q_models[i].model, rho);
   }
 
   // print some info
@@ -216,24 +228,22 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   }
 
   // policy function
-  if (update_policy) {
-    auto state = p_model.state;
-    state->step_train++;
-    if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
-      std::stringstream os;
-      os << "model: "
-         << "actor"
-         << ", ";
-      os << "step_train: " << state->step_train << ", ";
-      os << "loss: " << p_loss_val << ", ";
-      auto lrs = get_current_lrs(p_model.optimizer);
-      os << "lr: " << lrs[0];
-      if (!p_model.comm || (p_model.comm && p_model.comm->rank == 0)) {
-        torchfort::logging::print(os.str(), torchfort::logging::info);
-        if (state->enable_wandb_hook) {
-          torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_loss", state->step_train, p_loss_val);
-          torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_lr", state->step_train, lrs[0]);
-        }
+  auto state = p_model.state;
+  state->step_train++;
+  if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
+    std::stringstream os;
+    os << "model: "
+       << "actor"
+       << ", ";
+    os << "step_train: " << state->step_train << ", ";
+    os << "loss: " << p_loss_val << ", ";
+    auto lrs = get_current_lrs(p_model.optimizer);
+    os << "lr: " << lrs[0];
+    if (!p_model.comm || (p_model.comm && p_model.comm->rank == 0)) {
+      torchfort::logging::print(os.str(), torchfort::logging::info);
+      if (state->enable_wandb_hook) {
+        torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_loss", state->step_train, p_loss_val);
+        torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_lr", state->step_train, lrs[0]);
       }
     }
   }
@@ -241,12 +251,12 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   torchfort::nvtx::rangePop();
 }
 
-// TD3 training system
-class TD3System : public RLOffPolicySystem, public std::enable_shared_from_this<RLOffPolicySystem> {
+// SAC training system
+class SACSystem : public RLOffPolicySystem, public std::enable_shared_from_this<RLOffPolicySystem> {
 
 public:
   // constructor
-  TD3System(const char* name, const YAML::Node& system_node, int model_device, int rb_device);
+  SACSystem(const char* name, const YAML::Node& system_node, int model_device, int rb_device);
 
   // init communicators
   void initSystemComm(MPI_Comm mpi_comm);
@@ -281,11 +291,8 @@ private:
 
   std::shared_ptr<Comm> getSystemComm_();
 
-  // internally used functions
-  torch::Tensor predictWithNoiseTrain_(torch::Tensor state);
-
   // models
-  ModelPack p_model_, p_model_target_;
+  SACPolicyPack p_model_;
   std::vector<ModelPack> q_models_, q_models_target_;
 
   // replay buffer
@@ -297,21 +304,19 @@ private:
   // system comm
   std::shared_ptr<Comm> system_comm_;
 
-  // noise actors
-  std::shared_ptr<NoiseActor> noise_actor_train_;
-  std::shared_ptr<NoiseActor> noise_actor_exploration_;
-
   // some parameters
   int batch_size_;
   int num_critics_;
-  int policy_lag_;
   int nstep_;
   RewardReductionMode nstep_reward_reduction_;
   float gamma_;
   float rho_;
+  float alpha_;
   float a_low_, a_high_;
 };
 
+} // namespace off_policy
+  
 } // namespace rl
 
 } // namespace torchfort

@@ -33,11 +33,13 @@
 
 #include "internal/exceptions.h"
 #include "internal/rl/distributions.h"
-#include "internal/rl/sac.h"
+#include "internal/rl/off_policy/sac.h"
 
 namespace torchfort {
 
 namespace rl {
+
+namespace off_policy {
 
 SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
 		     int model_device, int rb_device)
@@ -491,6 +493,8 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
                float(q_loss_vals.size());
 }
 
+} // namespace off_policy
+  
 } // namespace rl
 
 } // namespace torchfort

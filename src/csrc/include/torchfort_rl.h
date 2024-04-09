@@ -35,7 +35,7 @@
 #define RL_WANDB_LOG_FUNC(dtype)                                                                                       \
   torchfort_result_t torchfort_rl_off_policy_wandb_log_##dtype(const char* name, const char* metric_name,              \
                                                                int64_t step, dtype value) {                            \
-    torchfort::rl::wandb_log_system(name, metric_name, step, value);                                                   \
+    torchfort::rl::off_policy::wandb_log_system(name, metric_name, step, value);                                       \
     return TORCHFORT_RESULT_SUCCESS;                                                                                   \
   }
 

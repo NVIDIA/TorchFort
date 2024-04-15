@@ -125,6 +125,7 @@ target_sources(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/off_policy/ddpg.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/off_policy/td3.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/off_policy/sac.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/on_policy/ppo.cpp
 )
 
 target_include_directories(${PROJECT_NAME}

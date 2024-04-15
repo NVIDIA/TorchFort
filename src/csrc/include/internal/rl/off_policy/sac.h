@@ -57,18 +57,9 @@ namespace rl {
 
 namespace off_policy {
 
-struct SACPolicyPack {
-  std::shared_ptr<ACPolicy> model;
-  std::shared_ptr<torch::optim::Optimizer> optimizer;
-  std::shared_ptr<BaseLRScheduler> lr_scheduler;
-  std::shared_ptr<BaseLoss> loss;
-  std::shared_ptr<Comm> comm;
-  std::shared_ptr<ModelState> state;
-};
-
 // implementing https://spinningup.openai.com/en/latest/algorithms/sac.html#pseudocode
 template <typename T>
-void train_sac(const SACPolicyPack& p_model, const std::vector<ModelPack>& q_models,
+void train_sac(const ACPolicyPack& p_model, const std::vector<ModelPack>& q_models,
                const std::vector<ModelPack>& q_models_target, torch::Tensor state_old_tensor,
                torch::Tensor state_new_tensor, torch::Tensor action_old_tensor, torch::Tensor reward_tensor,
                torch::Tensor d_tensor, const T& alpha, const T& gamma, const T& rho, T& p_loss_val,
@@ -292,7 +283,7 @@ private:
   std::shared_ptr<Comm> getSystemComm_();
 
   // models
-  SACPolicyPack p_model_;
+  ACPolicyPack p_model_;
   std::vector<ModelPack> q_models_, q_models_target_;
 
   // replay buffer

@@ -76,6 +76,15 @@ protected:
   std::shared_ptr<ModelWrapper> p_mu_log_sigma_;
 };
 
+struct ACPolicyPack {
+  std::shared_ptr<ACPolicy> model;
+  std::shared_ptr<torch::optim::Optimizer> optimizer;
+  std::shared_ptr<BaseLRScheduler> lr_scheduler;
+  std::shared_ptr<BaseLoss> loss;
+  std::shared_ptr<Comm> comm;
+  std::shared_ptr<ModelState> state;
+};
+  
 } // namespace rl
 
 } // namespace torchfort

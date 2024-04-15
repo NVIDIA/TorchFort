@@ -79,7 +79,7 @@ class GAELambdaRolloutBuffer : public RolloutBuffer, public std::enable_shared_f
 
 public:
   // constructor
-  GAELambdaRolloutBuffer(size_t size, torchfort_device_t device)
+  GAELambdaRolloutBuffer(size_t size, float gamma, float lambda, torchfort_device_t device)
     : RolloutBuffer(size, device), finalized_(false), gamma_(gamma), lambda_(lambda), rng_(), returns_(size), advantages_(size) {}
 
   // disable copy constructor
@@ -127,7 +127,7 @@ public:
     // we need to keep track of those
     next_value = q;
     next_non_terminal = 1.0 - float(e);
-    for (size_t step = _size - 2; _size >= 0; size--) {
+    for (size_t step = size_ - 2; step >= 0; step--) {
       std::tie(s, a, r, q, log_p, e) = buffer_.at(step);
       delta = r + gamma_ * next_value * next_non_terminal - q;
       last_gae_lam = delta + gamma_ * lambda_ * next_non_terminal * last_gae_lam;
@@ -166,10 +166,11 @@ public:
       auto index = uniform_dist(rng_);
 
       // get buffer entry
+      float r;
       bool e;
-      std::tie(stens_list[sample], atens_list[sample], q_list[sample], log_p_list[sample], e) = buffer_.at(index);
+      std::tie(stens_list[sample], atens_list[sample], r, q_list[sample], log_p_list[sample], e) = buffer_.at(index);
       adv_list[sample] = advantages_[sample];
-      ret_list[sample] = return_[sample];
+      ret_list[sample] = returns_[sample];
     }
     
     // stack the lists
@@ -178,7 +179,7 @@ public:
 
     // create new tensors
     auto options = torch::TensorOptions().dtype(torch::kFloat32);
-    auto qtens = torch::from_blob(q.data(), {batch_size, 1}, options).clone();
+    auto qtens = torch::from_blob(q_list.data(), {batch_size, 1}, options).clone();
     auto logptens = torch::from_blob(log_p_list.data(), {batch_size, 1}, options).clone();
     auto advtens = torch::from_blob(adv_list.data(), {batch_size, 1}, options).clone();
     auto rettens = torch::from_blob(ret_list.data(), {batch_size, 1}, options).clone();

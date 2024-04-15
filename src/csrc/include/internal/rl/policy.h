@@ -64,6 +64,7 @@ public:
   void to(torch::Device device, bool non_blocking = false);
   void save(const std::string& fname) const;
   void load(const std::string& fname);
+  torch::Device device() const;
 
   // forward routines
   std::tuple<torch::Tensor, torch::Tensor> forwardNoise(torch::Tensor state);

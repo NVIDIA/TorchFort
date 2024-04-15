@@ -87,7 +87,7 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   assert(d_tensor.size(1) == 1);
 
   // value functions
-  // move models to device
+  // set to train
   for (const auto& q_model : q_models) {
     q_model.model->train();
   }

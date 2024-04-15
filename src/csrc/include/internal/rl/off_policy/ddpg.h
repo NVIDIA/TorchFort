@@ -86,7 +86,6 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
   assert(d_tensor.size(1) == 1);
 
   // value functions
-  // move models to device
   q_model.model->train();
 
   // opt

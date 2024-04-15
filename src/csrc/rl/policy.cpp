@@ -57,6 +57,8 @@ void ACPolicy::save(const std::string& fname) const { p_mu_log_sigma_->save(fnam
 
 void ACPolicy::load(const std::string& fname) { p_mu_log_sigma_->load(fname); }
 
+torch::Device ACPolicy::device() const{ return p_mu_log_sigma_->device(); }
+
 std::tuple<torch::Tensor, torch::Tensor> ACPolicy::forwardNoise(torch::Tensor state) {
   // predict mu
   auto fwd = p_mu_log_sigma_->forward(std::vector<torch::Tensor>{state});

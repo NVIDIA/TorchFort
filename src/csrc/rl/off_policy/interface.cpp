@@ -185,9 +185,9 @@ torchfort_result_t torchfort_rl_off_policy_train_step(const char* name, float* p
 }
 
 // LOGGING
-RL_WANDB_LOG_FUNC(int)
-RL_WANDB_LOG_FUNC(float)
-RL_WANDB_LOG_FUNC(double)
+RL_OFF_POLICY_WANDB_LOG_FUNC(int)
+RL_OFF_POLICY_WANDB_LOG_FUNC(float)
+RL_OFF_POLICY_WANDB_LOG_FUNC(double)
 
 // RB utilities
 torchfort_result_t torchfort_rl_off_policy_update_replay_buffer(const char* name, void* state_old, void* state_new,

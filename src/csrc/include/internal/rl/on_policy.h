@@ -111,13 +111,31 @@ static void update_rollout_buffer(const char* name, T* state, size_t state_dim, 
 
   registry[name]->updateRolloutBuffer(state_tensor, action_tensor, 
 			 	      static_cast<float>(reward),
-			 	      static_cast<float>(value),
-			 	      static_cast<float>(log_p),
+				      static_cast<float>(value),
+				      static_cast<float>(log_p),
 				      initial_state);
   return;
 }
 
-#if 0
+template <typename T>
+static void finalize_rollout_buffer(const char* name, T value, bool final_state,
+				    cudaStream_t ext_stream) {
+
+  // no grad
+  torch::NoGradGuard no_grad;
+
+  c10::cuda::OptionalCUDAStreamGuard guard;
+  auto rb_device = registry[name]->rbDevice();
+  if (rb_device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
+    guard.reset_stream(stream);
+  }
+
+  // finalize buffer
+  registry[name]->finalizeRolloutBuffer(static_cast<float>(value), final_state);
+  return;
+}
+
 template <MemoryLayout L, typename T>
 static void predict_explore(const char* name, T* state, size_t state_dim, int64_t* state_shape, T* action,
 			    size_t action_dim, int64_t* action_shape, cudaStream_t ext_stream) {
@@ -199,7 +217,6 @@ template <typename T> void wandb_log_system(const char* name, const char* metric
 
   wandb_log(system->getSystemState_(), system->getSystemComm_(), name, metric_name, step, value);
 }
-#endif
 
 } // namespace on_policy
   

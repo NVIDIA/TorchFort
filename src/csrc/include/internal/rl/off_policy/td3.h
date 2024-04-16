@@ -104,10 +104,10 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   torch::Tensor y_tensor;
   {
     torch::NoGradGuard no_grad;
-    auto q_new_tensor =
+    torch::Tensor q_new_tensor =
         q_models_target[0].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
     for (int i = 1; i < q_models_target.size(); ++i) {
-      auto q_tmp_tensor =
+      torch::Tensor q_tmp_tensor =
           q_models_target[i].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
       q_new_tensor = torch::minimum(q_new_tensor, q_tmp_tensor);
     }
@@ -118,8 +118,8 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   q_loss_vals.clear();
   for (const auto& q_model : q_models) {
     // compute loss
-    auto q_old_tensor = q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
-    auto q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
+    torch::Tensor q_old_tensor = q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+    torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
     q_model.optimizer->zero_grad();
     q_loss_tensor.backward();
 
@@ -148,10 +148,10 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
 
     // set p_model to train
     p_model.model->train();
-    auto action_old_pred_tensor = p_model.model->forward(std::vector<torch::Tensor>{state_old_tensor})[0];
+    torch::Tensor action_old_pred_tensor = p_model.model->forward(std::vector<torch::Tensor>{state_old_tensor})[0];
     // just q1 is used
     // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
-    auto p_loss_tensor = -torch::mean(
+    torch::Tensor p_loss_tensor = -torch::mean(
         q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0]);
     // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
     // p_loss_tensor = -p_loss_tensor;

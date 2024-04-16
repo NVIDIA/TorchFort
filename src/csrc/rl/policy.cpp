@@ -32,34 +32,33 @@
 #include <torch/torch.h>
 
 #include "internal/exceptions.h"
-#include "internal/rl/distributions.h"
 #include "internal/rl/policy.h"
 
 namespace torchfort {
 
 namespace rl {
 
-  ACPolicy::ACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma, bool squashed)
+GaussianACPolicy::GaussianACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma, bool squashed)
     : squashed_(squashed), p_mu_log_sigma_(p_mu_log_sigma), log_sigma_min_(-20.), log_sigma_max_(2.) {}
 
-std::vector<torch::Tensor> ACPolicy::parameters() const {
+std::vector<torch::Tensor> GaussianACPolicy::parameters() const {
   std::vector<torch::Tensor> result = p_mu_log_sigma_->parameters();
   return result;
 }
 
-void ACPolicy::train() { p_mu_log_sigma_->train(); }
+void GaussianACPolicy::train() { p_mu_log_sigma_->train(); }
 
-void ACPolicy::eval() { p_mu_log_sigma_->eval(); }
+void GaussianACPolicy::eval() { p_mu_log_sigma_->eval(); }
 
-void ACPolicy::to(torch::Device device, bool non_blocking) { p_mu_log_sigma_->to(device, non_blocking); }
+void GaussianACPolicy::to(torch::Device device, bool non_blocking) { p_mu_log_sigma_->to(device, non_blocking); }
 
-void ACPolicy::save(const std::string& fname) const { p_mu_log_sigma_->save(fname); }
+void GaussianACPolicy::save(const std::string& fname) const { p_mu_log_sigma_->save(fname); }
 
-void ACPolicy::load(const std::string& fname) { p_mu_log_sigma_->load(fname); }
+void GaussianACPolicy::load(const std::string& fname) { p_mu_log_sigma_->load(fname); }
 
-torch::Device ACPolicy::device() const{ return p_mu_log_sigma_->device(); }
+torch::Device GaussianACPolicy::device() const{ return p_mu_log_sigma_->device(); }
 
-std::tuple<torch::Tensor, torch::Tensor> ACPolicy::forwardNoise(torch::Tensor state) {
+std::shared_ptr<NormalDistribution> GaussianACPolicy::getDistribution_(torch::Tensor state) {
   // predict mu
   auto fwd = p_mu_log_sigma_->forward(std::vector<torch::Tensor>{state});
   auto& action_mu = fwd[0];
@@ -68,27 +67,58 @@ std::tuple<torch::Tensor, torch::Tensor> ACPolicy::forwardNoise(torch::Tensor st
   auto action_sigma = torch::exp(torch::clamp(action_log_sigma, log_sigma_min_, log_sigma_max_));
 
   // create distribution
-  auto pi_dist = NormalDistribution(action_mu, action_sigma);
+  return std::make_shared<NormalDistribution>(action_mu, action_sigma);
+}
+  
+std::tuple<torch::Tensor, torch::Tensor> GaussianACPolicy::evaluateAction(torch::Tensor state, torch::Tensor action) {
+  // get distribution
+  auto pi_dist = getDistribution_(state);
+
+  // compute log prop
+  auto log_prob = torch::sum(torch::flatten(pi_dist->log_prob(action), 1), 1, true);
+
+  // account for squashing
+  torch::Tensor entropy;
+  if (squashed_) {
+    log_prob =
+      log_prob -
+      torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
+    // in this case no analytical form for the entropy exists and we need to estimate it from the log probs directly:
+    entropy = -log_prob;
+  } else {
+    // use analytical formula for entropy
+    entropy = torch::sum(torch::flatten(pi_dist->entropy(), 1), 1, true);
+  }
+  return std::make_tuple(log_prob, entropy);
+}
+  
+std::tuple<torch::Tensor, torch::Tensor> GaussianACPolicy::forwardNoise(torch::Tensor state) {
+  // get distribution
+  auto pi_dist = getDistribution_(state);
 
   // sample action and compute log prob
   // do not squash yet
-  auto action = pi_dist.rsample();
-  auto action_log_prob = torch::sum(torch::flatten(pi_dist.log_prob(action), 1), 1, true);
+  auto action = pi_dist->rsample();
+  auto log_prob = torch::sum(torch::flatten(pi_dist->log_prob(action), 1), 1, true);
 
   // account for squashing
   if (squashed_) {
-    action_log_prob =
-      action_log_prob -
+    log_prob =
+      log_prob -
       torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
     action = torch::tanh(action);
   }
 
-  return std::make_tuple(action, action_log_prob);
+  return std::make_tuple(action, log_prob);
 }
 
-torch::Tensor ACPolicy::forwardDeterministic(torch::Tensor state) {
+torch::Tensor GaussianACPolicy::forwardDeterministic(torch::Tensor state) {
   // predict mu is the only part
-  auto action = torch::tanh(p_mu_log_sigma_->forward(std::vector<torch::Tensor>{state})[0]);
+  auto action = p_mu_log_sigma_->forward(std::vector<torch::Tensor>{state})[0];
+
+  if (squashed_) {
+    action = torch::tanh(action);
+  }
 
   return action;
 }

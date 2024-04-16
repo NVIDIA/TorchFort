@@ -101,10 +101,10 @@ void train_sac(const ACPolicyPack& p_model, const std::vector<ModelPack>& q_mode
     std::tie(action_new_tensor, action_new_log_prob) = p_model.model->forwardNoise(state_new_tensor);
 
     // compute expected reward
-    auto q_new_tensor =
+    torch::Tensor q_new_tensor =
         q_models_target[0].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
     for (int i = 1; i < q_models_target.size(); ++i) {
-      auto q_tmp_tensor =
+      torch::Tensor q_tmp_tensor =
           q_models_target[i].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
       q_new_tensor = torch::minimum(q_new_tensor, q_tmp_tensor);
     }
@@ -152,7 +152,7 @@ void train_sac(const ACPolicyPack& p_model, const std::vector<ModelPack>& q_mode
 
   // just q1 is used
   // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
-  auto q_tens = q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0];
+  torch::Tensor q_tens = q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0];
   for (int i = 1; i < q_models_target.size(); ++i) {
     auto q_tmp_tensor =
         q_models_target[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];

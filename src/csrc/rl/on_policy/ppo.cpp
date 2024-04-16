@@ -50,13 +50,17 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
     std::set<std::string> supported_params{"batch_size", "gamma", "gae_lambda",
-					   "epsilon", "target_kl", "normalize_advantage"};
+					   "epsilon", "target_kl_divergence",
+					   "entropy_loss_coefficient", "value_loss_coefficient",
+					   "normalize_advantage"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     gamma_ = params.get_param<float>("gamma")[0];
     gae_lambda_ = params.get_param<float>("gae_lambda")[0];
-    target_kl_ = params.get_param<float>("target_kl")[0];
+    target_kl_divergence_ = params.get_param<float>("target_kl_divergence")[0];
     epsilon_ = params.get_param<float>("epsilon")[0];
+    entropy_loss_coeff_ = params.get_param<float>("entropy_loss_coefficient")[0];
+    value_loss_coeff_ = params.get_param<float>("value_loss_coefficient")[0];
     normalize_advantage_ = params.get_param<bool>("normalize_advantage")[0];
     
   } else {
@@ -126,7 +130,7 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
   }
   // PPO policies might be squased
   // TODO: add parameter
-  p_model_.model = std::make_shared<ACPolicy>(std::move(p_model), /* squashed = */ true);
+  p_model_.model = std::make_shared<GaussianACPolicy>(std::move(p_model), /* squashed = */ true);
   p_model_.state = get_state("actor", system_node);
 
   // get optimizers
@@ -166,6 +170,8 @@ void PPOSystem::printInfo() const {
   std::cout << "PPO parameters:" << std::endl;
   std::cout << "batch_size = " << batch_size_ << std::endl;
   std::cout << "epsilon = " << epsilon_ << std::endl;
+  std::cout << "entropy_loss_coefficient" << entropy_loss_coeff_ << std::endl;
+  std::cout << "value_loss_coefficient" << value_loss_coeff_ << std::endl;
   std::cout << "normalize_advantage = " << normalize_advantage_ << std::endl;
   std::cout << "a_low = " << a_low_ << std::endl;
   std::cout << "a_high = " << a_high_ << std::endl;
@@ -393,7 +399,7 @@ torch::Tensor PPOSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   return reward;
 }
 
-void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
+  void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   // increment train step counter first, this avoids an initial policy update at start
   train_step_count_++;
 
@@ -415,7 +421,10 @@ void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   }
 
   // train step
-  train_ppo(p_model_, q_model_, s, a, q, logp, adv, ret, gamma_, epsilon_, normalize_advantage_, p_loss_val, q_loss_val);
+  train_ppo(p_model_, q_model_,
+	    s, a, q, logp, adv, ret,
+	    epsilon_, entropy_loss_coeff_, value_loss_coeff_, normalize_advantage_,
+	    p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_);
 }
 
 } // namespace on_policy

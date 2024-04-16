@@ -92,9 +92,31 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
 
   // normalize advantages if requested
   if (normalize_advantage && (batch_size > 1) ) {
-    torch::Tensor adv_mean = torch::mean(adv_tensor);
-    torch::Tensor adv_std = torch::std(adv_tensor);
+    // make sure we are not going to compute gradients
+    torch::NoGradGuard no_grad;
+    
+    // compute mean
+    torch::Tensor adv_mean = torch::mean(adv_tensor, true);
 
+    // average mean across all nodes
+    if (p_model.comm) {
+      std::vector<torch::Tensor> means = {adv_mean};
+      p_model.comm->allreduce(means, true);
+      adv_mean = means[0];
+    }
+
+    // compute std    
+    torch::Tensor adv_std = torch::mean(torch::square(adv_tensor - adv_mean), true);
+
+    // average across all nodes
+    if (p_model.comm) {
+      std::vector<torch::Tensor> stds = {adv_std};
+      p_model.comm->allreduce(stds, true);
+      adv_std = stds[0];
+    }
+    adv_std = torch::sqrt(adv_std);
+
+    // update advantage tensor
     adv_tensor = (adv_tensor - adv_mean) / (adv_std + 1.e-8);
   }
 

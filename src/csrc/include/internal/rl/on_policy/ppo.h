@@ -234,6 +234,7 @@ public:
 
   // we should pass a tuple (s, a, r, q, log_p, e)
   void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, float, float, bool);
+  void finalizeRolloutBuffer(float, bool);
   bool isReady();
 
   // train step

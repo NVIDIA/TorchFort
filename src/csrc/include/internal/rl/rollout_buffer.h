@@ -60,7 +60,7 @@ public:
 
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, float, float, float, bool) = 0;
-  virtual void finalizeTrajectory(float, bool) = 0;
+  virtual void finalize(float, bool) = 0;
   virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
   sample(int) = 0;
   virtual bool isReady() const = 0;
@@ -108,7 +108,7 @@ public:
   }
 
   // compute returns and advantages
-  void finalizeTrajectory(float last_value, bool done) {
+  void finalize(float last_value, bool done) {
     float last_gae_lam = 0.;
 
     // initialize starting values

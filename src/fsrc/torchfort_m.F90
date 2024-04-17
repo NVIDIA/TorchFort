@@ -276,7 +276,7 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_update_replay_buffer_F")
       import
       character(kind=c_char) :: mname(*)
-      !dir$ ignore_tkr state_old, state_new, act_old
+      !dir$ ignore_tkr (dk)state_old, (dk)state_new, (dk)act_old
       !GCC$ attributes no_arg_check :: state_old, state_new, act_old
       real(c_float) :: state_old(*), state_new(*), act_old(*)
       real(c_float) :: reward
@@ -311,7 +311,7 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_predict_explore_F")
       import
       character(kind=c_char) :: mname(*)
-      !dir$ ignore_tkr state, act
+      !dir$ ignore_tkr (dk)state, (dk)act
       !GCC$ attributes no_arg_check :: state, act
       real(c_float) :: state(*), act(*)
       integer(c_size_t), value :: state_dim, act_dim
@@ -326,7 +326,7 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_predict_F")
       import
       character(kind=c_char) :: mname(*)
-      !dir$ ignore_tkr state, act
+      !dir$ ignore_tkr (dk)state, (dk)act
       !GCC$ attributes no_arg_check :: state, act
       real(c_float) :: state(*), act(*)
       integer(c_size_t), value :: state_dim, act_dim

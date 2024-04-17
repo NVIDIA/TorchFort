@@ -54,13 +54,15 @@ extern "C" {
  * @param[in] name A name to assign to the created training system instance to use as a key for other TorchFort
  * routines.
  * @param[in] config_fname The filesystem path to the user-defined configuration file to use.
- * @param[in] model_device Which device type to place and run the model on. For TORCHFORT_DEVICE_GPU, model will be placed on currently set GPU.
- * @param[in] rb_device Which device type to place the replay buffer on. For TORCHFORT_DEVICE_GPU, model will be placed on currently set GPU.
+ * @param[in] model device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
+ * values >= 0, model will be placed on GPU with index corresponding to value.
+ * @param[in] rb_device Which device to place the replay buffer on. For TORCHFORT_DEVICE_CPU (-1), the replay buffer will be placed on CPU. For 
+ * values >= 0, the replay buffer will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const char* config_fname,
-							 torchfort_device_t model_device, torchfort_device_t rb_device);
+							 int model_device, int rb_device);
 
 /**
  * @brief Creates a (synchronous) data-parallel off-policy reinforcement learning system instance from a provided
@@ -70,13 +72,15 @@ torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const
  * routines.
  * @param[in] config_fname The filesystem path to the user-defined configuration file to use.
  * @param[in] mpi_comm MPI communicator to use to initialize NCCL communication library for data-parallel communication.
- * @param[in] model_device Which device type to place and run the model on. For TORCHFORT_DEVICE_GPU, model will be placed on currently set GPU.
- * @param[in] rb_device Which device type to place the replay buffer on. For TORCHFORT_DEVICE_GPU, model will be placed on currently set GPU.
+ * @param[in] model device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
+ * values >= 0, model will be placed on GPU with index corresponding to value.
+ * @param[in] rb_device Which device to place the replay buffer on. For TORCHFORT_DEVICE_CPU (-1), the replay buffer will be placed on CPU. For 
+ * values >= 0, the replay buffer will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char* name, const char* config_fname, MPI_Comm mpi_comm,
-								     torchfort_device_t model_device, torchfort_device_t rb_device);
+								     int model_device, int rb_device);
 
 //  RL training/prediction/evaluation functions
 /**

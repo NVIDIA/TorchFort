@@ -266,7 +266,7 @@ class TD3System : public RLOffPolicySystem, public std::enable_shared_from_this<
 
 public:
   // constructor
-  TD3System(const char* name, const YAML::Node& system_node, torchfort_device_t model_device, torchfort_device_t rb_device);
+  TD3System(const char* name, const YAML::Node& system_node, int model_device, int rb_device);
 
   // init communicators
   void initSystemComm(MPI_Comm mpi_comm);

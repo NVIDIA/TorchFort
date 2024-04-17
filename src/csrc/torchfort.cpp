@@ -60,7 +60,7 @@ torchfort_result_t torchfort_set_cudnn_benchmark(const bool flag) {
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_create_model(const char* name, const char* config_fname, torchfort_device_t device) {
+torchfort_result_t torchfort_create_model(const char* name, const char* config_fname, int device) {
   using namespace torchfort;
 
   try {
@@ -109,7 +109,7 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
 }
 
 torchfort_result_t torchfort_create_distributed_model(const char* name, const char* config_fname, MPI_Comm mpi_comm,
-                                                      torchfort_device_t device) {
+                                                      int device) {
   using namespace torchfort;
 
   try {

@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
 
   // instantiate torchfort
   CHECK_TORCHFORT(torchfort_rl_off_policy_create_system("td3_system", "config.yaml",
-							TORCHFORT_DEVICE_GPU, TORCHFORT_DEVICE_CPU));
+							0, TORCHFORT_DEVICE_CPU));
 
   // define variables
   StateVector state, state_new;

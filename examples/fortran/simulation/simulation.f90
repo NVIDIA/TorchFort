@@ -72,7 +72,7 @@ module simulation
       integer :: i, j
       real(real32) ::  x, y
 
-      !$acc parallel loop collapse(2) default(present) async if(simulation_device)
+      !$acc parallel loop collapse(2) default(present) async if(simulation_device >= 0)
       do j = js, je
         do i = 1, n
           x = -1.0 + dx * (i-1) - mod(ax*t, 2.0)
@@ -92,7 +92,7 @@ module simulation
       integer :: i, j
       real(real32) ::  x, y
 
-      !$acc parallel loop collapse(2) default(present) async if(simulation_device)
+      !$acc parallel loop collapse(2) default(present) async if(simulation_device >= 0)
       do j = js, je
         do i = 1, n
           x = -1.0 + dx * (i-1) - mod(ax*t, 2.0)
@@ -131,7 +131,7 @@ module simulation
       block
         integer(HSIZE_T) :: dims(size(shape(sample)))
 
-        !$acc update host(sample) if(simulation_device)
+        !$acc update host(sample) if(simulation_device >= 0)
 
         call h5open_f(err)
         call h5fcreate_f (fname, H5F_ACC_TRUNC_F, out_file_id, err)

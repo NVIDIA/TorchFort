@@ -33,9 +33,9 @@ subroutine print_help_message
   "\t--configfile\n" // &
   "\t\tTorchFort configuration file to use. (default: config_mlp_native.yaml) \n" // &
   "\t--simulation_device\n" // &
-  "\t\tDevice to run simulation on. (0 for CPU, 1 for GPU. default: GPU) \n" // &
+  "\t\tDevice to run simulation on. (-1 for CPU, 0 for GPU. default: GPU) \n" // &
   "\t--train_device\n" // &
-  "\t\tDevice to run model training/inference on. (0 for CPU, 1 for GPU. default: GPU) \n" // &
+  "\t\tDevice to run model training/inference on. (-1 for CPU, 0 for GPU. default: GPU) \n" // &
   "\t--ntrain_steps\n" // &
   "\t\tNumber of training steps to run. (default: 100000) \n" // &
   "\t--nval_steps\n" // &
@@ -90,9 +90,8 @@ program train_distributed
   integer :: ntrain_steps = 100000
   integer :: nval_steps = 1000
   integer :: val_write_freq = 10
-  integer :: model_device_arg = 1
-  integer :: model_device = TORCHFORT_DEVICE_GPU
-  integer :: simulation_device = 1
+  integer :: model_device = 0
+  integer :: simulation_device = 0
 
   logical :: skip_next
   character(len=256) :: arg
@@ -149,12 +148,8 @@ program train_distributed
         skip_next = .true.
       case('--train_device')
         call get_command_argument(i+1, arg)
-        read(arg, *) model_device_arg
-        if (model_device_arg == 0) then
-          model_device = TORCHFORT_DEVICE_CPU
-        elseif(model_device_arg == 1) then
-          model_device = TORCHFORT_DEVICE_GPU
-        else
+        read(arg, *) model_device
+        if (model_device /= -1 .and. model_device /= 0) then
           print*, "Invalid train device type argument."
           call exit(1)
         endif
@@ -162,7 +157,7 @@ program train_distributed
       case('--simulation_device')
         call get_command_argument(i+1, arg)
         read(arg, *) simulation_device
-        if (simulation_device /= 0 .and. simulation_device /= 1) then
+        if (simulation_device /= -1 .and. simulation_device /= 0) then
           print*, "Invalid simulation device type argument."
           call exit(1)
         endif
@@ -178,25 +173,30 @@ program train_distributed
   end do
 
 #ifndef _OPENACC
-  if (simulation_device == 1) then
-    print*, "OpenACC support required to run simulation on GPU."
+  if (simulation_device /= -1) then
+    print*, "OpenACC support required to run simulation on GPU. &
+             Set --simulation_device -1 to run simulation on CPU."
     call exit(1)
   endif
 #endif
 #ifdef _OPENACC
-  if (simulation_device) then
+  if (simulation_device == 0) then
     ! assign GPUs by local rank
     dev_type = acc_get_device_type()
     call acc_set_device_num(local_rank, dev_type)
     call acc_init(dev_type)
   endif
 #endif
+  if (model_device == 0) then
+    ! assign GPUs by local rank
+    model_device = local_rank
+  endif
 
 
   if (rank == 0) then
     print*, "Run settings:"
     print*, "\tconfigfile: ", trim(configfile)
-    if (simulation_device == 0) then
+    if (simulation_device == TORCHFORT_DEVICE_CPU) then
       print*, "\tsimulation_device: cpu"
     else
       print*, "\tsimulation_device: gpu"
@@ -271,11 +271,11 @@ program train_distributed
 
   ! run training
   if (rank == 0 .and. ntrain_steps >= 1) print*, "start training..."
-  !$acc data copyin(u, u_div, input, label, input_local, label_local) if(simulation_device)
+  !$acc data copyin(u, u_div, input, label, input_local, label_local) if(simulation_device >= 0)
   do i = 1, ntrain_steps
     do j = 1, batch_size * nranks
       call run_simulation_step(u, u_div)
-      !$acc kernels if(simulation_device) async
+      !$acc kernels if(simulation_device >= 0) async
       input_local(:,:,1,j) = u
       label_local(:,:,1,j) = u_div
       !$acc end kernels
@@ -285,7 +285,7 @@ program train_distributed
 
     ! distribute local batch data across GPUs for data parallel training
     do j = 1, batch_size
-      !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device)
+      !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device >= 0)
       call MPI_Alltoallv(input_local(:,:,1,j), sendcounts, sdispls, MPI_FLOAT, &
                          input(:,:,1,j), recvcounts, rdispls, MPI_FLOAT, &
                          MPI_COMM_WORLD, istat)
@@ -296,7 +296,7 @@ program train_distributed
     end do
 
     !$acc wait
-    !$acc host_data use_device(input, label) if(simulation_device)
+    !$acc host_data use_device(input, label) if(simulation_device >= 0)
     istat = torchfort_train("mymodel", input, label, loss_val)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     !$acc end host_data
@@ -307,10 +307,10 @@ program train_distributed
 
   ! run inference
   if (rank == 0 .and. nval_steps >= 1) print*, "start validation..."
-  !$acc data copyin(u, u_div, input, label, input_local, label_local) copyout(output) if(simulation_device)
+  !$acc data copyin(u, u_div, input, label, input_local, label_local) copyout(output) if(simulation_device >= 0)
   do i = 1, nval_steps
     call run_simulation_step(u, u_div)
-    !$acc kernels async if(simulation_device)
+    !$acc kernels async if(simulation_device >= 0)
     input_local(:,:,1,1) = u
     label_local(:,:,1,1) = u_div
     !$acc end kernels
@@ -318,7 +318,7 @@ program train_distributed
     !$acc wait
 
     ! gather sample on all GPUs
-    !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device)
+    !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device >= 0)
     call MPI_Allgather(input_local(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        input(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        MPI_COMM_WORLD, istat)
@@ -328,13 +328,13 @@ program train_distributed
     !$acc end host_data
 
     !$acc wait
-    !$acc host_data use_device(input, output) if(simulation_device)
+    !$acc host_data use_device(input, output) if(simulation_device >= 0)
     istat = torchfort_inference("mymodel", input(:,:,1:1,1:1), output(:,:,1:1,1:1))
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     !$acc end host_data
     !$acc wait
 
-    !$acc kernels if(simulation_device)
+    !$acc kernels if(simulation_device >= 0)
     mse = sum((label(:,:,1,1) - output(:,:,1,1))**2) / (n*n)
     !$acc end kernels
 

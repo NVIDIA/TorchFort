@@ -40,7 +40,6 @@ module torchfort
   ! enum for torchfort supported device types
   enum, bind(c) ! torchfort_device
     enumerator :: TORCHFORT_DEVICE_CPU = -1
-    enumerator :: TORCHFORT_DEVICE_GPU = -2
   end enum
 
   ! enum for torchfort return values

@@ -56,7 +56,7 @@ public:
   // disable copy constructor
   ReplayBuffer(const ReplayBuffer&) = delete;
   // base constructor
-  ReplayBuffer(size_t max_size, size_t min_size, torchfort_device_t device) : max_size_(max_size), min_size_(min_size), device_(get_device(device)) {}
+  ReplayBuffer(size_t max_size, size_t min_size, int device) : max_size_(max_size), min_size_(min_size), device_(get_device(device)) {}
 
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, torch::Tensor, float, bool) = 0;
@@ -78,7 +78,7 @@ class UniformReplayBuffer : public ReplayBuffer, public std::enable_shared_from_
 
 public:
   // constructor
-  UniformReplayBuffer(size_t max_size, size_t min_size, torchfort_device_t device)
+  UniformReplayBuffer(size_t max_size, size_t min_size, int device)
     : ReplayBuffer(max_size, min_size, device), rng_() {}
 
   // disable copy constructor

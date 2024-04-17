@@ -30,15 +30,12 @@
 
 #pragma once
 
+#define TORCHFORT_DEVICE_CPU (-1)
+
 /**
  * @brief This enum defines the data types supported.
  */
 enum torchfort_datatype_t { TORCHFORT_FLOAT = -1, TORCHFORT_DOUBLE = -2 };
-
-/**
- * @brief This enum defines the device types supported.
- */
-enum torchfort_device_t { TORCHFORT_DEVICE_CPU = -1, TORCHFORT_DEVICE_GPU = -2 };
 
 /**
  * @brief This enum defines the possible values return values from TorchFort. Most functions in the TorchFort library

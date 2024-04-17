@@ -38,7 +38,7 @@ namespace torchfort {
 namespace rl {
 
 TD3System::TD3System(const char* name, const YAML::Node& system_node,
-		     torchfort_device_t model_device, torchfort_device_t rb_device)
+		     int model_device, int rb_device)
   : model_device_(get_device(model_device)), rb_device_(get_device(rb_device)) {
 
   // get basic parameters first

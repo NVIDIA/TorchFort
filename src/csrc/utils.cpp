@@ -58,20 +58,10 @@ std::string filename_sanitize(std::string s) {
   return s;
 }
 
-torch::Device get_device(int device_id) {
-  torch::Device device(torch::kCPU);
-  if (device_id >= 0) {
-    device = torch::Device(torch::kCUDA, device_id);
-  }
-  return device;
-}
-
-torch::Device get_device(torchfort_device_t device) {
+torch::Device get_device(int device) {
   torch::Device device_torch(torch::kCPU);
-  if (device == TORCHFORT_DEVICE_GPU) {
-    int device_id;
-    CHECK_CUDA(cudaGetDevice(&device_id));
-    device_torch = torch::Device(torch::kCUDA, device_id);
+  if (device != TORCHFORT_DEVICE_CPU) {
+    device_torch = torch::Device(torch::kCUDA, device);
   }
   return device_torch;
 }

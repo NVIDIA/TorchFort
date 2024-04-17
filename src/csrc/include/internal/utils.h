@@ -50,11 +50,8 @@ std::string sanitize(std::string s);
 // Function to convert a string to a filename
 std::string filename_sanitize(std::string s);
 
-// Function to return torch device from integer device id
-torch::Device get_device(int device_id);
-
-// Function to return torch device from torchfort_device_t
-torch::Device get_device(torchfort_device_t device);
+// Function to return torch device from integer device value
+torch::Device get_device(int device);
 
 // Function to return torch device from pointer
 torch::Device get_device(const void* ptr);

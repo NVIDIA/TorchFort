@@ -59,23 +59,25 @@ extern "C" {
  *
  * @param[in] name A name to assign to the created model instance to use as a key for other TorchFort routines.
  * @param[in] config_fname The filesystem path to the user-defined model configuration file to use.
- * @param[in] device Which device type to place and run the model on. For TORCHFORT_DEVICE_GPU, model will be placed on currently set GPU.
+ * @param[in] device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
+ * values >= 0, model will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_create_model(const char* name, const char* config_fname, torchfort_device_t device);
+torchfort_result_t torchfort_create_model(const char* name, const char* config_fname, int device);
 /**
  * @brief Creates a distributed data-parallel model from a provided configuration file.
  *
  * @param[in] name A name to assign to created model to use as a key for other TorchFort routines.
  * @param[in] config_fname The filesystem path to the user-defined model configuration file to use.
  * @param[in] mpi_comm MPI communicator to use to initialize NCCL communication library for data-parallel communication.
- * @param[in] device Which device type to place and run the model on. For TORCHFORT_DEVICE_GPU, model will be placed on currently set GPU.
+ * @param[in] device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
+ * values >= 0, model will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_create_distributed_model(const char* name, const char* config_fname, MPI_Comm mpi_comm,
-                                                      torchfort_device_t device);
+                                                      int device);
 
 // Training and inference functions
 /**

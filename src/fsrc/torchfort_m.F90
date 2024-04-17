@@ -114,7 +114,7 @@ module torchfort
       bind(C, name="torchfort_inference_F")
       import
       character(kind=c_char) :: mname(*)
-      !dir$ ignore_tkr input, output
+      !dir$ ignore_tkr (dk)input, (dk)output
       !GCC$ attributes no_arg_check :: input, output
       real(c_float) :: input(*), output(*)
       integer(c_size_t), value :: input_dim, output_dim
@@ -130,8 +130,8 @@ module torchfort
       bind(C, name="torchfort_train_F")
       import
       character(kind=c_char) :: mname(*)
-      !dir$ ignore_tkr input, label, loss_val
-      !GCC$ attributes no_arg_check :: input, label, loss_val
+      !dir$ ignore_tkr (dk)input, (dk)label, (k)loss_val
+      !GCC$ attributes no_arg_check :: input, label
       real(c_float) :: input(*), label(*)
       real(c_float) :: loss_val
       integer(c_size_t), value :: input_dim, label_dim
@@ -276,8 +276,8 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_update_replay_buffer_F")
       import
       character(kind=c_char) :: mname(*)
-      !dir$ ignore_tkr (dk)state_old, (dk)state_new, (dk)act_old
-      !GCC$ attributes no_arg_check :: state_old, state_new, act_old
+      !dir$ ignore_tkr (dk)state_old, (dk)state_new, (dk)act_old, (k)reward
+      !GCC$ attributes no_arg_check :: state_old, state_new, act_old, reward
       real(c_float) :: state_old(*), state_new(*), act_old(*)
       real(c_float) :: reward
       logical, value :: terminal
@@ -327,7 +327,7 @@ module torchfort
       import
       character(kind=c_char) :: mname(*)
       !dir$ ignore_tkr (dk)state, (dk)act
-      !GCC$ attributes no_arg_check :: state, act
+      !GCC$ attributes no_arg_check :: state, act  
       real(c_float) :: state(*), act(*)
       integer(c_size_t), value :: state_dim, act_dim
       integer(c_int64_t) :: state_shape(*), act_shape(*)
@@ -343,7 +343,11 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_evaluate_F")
       import
       character(kind=c_char) :: mname(*)
+<<<<<<< HEAD
       !dir$ ignore_tkr state, act, reward
+=======
+      !dir$ ignore_tkr (dk)state, (dk)act, (dk)reward
+>>>>>>> adding tkr
       !GCC$ attributes no_arg_check :: state, act, reward
       real(c_float) :: state(*), act(*), reward(*)
       integer(c_size_t), value :: state_dim, act_dim, reward_dim
@@ -597,25 +601,28 @@ module torchfort
      module procedure torchfort_rl_off_policy_train_step_float
   end interface torchfort_rl_off_policy_train_step
   
-  interface  torchfort_rl_off_policy_predict_explore
+  interface torchfort_rl_off_policy_predict_explore
      module procedure torchfort_rl_off_policy_predict_explore_float_4d
 #ifdef _CUDA
      module procedure torchfort_rl_off_policy_predict_explore_float_4d_dev
 #endif
   end interface torchfort_rl_off_policy_predict_explore
 
-  interface  torchfort_rl_off_policy_predict
+  interface torchfort_rl_off_policy_predict
      module procedure torchfort_rl_off_policy_predict_float_4d
 #ifdef _CUDA
      module procedure torchfort_rl_off_policy_predict_float_4d_dev
 #endif
   end interface torchfort_rl_off_policy_predict
 
-  interface  torchfort_rl_off_policy_evaluate
+  interface torchfort_rl_off_policy_evaluate
      module procedure torchfort_rl_off_policy_evaluate_float_4d
+<<<<<<< HEAD
 #ifdef _CUDA
      module procedure torchfort_rl_off_policy_evaluate_float_4d_dev
 #endif
+=======
+>>>>>>> adding tkr
   end interface torchfort_rl_off_policy_evaluate
 
   ! interfaces for RL on-policy routines
@@ -1956,40 +1963,6 @@ contains
     end block
   end function torchfort_rl_off_policy_evaluate_float_4d_dev
 #endif
-
-  function torchfort_rl_off_policy_evaluate_double_4d(mname, state, act, reward, stream) result(res)
-    character(len=*) :: mname
-    real(real64) :: state(:, :, :, :), act(:, :, :, :), reward(:, :)
-    integer(int64), optional :: stream
-    integer(c_int) :: res
-
-    integer(int64) :: stream_
-
-    integer(c_size_t) :: state_dim, act_dim, reward_dim
-
-    state_dim = size(shape(state))
-    act_dim = size(shape(act))
-    reward_dim = size(shape(reward))
-
-    stream_ = 0
-    if (present(stream)) stream_ = stream
-
-    block
-      integer(c_int64_t) :: state_shape(state_dim)
-      integer(c_int64_t) :: act_shape(act_dim)
-      integer(c_int64_t) :: reward_shape(reward_dim)
-
-      state_shape(:) = shape(state)
-      act_shape(:) = shape(act)
-      reward_shape(:) = shape(reward)
-
-      res = torchfort_rl_off_policy_evaluate_c([trim(mname), C_NULL_CHAR], &
-                                               state, state_dim, state_shape, &
-                                               act, act_dim, act_shape, &
-                                               reward, reward_dim, reward_shape, &
-                                               TORCHFORT_DOUBLE, stream_)
-    end block
-  end function torchfort_rl_off_policy_evaluate_double_4d
 
   ! RL on-policy related routines
   ! logging

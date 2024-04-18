@@ -516,14 +516,14 @@ void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
   }
 
   // ensure all models are on the correct devices
-  p_model_.model->to(model_device_);
-  p_model_target_.model->to(model_device_);
-  for (auto& q_model : q_models_) {
-    q_model.model->to(model_device_);
-  }
-  for (auto& q_model_target : q_models_target_) {
-    q_model_target.model->to(model_device_);
-  }
+  //p_model_.model->to(model_device_);
+  //p_model_target_.model->to(model_device_);
+  //for (auto& q_model : q_models_) {
+  //  q_model.model->to(model_device_);
+  //}
+  //for (auto& q_model_target : q_models_target_) {
+  //  q_model_target.model->to(model_device_);
+  //}
   
   // train step
   std::vector<float> q_loss_vals;

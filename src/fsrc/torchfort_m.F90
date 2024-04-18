@@ -276,6 +276,8 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_update_replay_buffer_F")
       import
       character(kind=c_char) :: mname(*)
+      !dir$ ignore_tkr state_old, state_new, act_old
+      !GCC$ attributes no_arg_check :: state_old, state_new, act_old
       real(c_float) :: state_old(*), state_new(*), act_old(*)
       real(c_float) :: reward
       logical, value :: terminal
@@ -309,6 +311,8 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_predict_explore_F")
       import
       character(kind=c_char) :: mname(*)
+      !dir$ ignore_tkr state, act
+      !GCC$ attributes no_arg_check :: state, act
       real(c_float) :: state(*), act(*)
       integer(c_size_t), value :: state_dim, act_dim
       integer(c_int64_t) :: state_shape(*), act_shape(*)
@@ -322,6 +326,8 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_predict_F")
       import
       character(kind=c_char) :: mname(*)
+      !dir$ ignore_tkr state, act
+      !GCC$ attributes no_arg_check :: state, act
       real(c_float) :: state(*), act(*)
       integer(c_size_t), value :: state_dim, act_dim
       integer(c_int64_t) :: state_shape(*), act_shape(*)
@@ -337,6 +343,8 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_evaluate_F")
       import
       character(kind=c_char) :: mname(*)
+      !dir$ ignore_tkr state, act, reward
+      !GCC$ attributes no_arg_check :: state, act, reward
       real(c_float) :: state(*), act(*), reward(*)
       integer(c_size_t), value :: state_dim, act_dim, reward_dim
       integer(c_int64_t) :: state_shape(*), act_shape(*), reward_shape(*)
@@ -364,6 +372,14 @@ module torchfort
     module procedure torchfort_inference_double_3d
     module procedure torchfort_inference_float_4d
     module procedure torchfort_inference_double_4d
+#ifdef _CUDA
+    module procedure torchfort_inference_float_2d_dev
+    module procedure torchfort_inference_double_2d_dev
+    module procedure torchfort_inference_float_3d_dev
+    module procedure torchfort_inference_double_3d_dev
+    module procedure torchfort_inference_float_4d_dev
+    module procedure torchfort_inference_double_4d_dev
+#endif
   end interface torchfort_inference
 
   ! Generic interface for training
@@ -374,6 +390,14 @@ module torchfort
     module procedure torchfort_train_double_3d
     module procedure torchfort_train_float_4d
     module procedure torchfort_train_double_4d
+#ifdef _CUDA
+    module procedure torchfort_train_float_2d_dev
+    module procedure torchfort_train_double_2d_dev
+    module procedure torchfort_train_float_3d_dev
+    module procedure torchfort_train_double_3d_dev
+    module procedure torchfort_train_float_4d_dev
+    module procedure torchfort_train_double_4d_dev
+#endif
   end interface torchfort_train
 
   ! Generic interface for distributed setup
@@ -409,6 +433,9 @@ module torchfort
   ! Generic interface for training
   interface torchfort_rl_off_policy_update_replay_buffer
      module procedure torchfort_rl_off_policy_update_replay_buffer_float_3d
+#ifdef _CUDA
+     module procedure torchfort_rl_off_policy_update_replay_buffer_float_3d_dev
+#endif
   end interface torchfort_rl_off_policy_update_replay_buffer
 
   interface torchfort_rl_off_policy_train_step
@@ -417,14 +444,23 @@ module torchfort
   
   interface  torchfort_rl_off_policy_predict_explore
      module procedure torchfort_rl_off_policy_predict_explore_float_4d
+#ifdef _CUDA
+     module procedure torchfort_rl_off_policy_predict_explore_float_4d_dev
+#endif
   end interface torchfort_rl_off_policy_predict_explore
 
   interface  torchfort_rl_off_policy_predict
      module procedure torchfort_rl_off_policy_predict_float_4d
+#ifdef _CUDA
+     module procedure torchfort_rl_off_policy_predict_float_4d_dev
+#endif
   end interface torchfort_rl_off_policy_predict
 
   interface  torchfort_rl_off_policy_evaluate
      module procedure torchfort_rl_off_policy_evaluate_float_4d
+#ifdef _CUDA
+     module procedure torchfort_rl_off_policy_evaluate_float_4d_dev
+#endif
   end interface torchfort_rl_off_policy_evaluate
 
 contains
@@ -718,6 +754,187 @@ contains
     end block
   end function torchfort_inference_double_4d
 
+#ifdef _CUDA
+  function torchfort_inference_float_2d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname), C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_2d_dev
+
+  function torchfort_inference_double_2d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname), C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_2d_dev
+
+  function torchfort_inference_float_3d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname), C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_3d_dev
+
+  function torchfort_inference_double_3d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname), C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_3d_dev
+
+  function torchfort_inference_float_4d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname), C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_4d_dev
+
+  function torchfort_inference_double_4d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname), C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_4d_dev
+#endif
+
   ! Training routines
   function torchfort_train_float_2d(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
@@ -904,6 +1121,194 @@ contains
                               loss_val, TORCHFORT_DOUBLE, stream_)
     end block
   end function torchfort_train_double_4d
+
+#ifdef _CUDA
+  function torchfort_train_float_2d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :), label(:, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname), C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_2d_dev
+
+  function torchfort_train_double_2d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :), label(:, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname), C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_2d_dev
+
+  function torchfort_train_float_3d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), label(:, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname), C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_3d_dev
+
+  function torchfort_train_double_3d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :), label(:, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname), C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_3d_dev
+
+  function torchfort_train_float_4d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), label(:, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname), C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_4d_dev
+
+  function torchfort_train_double_4d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :), label(:, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname), C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_4d_dev
+#endif
 
   function torchfort_save_model(mname, fname) result(res)
     character(len=*) :: mname
@@ -1108,6 +1513,40 @@ contains
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_3d
 
+#ifdef _CUDA
+  function torchfort_rl_off_policy_update_replay_buffer_float_3d_dev(mname, state_old, act_old, state_new, &
+                                                                     reward, terminal, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: state_old(:, :, :), state_new(:, :, :), act_old(:, :, :)
+    real(real32) :: reward
+    logical :: terminal
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    
+    integer(c_size_t) :: state_dim, act_dim
+    state_dim = size(shape(state_old))
+    act_dim = size(shape(act_old))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: state_shape(state_dim)
+      integer(c_int64_t) :: act_shape(act_dim)
+
+      state_shape(:) = shape(state_old)
+      act_shape(:) = shape(act_old)
+
+      res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname), C_NULL_CHAR], &
+                                                            state_old, state_new, state_dim, state_shape, &
+                                                            act_old, act_dim, act_shape, &
+                                                            reward, terminal, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_rl_off_policy_update_replay_buffer_float_3d_dev
+#endif
+
   function torchfort_rl_off_policy_is_ready(mname, ready) result(res)
     character(len=*) :: mname
     logical :: ready
@@ -1160,6 +1599,38 @@ contains
     end block
   end function torchfort_rl_off_policy_predict_explore_float_4d
 
+#ifdef _CUDA
+  function torchfort_rl_off_policy_predict_explore_float_4d_dev(mname, state, act, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: state(:, :, :, :), act(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: state_dim, act_dim
+
+    state_dim = size(shape(state))
+    act_dim = size(shape(act))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: state_shape(state_dim)
+      integer(c_int64_t) :: act_shape(act_dim)
+
+      state_shape(:) = shape(state)
+      act_shape(:) = shape(act)
+
+      res = torchfort_rl_off_policy_predict_explore_c([trim(mname), C_NULL_CHAR], &
+                                                      state, state_dim, state_shape, &
+                                                      act, act_dim, act_shape, &
+                                                      TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_rl_off_policy_predict_explore_float_4d_dev
+#endif
+
   function torchfort_rl_off_policy_predict_float_4d(mname, state, act, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state(:, :, :, :), act(:, :, :, :)
@@ -1189,6 +1660,38 @@ contains
                                               TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_predict_float_4d
+
+#ifdef _CUDA
+  function torchfort_rl_off_policy_predict_float_4d_dev(mname, state, act, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: state(:, :, :, :), act(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: state_dim, act_dim
+
+    state_dim = size(shape(state))
+    act_dim = size(shape(act))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: state_shape(state_dim)
+      integer(c_int64_t) :: act_shape(act_dim)
+
+      state_shape(:) = shape(state)
+      act_shape(:) = shape(act)
+
+      res = torchfort_rl_off_policy_predict_c([trim(mname), C_NULL_CHAR], &
+                                              state, state_dim, state_shape, &
+                                              act, act_dim, act_shape, &
+                                              TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_rl_off_policy_predict_float_4d_dev
+#endif
 
   function torchfort_rl_off_policy_evaluate_float_4d(mname, state, act, reward, stream) result(res)
     character(len=*) :: mname
@@ -1223,4 +1726,40 @@ contains
                                                TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_evaluate_float_4d
+
+#ifdef _CUDA
+  function torchfort_rl_off_policy_evaluate_float_4d_dev(mname, state, act, reward, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: state(:, :, :, :), act(:, :, :, :), reward(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: state_dim, act_dim, reward_dim
+
+    state_dim = size(shape(state))
+    act_dim = size(shape(act))
+    reward_dim = size(shape(reward))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: state_shape(state_dim)
+      integer(c_int64_t) :: act_shape(act_dim)
+      integer(c_int64_t) :: reward_shape(reward_dim)
+
+      state_shape(:) = shape(state)
+      act_shape(:) = shape(act)
+      reward_shape(:) = shape(reward)
+
+      res = torchfort_rl_off_policy_evaluate_c([trim(mname), C_NULL_CHAR], &
+                                               state, state_dim, state_shape, &
+                                               act, act_dim, act_shape, &
+                                               reward, reward_dim, reward_shape, &
+                                               TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_rl_off_policy_evaluate_float_4d_dev
+#endif
 end module torchfort

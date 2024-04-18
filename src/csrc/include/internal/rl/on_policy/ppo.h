@@ -82,14 +82,6 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   assert(adv_tensor.size(1) == 1);
   assert(ret_tensor.size(1) == 1);
 
-  // get tensors
-  state_tensor = state_tensor.to(p_model.model->device());
-  action_tensor = action_tensor.to(p_model.model->device());
-  q_tensor = q_tensor.to(p_model.model->device());
-  log_p_tensor = log_p_tensor.to(p_model.model->device());
-  adv_tensor = adv_tensor.to(p_model.model->device());
-  ret_tensor = ret_tensor.to(p_model.model->device());
-
   // normalize advantages if requested
   if (normalize_advantage && (batch_size > 1) ) {
     // make sure we are not going to compute gradients

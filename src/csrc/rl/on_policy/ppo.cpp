@@ -355,7 +355,7 @@ torch::Tensor PPOSystem::predict(torch::Tensor state) {
   // prepare inputs
   p_model_.model->to(model_device_);
   p_model_.model->eval();
-  state.to(model_device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   auto action = (p_model_.model)->forwardDeterministic(state);
@@ -373,7 +373,7 @@ torch::Tensor PPOSystem::predictExplore(torch::Tensor state) {
   // prepare inputs
   p_model_.model->to(model_device_);
   p_model_.model->eval();
-  state.to(model_device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   torch::Tensor action, log_probs;
@@ -392,8 +392,8 @@ torch::Tensor PPOSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   // prepare inputs
   q_model_.model->to(model_device_);
   q_model_.model->eval();
-  state.to(model_device_);
-  action.to(model_device_);
+  state = state.to(model_device_);
+  action = action.to(model_device_);
 
   // scale action
   auto action_scale = scale_action(action, a_low_, a_high_);
@@ -417,12 +417,12 @@ torch::Tensor PPOSystem::evaluate(torch::Tensor state, torch::Tensor action) {
     std::tie(s, a, q, logp, adv, ret) = rollout_buffer_->sample(batch_size_);
 
     // upload to device
-    s.to(model_device_);
-    a.to(model_device_);
-    q.to(model_device_);
-    logp.to(model_device_);
-    adv.to(model_device_);
-    ret.to(model_device_);
+    s = s.to(model_device_);
+    a = a.to(model_device_);
+    q = q.to(model_device_);
+    logp = logp.to(model_device_);
+    adv = adv.to(model_device_);
+    ret = ret.to(model_device_);
   }
 
   // train step

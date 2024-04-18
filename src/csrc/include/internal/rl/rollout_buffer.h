@@ -174,8 +174,8 @@ public:
     }
     
     // stack the lists
-    auto stens = torch::stack(stens_list, 0);
-    auto atens = torch::stack(atens_list, 0);
+    auto stens = torch::stack(stens_list, 0).clone();
+    auto atens = torch::stack(atens_list, 0).clone();
 
     // create new tensors
     auto options = torch::TensorOptions().dtype(torch::kFloat32);

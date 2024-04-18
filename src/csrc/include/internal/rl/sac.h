@@ -86,26 +86,12 @@ void train_sac(const SACPolicyPack& p_model, const std::vector<ModelPack>& q_mod
   assert(reward_tensor.size(1) == 1);
   assert(d_tensor.size(1) == 1);
 
-  // device handling
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  torch::Device device = get_device(device_id);
-
-  // get tensors
-  state_old_tensor = state_old_tensor.to(device);
-  state_new_tensor = state_new_tensor.to(device);
-  action_old_tensor = action_old_tensor.to(device);
-  reward_tensor = reward_tensor.to(device);
-  d_tensor = d_tensor.to(device);
-
   // value functions
   // move models to device
   for (const auto& q_model : q_models) {
-    q_model.model->to(device);
     q_model.model->train();
   }
   for (const auto& q_model_target : q_models_target) {
-    q_model_target.model->to(device);
     q_model_target.model->train();
   }
 
@@ -114,8 +100,6 @@ void train_sac(const SACPolicyPack& p_model, const std::vector<ModelPack>& q_mod
   auto q_loss_func = torch::nn::MSELoss(torch::nn::MSELossOptions().reduction(torch::kMean));
 
   // policy function
-  p_model.model->to(device);
-
   // compute y: use the target models for q_new, no grads
   torch::Tensor y_tensor;
   {

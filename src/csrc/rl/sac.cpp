@@ -474,13 +474,22 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_, gamma_, nstep_, nstep_reward_reduction_);
 
     // upload to device
-    s.to(model_device_);
-    a.to(model_device_);
-    sp.to(model_device_);
-    r.to(model_device_);
-    d.to(model_device_);
+    s = s.to(model_device_);
+    a = a.to(model_device_);
+    sp = sp.to(model_device_);
+    r = r.to(model_device_);
+    d = d.to(model_device_);
   }
 
+  // ensure all models are on the correct devices
+  p_model_.model->to(model_device_);
+  for (auto& q_model : q_models_) {
+    q_model.model->to(model_device_);
+  }
+  for (auto& q_model_target : q_models_target_) {
+    q_model_target.model->to(model_device_);
+  }
+  
   // train step
   std::vector<float> q_loss_vals;
   train_sac(p_model_, q_models_, q_models_target_, s, sp, a, r, d, static_cast<float>(std::pow(gamma_, nstep_)), rho_,

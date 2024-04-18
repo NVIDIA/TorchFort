@@ -502,14 +502,24 @@ void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
     std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_, gamma_, nstep_, nstep_reward_reduction_);
 
     // upload to device
-    s.to(model_device_);
-    a.to(model_device_);
-    sp.to(model_device_);
-    r.to(model_device_);
-    d.to(model_device_);
+    s = s.to(model_device_);
+    a = a.to(model_device_);
+    sp = sp.to(model_device_);
+    r = r.to(model_device_);
+    d = d.to(model_device_);
 
     // get a new action by predicting one with target network
     ap = predictWithNoiseTrain_(sp);
+  }
+
+  // ensure all models are on the correct devices
+  p_model_.model->to(model_device_);
+  p_model_target_.model->to(model_device_);
+  for (auto& q_model : q_models_) {
+    q_model.model->to(model_device_);
+  }
+  for (auto& q_model_target : q_models_target_) {
+    q_model_target.model->to(model_device_);
   }
 
   // train step

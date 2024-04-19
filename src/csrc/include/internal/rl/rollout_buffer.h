@@ -56,7 +56,7 @@ public:
   // disable copy constructor
   RolloutBuffer(const RolloutBuffer&) = delete;
   // base constructor
-  RolloutBuffer(size_t size, torchfort_device_t device) : size_(size), device_(get_device(device)) {}
+  RolloutBuffer(size_t size, int device) : size_(size), device_(get_device(device)) {}
 
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, float, float, float, bool) = 0;
@@ -79,7 +79,7 @@ class GAELambdaRolloutBuffer : public RolloutBuffer, public std::enable_shared_f
 
 public:
   // constructor
-  GAELambdaRolloutBuffer(size_t size, float gamma, float lambda, torchfort_device_t device)
+  GAELambdaRolloutBuffer(size_t size, float gamma, float lambda, int device)
     : RolloutBuffer(size, device), finalized_(false), gamma_(gamma), lambda_(lambda), rng_(), returns_(size), advantages_(size) {}
 
   // disable copy constructor

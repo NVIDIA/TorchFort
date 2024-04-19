@@ -62,7 +62,7 @@ std::unordered_map<std::string, std::shared_ptr<RLOnPolicySystem>> registry;
 } // namespace torchfort
 
 torchfort_result_t torchfort_rl_on_policy_create_system(const char* name, const char* config_fname,
-							torchfort_device_t model_device, torchfort_device_t rb_device) {
+							int model_device, int rb_device) {
   using namespace torchfort;
 
   try {
@@ -93,7 +93,7 @@ torchfort_result_t torchfort_rl_on_policy_create_system(const char* name, const 
 }
 
 torchfort_result_t torchfort_rl_on_policy_create_distributed_system(const char* name, const char* config_fname, MPI_Comm mpi_comm,
-								     torchfort_device_t model_device, torchfort_device_t rb_device) {
+								    int model_device, int rb_device) {
   using namespace torchfort;
 
   try {

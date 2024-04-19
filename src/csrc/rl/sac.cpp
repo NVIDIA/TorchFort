@@ -412,7 +412,7 @@ torch::Tensor SACSystem::predict(torch::Tensor state) {
   // prepare inputs
   p_model_.model->to(model_device_);
   p_model_.model->eval();
-  state.to(model_device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   auto action = (p_model_.model)->forwardDeterministic(state);
@@ -430,7 +430,7 @@ torch::Tensor SACSystem::predictExplore(torch::Tensor state) {
   // prepare inputs
   p_model_.model->to(model_device_);
   p_model_.model->eval();
-  state.to(model_device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   torch::Tensor action, log_probs;
@@ -449,8 +449,8 @@ torch::Tensor SACSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   // prepare inputs
   q_models_target_[0].model->to(model_device_);
   q_models_target_[0].model->eval();
-  state.to(model_device_);
-  action.to(model_device_);
+  state = state.to(model_device_);
+  action = action.to(model_device_);
 
   // scale action
   auto action_scale = scale_action(action, a_low_, a_high_);
@@ -479,15 +479,6 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     sp = sp.to(model_device_);
     r = r.to(model_device_);
     d = d.to(model_device_);
-  }
-
-  // ensure all models are on the correct devices
-  p_model_.model->to(model_device_);
-  for (auto& q_model : q_models_) {
-    q_model.model->to(model_device_);
-  }
-  for (auto& q_model_target : q_models_target_) {
-    q_model_target.model->to(model_device_);
   }
   
   // train step

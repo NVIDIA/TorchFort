@@ -367,7 +367,7 @@ torch::Tensor DDPGSystem::predictWithNoiseTrain_(torch::Tensor state) {
   // prepare inputs
   p_model_target_.model->to(model_device_);
   p_model_target_.model->eval();
-  state.to(model_device_);
+  state = state.to(model_device_);
 
   // get noisy prediction
   auto action = (*noise_actor_train_)(p_model_target_, state);
@@ -396,7 +396,7 @@ torch::Tensor DDPGSystem::predict(torch::Tensor state) {
   // prepare inputs
   p_model_target_.model->to(model_device_);
   p_model_target_.model->eval();
-  state.to(model_device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   auto action = (p_model_target_.model)->forward(std::vector<torch::Tensor>{state})[0];
@@ -414,7 +414,7 @@ torch::Tensor DDPGSystem::predictExplore(torch::Tensor state) {
   // prepare inputs
   p_model_.model->to(model_device_);
   p_model_.model->eval();
-  state.to(model_device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   auto action = (*noise_actor_exploration_)(p_model_, state);
@@ -432,8 +432,8 @@ torch::Tensor DDPGSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   // prepare inputs
   q_model_target_.model->to(model_device_);
   q_model_target_.model->eval();
-  state.to(model_device_);
-  action.to(model_device_);
+  state = state.to(model_device_);
+  action = action.to(model_device_);
 
   // do fwd pass
   auto reward = (q_model_target_.model)->forward(std::vector<torch::Tensor>{state, action})[0];
@@ -463,12 +463,6 @@ void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     // get a new action by predicting one with target network
     ap = predictWithNoiseTrain_(sp);
   }
-
-  // ensure all models are on the correct devices
-  p_model_.model->to(model_device_);
-  p_model_target_.model->to(model_device_);
-  q_model_.model->to(model_device_);
-  q_model_target_.model->to(model_device_);
 
   // train step
   train_ddpg(p_model_, p_model_target_, q_model_, q_model_target_, s, sp, a, ap, r, d,

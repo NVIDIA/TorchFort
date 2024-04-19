@@ -97,7 +97,7 @@ torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char*
  iteration.
  * @param[out] q_loss_val A pointer to a memory location to write the critic loss value computed during the training
  iteration. If the system uses multiple critics, the average across all critics is returned.
- * @param[out] stream CUDA stream to enqueue the training operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -121,7 +121,7 @@ torchfort_result_t torchfort_rl_off_policy_train_step(const char* name, float* p
  * @param[in] action_shape A pointer to an array specifying the shape of the action data. Length should be equal to the
  * rank of the action data.
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the action prediction operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -151,7 +151,7 @@ torchfort_result_t torchfort_rl_off_policy_predict_explore_F(const char* name, v
  * @param[in] action_shape A pointer to an array specifying the shape of the action data. Length should be equal to the
  * rank of the action data.
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the action prediction operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -184,7 +184,7 @@ torchfort_result_t torchfort_rl_off_policy_predict_F(const char* name, void* sta
  * @param[in] reward_shape A pointer to an array specifying the shape of the reward data. Length should be equal to the
  * rank of the reward data.
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the action prediction operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -221,7 +221,7 @@ torchfort_result_t torchfort_rl_off_policy_evaluate_F(const char* name, void* st
  * @param[in] final_state A flag indicating whether \pstate_new is the final state in the current episode (set to \p
  * true if it is the final state, otherwise \p false).
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the action prediction operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */

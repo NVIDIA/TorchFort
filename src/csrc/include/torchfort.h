@@ -94,7 +94,7 @@ torchfort_result_t torchfort_create_distributed_model(const char* name, const ch
  * rank of the label data.
  * @param[out] loss_val A pointer to a memory location to write the loss value computed during the training iteration.
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the training operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -119,7 +119,7 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
  * @param[in] output_shape  A pointer to an array specifying the shape of the output data. Length should be equal to the
  * rank of the output data.
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA steram to enqueue the inference operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */

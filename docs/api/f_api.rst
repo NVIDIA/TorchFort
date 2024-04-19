@@ -61,12 +61,13 @@ Model Creation
 torchfort_create_model
 ______________________
 
-.. f:function:: torchfort_create_model(name, config_fname)
+.. f:function:: torchfort_create_model(name, config_fname, device)
 
   Creates a model from a provided configuration file.
 
   :p character(:) handle [in]: A name to assign to the created model instance to use as a key for other TorchFort routines.
   :p character(:) config_fname [in]: The filesystem path to the user-defined model configuration file to use.
+  :p integer device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
   
 ------
@@ -76,14 +77,15 @@ ______________________
 torchfort_create_distributed_model
 __________________________________
 
-.. f:function:: torchfort_create_distributed_model(name, config_fname, mpi_comm)
+.. f:function:: torchfort_create_distributed_model(name, config_fname, mpi_comm, device)
 
   Creates a distributed data-parallel model from a provided configuration file.
 
- :p character(:) handle [in]: A name to assign to the created model instance to use as a key for other TorchFort routines.
- :p character(:) config_fname [in]: The filesystem path to the user-defined configuration file to use.
- :p integer mpi_comm [in]: MPI communicator to use to initialize NCCL communication library for data-parallel communication.
- :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+  :p character(:) handle [in]: A name to assign to the created model instance to use as a key for other TorchFort routines.
+  :p character(:) config_fname [in]: The filesystem path to the user-defined configuration file to use.
+  :p integer mpi_comm [in]: MPI communicator to use to initialize NCCL communication library for data-parallel communication.
+  :p integer device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
 
 ------
 
@@ -105,7 +107,7 @@ _______________
   :p T(*) input [in]: An array containing the input data. The last array dimension should be the batch dimension, the other dimensions are the feature dimensions.
   :p T(*) label [in]: An array containing the label data. The last array dimension should be the batch dimension. :code:`label` does not need to be of the same shape as :code:`input` but the batch dimension should match. Additionally, :code:`label` should be of the same rank as `input`.
   :p T loss_val [out]: A variable that will hold the loss value computed during the training iteration.
-  :p integer(cuda_stream_kind) stream[in,optional]: CUDA stream to enqueue the training operations.
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
   
 ------
@@ -124,7 +126,7 @@ ___________________
    :p character(:) mname [in]: The key of the model instance.
    :p T(*) input [in]: An array containing the input data. The last array dimension should be the batch dimension, the other dimensions are the feature dimensions.
    :p T(*) output [out]: An array which will hold the output of the model. The last array dimension should be the batch dimension. :code:`output` does not need to be of the same shape as :code:`input` but the batch dimension should match. Additionally, :code:`output` should be of the same rank as `input`. 
-   :p integer(cuda_stream_kind) stream[in,optional]: CUDA stream to enqueue the training operations.
+   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
    :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
    
 ------
@@ -246,12 +248,14 @@ Basic routines to create and register a reinforcement learning system in the int
 torchfort_rl_off_policy_create_system
 _____________________________________
 
-.. f:function:: torchfort_rl_off_policy_create_system(name, config_fname)
+.. f:function:: torchfort_rl_off_policy_create_system(name, config_fname, model_device, rb_device)
 
   Creates an off-policy reinforcement learning training system instance from a provided configuration file.
 
   :p character(:) name [in]: A name to assign to the created training system instance to use as a key for other TorchFort routines.
   :p character(:) config_fname [in]: The filesystem path to the user-defined configuration file to use.
+  :p integer model_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
+  :p integer rb_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
   
 ------
@@ -261,13 +265,15 @@ _____________________________________
 torchfort_rl_off_policy_create_distributed_system
 _________________________________________________
 
-.. f:function:: torchfort_rl_off_policy_create_distributed_system(name, config_fname, mpi_comm)
+.. f:function:: torchfort_rl_off_policy_create_distributed_system(name, config_fname, mpi_comm, model_device, rb_device)
 
   Creates a (synchronous) data-parallel off-policy reinforcement learning system instance from a provided configuration file.
 
   :p character(:) name [in]: A name to assign to the created training system instance to use as a key for other TorchFort routines.
   :p character(:) config_fname [in]: The filesystem path to the user-defined configuration file to use.
   :p integer mpi_comm [in]: MPI communicator to use to initialize NCCL communication library for data-parallel communication.
+  :p integer model_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
+  :p integer rb_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
   
 ------
@@ -293,7 +299,7 @@ __________________________________
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
   :p T p_loss_val [out]: A single or double precision variable which will hold the policy loss value computed during the training iteration.
   :p T q_loss_val [out]: A single or double precision variable which will hold the critic loss value computed during the training iteration, averaged over all available critics (depends on the chosen algorithm).
-  :p integer(cuda_stream_kind) stream[in,optional]: CUDA stream to enqueue the training operations.
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
   
 ------
@@ -313,7 +319,7 @@ _______________________________________
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
   :p T state [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the state space.
   :p T act [out]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the action space.
-  :p integer(cuda_stream_kind) stream [in,optional]: CUDA stream to enqueue the operation.
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
 
 ------
@@ -334,7 +340,7 @@ _______________________________________
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
   :p T state [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the state space.
   :p T act [out]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the action space.
-  :p integer(cuda_stream_kind) stream [in,optional]: CUDA stream to enqueue the operation.
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
   
 ------
@@ -356,7 +362,7 @@ ________________________________
   :p T state [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the state space.
   :p T act [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the action space.
   :p T reward [out]: Two-dimensional array of size (1, :code:`batch_size`) which will hold the predicted reward values.
-  :p integer(cuda_stream_kind) stream [in,optional]: CUDA stream to enqueue the operation.
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
  
 ------
@@ -381,7 +387,7 @@ ____________________________________________
   :p T state_new [in]: Multi-dimensional array of size of the state space.
   :p T reward [in]: Reward value.
   :p logical final_state [in]: Terminal flag.
-  :p integer(cuda_stream_kind) stream [in,optional]: CUDA stream to enqueue the operation.
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
 
 ------

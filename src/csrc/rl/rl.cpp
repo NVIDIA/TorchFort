@@ -56,6 +56,14 @@ namespace torchfort {
 namespace rl {
 // Global variables
 std::unordered_map<std::string, std::shared_ptr<RLOffPolicySystem>> rl_systems;
+
+// default constructor:
+RLOffPolicySystem::RLOffPolicySystem(int model_device, int rb_device) : train_step_count_(0), model_device_(get_device(model_device)), rb_device_(get_device(rb_device)) {
+  if ( !(torchfort::rl::validate_devices(model_device, rb_device)) ) {
+    THROW_INVALID_USAGE("The parameters model_device and rb_device have to specify the same GPU or one has to specify a GPU and the other the CPU.");
+  }
+}
+
 } // namespace rl
 } // namespace torchfort
 
@@ -154,8 +162,12 @@ torchfort_result_t torchfort_rl_off_policy_train_step(const char* name, float* p
   // TODO: we need to figure out what to do if RB and Model streams are different
   c10::cuda::OptionalCUDAStreamGuard guard;
   auto model_device = rl::rl_systems[name]->modelDevice();
+  auto rb_device = rl::rl_systems[name]->rbDevice();
   if (model_device.is_cuda()) {
     auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
+    guard.reset_stream(stream);
+  } else if (rb_device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
     guard.reset_stream(stream);
   }
 

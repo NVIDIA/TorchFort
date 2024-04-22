@@ -40,7 +40,7 @@ namespace rl {
 
 DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node,
 		       int model_device, int rb_device)
-  : model_device_(get_device(model_device)), rb_device_(get_device(rb_device)) {
+  : RLOffPolicySystem(model_device, rb_device) {
 
   // get basic parameters first
   auto algo_node = system_node["algorithm"];

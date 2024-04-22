@@ -37,6 +37,14 @@ namespace torchfort {
 
 namespace rl {
 
+bool validate_devices(int device1, int device2) {
+  if ((device1 != device2) && (device1 * device2 > 0)) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
 std::vector<double> get_current_lrs(std::shared_ptr<torch::optim::Optimizer> optimizer) {
   std::vector<double> learnings_rates(optimizer->param_groups().size());
   if (learnings_rates.size() > 0) {

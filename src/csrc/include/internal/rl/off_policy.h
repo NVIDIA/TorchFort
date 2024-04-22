@@ -57,7 +57,7 @@ public:
   RLOffPolicySystem(const RLOffPolicySystem&) = delete;
 
   // empty constructor:
-  RLOffPolicySystem() : train_step_count_(0) {}
+  RLOffPolicySystem(int model_device, int rb_device);
 
   // some important functions which have to be implemented by the base class
   virtual void updateReplayBuffer(torch::Tensor, torch::Tensor, torch::Tensor, float, bool) = 0;
@@ -80,6 +80,7 @@ protected:
   virtual std::shared_ptr<ModelState> getSystemState_() = 0;
   virtual std::shared_ptr<Comm> getSystemComm_() = 0;
   size_t train_step_count_;
+  torch::Device model_device_, rb_device_;
 };
 
 // Declaration of external global variables

@@ -68,6 +68,7 @@ RLOffPolicySystem::RLOffPolicySystem(int model_device, int rb_device) : train_st
 
 } // namespace off_policy
 
+} // namespace rl
 } // namespace torchfort
 
 torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const char* config_fname,

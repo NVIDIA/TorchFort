@@ -277,10 +277,6 @@ private:
 
   std::shared_ptr<Comm> getSystemComm_();
 
-  // device
-  torch::Device model_device_;
-  torch::Device rb_device_;
-
   // models
   ACPolicyPack p_model_;
   ModelPack q_model_;

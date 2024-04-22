@@ -56,6 +56,14 @@ namespace rl {
 namespace on_policy {
 // Global variables
 std::unordered_map<std::string, std::shared_ptr<RLOnPolicySystem>> registry;
+
+// default constructor:
+RLOnPolicySystem::RLOnPolicySystem(int model_device, int rb_device) : train_step_count_(0), model_device_(get_device(model_device)), rb_device_(get_device(rb_device)) {
+  if ( !(torchfort::rl::validate_devices(model_device, rb_device)) ) {
+    THROW_INVALID_USAGE("The parameters model_device and rb_device have to specify the same GPU or one has to specify a GPU and the other the CPU.");
+  }
+}
+  
 } // namespace on_policy
 
 } // namespace rl

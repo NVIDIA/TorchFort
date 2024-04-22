@@ -284,10 +284,6 @@ private:
   // internally used functions
   torch::Tensor predictWithNoiseTrain_(torch::Tensor state);
 
-  // device
-  torch::Device model_device_;
-  torch::Device rb_device_;
-
   // models
   ModelPack p_model_, p_model_target_;
   std::vector<ModelPack> q_models_, q_models_target_;

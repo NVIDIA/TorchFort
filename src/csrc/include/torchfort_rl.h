@@ -460,10 +460,10 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
 
 // RL on-policy rollout buffer update functions
 /**
- * @brief Adds a new \f$(s, a, r, q, log_p, e)\f$ tuple to the rollout buffer
+ * @brief Adds a new \f$(s, a, r, d)\f$ tuple to the rollout buffer
  * @details Here \f$s\f$ (\p state) is the state for which action \f$a\f$ (\p action) was taken,
- * and receiving reward \f$r\f$ (\p reward) which was estimated to be \f$q\f$ (\p value) with the critic. 
- * The initial state flag \f$e\f$ (\p initial_state) specifies whether \f$s\f$ is the initial state in a new episode.
+ * and receiving reward \f$r\f$ (\p reward).
+ * The terminal state flag \f$d\f$ (\p terminal_state) specifies whether \f$s\f$ is the final state of the episode.
  *
  * @param[in] name The name of system instance to use, as defined during system creation.
  * @param[in] state A pointer to a memory buffer containing state data.
@@ -475,8 +475,8 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
  * @param[in] action_shape A pointer to an array specifying the shape of the action data. Length should be equal to the
  * rank of the action data.
  * @param[in] reward A pointer to a memory buffer with reward data.
- * @param[in] initial_state A flag indicating whether \pstate is the initial state in a new episode (set to \p
- * true if it is the initial state, otherwise \p false).
+ * @param[in] final_state. A flag indicating whether the state after \p state is the final state in the episode (set to \p
+ * true if this is true, otherwise \p false).
  * @param[out] dtype The TorchFort datatype to use for this operation.
  * @param[out] stream CUDA stream to enqueue the action prediction operations.
  *
@@ -493,6 +493,15 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* na
 								  void* action, size_t action_dim, int64_t* action_shape,
 								  const void* reward, bool initial_state,
 								  torchfort_datatype_t dtype, cudaStream_t stream);
+
+/**
+ * @brief Resets the rollout buffer
+ * @details This function call clears the rollout buffer and resets all variables except for the end of episode tracker.
+ *
+ * @param[in] name The name of system instance to use, as defined during system creation. 
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure. 
+*/
+torchfort_result_t torchfort_rl_on_policy_reset_rollout_buffer(const char* name);
 
 // RL on-policy checkpoint save and loading functions
 /**

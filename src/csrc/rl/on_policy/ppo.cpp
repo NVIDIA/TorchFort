@@ -317,7 +317,7 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
 }
 
 // we should pass a tuple (s, a, r, d)
-void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, bool e) {
+void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, bool d) {
   // note that we have to rescale the action: [a_low, a_high] -> [-1, 1]
   auto as = scale_action(a, a_low_, a_high_);
 
@@ -333,12 +333,16 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, b
   float log_p = log_p_tensor.item<float>();
   
   // the replay buffer only stores scaled actions!
-  rollout_buffer_->update(s, as, r, q, log_p, e);
+  rollout_buffer_->update(s, as, r, q, log_p, d);
 }
 
-// we need to be able to finalize the buffer
-void PPOSystem::finalizeRolloutBuffer(float q, bool e) {
-  rollout_buffer_->finalize(q, e);
+//// we need to be able to finalize the buffer
+//void PPOSystem::finalizeRolloutBuffer(float q, bool d) {
+//  rollout_buffer_->finalize(q, d);
+//}
+
+void PPOSystem::resetRolloutBuffer() {
+  rollout_buffer_->reset();
 }
 
 bool PPOSystem::isReady() { return (rollout_buffer_->isReady()); }

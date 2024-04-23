@@ -61,7 +61,8 @@ public:
 
   // some important functions which have to be implemented by the base class
   virtual void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, bool) = 0;
-  virtual void finalizeRolloutBuffer(float, bool) = 0;
+  //virtual void finalizeRolloutBuffer(float, bool) = 0;
+  virtual void resetRolloutBuffer() = 0;
   virtual bool isReady() = 0;
 
   // these have to be implemented
@@ -91,7 +92,7 @@ extern std::unordered_map<std::string, std::shared_ptr<RLOnPolicySystem>> regist
 template <MemoryLayout L, typename T>
 static void update_rollout_buffer(const char* name, T* state, size_t state_dim, int64_t* state_shape,
 				  T* action, size_t action_dim, int64_t* action_shape,
-				  T reward, bool initial_state, cudaStream_t ext_stream) {
+				  T reward, bool final_state, cudaStream_t ext_stream) {
 
   // no grad
   torch::NoGradGuard no_grad;
@@ -116,28 +117,28 @@ static void update_rollout_buffer(const char* name, T* state, size_t state_dim, 
 
   registry[name]->updateRolloutBuffer(state_tensor, action_tensor, 
 			 	      static_cast<float>(reward),
-				      initial_state);
+				      final_state);
   return;
 }
 
-template <typename T>
-static void finalize_rollout_buffer(const char* name, T value, bool final_state,
-				    cudaStream_t ext_stream) {
-
-  // no grad
-  torch::NoGradGuard no_grad;
-
-  c10::cuda::OptionalCUDAStreamGuard guard;
-  auto rb_device = registry[name]->rbDevice();
-  if (rb_device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
-    guard.reset_stream(stream);
-  }
-
-  // finalize buffer
-  registry[name]->finalizeRolloutBuffer(static_cast<float>(value), final_state);
-  return;
-}
+  //template <typename T>
+  //static void finalize_rollout_buffer(const char* name, T value, bool final_state,
+  //				    cudaStream_t ext_stream) {
+  //
+  //// no grad
+  //torch::NoGradGuard no_grad;
+  //
+  //c10::cuda::OptionalCUDAStreamGuard guard;
+  //auto rb_device = registry[name]->rbDevice();
+  //if (rb_device.is_cuda()) {
+  //  auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
+  //  guard.reset_stream(stream);
+  //}
+  //
+  //// finalize buffer
+  //registry[name]->finalizeRolloutBuffer(static_cast<float>(value), final_state);
+  //return;
+  //}
 
 template <MemoryLayout L, typename T>
 static void predict_explore(const char* name, T* state, size_t state_dim, int64_t* state_shape, T* action,

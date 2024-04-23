@@ -248,7 +248,8 @@ public:
 
   // we should pass a tuple (s, a, r, e)
   void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, bool);
-  void finalizeRolloutBuffer(float, bool);
+  //void finalizeRolloutBuffer(float, bool);
+  void resetRolloutBuffer();
   bool isReady();
 
   // train step

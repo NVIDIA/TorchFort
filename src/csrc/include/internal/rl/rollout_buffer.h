@@ -107,15 +107,8 @@ public:
       buffer_.push_front(std::make_tuple(sc, ac, r, q, log_p, next_state_initial_));
     }
 
-    // if next_state_inital_ is initial state, set it to false
-    if (next_state_initial_) {
-      next_state_initial_ = false;
-    }
-    
-    // if d is final state, next state is initial state:
-    if (d) {
-      next_state_initial_ = true;
-    }
+    // set next_state_inital to done:
+    next_state_initial_ = d;
   }
 
   // compute returns and advantages

@@ -426,7 +426,7 @@ module torchfort
     function torchfort_rl_on_policy_update_rollout_buffer_c(mname, &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, initial, dtype, stream) result(res) &
+                                                            reward, terminal, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_on_policy_update_rollout_buffer_F")
       import
       character(kind=c_char) :: mname(*)
@@ -434,13 +434,20 @@ module torchfort
       !GCC$ attributes no_arg_check :: state, act, reward
       real(c_float) :: state(*), act(*)
       real(c_float) :: reward
-      logical, value :: initial
+      logical, value :: terminal
       integer(c_size_t), value :: state_dim, act_dim
       integer(c_int64_t) :: state_shape(*), act_shape(*)
       integer(c_int), value :: dtype
       integer(int64), value :: stream
       integer(c_int) :: res
     end function torchfort_rl_on_policy_update_rollout_buffer_c
+
+    function torchfort_rl_on_policy_reset_rollout_buffer_c(mname) result(res) &
+      bind(C, name="torchfort_rl_on_policy_reset_rollout_buffer")
+      import
+      character(kind=c_char) :: mname(*)
+      integer(c_int) :: res
+    end function torchfort_rl_on_policy_reset_rollout_buffer_c
 
     function torchfort_rl_on_policy_is_ready_c(mname, ready) result(res) &
       bind(C, name="torchfort_rl_on_policy_is_ready")
@@ -2089,11 +2096,11 @@ contains
 
   ! Training routines
   function torchfort_rl_on_policy_update_rollout_buffer_float_3d(mname, state, act, &
-                                                                 reward, initial, stream) result(res)
+                                                                 reward, terminal, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state(:, :, :), act(:, :, :)
     real(real32) :: reward
-    logical :: initial
+    logical :: terminal
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -2116,18 +2123,18 @@ contains
       res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname), C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, initial, &
+                                                            reward, terminal, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_3d
 
 #ifdef _CUDA
   function torchfort_rl_on_policy_update_rollout_buffer_float_3d_dev(mname, state, act, &
-                                                                     reward, initial, stream) result(res)
+                                                                     reward, terminal, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state(:, :, :), act(:, :, :)
     real(real32) :: reward
-    logical :: initial
+    logical :: terminal
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -2150,11 +2157,17 @@ contains
       res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname), C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, initial, &
+                                                            reward, terminal, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_3d_dev
 #endif
+
+  function torchfort_rl_on_policy_reset_rollout_buffer(mname) result(res)
+    character(len=*) :: mname
+    integer(c_int) :: res
+    res = torchfort_rl_on_policy_reset_rollout_buffer_c([trim(mname), C_NULL_CHAR])
+  end function torchfort_rl_on_policy_reset_rollout_buffer
   
   function torchfort_rl_on_policy_is_ready(mname, ready) result(res)
     character(len=*) :: mname

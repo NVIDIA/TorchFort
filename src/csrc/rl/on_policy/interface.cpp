@@ -184,7 +184,7 @@ RL_ON_POLICY_WANDB_LOG_FUNC(double)
 torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer(const char* name,
 								void* state, size_t state_dim, int64_t* state_shape,
 								void* action, size_t action_dim, int64_t* action_shape,
-								const void* reward, bool initial_state,
+								const void* reward, bool final_state,
 								torchfort_datatype_t dtype, cudaStream_t ext_stream) {
   using namespace torchfort;
   try {
@@ -193,14 +193,14 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer(const char* name
       float reward_val = *reinterpret_cast<const float*>(reward);
       rl::on_policy::update_rollout_buffer<RowMajor>(name, reinterpret_cast<float*>(state), state_dim, state_shape,
 						     reinterpret_cast<float*>(action), action_dim, action_shape,
-						     reward_val, initial_state, ext_stream);
+						     reward_val, final_state, ext_stream);
       break;
     }
     case TORCHFORT_DOUBLE: {
       double reward_val = *reinterpret_cast<const double*>(reward);
       rl::on_policy::update_rollout_buffer<RowMajor>(name, reinterpret_cast<double*>(state), state_dim, state_shape,
 						     reinterpret_cast<double*>(action), action_dim, action_shape,
-						     reward_val, initial_state, ext_stream);
+						     reward_val, final_state, ext_stream);
       break;
     }
     default: {
@@ -218,7 +218,7 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer(const char* name
 torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* name,
 								  void* state, size_t state_dim, int64_t* state_shape,
 								  void* action, size_t action_dim, int64_t* action_shape,
-								  const void* reward, bool initial_state,
+								  const void* reward, bool final_state,
 								  torchfort_datatype_t dtype, cudaStream_t ext_stream) {
 								 
   using namespace torchfort;
@@ -228,14 +228,14 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* na
       float reward_val = *reinterpret_cast<const float*>(reward);
       rl::on_policy::update_rollout_buffer<ColMajor>(name, reinterpret_cast<float*>(state), state_dim, state_shape,
                                                      reinterpret_cast<float*>(action), action_dim, action_shape,
-                                                     reward_val, initial_state, ext_stream);
+                                                     reward_val, final_state, ext_stream);
       break;
     }
     case TORCHFORT_DOUBLE: {
       double reward_val = *reinterpret_cast<const double*>(reward);
       rl::on_policy::update_rollout_buffer<ColMajor>(name, reinterpret_cast<double*>(state), state_dim, state_shape,
                                                      reinterpret_cast<double*>(action), action_dim, action_shape,
-                                                     reward_val, initial_state, ext_stream);
+                                                     reward_val, final_state, ext_stream);
       break;
     }
     default: {
@@ -243,6 +243,17 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* na
       break;
     }
     }
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_rl_on_policy_reset_rollout_buffer(const char* name) {
+  using namespace torchfort;
+  try {
+    rl::on_policy::registry[name]->resetRolloutBuffer();
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();

@@ -91,7 +91,7 @@ public:
 
     // add no grad guard
     torch::NoGradGuard no_grad;
-
+    
     // do not push anything if buffer is full, instead check if buffer is finalized
     if (buffer_.size() == size_) {
       if (!finalized_) {
@@ -103,8 +103,9 @@ public:
       auto sc = s.to(device_, s.dtype(), /* non_blocking = */ false, /* copy = */ true);
       auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
     
-      // add the newest element in front
-      buffer_.push_front(std::make_tuple(sc, ac, r, q, log_p, next_state_initial_));
+      // add the newest/latest element in back
+      // TODO: is that right? should be
+      buffer_.push_back(std::make_tuple(sc, ac, r, q, log_p, next_state_initial_));
     }
 
     // set next_state_inital to done:
@@ -116,9 +117,9 @@ public:
     float last_gae_lam = 0.;
 
     // initialize starting values
-    float next_non_terminal = 1.0 - float(done);
+    float next_non_terminal = (done ? 0. : 1.);
     float next_value = last_value;
-
+    
     // get first buffer entry
     torch::Tensor s, a;
     float r, q, log_p;
@@ -128,17 +129,19 @@ public:
     last_gae_lam = delta + gamma_ * lambda_ * next_non_terminal * last_gae_lam;
     advantages_[size_ - 1] = last_gae_lam;
     returns_[size_ - 1] = last_gae_lam + q;
+
     // we need to keep track of those
     next_value = q;
-    next_non_terminal = 1.0 - float(e);
-    for (size_t step = size_ - 2; step >= 0; step--) {
+    next_non_terminal = (e ? 0. : 1.);
+    
+    for (int64_t step = size_ - 2; step >= 0; step--) {
       std::tie(s, a, r, q, log_p, e) = buffer_.at(step);
       delta = r + gamma_ * next_value * next_non_terminal - q;
       last_gae_lam = delta + gamma_ * lambda_ * next_non_terminal * last_gae_lam;
       advantages_[step] = last_gae_lam;
       returns_[step] = last_gae_lam + q;
       next_value = q;
-      next_non_terminal = 1.0 - float(e);
+      next_non_terminal = (e ? 0. : 1.);
     }
     finalized_ = true;
     
@@ -171,10 +174,10 @@ public:
 
       // get buffer entry
       float r;
-      bool e;
-      std::tie(stens_list[sample], atens_list[sample], r, q_list[sample], log_p_list[sample], e) = buffer_.at(index);
-      adv_list[sample] = advantages_[sample];
-      ret_list[sample] = returns_[sample];
+      bool d;
+      std::tie(stens_list[sample], atens_list[sample], r, q_list[sample], log_p_list[sample], d) = buffer_.at(index);
+      adv_list[sample] = advantages_[index];
+      ret_list[sample] = returns_[index];
     }
     
     // stack the lists

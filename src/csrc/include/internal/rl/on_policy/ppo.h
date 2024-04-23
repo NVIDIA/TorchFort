@@ -83,12 +83,12 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   assert(ret_tensor.size(1) == 1);
 
   // normalize advantages if requested
-  if (normalize_advantage && (batch_size > 1) ) {
+  if ( normalize_advantage && (batch_size > 1) ) {
     // make sure we are not going to compute gradients
     torch::NoGradGuard no_grad;
     
     // compute mean
-    torch::Tensor adv_mean = torch::mean(adv_tensor, true);
+    torch::Tensor adv_mean = torch::mean(adv_tensor);
 
     // average mean across all nodes
     if (p_model.comm) {
@@ -97,8 +97,8 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
       adv_mean = means[0];
     }
 
-    // compute std    
-    torch::Tensor adv_std = torch::mean(torch::square(adv_tensor - adv_mean), true);
+    // compute std
+    torch::Tensor adv_std = torch::mean(torch::square(adv_tensor - adv_mean));
 
     // average across all nodes
     if (p_model.comm) {
@@ -130,7 +130,7 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   torch::Tensor p_loss_tensor_2 = adv_tensor * torch::clamp(ratio_tensor, 1. - epsilon, 1. + epsilon);
   // the stable baselines code uses torch.min but I think this is wrong, it has to be torch.minimum
   torch::Tensor p_loss_tensor = -torch::mean(torch::minimum(p_loss_tensor_1, p_loss_tensor_2));
-
+  
   // critic loss
   // loss function is fixed by algorithm
   auto q_loss_func = torch::nn::MSELoss(torch::nn::MSELossOptions().reduction(torch::kMean));
@@ -179,7 +179,7 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   // save loss vals
   p_loss_val = p_loss_tensor.item<T>();
   q_loss_val = q_loss_tensor.item<T>();
-
+  
   // some diagnostic variables
   {
     torch::NoGradGuard no_grad;
@@ -188,7 +188,7 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
     kl_divergence = torch::mean((torch::exp(log_ratio_tensor) - 1.) - log_ratio_tensor).item<T>();
     
     // clip_fraction
-    torch::Tensor clip_fraction_tensor = torch::mean((torch::abs(ratio_tensor - 1.) > epsilon));
+    torch::Tensor clip_fraction_tensor = torch::mean((torch::abs(ratio_tensor - 1.) > epsilon).to(torch::kFloat32));
     clip_fraction = clip_fraction_tensor.item<T>();
   }
   

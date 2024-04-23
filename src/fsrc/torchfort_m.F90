@@ -275,7 +275,7 @@ module torchfort
     function torchfort_rl_off_policy_update_replay_buffer_c(mname, &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
-                                                            reward, terminal, dtype, stream) result(res) &
+                                                            reward, cterminal, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_off_policy_update_replay_buffer_F")
       import
       character(kind=c_char) :: mname(*)
@@ -283,7 +283,7 @@ module torchfort
       !GCC$ attributes no_arg_check :: state_old, state_new, act_old, reward
       real(c_float) :: state_old(*), state_new(*), act_old(*)
       real(c_float) :: reward
-      logical, value :: terminal
+      logical(c_bool), value :: cterminal
       integer(c_size_t), value :: state_dim, act_dim
       integer(c_int64_t) :: state_shape(*), act_shape(*)
       integer(c_int), value :: dtype
@@ -426,7 +426,7 @@ module torchfort
     function torchfort_rl_on_policy_update_rollout_buffer_c(mname, &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, terminal, dtype, stream) result(res) &
+                                                            reward, cterminal, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_on_policy_update_rollout_buffer_F")
       import
       character(kind=c_char) :: mname(*)
@@ -434,7 +434,7 @@ module torchfort
       !GCC$ attributes no_arg_check :: state, act, reward
       real(c_float) :: state(*), act(*)
       real(c_float) :: reward
-      logical, value :: terminal
+      logical(c_bool), value :: cterminal
       integer(c_size_t), value :: state_dim, act_dim
       integer(c_int64_t) :: state_shape(*), act_shape(*)
       integer(c_int), value :: dtype
@@ -1713,14 +1713,16 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
+      logical(c_bool) :: cterminal
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
+      cterminal = terminal
 
       res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname), C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
-                                                            reward, terminal, TORCHFORT_FLOAT, stream_)
+                                                            reward, cterminal, TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_3d
 
@@ -1746,14 +1748,16 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
+      logical(c_bool) :: cterminal
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
+      cterminal = terminal
 
       res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname), C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
-                                                            reward, terminal, TORCHFORT_FLOAT, stream_)
+                                                            reward, cterminal, TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_3d_dev
 #endif
@@ -2116,14 +2120,16 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
+      logical(c_bool) :: cterminal
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
+      cterminal = terminal
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname), C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, terminal, &
+                                                            reward, cterminal, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_3d
@@ -2150,14 +2156,16 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
+      logical(c_bool) :: cterminal
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
+      cterminal = terminal
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname), C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, terminal, &
+                                                            reward, cterminal, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_3d_dev

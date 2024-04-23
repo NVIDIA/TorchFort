@@ -60,7 +60,7 @@ public:
   RLOnPolicySystem(int model_device, int rb_device);
 
   // some important functions which have to be implemented by the base class
-  virtual void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, float, float, bool) = 0;
+  virtual void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, bool) = 0;
   virtual void finalizeRolloutBuffer(float, bool) = 0;
   virtual bool isReady() = 0;
 
@@ -91,15 +91,19 @@ extern std::unordered_map<std::string, std::shared_ptr<RLOnPolicySystem>> regist
 template <MemoryLayout L, typename T>
 static void update_rollout_buffer(const char* name, T* state, size_t state_dim, int64_t* state_shape,
 				  T* action, size_t action_dim, int64_t* action_shape,
-				  T reward, T value, T log_p, bool initial_state,
-				  cudaStream_t ext_stream) {
+				  T reward, bool initial_state, cudaStream_t ext_stream) {
 
   // no grad
   torch::NoGradGuard no_grad;
 
+  // we need to sync carefully here
   c10::cuda::OptionalCUDAStreamGuard guard;
+  auto model_device = registry[name]->modelDevice();
   auto rb_device = registry[name]->rbDevice();
-  if (rb_device.is_cuda()) {
+  if (model_device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
+    guard.reset_stream(stream);
+  } else if (rb_device.is_cuda()) {
     auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
     guard.reset_stream(stream);
   }
@@ -112,8 +116,6 @@ static void update_rollout_buffer(const char* name, T* state, size_t state_dim, 
 
   registry[name]->updateRolloutBuffer(state_tensor, action_tensor, 
 			 	      static_cast<float>(reward),
-				      static_cast<float>(value),
-				      static_cast<float>(log_p),
 				      initial_state);
   return;
 }

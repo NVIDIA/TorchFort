@@ -426,12 +426,12 @@ module torchfort
     function torchfort_rl_on_policy_update_rollout_buffer_c(mname, &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, val, log_p, initial, dtype, stream) result(res) &
+                                                            reward, initial, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_on_policy_update_rollout_buffer_F")
       import
       character(kind=c_char) :: mname(*)
       real(c_float) :: state(*), act(*)
-      real(c_float) :: reward, val, log_p
+      real(c_float) :: reward
       logical, value :: initial
       integer(c_size_t), value :: state_dim, act_dim
       integer(c_int64_t) :: state_shape(*), act_shape(*)
@@ -2081,10 +2081,10 @@ contains
 
   ! Training routines
   function torchfort_rl_on_policy_update_rollout_buffer_float_3d(mname, state, act, &
-                                                                 reward, val, log_p, initial, stream) result(res)
+                                                                 reward, initial, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state(:, :, :), act(:, :, :)
-    real(real32) :: reward, val, log_p
+    real(real32) :: reward
     logical :: initial
     integer(int64), optional :: stream
     integer(c_int) :: res
@@ -2108,7 +2108,7 @@ contains
       res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname), C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, val, log_p, initial, &
+                                                            reward, initial, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_3d

@@ -316,11 +316,22 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
   }
 }
 
-// we should pass a tuple (s, a, s', r, d)
-void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, float q, float log_p, bool e) {
+// we should pass a tuple (s, a, r, d)
+void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, bool e) {
   // note that we have to rescale the action: [a_low, a_high] -> [-1, 1]
   auto as = scale_action(a, a_low_, a_high_);
 
+  // compute q:
+  // we need to unsqueeze s and a to make sure that we can pass them to the NN:
+  torch::Tensor ad = torch::unsqueeze(as.to(model_device_), 0);
+  torch::Tensor sd = torch::unsqueeze(s.to(model_device_), 0);
+  float q = (q_model_.model)->forward(std::vector<torch::Tensor>{sd, ad})[0].item<float>();
+  
+  // compute log_p:
+  torch::Tensor log_p_tensor, entropy_tensor;
+  std::tie(log_p_tensor, entropy_tensor) = p_model_.model->evaluateAction(sd, ad);
+  float log_p = log_p_tensor.item<float>();
+  
   // the replay buffer only stores scaled actions!
   rollout_buffer_->update(s, as, r, q, log_p, e);
 }

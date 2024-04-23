@@ -246,8 +246,8 @@ public:
   // init communicators
   void initSystemComm(MPI_Comm mpi_comm);
 
-  // we should pass a tuple (s, a, r, q, log_p, e)
-  void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, float, float, bool);
+  // we should pass a tuple (s, a, r, e)
+  void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, bool);
   void finalizeRolloutBuffer(float, bool);
   bool isReady();
 

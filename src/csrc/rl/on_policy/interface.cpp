@@ -184,28 +184,23 @@ RL_ON_POLICY_WANDB_LOG_FUNC(double)
 torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer(const char* name,
 								void* state, size_t state_dim, int64_t* state_shape,
 								void* action, size_t action_dim, int64_t* action_shape,
-								const void* reward, const void* value, const void* log_p,
-								bool initial_state, torchfort_datatype_t dtype,
-								cudaStream_t ext_stream) {
+								const void* reward, bool initial_state,
+								torchfort_datatype_t dtype, cudaStream_t ext_stream) {
   using namespace torchfort;
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT: {
       float reward_val = *reinterpret_cast<const float*>(reward);
-      float value_val = *reinterpret_cast<const float*>(value);
-      float log_p_val = *reinterpret_cast<const float*>(log_p);
       rl::on_policy::update_rollout_buffer<RowMajor>(name, reinterpret_cast<float*>(state), state_dim, state_shape,
 						     reinterpret_cast<float*>(action), action_dim, action_shape,
-						     reward_val, value_val, log_p_val, initial_state, ext_stream);
+						     reward_val, initial_state, ext_stream);
       break;
     }
     case TORCHFORT_DOUBLE: {
       double reward_val = *reinterpret_cast<const double*>(reward);
-      double value_val = *reinterpret_cast<const double*>(value);
-      double log_p_val = *reinterpret_cast<const double*>(log_p);
       rl::on_policy::update_rollout_buffer<RowMajor>(name, reinterpret_cast<double*>(state), state_dim, state_shape,
 						     reinterpret_cast<double*>(action), action_dim, action_shape,
-						     reward_val, value_val, log_p_val, initial_state, ext_stream);
+						     reward_val, initial_state, ext_stream);
       break;
     }
     default: {
@@ -223,29 +218,24 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer(const char* name
 torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* name,
 								  void* state, size_t state_dim, int64_t* state_shape,
 								  void* action, size_t action_dim, int64_t* action_shape,
-								  const void* reward, const void* value, const void* log_p,
-								  bool initial_state, torchfort_datatype_t dtype,
-								  cudaStream_t ext_stream) {
+								  const void* reward, bool initial_state,
+								  torchfort_datatype_t dtype, cudaStream_t ext_stream) {
 								 
   using namespace torchfort;
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT: {
       float reward_val = *reinterpret_cast<const float*>(reward);
-      float value_val = *reinterpret_cast<const float*>(value);
-      float log_p_val = *reinterpret_cast<const float*>(log_p);
       rl::on_policy::update_rollout_buffer<ColMajor>(name, reinterpret_cast<float*>(state), state_dim, state_shape,
                                                      reinterpret_cast<float*>(action), action_dim, action_shape,
-                                                     reward_val, value_val, log_p_val, initial_state, ext_stream);
+                                                     reward_val, initial_state, ext_stream);
       break;
     }
     case TORCHFORT_DOUBLE: {
       double reward_val = *reinterpret_cast<const double*>(reward);
-      double value_val = *reinterpret_cast<const double*>(value);
-      double log_p_val = *reinterpret_cast<const double*>(log_p);
       rl::on_policy::update_rollout_buffer<ColMajor>(name, reinterpret_cast<double*>(state), state_dim, state_shape,
                                                      reinterpret_cast<double*>(action), action_dim, action_shape,
-                                                     reward_val, value_val, log_p_val, initial_state, ext_stream);
+                                                     reward_val, initial_state, ext_stream);
       break;
     }
     default: {

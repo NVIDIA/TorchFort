@@ -475,8 +475,6 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
  * @param[in] action_shape A pointer to an array specifying the shape of the action data. Length should be equal to the
  * rank of the action data.
  * @param[in] reward A pointer to a memory buffer with reward data.
- * @param[in] value A pointer to a memory buffer with value data, obtained from `torchfort_rl_on_policy_evaluate`.
- * @param[in] log_p A pointer to a memory buffer with log-probabilities of the current action taken by the current policy.
  * @param[in] initial_state A flag indicating whether \pstate is the initial state in a new episode (set to \p
  * true if it is the initial state, otherwise \p false).
  * @param[out] dtype The TorchFort datatype to use for this operation.
@@ -487,16 +485,14 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
 torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer(const char* name,
 								void* state, size_t state_dim, int64_t* state_shape,
                                                                 void* action, size_t action_dim, int64_t* action_shape,
-								const void* reward, const void* value, const void* log_p,
-                                                                bool initial_state, torchfort_datatype_t dtype,
-                                                                cudaStream_t stream);
+								const void* reward, bool initial_state,
+								torchfort_datatype_t dtype, cudaStream_t stream);
 
 torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* name,
 								  void* state, size_t state_dim, int64_t* state_shape,
 								  void* action, size_t action_dim, int64_t* action_shape,
-								  const void* reward, const void* value, const void* log_p,
-								  bool initial_state, torchfort_datatype_t dtype,
-								  cudaStream_t stream);
+								  const void* reward, bool initial_state,
+								  torchfort_datatype_t dtype, cudaStream_t stream);
 
 // RL on-policy checkpoint save and loading functions
 /**

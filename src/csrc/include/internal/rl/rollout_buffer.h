@@ -56,7 +56,7 @@ public:
   // disable copy constructor
   RolloutBuffer(const RolloutBuffer&) = delete;
   // base constructor
-  RolloutBuffer(size_t size, int device) : size_(size), device_(get_device(device)) {}
+  RolloutBuffer(size_t size, int device) : size_(size), device_(get_device(device)), next_state_initial_(true) {}
 
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, float, float, float, bool) = 0;
@@ -73,6 +73,7 @@ public:
 protected:
   size_t size_;
   torch::Device device_;
+  bool next_state_initial_;
 };
 
 class GAELambdaRolloutBuffer : public RolloutBuffer, public std::enable_shared_from_this<RolloutBuffer> {
@@ -86,24 +87,34 @@ public:
   GAELambdaRolloutBuffer(const GAELambdaRolloutBuffer&) = delete;
 
   // update
-  void update(torch::Tensor s, torch::Tensor a, float r, float q, float log_p, bool e) {
+  void update(torch::Tensor s, torch::Tensor a, float r, float q, float log_p, bool d) {
 
     // add no grad guard
     torch::NoGradGuard no_grad;
 
-    // clone the tensors and move to device
-    auto sc = s.to(device_, s.dtype(), /* non_blocking = */ false, /* copy = */ true);
-    auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
+    // do not push anything if buffer is full, instead check if buffer is finalized
+    if (buffer_.size() == size_) {
+      if (!finalized_) {
+	finalize(q, d);
+      }
+    } else {
+    
+      // clone the tensors and move to device
+      auto sc = s.to(device_, s.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
+    
+      // add the newest element in front
+      buffer_.push_front(std::make_tuple(sc, ac, r, q, log_p, next_state_initial_));
+    }
 
-    // add the newest element in front
-    buffer_.push_front(std::make_tuple(sc, ac, r, q, log_p, e));
-
-    // if we reached max size already, remove the oldest element
-    // this ensures that we never have a buffer which has more elements than expected
-    // the user should ensure that he queries is_ready frequently and performs
-    // train steps accordingly
-    if (buffer_.size() > size_) {
-      buffer_.pop_back();
+    // if next_state_inital_ is initial state, set it to false
+    if (next_state_initial_) {
+      next_state_initial_ = false;
+    }
+    
+    // if d is final state, next state is initial state:
+    if (d) {
+      next_state_initial_ = true;
     }
   }
 
@@ -188,7 +199,7 @@ public:
   }
 
   // check functions
-  bool isReady() const { return (buffer_.size() == size_); }
+  bool isReady() const { return ((buffer_.size() == size_) && finalized_); }
 
   // reset the buffer
   void reset() {
@@ -200,6 +211,8 @@ public:
 
     // finally, set the finalized flag to false
     finalized_ = false;
+
+    // do not touch the next state initial parameter here!
     
     return;
   }

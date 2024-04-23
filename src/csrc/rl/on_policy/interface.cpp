@@ -250,33 +250,6 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* na
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_rl_on_policy_finalize_rollout_buffer(const char* name, const void* value, bool final_state,
-								  torchfort_datatype_t dtype, cudaStream_t ext_stream) {
-  using namespace torchfort;
-  try {
-    switch (dtype) {
-    case TORCHFORT_FLOAT: {
-      float value_val = *reinterpret_cast<const float*>(value);
-      rl::on_policy::finalize_rollout_buffer(name, value_val, final_state, ext_stream);
-      break;
-    }
-    case TORCHFORT_DOUBLE: {
-      double value_val = *reinterpret_cast<const double*>(value);
-      rl::on_policy::finalize_rollout_buffer(name, value_val, final_state, ext_stream);
-      break;
-    }
-    default: {
-      THROW_INVALID_USAGE("Unknown datatype provided.");
-      break;
-    }
-    }
-  } catch (const BaseException& e) {
-    std::cerr << e.what();
-    return e.getResult();
-  }
-  return TORCHFORT_RESULT_SUCCESS;
-}
-
 torchfort_result_t torchfort_rl_on_policy_predict_explore(const char* name, void* state, size_t state_dim,
 							  int64_t* state_shape, void* action, size_t action_dim,
 							  int64_t* action_shape, torchfort_datatype_t dtype,

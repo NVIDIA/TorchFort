@@ -84,27 +84,12 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   assert(reward_tensor.size(1) == 1);
   assert(d_tensor.size(1) == 1);
 
-  // device handling
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  torch::Device device = get_device(device_id);
-
-  // get tensors
-  state_old_tensor = state_old_tensor.to(device);
-  state_new_tensor = state_new_tensor.to(device);
-  action_old_tensor = action_old_tensor.to(device);
-  action_new_tensor = action_new_tensor.to(device);
-  reward_tensor = reward_tensor.to(device);
-  d_tensor = d_tensor.to(device);
-
   // value functions
   // move models to device
   for (const auto& q_model : q_models) {
-    q_model.model->to(device);
     q_model.model->train();
   }
   for (const auto& q_model_target : q_models_target) {
-    q_model_target.model->to(device);
     q_model_target.model->train();
   }
 
@@ -113,11 +98,6 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   auto q_loss_func = torch::nn::MSELoss(torch::nn::MSELossOptions().reduction(torch::kMean));
 
   // policy function
-  // base
-  p_model.model->to(device);
-  // target
-  p_model_target.model->to(device);
-
   // compute y: use the target models for q_new, no grads
   torch::Tensor y_tensor;
   {
@@ -266,7 +246,7 @@ class TD3System : public RLOffPolicySystem, public std::enable_shared_from_this<
 
 public:
   // constructor
-  TD3System(const char* name, const YAML::Node& system_node);
+  TD3System(const char* name, const YAML::Node& system_node, int model_device, int rb_device);
 
   // init communicators
   void initSystemComm(MPI_Comm mpi_comm);
@@ -291,6 +271,10 @@ public:
   // info printing
   void printInfo() const;
 
+  // accessors
+  torch::Device modelDevice() const;
+  torch::Device rbDevice() const;
+
 private:
   // we need those accessors for logging
   std::shared_ptr<ModelState> getSystemState_();
@@ -299,9 +283,6 @@ private:
 
   // internally used functions
   torch::Tensor predictWithNoiseTrain_(torch::Tensor state);
-
-  // device
-  torch::Device device_;
 
   // models
   ModelPack p_model_, p_model_target_;

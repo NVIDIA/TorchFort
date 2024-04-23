@@ -46,7 +46,7 @@ namespace torchfort {
 
 namespace rl {
 
-using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, float, float>;
+using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, float, bool>;
 
 enum RewardReductionMode { Sum = 1, Mean = 2, WeightedMean = 3, SumNoSkip = 4, MeanNoSkip = 5, WeightedMeanNoSkip = 6 };
 
@@ -56,7 +56,7 @@ public:
   // disable copy constructor
   ReplayBuffer(const ReplayBuffer&) = delete;
   // base constructor
-  ReplayBuffer(size_t max_size, size_t min_size) : max_size_(max_size), min_size_(min_size) {}
+  ReplayBuffer(size_t max_size, size_t min_size, int device) : max_size_(max_size), min_size_(min_size), device_(get_device(device)) {}
 
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, torch::Tensor, float, bool) = 0;
@@ -66,18 +66,20 @@ public:
   virtual void printInfo() const = 0;
   virtual void save(const std::string& fname) const = 0;
   virtual void load(const std::string& fname) = 0;
+  virtual torch::Device device() const = 0;
 
 protected:
   size_t max_size_;
   size_t min_size_;
+  torch::Device device_;
 };
 
 class UniformReplayBuffer : public ReplayBuffer, public std::enable_shared_from_this<ReplayBuffer> {
 
 public:
   // constructor
-  UniformReplayBuffer(size_t max_size, size_t min_size)
-      : ReplayBuffer(max_size, min_size), rng_(), device_(torch::kCPU) {}
+  UniformReplayBuffer(size_t max_size, size_t min_size, int device)
+    : ReplayBuffer(max_size, min_size, device), rng_() {}
 
   // disable copy constructor
   UniformReplayBuffer(const UniformReplayBuffer&) = delete;
@@ -193,9 +195,9 @@ public:
     }
 
     // stack the lists
-    auto stens = torch::stack(stens_list, 0);
-    auto atens = torch::stack(atens_list, 0);
-    auto sptens = torch::stack(sptens_list, 0);
+    auto stens = torch::stack(stens_list, 0).clone();
+    auto atens = torch::stack(atens_list, 0).clone();
+    auto sptens = torch::stack(sptens_list, 0).clone();
 
     // create new tensors
     auto options = torch::TensorOptions().dtype(torch::kFloat32);
@@ -212,18 +214,20 @@ public:
     // create an ordered dict with the buffer contents:
     std::vector<torch::Tensor> s_data, a_data, sp_data;
     std::vector<torch::Tensor> r_data, d_data;
-    auto options = torch::TensorOptions().dtype(torch::kFloat32);
+    auto options_f = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCPU);
+    auto options_b = torch::TensorOptions().dtype(torch::kBool).device(torch::kCPU);
     for (size_t index = 0; index < buffer_.size(); ++index) {
       torch::Tensor s, a, sp;
-      float r, d;
+      float r;
+      bool d;
       std::tie(s, a, sp, r, d) = buffer_.at(index);
-      s_data.push_back(s);
-      a_data.push_back(a);
-      sp_data.push_back(sp);
+      s_data.push_back(s.to(torch::kCPU));
+      a_data.push_back(a.to(torch::kCPU));
+      sp_data.push_back(sp.to(torch::kCPU));
 
-      auto rt = torch::from_blob(&r, {1}, options).clone();
+      auto rt = torch::from_blob(&r, {1}, options_f).clone();
       r_data.push_back(rt);
-      auto dt = torch::from_blob(&d, {1}, options).clone();
+      auto dt = torch::from_blob(&d, {1}, options_b).clone();
       d_data.push_back(dt);
     }
 
@@ -269,7 +273,7 @@ public:
       auto a = a_data[index];
       auto sp = sp_data[index];
       float r = r_data[index].item<float>();
-      float d = d_data[index].item<float>();
+      bool d = d_data[index].item<bool>();
 
       // update buffer
       this->update(s, a, sp, r, d);
@@ -282,8 +286,11 @@ public:
     std::cout << "min_size = " << min_size_ << std::endl;
   }
 
+  torch::Device device() const {
+    return device_;
+  }
+
 private:
-  torch::Device device_;
   // the rbuffer contains tuples: (s, a, s', r, d)
   // std::deque<std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, float, bool>> buffer_;
   std::deque<BufferEntry> buffer_;

@@ -48,6 +48,10 @@ namespace torchfort {
 
 namespace rl {
 
+// helpers for sanitizing devices
+// check if both devices are different, one device has to be a cpu device.
+bool validate_devices(int device1, int device2);
+  
 // helpers for extracting LRS from optimizer
 std::vector<double> get_current_lrs(std::shared_ptr<torch::optim::Optimizer> optimizer);
 

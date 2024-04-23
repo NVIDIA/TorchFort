@@ -39,62 +39,10 @@ namespace torchfort {
 
 namespace rl {
 
-SACPolicy::SACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma)
-    : p_mu_log_sigma_(p_mu_log_sigma), log_sigma_min_(-20.), log_sigma_max_(2.) {}
-
-std::vector<torch::Tensor> SACPolicy::parameters() const {
-  std::vector<torch::Tensor> result = p_mu_log_sigma_->parameters();
-  return result;
-}
-
-void SACPolicy::train() { p_mu_log_sigma_->train(); }
-
-void SACPolicy::eval() { p_mu_log_sigma_->eval(); }
-
-void SACPolicy::to(torch::Device device, bool non_blocking) { p_mu_log_sigma_->to(device, non_blocking); }
-
-void SACPolicy::save(const std::string& fname) const { p_mu_log_sigma_->save(fname); }
-
-void SACPolicy::load(const std::string& fname) { p_mu_log_sigma_->load(fname); }
-
-std::tuple<torch::Tensor, torch::Tensor> SACPolicy::forwardNoise(torch::Tensor state) {
-  // predict mu
-  auto fwd = p_mu_log_sigma_->forward(std::vector<torch::Tensor>{state});
-  auto& action_mu = fwd[0];
-  auto& action_log_sigma = fwd[1];
-  // predict sigma
-  auto action_sigma = torch::exp(torch::clamp(action_log_sigma, log_sigma_min_, log_sigma_max_));
-
-  // create distribution
-  auto pi_dist = NormalDistribution(action_mu, action_sigma);
-
-  // sample action and compute log prob
-  // do not squash yet
-  auto action = pi_dist.rsample();
-  auto action_log_prob = torch::sum(torch::flatten(pi_dist.log_prob(action), 1), 1, true);
-
-  // account for squashing
-  action_log_prob =
-      action_log_prob -
-      torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
-  action = torch::tanh(action);
-
-  return std::make_tuple(action, action_log_prob);
-}
-
-torch::Tensor SACPolicy::forwardDeterministic(torch::Tensor state) {
-  // predict mu is the only part
-  auto action = torch::tanh(p_mu_log_sigma_->forward(std::vector<torch::Tensor>{state})[0]);
-
-  return action;
-}
-
-SACSystem::SACSystem(const char* name, const YAML::Node& system_node) : device_(torch::Device(torch::kCPU)) {
-  // get device
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  device_ = get_device(device_id);
-
+SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
+		     int model_device, int rb_device)
+  : RLOffPolicySystem(model_device, rb_device) {
+  
   // get basic parameters first
   auto algo_node = system_node["algorithm"];
   if (algo_node["parameters"]) {
@@ -150,7 +98,7 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node) : device_(
 
       // distinction between buffer types
       if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size);
+        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
       }
@@ -190,11 +138,15 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node) : device_(
   // get policy model hooks
   std::shared_ptr<ModelWrapper> p_model;
   if (system_node["policy_model"]) {
-    p_model = get_model(system_node["policy_model"]);
+    auto policy_node = system_node["policy_model"];
+    
+    // get basic policy parameters:
+    p_model = get_model(policy_node);
   } else {
     THROW_INVALID_USAGE("Missing policy_model block in configuration file.");
   }
-  p_model_.model = std::make_shared<SACPolicy>(std::move(p_model));
+  // SAC policies should always be squashed
+  p_model_.model = std::make_shared<ACPolicy>(std::move(p_model), /* squashed = */ true);
   p_model_.state = get_state("actor", system_node);
 
   // get optimizers
@@ -251,30 +203,38 @@ void SACSystem::printInfo() const {
   return;
 }
 
+torch::Device SACSystem::modelDevice() const {
+  return model_device_;
+}
+
+torch::Device SACSystem::rbDevice() const {
+  return rb_device_;
+}
+  
 void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // policy
-  p_model_.comm = std::make_shared<Comm>();
-  p_model_.comm->initialize(mpi_comm);
+  p_model_.comm = std::make_shared<Comm>(mpi_comm);
+  p_model_.comm->initialize(model_device_.is_cuda());
   // critic
   for (auto& q_model : q_models_) {
-    q_model.comm = std::make_shared<Comm>();
-    q_model.comm->initialize(mpi_comm);
+    q_model.comm = std::make_shared<Comm>(mpi_comm);
+    q_model.comm->initialize(model_device_.is_cuda());
   }
   for (auto& q_model_target : q_models_target_) {
-    q_model_target.comm = std::make_shared<Comm>();
-    q_model_target.comm->initialize(mpi_comm);
+    q_model_target.comm = std::make_shared<Comm>(mpi_comm);
+    q_model_target.comm->initialize(model_device_.is_cuda());
   }
 
   // move to device before broadcasting
   // policy
-  p_model_.model->to(device_);
+  p_model_.model->to(model_device_);
   // critic
   for (auto& q_model : q_models_) {
-    q_model.model->to(device_);
+    q_model.model->to(model_device_);
   }
   for (auto& q_model_target : q_models_target_) {
-    q_model_target.model->to(device_);
+    q_model_target.model->to(model_device_);
   }
 
   // Broadcast initial model parameters from rank 0
@@ -436,10 +396,6 @@ std::shared_ptr<Comm> SACSystem::getSystemComm_() { return system_comm_; }
 // do exploration step without knowledge about the state
 // for example, apply random action
 torch::Tensor SACSystem::explore(torch::Tensor action) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
@@ -450,17 +406,13 @@ torch::Tensor SACSystem::explore(torch::Tensor action) {
 }
 
 torch::Tensor SACSystem::predict(torch::Tensor state) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_.model->to(device_);
+  p_model_.model->to(model_device_);
   p_model_.model->eval();
-  state.to(device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   auto action = (p_model_.model)->forwardDeterministic(state);
@@ -472,17 +424,13 @@ torch::Tensor SACSystem::predict(torch::Tensor state) {
 }
 
 torch::Tensor SACSystem::predictExplore(torch::Tensor state) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_.model->to(device_);
+  p_model_.model->to(model_device_);
   p_model_.model->eval();
-  state.to(device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   torch::Tensor action, log_probs;
@@ -495,18 +443,14 @@ torch::Tensor SACSystem::predictExplore(torch::Tensor state) {
 }
 
 torch::Tensor SACSystem::evaluate(torch::Tensor state, torch::Tensor action) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  q_models_target_[0].model->to(device_);
+  q_models_target_[0].model->to(model_device_);
   q_models_target_[0].model->eval();
-  state.to(device_);
-  action.to(device_);
+  state = state.to(model_device_);
+  action = action.to(model_device_);
 
   // scale action
   auto action_scale = scale_action(action, a_low_, a_high_);
@@ -518,11 +462,6 @@ torch::Tensor SACSystem::evaluate(torch::Tensor state, torch::Tensor action) {
 }
 
 void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
-
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // increment train step counter first, this avoids an initial policy update at start
   train_step_count_++;
 
@@ -535,13 +474,13 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_, gamma_, nstep_, nstep_reward_reduction_);
 
     // upload to device
-    s.to(device_);
-    a.to(device_);
-    sp.to(device_);
-    r.to(device_);
-    d.to(device_);
+    s = s.to(model_device_);
+    a = a.to(model_device_);
+    sp = sp.to(model_device_);
+    r = r.to(model_device_);
+    d = d.to(model_device_);
   }
-
+  
   // train step
   std::vector<float> q_loss_vals;
   train_sac(p_model_, q_models_, q_models_target_, s, sp, a, r, d, static_cast<float>(std::pow(gamma_, nstep_)), rho_,

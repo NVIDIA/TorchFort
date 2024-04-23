@@ -30,6 +30,8 @@
 
 #pragma once
 
+#define TORCHFORT_DEVICE_CPU (-1)
+
 /**
  * @brief This enum defines the data types supported.
  */

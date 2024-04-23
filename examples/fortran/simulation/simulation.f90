@@ -33,14 +33,15 @@ module simulation
   real(real32), private, parameter :: PI  = 4 * atan(1.0)
 
   integer, private :: n, js, je
+  integer, private :: simulation_device
   real(real32), private :: dx, t_total, dt, a
   real(real32), private :: ax, ay
   real(real32), private :: k = 1
 
   contains
-    subroutine init_simulation(n_in, dt_in, a_in, t_start, rank, nranks)
+    subroutine init_simulation(n_in, dt_in, a_in, t_start, rank, nranks, simulation_device_in)
       implicit none
-      integer, intent(in) :: n_in
+      integer, intent(in) :: n_in, simulation_device_in
       real(real32), intent(in) :: dt_in, t_start
       real(real32), intent(in) :: a_in(2)
       integer :: rank, nranks
@@ -48,6 +49,7 @@ module simulation
       dt = dt_in
       ax = a_in(1)
       ay = a_in(2)
+      simulation_device = simulation_device_in
 
       dx = 2.0/(n)
       t_total = t_start
@@ -70,7 +72,7 @@ module simulation
       integer :: i, j
       real(real32) ::  x, y
 
-      !$acc parallel loop collapse(2) default(present)
+      !$acc parallel loop collapse(2) default(present) async if(simulation_device >= 0)
       do j = js, je
         do i = 1, n
           x = -1.0 + dx * (i-1) - mod(ax*t, 2.0)
@@ -90,7 +92,7 @@ module simulation
       integer :: i, j
       real(real32) ::  x, y
 
-      !$acc parallel loop collapse(2) default(present)
+      !$acc parallel loop collapse(2) default(present) async if(simulation_device >= 0)
       do j = js, je
         do i = 1, n
           x = -1.0 + dx * (i-1) - mod(ax*t, 2.0)
@@ -129,7 +131,7 @@ module simulation
       block
         integer(HSIZE_T) :: dims(size(shape(sample)))
 
-        !$acc update host(sample)
+        !$acc update host(sample) if(simulation_device >= 0)
 
         call h5open_f(err)
         call h5fcreate_f (fname, H5F_ACC_TRUNC_F, out_file_id, err)

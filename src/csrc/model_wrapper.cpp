@@ -55,10 +55,7 @@ ModelWrapper::ModelWrapper(const std::string& jit_model_fname) : jit{true} {
   }
 
   model_jit = std::shared_ptr<torch::jit::Module>(new torch::jit::Module);
-  // Load model on currently set GPU
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  *model_jit = torch::jit::load(jit_model_fname, get_device(device_id));
+  *model_jit = torch::jit::load(jit_model_fname, device_);
 }
 
 std::vector<torch::Tensor> ModelWrapper::parameters() const {
@@ -91,6 +88,8 @@ void ModelWrapper::to(torch::Device device, bool non_blocking) {
   } else {
     model->to(device, non_blocking);
   }
+
+  this->device_ = device;
 }
 
 void ModelWrapper::train() {
@@ -131,9 +130,13 @@ std::vector<torch::Tensor> ModelWrapper::forward(const std::vector<torch::Tensor
 
 void ModelWrapper::save(const std::string& fname) const {
   if (jit) {
+    model_jit->to(torch::Device(torch::kCPU));
     model_jit->save(fname);
+    model_jit->to(device_);
   } else {
+    model->to(torch::Device(torch::kCPU));
     torch::save(model, fname);
+    model->to(device_);
   }
 }
 
@@ -145,13 +148,16 @@ void ModelWrapper::load(const std::string& fname) {
     model_jit.reset();
     model_jit = std::shared_ptr<torch::jit::Module>(new torch::jit::Module);
 
-    // Load model on currently set GPU
-    int device_id;
-    CHECK_CUDA(cudaGetDevice(&device_id));
-    *model_jit = torch::jit::load(fname, get_device(device_id));
+    *model_jit = torch::jit::load(fname, device_);
   } else {
+    model->to(torch::Device(torch::kCPU));
     torch::load(model, fname);
+    model->to(device_);
   }
+}
+
+torch::Device ModelWrapper::device() const {
+  return device_;
 }
 
 } // namespace torchfort

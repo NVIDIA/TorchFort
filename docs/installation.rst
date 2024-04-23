@@ -6,13 +6,15 @@ TorchFort can be installed in multiple ways but we highly recommend building and
 Docker Installation
 -------------------
 
-We provide a ``Dockerfile`` which contains all relevant dependencies. In order to build TorchFort using Docker, simply clone the repo and call:
+We provide a ``Dockerfile`` which contains all relevant dependencies and builds using the `NVIDIA HPC SDK <https://developer.nvidia.com/hpc-sdk>`_ software libraries and compilers, which is our recommended way to build TorchFort. In order to build TorchFort using Docker, simply clone the repo and call:
 
 .. code-block:: bash
 
     docker build -t torchfort:latest -f docker/Dockerfile .
 
 from the top level directory of the repo. Inside the container, TorchFort will be installed in ``/opt/torchfort``.
+
+We provide an alternative docker file ``Dockerfile_gnu`` which can be used to build TorchFort using GNU compilers.
 
 CMake Installation
 ------------------
@@ -21,30 +23,35 @@ For a native installation TorchFort provides a ``CMakeList.txt`` file. Please ma
 
 * Requirements for core functionality and examples:
 
-  - CUDA 11.8 (CUDA 12.x is **not** supported yet)
+  - CUDA 12.1 or newer
   - ``python`` version 3.6 or higher
   - ``pybind11``
   - ``yaml-cpp`` from https://github.com/jbeder/yaml-cpp.git
-  - C++ compiler ``nvcc`` and Fortran compiler ``nvfortran``. We recommend installing the `NVIDIA HPC SDK Toolkit <https://developer.nvidia.com/hpc-sdk>`_.
+  - MPI
+  - NVIDIA Collective Communication Library (``NCCL``)
   - ``HDF5``
   - the Python modules specified in ``requirements.txt``
+  - GNU or `NVHPC <https://developer.nvidia.com/hpc-sdk>`_ compilers. NVHPC compilers are **required** if CUDA Fortran device array support is desired.
+
 
 * Additional requirements for building this documentation:
 
   - Doxygen
   - the Python modules specified in ``docs/requirements.txt``
 
-To build TorchFort, clone the repo and set the environment variable ``NVHPC_CMAKE_DIR`` to the directory where the NVIDIA HPC SDK Toolkit CMake config files are located. Those are usually located in ``<NVHPC root directory>/cmake``. Then, call from the root directory:
+To build TorchFort, clone the repo then call the following from the root directory:
 
 .. code-block:: bash
 
     mkdir build && cd build
     cmake -DCMAKE_INSTALL_PREFIX=<TorchFort installation prefix> \
-          -DNVHPC_CUDA_VERSION=11.8 \
-          -DCMAKE_PREFIX_PATH="`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`;${NHPC_CMAKE_DIR}" \
+          -DTORCHFORT_YAML_CPP_ROOT=<path to yaml-cpp installation> \
+          -DTORCHFORT_BUILD_EXAMPLES=1 \
+          -DCMAKE_PREFIX_PATH="`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`" \
         ..
     make -j install
 
+See the top level ``CMakeLists.txt`` file for additional CMake configuration options.
     
 Build Documentation
 -------------------

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,56 +29,51 @@
  */
 
 #pragma once
+#include <unordered_map>
+
+#include <yaml-cpp/yaml.h>
+
 #include <cuda_runtime.h>
 
-#include <cmath>
+#include <c10/cuda/CUDAGuard.h>
+#include <c10/cuda/CUDAStream.h>
 #include <torch/torch.h>
 
+#include "internal/defines.h"
+#include "internal/logging.h"
+#include "internal/lr_schedulers.h"
+#include "internal/model_pack.h"
+#include "internal/setup.h"
+
+// rl stuff
 #include "internal/rl/rl.h"
 
 namespace torchfort {
 
 namespace rl {
 
-class Distribution {
-
+// helper for AC policies
+class ACPolicy {
 public:
-  Distribution(const Distribution&) = delete;
+  ACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma, bool squashed=false);
 
-  // constructor
-  Distribution() {}
-  virtual torch::Tensor rsample() = 0;
-  virtual torch::Tensor log_prob(torch::Tensor value) = 0;
-  virtual torch::Tensor entropy() = 0;
-};
+  // we expose those for convenience
+  std::vector<torch::Tensor> parameters() const;
+  void train();
+  void eval();
+  void to(torch::Device device, bool non_blocking = false);
+  void save(const std::string& fname) const;
+  void load(const std::string& fname);
 
-class NormalDistribution : public Distribution, public std::enable_shared_from_this<Distribution> {
-public:
-  NormalDistribution(torch::Tensor mu, torch::Tensor sigma) : mu_(mu), sigma_(sigma) {}
-
-  torch::Tensor rsample() {
-    auto noise = torch::empty_like(mu_).normal_(0., 1.);
-    return torch::Tensor(mu_ + sigma_ * noise).clone();
-  }
-
-  torch::Tensor log_prob(torch::Tensor value) {
-    auto var = torch::pow(sigma_, 2);
-    auto log_sigma = sigma_.log();
-    auto result = -torch::pow((value - mu_), 2) / (2 * var) - log_sigma - std::log(std::sqrt(2. * M_PI));
-
-    return result;
-  }
-
-  torch::Tensor entropy() {
-    auto log_sigma = sigma_.log();
-    auto result = log_sigma + 0.5 * (1. + std::log(2. * M_PI));
-
-    return result;
-  }
+  // forward routines
+  std::tuple<torch::Tensor, torch::Tensor> forwardNoise(torch::Tensor state);
+  torch::Tensor forwardDeterministic(torch::Tensor state);
 
 protected:
-  torch::Tensor mu_;
-  torch::Tensor sigma_;
+  bool squashed_;
+  float log_sigma_min_;
+  float log_sigma_max_;
+  std::shared_ptr<ModelWrapper> p_mu_log_sigma_;
 };
 
 } // namespace rl

@@ -38,12 +38,9 @@
 namespace torchfort {
 namespace rl {
 
-DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node) : device_(torch::Device(torch::kCPU)) {
-
-  // get device
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  device_ = get_device(device_id);
+DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node,
+		       int model_device, int rb_device)
+  : RLOffPolicySystem(model_device, rb_device) {
 
   // get basic parameters first
   auto algo_node = system_node["algorithm"];
@@ -130,7 +127,7 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node) : device
 
       // distinction between buffer types
       if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size);
+        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
       }
@@ -145,7 +142,9 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node) : device
   // get value model hook
   if (system_node["critic_model"]) {
     q_model_.model = get_model(system_node["critic_model"]);
+    q_model_.model->to(model_device_);
     q_model_target_.model = get_model(system_node["critic_model"]);
+    q_model_target_.model->to(model_device_);
     // change weights for models
     init_parameters(q_model_.model);
     // copy new parameters
@@ -164,7 +163,9 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node) : device
   // get policy model hook
   if (system_node["policy_model"]) {
     p_model_.model = get_model(system_node["policy_model"]);
+    p_model_.model->to(model_device_);
     p_model_target_.model = get_model(system_node["policy_model"]);
+    p_model_target_.model->to(model_device_);
     // copy parameters
     copy_parameters(p_model_target_.model, p_model_.model);
     // freeze weights
@@ -230,26 +231,34 @@ void DDPGSystem::printInfo() const {
   return;
 }
 
+torch::Device DDPGSystem::modelDevice() const {
+  return model_device_;
+}
+
+torch::Device DDPGSystem::rbDevice() const {
+  return replay_buffer_->device();
+}
+
 void DDPGSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // policy
-  p_model_.comm = std::make_shared<Comm>();
-  p_model_.comm->initialize(mpi_comm);
-  p_model_target_.comm = std::make_shared<Comm>();
-  p_model_target_.comm->initialize(mpi_comm);
+  p_model_.comm = std::make_shared<Comm>(mpi_comm);
+  p_model_.comm->initialize(model_device_.is_cuda());
+  p_model_target_.comm = std::make_shared<Comm>(mpi_comm);
+  p_model_target_.comm->initialize(model_device_.is_cuda());
   // critic
-  q_model_.comm = std::make_shared<Comm>();
-  q_model_.comm->initialize(mpi_comm);
-  q_model_target_.comm = std::make_shared<Comm>();
-  q_model_target_.comm->initialize(mpi_comm);
+  q_model_.comm = std::make_shared<Comm>(mpi_comm);
+  q_model_.comm->initialize(model_device_.is_cuda());
+  q_model_target_.comm = std::make_shared<Comm>(mpi_comm);
+  q_model_target_.comm->initialize(model_device_.is_cuda());
 
   // move to device before broadcasting
   // policy
-  p_model_.model->to(device_);
-  p_model_target_.model->to(device_);
+  p_model_.model->to(model_device_);
+  p_model_target_.model->to(model_device_);
   // critic
-  q_model_.model->to(device_);
-  q_model_target_.model->to(device_);
+  q_model_.model->to(model_device_);
+  q_model_target_.model->to(model_device_);
 
   // Broadcast initial model parameters from rank 0
   // policy
@@ -356,9 +365,9 @@ torch::Tensor DDPGSystem::predictWithNoiseTrain_(torch::Tensor state) {
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_target_.model->to(device_);
+  p_model_target_.model->to(model_device_);
   p_model_target_.model->eval();
-  state.to(device_);
+  state = state.to(model_device_);
 
   // get noisy prediction
   auto action = (*noise_actor_train_)(p_model_target_, state);
@@ -371,10 +380,6 @@ torch::Tensor DDPGSystem::predictWithNoiseTrain_(torch::Tensor state) {
 // do exploration step without knowledge about the state
 // for example, apply random action
 torch::Tensor DDPGSystem::explore(torch::Tensor action) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
@@ -385,17 +390,13 @@ torch::Tensor DDPGSystem::explore(torch::Tensor action) {
 }
 
 torch::Tensor DDPGSystem::predict(torch::Tensor state) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_target_.model->to(device_);
+  p_model_target_.model->to(model_device_);
   p_model_target_.model->eval();
-  state.to(device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   auto action = (p_model_target_.model)->forward(std::vector<torch::Tensor>{state})[0];
@@ -407,17 +408,13 @@ torch::Tensor DDPGSystem::predict(torch::Tensor state) {
 }
 
 torch::Tensor DDPGSystem::predictExplore(torch::Tensor state) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_.model->to(device_);
+  p_model_.model->to(model_device_);
   p_model_.model->eval();
-  state.to(device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   auto action = (*noise_actor_exploration_)(p_model_, state);
@@ -429,18 +426,14 @@ torch::Tensor DDPGSystem::predictExplore(torch::Tensor state) {
 }
 
 torch::Tensor DDPGSystem::evaluate(torch::Tensor state, torch::Tensor action) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  q_model_target_.model->to(device_);
+  q_model_target_.model->to(model_device_);
   q_model_target_.model->eval();
-  state.to(device_);
-  action.to(device_);
+  state = state.to(model_device_);
+  action = action.to(model_device_);
 
   // do fwd pass
   auto reward = (q_model_target_.model)->forward(std::vector<torch::Tensor>{state, action})[0];
@@ -449,11 +442,6 @@ torch::Tensor DDPGSystem::evaluate(torch::Tensor state, torch::Tensor action) {
 }
 
 void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
-
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // increment train step counter first, this avoids an initial policy update at start
   train_step_count_++;
 
@@ -466,11 +454,11 @@ void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_, gamma_, nstep_, nstep_reward_reduction_);
 
     // upload to device
-    s.to(device_);
-    a.to(device_);
-    sp.to(device_);
-    r.to(device_);
-    d.to(device_);
+    s = s.to(model_device_);
+    a = a.to(model_device_);
+    sp = sp.to(model_device_);
+    r = r.to(model_device_);
+    d = d.to(model_device_);
 
     // get a new action by predicting one with target network
     ap = predictWithNoiseTrain_(sp);

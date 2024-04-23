@@ -59,20 +59,25 @@ extern "C" {
  *
  * @param[in] name A name to assign to the created model instance to use as a key for other TorchFort routines.
  * @param[in] config_fname The filesystem path to the user-defined model configuration file to use.
+ * @param[in] device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
+ * values >= 0, model will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_create_model(const char* name, const char* config_fname);
+torchfort_result_t torchfort_create_model(const char* name, const char* config_fname, int device);
 /**
  * @brief Creates a distributed data-parallel model from a provided configuration file.
  *
  * @param[in] name A name to assign to created model to use as a key for other TorchFort routines.
  * @param[in] config_fname The filesystem path to the user-defined model configuration file to use.
  * @param[in] mpi_comm MPI communicator to use to initialize NCCL communication library for data-parallel communication.
+ * @param[in] device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
+ * values >= 0, model will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_create_distributed_model(const char* name, const char* config_fname, MPI_Comm mpi_comm);
+torchfort_result_t torchfort_create_distributed_model(const char* name, const char* config_fname, MPI_Comm mpi_comm,
+                                                      int device);
 
 // Training and inference functions
 /**
@@ -89,7 +94,7 @@ torchfort_result_t torchfort_create_distributed_model(const char* name, const ch
  * rank of the label data.
  * @param[out] loss_val A pointer to a memory location to write the loss value computed during the training iteration.
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the training operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -114,7 +119,7 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
  * @param[in] output_shape  A pointer to an array specifying the shape of the output data. Length should be equal to the
  * rank of the output data.
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA steram to enqueue the inference operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */

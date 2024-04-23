@@ -23,14 +23,15 @@ First, create a model instance.
 
   .. code-tab:: fortran
 
-    istat = torchfort_create_model(model_name, configfile)
+    istat = torchfort_create_model(model_name, configfile, device)
 
   .. code-tab:: c++
 
-    istat = torchfort_create_model(model_name, configfile);
+    istat = torchfort_create_model(model_name, configfile, device);
 
 This function instantiates a model, associating a string ``model_name`` with a model instance created using a YAML configuration file located at path ``configfile``. See :ref:`torchfort_config-ref` for details
 on the YAML configuration file format and options.
+The last argument ``device`` specifies where to place and run the model on. Values 0 or greater correspond to GPU device indices (e.g., a value of ``0`` will place the model on GPU device 0). The constant ``TORCHFORT_DEVICE_GPU (-1)`` can be used to place the model on the CPU.
 
 Run a Training Step
 ~~~~~~~~~~~~~~~~~~~
@@ -51,6 +52,7 @@ Run a training step on input and label data generated from your program.
 
 This function passes the ``input`` and ``label`` data to the model instance associated with ``model_name`` and runs a training iteration, updating the model parameters as necessary. The training loss is returned by reference to the ``loss`` variable.
 In the Fortran API, ``input`` and ``label`` are multi-dimensional Fortran arrays, with dimension/shape/datatype information automatically inferred in the interface.
+The ``stream`` argument specifies a CUDA stream to enqueue the training operations into. This argument is ignored if the model was placed on the CPU.
 
 Run Inference to generate predicted output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,6 +73,8 @@ After training the model on one or more samples, we can run an inference to gene
 
 This function passes the ``input`` data to the model instance associated with ``model_name`` and runs an inference, returning the predicted output from the model to ``output``.
 In the Fortran API, ``input`` and ``output`` are multi-dimensional Fortran arrays, with dimension/shape/datatype information automatically inferred in the interface.
+The ``stream`` argument specifies a CUDA stream to enqueue the inference operations into. This argument is ignored if the model was placed on the CPU.
+
 
 Checkpoint/Restart
 ~~~~~~~~~~~~~~~~~~
@@ -140,13 +144,14 @@ To start, a TorchFort rl system has to be initialized with the call:
 
   .. code-tab:: fortran
   
-    istat = torchfort_rl_off_policy_create_system(system_name, configfile)
+    istat = torchfort_rl_off_policy_create_system(system_name, configfile, model_device, rb_device)
     
   .. code-tab:: c++
 
-    istat = torchfort_rl_off_policy_create_system(system_name, configfile);
+    istat = torchfort_rl_off_policy_create_system(system_name, configfile, model_device, rb_device);
 
 where ``system_name`` is a name which used by TorchFort to identify the system created using  YAML configuration file ``configfile``. See :ref:`torchfort_config-ref` for details on the YAML configuration file format and options.
+The last two arguments ``model_device`` and ``rb_device`` specify where to place the model and replay buffer on respectively. Values 0 or greater correspond to GPU device indices (e.g., a value of ``0`` will place the model or replay buffer on GPU device 0). The constant ``TORCHFORT_DEVICE_GPU (-1)`` can be used to place the model or replay buffer on the CPU.
 
 Replay Buffer Management
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -166,11 +171,11 @@ The user application (usually called *environment* in the RL context) will gener
                                                          action, action_dim, action_shape, 
                                                          reward, terminal, dtype, stream);
 
-``state_old`` is an array describing the old environment state to which ``action`` is applied, resulting in a new environment state ``state_new`` and a corresponding scalar ``reward``. The variable ``terminal`` is a flag which specifies whether the end of an episode is reached. In the Fortran API, the states and actions are multi-dimensional Fortran arrays with dimension/shape/datatype automatically inferred in the interface. In the C++ API, all arrays are ``void`` pointers and the state and action dimensions and shapes have to be passed explicitly.
+``state_old`` is an array describing the old environment state to which ``action`` is applied, resulting in a new environment state ``state_new`` and a corresponding scalar ``reward``. The variable ``terminal`` is a flag which specifies whether the end of an episode is reached. In the Fortran API, the states and actions are multi-dimensional Fortran arrays with dimension/shape/datatype automatically inferred in the interface. In the C++ API, all arrays are ``void`` pointers and the state and action dimensions and shapes have to be passed explicitly. The ``stream`` argument specifies a CUDA stream to enqueue the update operations into. This argument is ignored if the replay buffer was placed on the CPU.
 
 .. note::
     The update replay buffer functions expect a single tuple containing single samples and hence no batch dimension should be included.
-    
+
 .. warning::
     It is important to mention that this function should be called in causal order on the state tuples, i.e., the data inserted into the replay buffer should contain subsequent steps of the environment. In case of n-step rollouts, the sampling logic assumes that the list of tuples are ordered causally and different trajectories are separated by a terminal flag set to true for the last step in trajectory. Any non-causal ordering would likely yield sub-optimal training performance.
 
@@ -213,6 +218,7 @@ TorchFort provides the following two functions to generate action predictions fr
                                                     dtype, stream);
     
 Both functions predict an ``action`` based on a ``state``. The first variant generates a deterministic prediction from the target network (for algorithms which use target networks, i.e., a shadow network which gets updated less often than the active networks the regular weight updates are applied to). The second variant generates a prediction using the active network and also adds noise as specified in the configuration file.
+The ``stream`` argument specifies a CUDA stream to enqueue the prediction operations into. This argument is ignored if the model was placed on the CPU.
 
 .. note::
     The prediction methods are inference methods and thus expect a batch of data. Therefore, the state and action arrays need to include a batch dimension.
@@ -226,13 +232,14 @@ Once the system is ready, a training step (forward, backward, optimizer step, le
 
   .. code-tab:: fortran
   
-    istat = torchfort_rl_off_policy_train_step(system_name, p_loss, q_loss)
+    istat = torchfort_rl_off_policy_train_step(system_name, p_loss, q_loss, stream)
     
   .. code-tab:: c++
   
-    istat = torchfort_rl_off_policy_train_step(system_name, p_loss, q_loss);
+    istat = torchfort_rl_off_policy_train_step(system_name, p_loss, q_loss, stream);
     
 This function will retrieve a single batch from the replay buffer and perform a training step, populating the variables ``p_loss``, ``q_loss`` by reference. 
+The ``stream`` argument specifies a CUDA stream to enqueue the training operations into. This argument is ignored if the model was placed on the CPU.
 
 .. note::
     If the RL algorithm uses a policy lag bigger than zero, for some steps only the value function networks are updated. In this case, ``p_loss`` is not computed and will be equal to zero.

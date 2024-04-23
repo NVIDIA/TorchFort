@@ -53,28 +53,31 @@ public:
   // disable copy constructor
   RLOffPolicySystem(const RLOffPolicySystem&) = delete;
 
-  // empty constructor:
-  RLOffPolicySystem() : train_step_count_(0) {}
+  // default constructor:
+  RLOffPolicySystem(int model_device, int rb_device);
 
   // some important functions which have to be implemented by the base class
   virtual void updateReplayBuffer(torch::Tensor, torch::Tensor, torch::Tensor, float, bool) = 0;
   virtual bool isReady() = 0;
 
   // these have to be implemented
-  virtual torch::Tensor explore(torch::Tensor action) = 0;
-  virtual torch::Tensor predict(torch::Tensor state) = 0;
-  virtual torch::Tensor predictExplore(torch::Tensor state) = 0;
-  virtual torch::Tensor evaluate(torch::Tensor state, torch::Tensor action) = 0;
+  virtual torch::Tensor explore(torch::Tensor) = 0;
+  virtual torch::Tensor predict(torch::Tensor) = 0;
+  virtual torch::Tensor predictExplore(torch::Tensor) = 0;
+  virtual torch::Tensor evaluate(torch::Tensor, torch::Tensor) = 0;
   virtual void trainStep(float&, float&) = 0;
   virtual void printInfo() const = 0;
   virtual void initSystemComm(MPI_Comm mpi_comm) = 0;
   virtual void saveCheckpoint(const std::string& checkpoint_dir) const = 0;
   virtual void loadCheckpoint(const std::string& checkpoint_dir) = 0;
+  virtual torch::Device modelDevice() const = 0;
+  virtual torch::Device rbDevice() const = 0;
 
 protected:
   virtual std::shared_ptr<ModelState> getSystemState_() = 0;
   virtual std::shared_ptr<Comm> getSystemComm_() = 0;
   size_t train_step_count_;
+  torch::Device model_device_, rb_device_;
 };
 
 // Declaration of external global variables
@@ -86,21 +89,22 @@ static void update_replay_buffer(const char* name, T* state_old, T* state_new, s
                                  T* action_old, size_t action_dim, int64_t* action_shape, T reward, bool final_state,
                                  cudaStream_t ext_stream) {
 
-  // device stuff
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  auto stream = c10::cuda::getStreamFromExternal(ext_stream, device_id);
-  c10::cuda::CUDAStreamGuard guard(stream);
-
   // no grad
   torch::NoGradGuard no_grad;
 
+  c10::cuda::OptionalCUDAStreamGuard guard;
+  auto rb_device = rl_systems[name]->rbDevice();
+  if (rb_device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
+    guard.reset_stream(stream);
+  }
+
   // get tensors and copy:
-  auto state_old_tensor = get_tensor<L>(state_old, state_dim, state_shape, device_id)
+  auto state_old_tensor = get_tensor<L>(state_old, state_dim, state_shape)
                               .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto state_new_tensor = get_tensor<L>(state_new, state_dim, state_shape, device_id)
+  auto state_new_tensor = get_tensor<L>(state_new, state_dim, state_shape)
                               .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto action_old_tensor = get_tensor<L>(action_old, action_dim, action_shape, device_id)
+  auto action_old_tensor = get_tensor<L>(action_old, action_dim, action_shape)
                                .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
 
   rl_systems[name]->updateReplayBuffer(state_old_tensor, action_old_tensor, state_new_tensor,
@@ -113,15 +117,17 @@ static void predict_explore(const char* name, T* state, size_t state_dim, int64_
                             size_t action_dim, int64_t* action_shape, cudaStream_t ext_stream) {
 
   // device and stream handling
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  auto stream = c10::cuda::getStreamFromExternal(ext_stream, device_id);
-  c10::cuda::CUDAStreamGuard guard(stream);
+  c10::cuda::OptionalCUDAStreamGuard guard;
+  auto model_device = rl_systems[name]->modelDevice();
+  if (model_device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
+    guard.reset_stream(stream);
+  }
 
   // create tensors
-  auto state_tensor = get_tensor<L>(state, state_dim, state_shape, device_id)
+  auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
                           .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto action_tensor = get_tensor<L>(action, action_dim, action_shape, device_id);
+  auto action_tensor = get_tensor<L>(action, action_dim, action_shape);
 
   // fwd pass
   auto tmpaction = rl_systems[name]->predictExplore(state_tensor).to(action_tensor.dtype());
@@ -135,15 +141,17 @@ static void predict(const char* name, T* state, size_t state_dim, int64_t* state
                     int64_t* action_shape, cudaStream_t ext_stream) {
 
   // device and stream handling
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  auto stream = c10::cuda::getStreamFromExternal(ext_stream, device_id);
-  c10::cuda::CUDAStreamGuard guard(stream);
-
+  c10::cuda::OptionalCUDAStreamGuard guard;
+  auto model_device = rl_systems[name]->modelDevice();
+  if (model_device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
+    guard.reset_stream(stream);
+  }
+  
   // create tensors
-  auto state_tensor = get_tensor<L>(state, state_dim, state_shape, device_id)
+  auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
                           .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto action_tensor = get_tensor<L>(action, action_dim, action_shape, device_id);
+  auto action_tensor = get_tensor<L>(action, action_dim, action_shape);
 
   // fwd pass
   auto tmpaction = rl_systems[name]->predict(state_tensor).to(action_tensor.dtype());
@@ -158,17 +166,19 @@ static void evaluate(const char* name, T* state, size_t state_dim, int64_t* stat
                      cudaStream_t ext_stream) {
 
   // device and stream handling
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  auto stream = c10::cuda::getStreamFromExternal(ext_stream, device_id);
-  c10::cuda::CUDAStreamGuard guard(stream);
+  c10::cuda::OptionalCUDAStreamGuard guard;
+  auto model_device = rl_systems[name]->modelDevice();
+  if (model_device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
+    guard.reset_stream(stream);
+  }
 
   // create tensors
-  auto state_tensor = get_tensor<L>(state, state_dim, state_shape, device_id)
+  auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
                           .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto action_tensor = get_tensor<L>(action, action_dim, action_shape, device_id)
+  auto action_tensor = get_tensor<L>(action, action_dim, action_shape)
                            .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto reward_tensor = get_tensor<L>(reward, reward_dim, reward_shape, device_id);
+  auto reward_tensor = get_tensor<L>(reward, reward_dim, reward_shape);
 
   // fwd pass
   auto tmpreward = rl_systems[name]->evaluate(state_tensor, action_tensor).to(reward_tensor.dtype());

@@ -37,19 +37,16 @@
 namespace torchfort {
 namespace rl {
 
-TD3System::TD3System(const char* name, const YAML::Node& system_node) : device_(torch::Device(torch::kCPU)) {
-
-  // get device
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  device_ = get_device(device_id);
-
+TD3System::TD3System(const char* name, const YAML::Node& system_node,
+		     int model_device, int rb_device)
+  : RLOffPolicySystem(model_device, rb_device) {
+  
   // get basic parameters first
   auto algo_node = system_node["algorithm"];
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
     std::set<std::string> supported_params{"batch_size", "num_critics", "policy_lag", "nstep", "nstep_reward_reduction",
-                                           "gamma",      "rho"};
+                                           "gamma", "rho"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     num_critics_ = params.get_param<int>("num_critics", 2)[0];
@@ -132,7 +129,7 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node) : device_(
 
       // distinction between buffer types
       if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size);
+        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
       }
@@ -152,7 +149,9 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node) : device_(
   if (system_node["critic_model"]) {
     for (int i = 0; i < q_models_.size(); ++i) {
       q_models_[i].model = get_model(system_node["critic_model"]);
+      q_models_[i].model->to(model_device_);
       q_models_target_[i].model = get_model(system_node["critic_model"]);
+      q_models_target_[i].model->to(model_device_);
       // change weights for models
       init_parameters(q_models_[i].model);
       // copy new parameters
@@ -172,7 +171,9 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node) : device_(
   // get policy model hook
   if (system_node["policy_model"]) {
     p_model_.model = get_model(system_node["policy_model"]);
+    p_model_.model->to(model_device_);
     p_model_target_.model = get_model(system_node["policy_model"]);
+    p_model_target_.model->to(model_device_);
     // copy parameters
     copy_parameters(p_model_target_.model, p_model_.model);
     // freeze weights
@@ -244,33 +245,41 @@ void TD3System::printInfo() const {
   return;
 }
 
+torch::Device TD3System::modelDevice() const {
+  return model_device_;
+}
+
+torch::Device TD3System::rbDevice() const {
+  return rb_device_;
+}
+  
 void TD3System::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // policy
-  p_model_.comm = std::make_shared<Comm>();
-  p_model_.comm->initialize(mpi_comm);
-  p_model_target_.comm = std::make_shared<Comm>();
-  p_model_target_.comm->initialize(mpi_comm);
+  p_model_.comm = std::make_shared<Comm>(mpi_comm);
+  p_model_.comm->initialize(model_device_.is_cuda());
+  p_model_target_.comm = std::make_shared<Comm>(mpi_comm);
+  p_model_target_.comm->initialize(model_device_.is_cuda());
   // critic
   for (auto& q_model : q_models_) {
-    q_model.comm = std::make_shared<Comm>();
-    q_model.comm->initialize(mpi_comm);
+    q_model.comm = std::make_shared<Comm>(mpi_comm);
+    q_model.comm->initialize(model_device_.is_cuda());
   }
   for (auto& q_model_target : q_models_target_) {
-    q_model_target.comm = std::make_shared<Comm>();
-    q_model_target.comm->initialize(mpi_comm);
+    q_model_target.comm = std::make_shared<Comm>(mpi_comm);
+    q_model_target.comm->initialize(model_device_.is_cuda());
   }
 
   // move to device before broadcasting
   // policy
-  p_model_.model->to(device_);
-  p_model_target_.model->to(device_);
+  p_model_.model->to(model_device_);
+  p_model_target_.model->to(model_device_);
   // critic
   for (auto& q_model : q_models_) {
-    q_model.model->to(device_);
+    q_model.model->to(model_device_);
   }
   for (auto& q_model_target : q_models_target_) {
-    q_model_target.model->to(device_);
+    q_model_target.model->to(model_device_);
   }
 
   // Broadcast initial model parameters from rank 0
@@ -402,9 +411,9 @@ torch::Tensor TD3System::predictWithNoiseTrain_(torch::Tensor state) {
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_target_.model->to(device_);
+  p_model_target_.model->to(model_device_);
   p_model_target_.model->eval();
-  state.to(device_);
+  state = state.to(model_device_);
 
   // get noisy prediction
   auto action = (*noise_actor_train_)(p_model_target_, state);
@@ -417,10 +426,6 @@ torch::Tensor TD3System::predictWithNoiseTrain_(torch::Tensor state) {
 // do exploration step without knowledge about the state
 // for example, apply random action
 torch::Tensor TD3System::explore(torch::Tensor action) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
@@ -431,17 +436,13 @@ torch::Tensor TD3System::explore(torch::Tensor action) {
 }
 
 torch::Tensor TD3System::predict(torch::Tensor state) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_target_.model->to(device_);
+  p_model_target_.model->to(model_device_);
   p_model_target_.model->eval();
-  state.to(device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   auto action = (p_model_target_.model)->forward(std::vector<torch::Tensor>{state})[0];
@@ -453,17 +454,13 @@ torch::Tensor TD3System::predict(torch::Tensor state) {
 }
 
 torch::Tensor TD3System::predictExplore(torch::Tensor state) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_.model->to(device_);
+  p_model_.model->to(model_device_);
   p_model_.model->eval();
-  state.to(device_);
+  state = state.to(model_device_);
 
   // do fwd pass
   auto action = (*noise_actor_exploration_)(p_model_, state);
@@ -475,18 +472,14 @@ torch::Tensor TD3System::predictExplore(torch::Tensor state) {
 }
 
 torch::Tensor TD3System::evaluate(torch::Tensor state, torch::Tensor action) {
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // no grad guard
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  q_models_target_[0].model->to(device_);
+  q_models_target_[0].model->to(model_device_);
   q_models_target_[0].model->eval();
-  state.to(device_);
-  action.to(device_);
+  state = state.to(model_device_);
+  action = action.to(model_device_);
 
   // do fwd pass
   auto reward = (q_models_target_[0].model)->forward(std::vector<torch::Tensor>{state, action})[0];
@@ -495,11 +488,6 @@ torch::Tensor TD3System::evaluate(torch::Tensor state, torch::Tensor action) {
 }
 
 void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
-
-  // stream
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-
   // increment train step counter first, this avoids an initial policy update at start
   train_step_count_++;
 
@@ -514,11 +502,11 @@ void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
     std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_, gamma_, nstep_, nstep_reward_reduction_);
 
     // upload to device
-    s.to(device_);
-    a.to(device_);
-    sp.to(device_);
-    r.to(device_);
-    d.to(device_);
+    s = s.to(model_device_);
+    a = a.to(model_device_);
+    sp = sp.to(model_device_);
+    r = r.to(model_device_);
+    d = d.to(model_device_);
 
     // get a new action by predicting one with target network
     ap = predictWithNoiseTrain_(sp);

@@ -91,7 +91,8 @@ int main(int argc, char* argv[]) {
   float theta_width = state_max[2] - state_min[2];
 
   // instantiate torchfort
-  CHECK_TORCHFORT(torchfort_rl_off_policy_create_system("td3_system", "config.yaml"));
+  CHECK_TORCHFORT(torchfort_rl_off_policy_create_system("td3_system", "config.yaml",
+							0, TORCHFORT_DEVICE_CPU));
 
   // define variables
   StateVector state, state_new;

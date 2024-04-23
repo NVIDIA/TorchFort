@@ -54,10 +54,15 @@ extern "C" {
  * @param[in] name A name to assign to the created training system instance to use as a key for other TorchFort
  * routines.
  * @param[in] config_fname The filesystem path to the user-defined configuration file to use.
+ * @param[in] model device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
+ * values >= 0, model will be placed on GPU with index corresponding to value.
+ * @param[in] rb_device Which device to place the replay buffer on. For TORCHFORT_DEVICE_CPU (-1), the replay buffer will be placed on CPU. For 
+ * values >= 0, the replay buffer will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const char* config_fname);
+torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const char* config_fname,
+							 int model_device, int rb_device);
 
 /**
  * @brief Creates a (synchronous) data-parallel off-policy reinforcement learning system instance from a provided
@@ -67,11 +72,15 @@ torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const
  * routines.
  * @param[in] config_fname The filesystem path to the user-defined configuration file to use.
  * @param[in] mpi_comm MPI communicator to use to initialize NCCL communication library for data-parallel communication.
+ * @param[in] model device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
+ * values >= 0, model will be placed on GPU with index corresponding to value.
+ * @param[in] rb_device Which device to place the replay buffer on. For TORCHFORT_DEVICE_CPU (-1), the replay buffer will be placed on CPU. For 
+ * values >= 0, the replay buffer will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char* name, const char* config_fname,
-                                                                     MPI_Comm mpi_comm);
+torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char* name, const char* config_fname, MPI_Comm mpi_comm,
+								     int model_device, int rb_device);
 
 //  RL training/prediction/evaluation functions
 /**
@@ -88,7 +97,7 @@ torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char*
  iteration.
  * @param[out] q_loss_val A pointer to a memory location to write the critic loss value computed during the training
  iteration. If the system uses multiple critics, the average across all critics is returned.
- * @param[out] stream CUDA stream to enqueue the training operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -112,7 +121,7 @@ torchfort_result_t torchfort_rl_off_policy_train_step(const char* name, float* p
  * @param[in] action_shape A pointer to an array specifying the shape of the action data. Length should be equal to the
  * rank of the action data.
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the action prediction operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -142,7 +151,7 @@ torchfort_result_t torchfort_rl_off_policy_predict_explore_F(const char* name, v
  * @param[in] action_shape A pointer to an array specifying the shape of the action data. Length should be equal to the
  * rank of the action data.
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the action prediction operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -175,7 +184,7 @@ torchfort_result_t torchfort_rl_off_policy_predict_F(const char* name, void* sta
  * @param[in] reward_shape A pointer to an array specifying the shape of the reward data. Length should be equal to the
  * rank of the reward data.
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the action prediction operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -212,7 +221,7 @@ torchfort_result_t torchfort_rl_off_policy_evaluate_F(const char* name, void* st
  * @param[in] final_state A flag indicating whether \pstate_new is the final state in the current episode (set to \p
  * true if it is the final state, otherwise \p false).
  * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the action prediction operations.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */

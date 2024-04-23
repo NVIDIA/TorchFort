@@ -49,36 +49,14 @@
 #include "internal/rl/replay_buffer.h"
 #include "internal/rl/rl.h"
 #include "internal/rl/utils.h"
+#include "internal/rl/policy.h"
 
 namespace torchfort {
 
 namespace rl {
 
-// helper for SAC policies
-class SACPolicy {
-public:
-  SACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma);
-
-  // we expose those for convenience
-  std::vector<torch::Tensor> parameters() const;
-  void train();
-  void eval();
-  void to(torch::Device device, bool non_blocking = false);
-  void save(const std::string& fname) const;
-  void load(const std::string& fname);
-
-  // forward routines
-  std::tuple<torch::Tensor, torch::Tensor> forwardNoise(torch::Tensor state);
-  torch::Tensor forwardDeterministic(torch::Tensor state);
-
-protected:
-  float log_sigma_min_;
-  float log_sigma_max_;
-  std::shared_ptr<ModelWrapper> p_mu_log_sigma_;
-};
-
 struct SACPolicyPack {
-  std::shared_ptr<SACPolicy> model;
+  std::shared_ptr<ACPolicy> model;
   std::shared_ptr<torch::optim::Optimizer> optimizer;
   std::shared_ptr<BaseLRScheduler> lr_scheduler;
   std::shared_ptr<BaseLoss> loss;
@@ -108,26 +86,12 @@ void train_sac(const SACPolicyPack& p_model, const std::vector<ModelPack>& q_mod
   assert(reward_tensor.size(1) == 1);
   assert(d_tensor.size(1) == 1);
 
-  // device handling
-  int device_id;
-  CHECK_CUDA(cudaGetDevice(&device_id));
-  torch::Device device = get_device(device_id);
-
-  // get tensors
-  state_old_tensor = state_old_tensor.to(device);
-  state_new_tensor = state_new_tensor.to(device);
-  action_old_tensor = action_old_tensor.to(device);
-  reward_tensor = reward_tensor.to(device);
-  d_tensor = d_tensor.to(device);
-
   // value functions
   // move models to device
   for (const auto& q_model : q_models) {
-    q_model.model->to(device);
     q_model.model->train();
   }
   for (const auto& q_model_target : q_models_target) {
-    q_model_target.model->to(device);
     q_model_target.model->train();
   }
 
@@ -136,8 +100,6 @@ void train_sac(const SACPolicyPack& p_model, const std::vector<ModelPack>& q_mod
   auto q_loss_func = torch::nn::MSELoss(torch::nn::MSELossOptions().reduction(torch::kMean));
 
   // policy function
-  p_model.model->to(device);
-
   // compute y: use the target models for q_new, no grads
   torch::Tensor y_tensor;
   {
@@ -292,7 +254,7 @@ class SACSystem : public RLOffPolicySystem, public std::enable_shared_from_this<
 
 public:
   // constructor
-  SACSystem(const char* name, const YAML::Node& system_node);
+  SACSystem(const char* name, const YAML::Node& system_node, int model_device, int rb_device);
 
   // init communicators
   void initSystemComm(MPI_Comm mpi_comm);
@@ -317,14 +279,15 @@ public:
   // info printing
   void printInfo() const;
 
+  // accessors
+  torch::Device modelDevice() const;
+  torch::Device rbDevice() const;
+
 private:
   // we need those accessors for logging
   std::shared_ptr<ModelState> getSystemState_();
 
   std::shared_ptr<Comm> getSystemComm_();
-
-  // device
-  torch::Device device_;
 
   // models
   SACPolicyPack p_model_;

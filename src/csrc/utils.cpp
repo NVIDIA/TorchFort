@@ -32,9 +32,9 @@
 #include <regex>
 #include <string>
 
-#include <c10/core/Device.h>
 #include <torch/torch.h>
 
+#include "internal/defines.h"
 #include "internal/utils.h"
 
 namespace torchfort {
@@ -58,10 +58,25 @@ std::string filename_sanitize(std::string s) {
   return s;
 }
 
-c10::Device get_device(int device_id) {
-  c10::Device device(torch::kCPU);
-  if (device_id >= 0) {
-    device = c10::Device(torch::kCUDA, device_id);
+torch::Device get_device(int device) {
+  torch::Device device_torch(torch::kCPU);
+  if (device != TORCHFORT_DEVICE_CPU) {
+    device_torch = torch::Device(torch::kCUDA, device);
+  }
+  return device_torch;
+}
+
+torch::Device get_device(const void* ptr) {
+  cudaPointerAttributes attr;
+  CHECK_CUDA(cudaPointerGetAttributes(&attr, ptr));
+  torch::Device device = torch::Device(torch::kCPU);
+  switch (attr.type) {
+    case cudaMemoryTypeHost:
+    case cudaMemoryTypeUnregistered:
+      device = torch::Device(torch::kCPU); break;
+    case cudaMemoryTypeManaged:
+    case cudaMemoryTypeDevice:
+      device = torch::Device(torch::kCUDA); break;
   }
   return device;
 }

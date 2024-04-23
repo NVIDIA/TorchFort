@@ -60,7 +60,7 @@ torchfort_result_t torchfort_set_cudnn_benchmark(const bool flag) {
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_create_model(const char* name, const char* config_fname) {
+torchfort_result_t torchfort_create_model(const char* name, const char* config_fname, int device) {
   using namespace torchfort;
 
   try {
@@ -74,9 +74,11 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
     // Setting up model
     if (config["model"]) {
       models[name].model = get_model(config["model"]);
+      models[name].model->to(get_device(device));
     } else {
       THROW_INVALID_USAGE("Missing model block in configuration file.");
     }
+
 
     // Setting up loss
     if (config["loss"]) {
@@ -106,25 +108,22 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_create_distributed_model(const char* name, const char* config_fname, MPI_Comm mpi_comm) {
+torchfort_result_t torchfort_create_distributed_model(const char* name, const char* config_fname, MPI_Comm mpi_comm,
+                                                      int device) {
   using namespace torchfort;
 
   try {
-    torchfort_create_model(name, config_fname);
+    torchfort_create_model(name, config_fname, device);
 
     // Set up distributed communicator
-    models[name].comm = std::shared_ptr<Comm>(new Comm());
-    models[name].comm->initialize(mpi_comm);
-
-    // Move model to device before broadcast
-    int device_id;
-    CHECK_CUDA(cudaGetDevice(&device_id));
-    models[name].model->to(get_device(device_id));
+    models[name].comm = std::shared_ptr<Comm>(new Comm(mpi_comm));
+    models[name].comm->initialize(models[name].model->device().is_cuda());
 
     // Broadcast initial model parameters from rank 0
     for (auto& p : models[name].model->parameters()) {
       models[name].comm->broadcast(p, 0);
     }
+
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();

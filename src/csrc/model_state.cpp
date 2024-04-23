@@ -41,6 +41,7 @@ void ModelState::save(const std::string& fname) {
   torch::serialize::OutputArchive archive;
   archive.write("step_train", torch::IValue(step_train));
   archive.write("step_inference", torch::IValue(step_inference));
+  archive.write("device", torch::IValue(device));
   archive.save_to(fname);
 }
 
@@ -62,6 +63,11 @@ void ModelState::load(const std::string& fname) {
     THROW_INVALID_USAGE(fname + " is missing required data.");
   }
   step_inference = ivalue.to<int64_t>();
+
+  if (!archive.try_read("device", ivalue)) {
+    THROW_INVALID_USAGE(fname + " is missing required data.");
+  }
+  device = ivalue.to<torch::Device>();
 }
 
 } // namespace torchfort

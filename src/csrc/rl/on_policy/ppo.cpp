@@ -61,8 +61,7 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
     epsilon_ = params.get_param<float>("epsilon")[0];
     entropy_loss_coeff_ = params.get_param<float>("entropy_loss_coefficient")[0];
     value_loss_coeff_ = params.get_param<float>("value_loss_coefficient")[0];
-    normalize_advantage_ = params.get_param<bool>("normalize_advantage")[0];
-    
+    normalize_advantage_ = params.get_param<bool>("normalize_advantage")[0];    
   } else {
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
   }
@@ -109,8 +108,11 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
   // get value model hook
   if (system_node["critic_model"]) {
     q_model_.model = get_model(system_node["critic_model"]);
+    q_model_.model->to(model_device_);
+    
     // change weights for models
     init_parameters(q_model_.model);
+    
     // set state
     std::string qname = "critic";
     q_model_.state = get_state("critic", system_node);
@@ -122,8 +124,6 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
   std::shared_ptr<ModelWrapper> p_model;
   if (system_node["policy_model"]) {
     auto policy_node = system_node["policy_model"];
-    
-    // get basic policy parameters:
     p_model = get_model(policy_node);
   } else {
     THROW_INVALID_USAGE("Missing policy_model block in configuration file.");
@@ -132,6 +132,7 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
   // TODO: add parameter
   p_model_.model = std::make_shared<GaussianACPolicy>(std::move(p_model), /* squashed = */ true);
   p_model_.state = get_state("actor", system_node);
+  p_model_.model->to(model_device_);
 
   // get optimizers
   if (system_node["optimizer"]) {

@@ -332,8 +332,6 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, b
   torch::Tensor log_p_tensor, entropy_tensor;
   std::tie(log_p_tensor, entropy_tensor) = p_model_.model->evaluateAction(sd, ad);
   float log_p = log_p_tensor.item<float>();
-
-  std::cout << "update: r " << r << " q " << q << " log_p " << log_p << " d " << d << std::endl;
   
   // the replay buffer only stores scaled actions!
   rollout_buffer_->update(s, as, r, q, log_p, d);

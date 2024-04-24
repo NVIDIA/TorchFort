@@ -53,6 +53,8 @@ namespace torchfort {
 
 namespace rl {
 
+enum ActorNormalizationMode { Clip = 1, Scale = 2 };
+  
 // helper for AC policies
 class ACPolicy {
 public:

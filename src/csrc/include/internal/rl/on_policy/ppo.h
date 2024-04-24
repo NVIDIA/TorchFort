@@ -300,6 +300,7 @@ private:
   float clip_fraction_;
   float a_low_, a_high_;
   bool normalize_advantage_;
+  ActorNormalizationMode actor_normalization_mode_;
 };
 
 } // namespace on_policy

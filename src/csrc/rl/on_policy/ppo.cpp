@@ -66,9 +66,10 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
   }
 
+  std::string noise_actor_type = "gaussian_ac";
   if (system_node["action"]) {
     auto action_node = system_node["action"];
-    std::string noise_actor_type = sanitize(action_node["type"].as<std::string>());
+    noise_actor_type = sanitize(action_node["type"].as<std::string>());
     if (action_node["parameters"]) {
       auto params = get_params(action_node["parameters"]);
       std::set<std::string> supported_params{"a_low", "a_high"};
@@ -130,7 +131,15 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
   }
   // PPO policies might be squased
   // TODO: add parameter
-  p_model_.model = std::make_shared<GaussianACPolicy>(std::move(p_model), /* squashed = */ true);
+  if (noise_actor_type == "gaussian_ac") {
+    p_model_.model = std::make_shared<GaussianACPolicy>(std::move(p_model), /* squashed = */ false);
+    actor_normalization_mode_ = ActorNormalizationMode::Clip;
+  } else if (noise_actor_type == "squashed_gaussian_ac") {
+    p_model_.model = std::make_shared<GaussianACPolicy>(std::move(p_model), /* squashed = */ true);
+    actor_normalization_mode_ =	ActorNormalizationMode::Scale;
+  } else {
+    THROW_INVALID_USAGE("Invalid actor type specified, supported actor types for PPO are [gaussian_ac, squashed_gaussian_ac]");
+  }
   p_model_.state = get_state("actor", system_node);
   p_model_.model->to(model_device_);
 
@@ -320,7 +329,19 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
 // we should pass a tuple (s, a, r, d)
 void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, bool d) {
   // note that we have to rescale the action: [a_low, a_high] -> [-1, 1]
-  auto as = scale_action(a, a_low_, a_high_);
+  torch::Tensor as;
+  switch (actor_normalization_mode_) {
+  case ActorNormalizationMode::Scale:
+    // clamp to [a_low, a_high]
+    as = torch::clamp(a, a_low_, a_high_);
+    // scale to [-1, 1]
+    as = scale_action(as, a_low_, a_high_);
+    break;
+  case ActorNormalizationMode::Clip:
+    // clamp to [a_low, a_high]
+    as = torch::clamp(a, a_low_, a_high_);
+    break;
+  }
 
   // compute q:
   // we need to unsqueeze s and a to make sure that we can pass them to the NN:
@@ -377,7 +398,14 @@ torch::Tensor PPOSystem::predict(torch::Tensor state) {
   auto action = (p_model_.model)->forwardDeterministic(state);
 
   // clip action
-  action = unscale_action(action, a_low_, a_high_);
+  switch (actor_normalization_mode_) {
+  case ActorNormalizationMode::Scale:
+    action = unscale_action(action, a_low_, a_high_);
+    break;
+  case ActorNormalizationMode::Clip:
+    action = torch::clamp(action, a_low_, a_high_);
+    break;
+  }
 
   return action;
 }
@@ -396,7 +424,14 @@ torch::Tensor PPOSystem::predictExplore(torch::Tensor state) {
   std::tie(action, log_probs) = (p_model_.model)->forwardNoise(state);
 
   // clip action
-  action = unscale_action(action, a_low_, a_high_);
+  switch (actor_normalization_mode_) {
+  case ActorNormalizationMode::Scale:
+    action = unscale_action(action, a_low_, a_high_);
+    break;
+  case ActorNormalizationMode::Clip:
+    action = torch::clamp(action, a_low_, a_high_);
+    break;
+  }
 
   return action;
 }
@@ -412,7 +447,18 @@ torch::Tensor PPOSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   action = action.to(model_device_);
 
   // scale action
-  auto action_scale = scale_action(action, a_low_, a_high_);
+  switch (actor_normalization_mode_) {
+  case ActorNormalizationMode::Scale:
+    // clamp to [a_low, a_high]
+    action = torch::clamp(action, a_low_, a_high_);
+    // scale to [-1, 1]
+    action = scale_action(action, a_low_, a_high_);
+    break;
+  case ActorNormalizationMode::Clip:
+    // clamp to [a_low, a_high]
+    action = torch::clamp(action, a_low_, a_high_);
+    break;
+  }
 
   // do fwd pass
   auto reward = (q_model_.model)->forward(std::vector<torch::Tensor>{state, action})[0];
@@ -420,7 +466,7 @@ torch::Tensor PPOSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   return reward;
 }
 
-  void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
+void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   // increment train step counter first, this avoids an initial policy update at start
   train_step_count_++;
 

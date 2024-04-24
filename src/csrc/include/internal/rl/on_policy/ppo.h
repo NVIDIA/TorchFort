@@ -210,6 +210,8 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
       if (state->enable_wandb_hook) {
         torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_loss", state->step_train, p_loss_val);
         torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_lr", state->step_train, lrs[0]);
+	torchfort::wandb_log(p_model.state, p_model.comm, "actor", "clip_fraction", state->step_train, clip_fraction);
+	torchfort::wandb_log(p_model.state, p_model.comm, "actor", "kl_divergence", state->step_train, kl_divergence);
       }
     }
   }

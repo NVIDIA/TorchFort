@@ -130,7 +130,7 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node,
 
       // distinction between buffer types
       if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, rb_device);
+        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, gamma_, nstep_, nstep_reward_reduction_, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
       }
@@ -454,7 +454,7 @@ void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     torch::NoGradGuard no_grad;
 
     // get a sample from the replay buffer
-    std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_, gamma_, nstep_, nstep_reward_reduction_);
+    std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_);
 
     // upload to device
     s = s.to(model_device_);

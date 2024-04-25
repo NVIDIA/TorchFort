@@ -118,6 +118,7 @@ target_sources(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/polynomial_lr.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/scheduler_setup.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/step_lr.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/linear_lr.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/models/mlp_model.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/policy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/utils.cpp

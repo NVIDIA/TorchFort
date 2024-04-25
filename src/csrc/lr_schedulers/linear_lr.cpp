@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,70 +28,33 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <algorithm>
 #include <vector>
 
-#include <torch/torch.h>
-
 #include "internal/base_lr_scheduler.h"
+#include "internal/lr_schedulers.h"
 
 namespace torchfort {
 
-class CosineAnnealingLR : public BaseLRScheduler {
-public:
-  CosineAnnealingLR(torch::optim::Optimizer& optimizer, const unsigned T_max, const double eta_min = 0.0);
+LinearLR::LinearLR(torch::optim::Optimizer& optimizer, const unsigned total_iters, const double start_factor, const double end_factor)
+  : BaseLRScheduler(optimizer), total_iters_(total_iters), start_factor_(start_factor), end_factor_(end_factor) {}
 
-private:
-  std::vector<double> get_lrs() override;
-  double update_lr(const double& last_lr, const double& base_lr);
+std::vector<double> LinearLR::get_lrs() {
 
-  const unsigned T_max_;
-  const double eta_min_;
-  std::vector<double> base_lrs_;
-};
+  double factor;
+  if (step_count_ == 0) {
+    factor = start_factor_;
+  } else if (step_count_ > total_iters_) {
+    factor = 1.;
+  } else {
+    factor = (1. + (end_factor_ - start_factor_) / double(total_iters_ * start_factor_ + (step_count_ - 1) * (end_factor_ - start_factor_)));
+  }
 
-class MultiStepLR : public BaseLRScheduler {
-public:
-  MultiStepLR(torch::optim::Optimizer& optimizer, const std::vector<int>& milestones, const double gamma = 0.1);
+  // get current lrs and modify
+  std::vector<double> lrs = get_current_lrs();
+  std::transform(lrs.begin(), lrs.end(), lrs.begin(), [factor](const double& v) { return factor * v; });
 
-private:
-  std::vector<double> get_lrs() override;
-
-  const std::vector<int> milestones_;
-  const double gamma_;
-};
-
-class PolynomialLR : public BaseLRScheduler {
-public:
-  PolynomialLR(torch::optim::Optimizer& optimizer, const unsigned total_iters, const double power = 1.0);
-
-private:
-  std::vector<double> get_lrs() override;
-
-  const unsigned total_iters_;
-  const double power_;
-};
-
-class StepLR : public BaseLRScheduler {
-public:
-  StepLR(torch::optim::Optimizer& optimizer, const unsigned step_size, const double gamma = 0.1);
-
-private:
-  std::vector<double> get_lrs() override;
-
-  const unsigned step_size_;
-  const double gamma_;
-};
-
-class LinearLR : public BaseLRScheduler {
-public:
-  LinearLR(torch::optim::Optimizer& optimizer, const unsigned total_iters, const double start_factor=0.333, const double end_factor = 1.0);
-
-private:
-  std::vector<double> get_lrs() override;
-
-  const unsigned total_iters_;
-  const double start_factor_, end_factor_;
-};
+  return lrs;
+}
 
 } // namespace torchfort

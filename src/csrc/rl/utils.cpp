@@ -113,12 +113,14 @@ void set_grad_state(std::shared_ptr<ModelWrapper> model, const bool requires_gra
   return;
 }
 
+torch::Tensor explained_variance(torch::Tensor q_pred, torch::Tensor q_true) {
+  // Computes fraction of variance that ypred explains about y.
+  // Returns 1 - Var[y-ypred] / Var[y]
+  // see https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/utils.py
+  torch::Tensor var_q_true = torch::var(q_true);
+  return 1. - torch::var(q_true - q_pred) / var_q_true;
+}
+
 } // namespace rl
 
 } // namespace torchfort
-
-// general stuff
-// RL_INFERENCE_PREDICT_Q_FUNC(float)
-// RL_INFERENCE_PREDICT_Q_FUNC(double)
-// RL_INFERENCE_PREDICT_Q_FUNC_F(float)
-// RL_INFERENCE_PREDICT_Q_FUNC_F(double)

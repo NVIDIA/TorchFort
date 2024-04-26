@@ -50,7 +50,7 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
     std::set<std::string> supported_params{"batch_size", "gamma", "gae_lambda",
-					   "epsilon", "target_kl_divergence",
+					   "epsilon", "clip_q", "target_kl_divergence",
 					   "entropy_loss_coefficient", "value_loss_coefficient",
 					   "normalize_advantage"};
     check_params(supported_params, params.keys());
@@ -59,6 +59,7 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
     gae_lambda_ = params.get_param<float>("gae_lambda")[0];
     target_kl_divergence_ = params.get_param<float>("target_kl_divergence")[0];
     epsilon_ = params.get_param<float>("epsilon")[0];
+    clip_q_ = params.get_param<float>("clip_q", 0.)[0];
     entropy_loss_coeff_ = params.get_param<float>("entropy_loss_coefficient")[0];
     value_loss_coeff_ = params.get_param<float>("value_loss_coefficient")[0];
     normalize_advantage_ = params.get_param<bool>("normalize_advantage")[0];    
@@ -180,6 +181,7 @@ void PPOSystem::printInfo() const {
   std::cout << "PPO parameters:" << std::endl;
   std::cout << "batch_size = " << batch_size_ << std::endl;
   std::cout << "epsilon = " << epsilon_ << std::endl;
+  std::cout << "clip_q = " << clip_q_ << std::endl;
   std::cout << "entropy_loss_coefficient" << entropy_loss_coeff_ << std::endl;
   std::cout << "value_loss_coefficient" << value_loss_coeff_ << std::endl;
   std::cout << "normalize_advantage = " << normalize_advantage_ << std::endl;
@@ -490,8 +492,21 @@ void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   // train step
   train_ppo(p_model_, q_model_,
 	    s, a, q, logp, adv, ret,
-	    epsilon_, entropy_loss_coeff_, value_loss_coeff_, normalize_advantage_,
-	    p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_);
+	    epsilon_, clip_q_, entropy_loss_coeff_, value_loss_coeff_, normalize_advantage_,
+	    p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_, explained_variance_);
+
+  // system logging
+  {
+    std::stringstream os;
+    os << "PPO system: " << "clip_fraction: " << clip_fraction_ << ", kl_divergence: " << current_kl_divergence_
+       <<  ", explained_variance: " << explained_variance_ << std::endl;
+    torchfort::logging::print(os.str(), torchfort::logging::info);
+    if (system_state_->enable_wandb_hook) {
+      torchfort::wandb_log(system_state_, system_comm_, "PPO", "clip_fraction", train_step_count_, clip_fraction_);
+      torchfort::wandb_log(system_state_, system_comm_, "PPO", "kl_divergence", train_step_count_, current_kl_divergence_);
+      torchfort::wandb_log(system_state_, system_comm_, "PPO", "explained_variance", train_step_count_, explained_variance_);
+    }
+  }
 }
 
 } // namespace on_policy

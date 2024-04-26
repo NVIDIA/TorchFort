@@ -104,6 +104,9 @@ template <typename T> torch::Tensor unscale_action(torch::Tensor scaled_action, 
   return unscaled_action;
 }
 
+// explained variance
+torch::Tensor explained_variance(torch::Tensor q_pred, torch::Tensor q_true);
+  
 } // namespace rl
 
 } // namespace torchfort

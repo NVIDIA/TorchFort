@@ -62,9 +62,9 @@ public:
   }
 
   torch::Tensor log_prob(torch::Tensor value) {
-    auto var = torch::pow(sigma_, 2);
+    auto var = torch::square(sigma_);
     auto log_sigma = sigma_.log();
-    auto result = -torch::pow((value - mu_), 2) / (2 * var) - log_sigma - std::log(std::sqrt(2. * M_PI));
+    auto result = -torch::square(value - mu_) / (2 * var) - log_sigma - std::log(std::sqrt(2. * M_PI));
 
     return result;
   }

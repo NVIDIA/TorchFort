@@ -73,16 +73,24 @@ std::shared_ptr<NormalDistribution> GaussianACPolicy::getDistribution_(torch::Te
 std::tuple<torch::Tensor, torch::Tensor> GaussianACPolicy::evaluateAction(torch::Tensor state, torch::Tensor action) {
   // get distribution
   auto pi_dist = getDistribution_(state);
-
+  
+  // we need to undo squashing in some cases
+  torch::Tensor gaussian_action;
+  if (squashed_) {
+    gaussian_action = torch::atan(action);
+  } else {
+    gaussian_action = action;
+  }
+  
   // compute log prop
-  auto log_prob = torch::sum(torch::flatten(pi_dist->log_prob(action), 1), 1, true);
+  auto log_prob = torch::sum(torch::flatten(pi_dist->log_prob(gaussian_action), 1), 1, true);
 
   // account for squashing
   torch::Tensor entropy;
   if (squashed_) {
     log_prob =
-      log_prob -
-      torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
+      log_prob - torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, true);
+      //torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
     // in this case no analytical form for the entropy exists and we need to estimate it from the log probs directly:
     entropy = -log_prob;
   } else {

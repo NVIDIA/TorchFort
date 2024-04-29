@@ -273,16 +273,23 @@ void SACSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
 
   // policy
   {
-    auto model_path = root_dir / "policy" / "model.pt";
+    std::filesystem::path policy_root_dir = root_dir / "policy";
+    if (!std::filesystem::exists(policy_root_dir)) {
+      bool rv = std::filesystem::create_directory(policy_root_dir);
+      if (!rv) {
+        THROW_INVALID_USAGE("Could not create policy checkpoint directory.");
+      } 
+    }
+    auto model_path = policy_root_dir / "model.pt";
     p_model_.model->save(model_path.native());
 
-    auto optimizer_path = root_dir / "policy" / "optimizer.pt";
+    auto optimizer_path = policy_root_dir / "optimizer.pt";
     torch::save(*p_model_.optimizer, optimizer_path.native());
 
-    auto lr_path = root_dir / "policy" / "lr.pt";
+    auto lr_path = policy_root_dir / "lr.pt";
     p_model_.lr_scheduler->save(lr_path.native());
 
-    auto state_path = root_dir / "policy" / "state.pt";
+    auto state_path = policy_root_dir / "state.pt";
     p_model_.state->save(state_path.native());
   }
 

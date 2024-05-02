@@ -72,7 +72,7 @@ static ncclComm_t ncclCommFromMPIComm(MPI_Comm mpi_comm) {
   if (rank == 0)
     CHECK_NCCL(ncclGetUniqueId(&id));
   CHECK_MPI(MPI_Bcast(&id, sizeof(id), MPI_BYTE, 0, mpi_comm));
-  ncclComm_t nccl_comm;
+  ncclComm_t nccl_comm;  
   CHECK_NCCL(ncclCommInitRank(&nccl_comm, size, id, rank));
 
   return nccl_comm;

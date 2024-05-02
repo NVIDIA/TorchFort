@@ -82,13 +82,6 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   assert(adv_tensor.size(1) == 1);
   assert(ret_tensor.size(1) == 1);
 
-  //std::cout << "action_tensor " << action_tensor << std::endl;
-  //std::cout << "state_tensor "	<< state_tensor << std::endl;
-  //std::cout << "ret_tensor "	<< ret_tensor << std::endl;
-  //std::cout << "adv_tensor "	<< adv_tensor << std::endl;
-  //std::cout << "log_p_tensor "	<< log_p_tensor << std::endl;
-  //std::cout << "q_tensor "	<< q_tensor << std::endl;
-
   // normalize advantages if requested
   if ( normalize_advantage && (batch_size > 1) ) {
     // make sure we are not going to compute gradients
@@ -199,18 +192,32 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   q_model.optimizer->step();
   q_model.lr_scheduler->step();
 
-  // save loss vals
-  p_loss_val = p_loss_tensor.item<T>();
-  q_loss_val = q_loss_tensor.item<T>();
-  
+  // reduce losses across ranks for printing
+  torch::Tensor p_loss_mean_tensor = p_loss_tensor;
+  if (p_model.comm) {
+    torch::NoGradGuard no_grad;
+    std::vector<torch::Tensor> p_loss_mean = {p_loss_tensor};
+    p_model.comm->allreduce(p_loss_mean, true);
+    p_loss_mean_tensor = p_loss_mean[0];
+  }
+  p_loss_val = p_loss_mean_tensor.item<T>();
+
+  torch::Tensor q_loss_mean_tensor = q_loss_tensor;
+  if (q_model.comm) {
+    torch::NoGradGuard no_grad;
+    std::vector<torch::Tensor> q_loss_mean = {q_loss_tensor};
+    q_model.comm->allreduce(q_loss_mean, true);
+    q_loss_mean_tensor = q_loss_mean[0];
+  }
+  q_loss_val = q_loss_mean_tensor.item<T>();
+    
   // policy function
   auto state = p_model.state;
   state->step_train++;
-  if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
+  if ((state->report_frequency > 0) && (state->step_train % state->report_frequency == 0))
+  {
     std::stringstream os;
-    os << "model: "
-       << "actor"
-       << ", ";
+    os << "model: " << "actor" << ", ";
     os << "step_train: " << state->step_train << ", ";
     os << "loss: " << p_loss_val << ", ";
     auto lrs = get_current_lrs(p_model.optimizer);
@@ -228,7 +235,8 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
 
   state = q_model.state;
   state->step_train++;
-  if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
+  if ((state->report_frequency > 0) && (state->step_train % state->report_frequency == 0))
+  {
     std::stringstream os;
     os << "model: " << "critic" << ", ";
     os << "step_train: " << state->step_train << ", ";
@@ -250,14 +258,33 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
     torch::NoGradGuard no_grad;
 
     // kl_divergence
-    kl_divergence = torch::mean((ratio_tensor - 1.) - log_ratio_tensor).item<T>();
+    torch::Tensor kl_divergence_tensor = torch::mean((ratio_tensor - 1.) - log_ratio_tensor);
+    if (q_model.comm)
+    {
+      std::vector<torch::Tensor> kl_divergence_mean = {kl_divergence_tensor};
+      q_model.comm->allreduce(kl_divergence_mean, true);
+      kl_divergence_tensor = kl_divergence_mean[0];
+    }
+    kl_divergence = kl_divergence_tensor.item<T>();
 
     // clip_fraction
     torch::Tensor clip_fraction_tensor = torch::mean((torch::abs(ratio_tensor - 1.) > epsilon).to(torch::kFloat32));
+    if (q_model.comm)
+    {
+      std::vector<torch::Tensor> clip_fraction_mean = {clip_fraction_tensor};
+      q_model.comm->allreduce(clip_fraction_mean, true);
+      clip_fraction_tensor = clip_fraction_mean[0];
+    }
     clip_fraction = clip_fraction_tensor.item<T>();
 
     // explained variance
     torch::Tensor expvar_tensor = explained_variance(q_tensor, ret_tensor);
+    if (q_model.comm)
+    {
+      std::vector<torch::Tensor> expvar_mean = {expvar_tensor};
+      q_model.comm->allreduce(expvar_mean, true);
+      expvar_tensor = expvar_mean[0];
+    }
     explained_var = expvar_tensor.item<T>();
   }
 

@@ -203,6 +203,9 @@ torch::Device PPOSystem::rbDevice() const {
   
 void PPOSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
+  // system
+  system_comm_ = std::make_shared<Comm>(mpi_comm);
+  system_comm_->initialize(model_device_.is_cuda());
   // policy
   p_model_.comm = std::make_shared<Comm>(mpi_comm);
   p_model_.comm->initialize(model_device_.is_cuda());
@@ -501,17 +504,22 @@ void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
 	    s, a, q, logp, adv, ret,
 	    epsilon_, clip_q_, entropy_loss_coeff_, value_loss_coeff_, normalize_advantage_,
 	    p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_, explained_variance_);
-
+  
   // system logging
+  if ((system_state_->report_frequency > 0) && (train_step_count_ % system_state_->report_frequency == 0))
   {
-    std::stringstream os;
-    os << "PPO system: " << "clip_fraction: " << clip_fraction_ << ", kl_divergence: " << current_kl_divergence_
-       <<  ", explained_variance: " << explained_variance_ << std::endl;
-    torchfort::logging::print(os.str(), torchfort::logging::info);
-    if (system_state_->enable_wandb_hook) {
-      torchfort::wandb_log(system_state_, system_comm_, "PPO", "clip_fraction", train_step_count_, clip_fraction_);
-      torchfort::wandb_log(system_state_, system_comm_, "PPO", "kl_divergence", train_step_count_, current_kl_divergence_);
-      torchfort::wandb_log(system_state_, system_comm_, "PPO", "explained_variance", train_step_count_, explained_variance_);
+    if (!system_comm_ || (system_comm_ && system_comm_->rank == 0))
+    {
+      std::stringstream os;
+      os << "PPO system: " << "clip_fraction: " << clip_fraction_ << ", kl_divergence: " << current_kl_divergence_
+	 <<  ", explained_variance: " << explained_variance_ << std::endl;
+      torchfort::logging::print(os.str(), torchfort::logging::info);
+      if (system_state_->enable_wandb_hook)
+      {
+	torchfort::wandb_log(system_state_, system_comm_, "PPO", "clip_fraction", train_step_count_, clip_fraction_);
+	torchfort::wandb_log(system_state_, system_comm_, "PPO", "kl_divergence", train_step_count_, current_kl_divergence_);
+	torchfort::wandb_log(system_state_, system_comm_, "PPO", "explained_variance", train_step_count_, explained_variance_);
+      }
     }
   }
 }

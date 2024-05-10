@@ -150,6 +150,20 @@ module torchfort
       logical :: flag
       integer(c_int) :: res
     end function torchfort_set_cudnn_benchmark_c
+
+    function torchfort_set_cuda_allow_tf32_c(flag) result(res) &
+      bind(C, name="torchfort_set_cuda_allow_tf32")
+      import
+      logical :: flag
+      integer(c_int) :: res
+    end function torchfort_set_cuda_allow_tf32_c
+
+    function torchfort_set_cuda_manual_seed_c(seed) result(res) &
+      bind(C, name="torchfort_set_cuda_manual_seed")
+      import
+      integer(c_int) :: seed
+      integer(c_int) :: res
+    end function torchfort_set_cuda_manual_seed_c
     
     function torchfort_create_model_c(mname, fname, dev) result(res) &
       bind(C, name="torchfort_create_model")
@@ -682,6 +696,18 @@ contains
     integer(c_int) :: res
     res = torchfort_set_cudnn_benchmark_c(flag)
   end function torchfort_set_cudnn_benchmark
+
+  function torchfort_set_cuda_allow_tf32(flag) result(res)
+    logical :: flag
+    integer(c_int) :: res
+    res = torchfort_set_cuda_allow_tf32_c(flag)
+  end function torchfort_set_cuda_allow_tf32
+
+  function torchfort_set_cuda_manual_seed(seed) result(res)
+    integer(c_int) :: seed
+    integer(c_int) :: res
+    res = torchfort_set_cuda_manual_seed_c(seed)
+  end function torchfort_set_cuda_manual_seed
   
   ! Setup routines
   function torchfort_create_model(mname, fname, dev) result(res)

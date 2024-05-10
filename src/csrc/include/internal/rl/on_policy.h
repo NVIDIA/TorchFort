@@ -110,11 +110,11 @@ static void update_rollout_buffer(const char* name, T* state, size_t state_dim, 
   }
 
   // get tensors and copy:
-  auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
+  torch::Tensor state_tensor = get_tensor<L>(state, state_dim, state_shape)
                       .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto action_tensor = get_tensor<L>(action, action_dim, action_shape)
+  torch::Tensor action_tensor = get_tensor<L>(action, action_dim, action_shape)
                       .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-
+  
   registry[name]->updateRolloutBuffer(state_tensor, action_tensor, 
 			 	      static_cast<float>(reward),
 				      final_state);

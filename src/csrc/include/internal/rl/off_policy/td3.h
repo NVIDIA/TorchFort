@@ -85,7 +85,7 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   // singleton dims
   assert(reward_tensor.size(1) == 1);
   assert(d_tensor.size(1) == 1);
-
+  
   // value functions
   // set to train
   for (const auto& q_model : q_models) {
@@ -138,7 +138,14 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
     q_model.lr_scheduler->step();
 
     // save loss values
-    q_loss_vals.push_back(q_loss_tensor.item<T>());
+    torch::Tensor q_loss_mean_tensor = q_loss_tensor;
+    if (q_model.comm) {
+      torch::NoGradGuard no_grad;
+      std::vector<torch::Tensor> q_loss_mean = {q_loss_tensor};
+      q_model.comm->allreduce(q_loss_mean, true);
+      q_loss_mean_tensor = q_loss_mean[0];
+    }
+    q_loss_vals.push_back(q_loss_mean_tensor.item<T>());
   }
 
   // policy function
@@ -153,8 +160,6 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
     // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
     torch::Tensor p_loss_tensor = -torch::mean(
         q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0]);
-    // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
-    // p_loss_tensor = -p_loss_tensor;
 
     // bwd pass
     p_model.optimizer->zero_grad();
@@ -177,8 +182,15 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
     // unfreeze the q1model
     set_grad_state(q_models[0].model, true);
 
-    // save loss val
-    p_loss_val = p_loss_tensor.item<T>();
+    // reduce losses across ranks for printing
+    torch::Tensor p_loss_mean_tensor = p_loss_tensor;
+    if (p_model.comm) {
+      torch::NoGradGuard no_grad;
+      std::vector<torch::Tensor> p_loss_mean = {p_loss_tensor};
+      p_model.comm->allreduce(p_loss_mean, true);
+      p_loss_mean_tensor = p_loss_mean[0];
+    }
+    p_loss_val = p_loss_mean_tensor.item<T>();
   } else {
     // make sure that the loss value is sane and not some garbage number
     p_loss_val = static_cast<T>(0.);

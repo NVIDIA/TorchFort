@@ -60,7 +60,6 @@ class ACPolicy {
 public:
   // default constructor
   ACPolicy() {}
-  //ACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma, bool squashed=false);
   // disable copy constructor
   ACPolicy(const ACPolicy&) = delete;
 

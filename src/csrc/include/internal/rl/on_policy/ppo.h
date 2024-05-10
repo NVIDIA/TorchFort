@@ -82,6 +82,26 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   assert(adv_tensor.size(1) == 1);
   assert(ret_tensor.size(1) == 1);
 
+  // DEBUG
+  //std::cout << "TRAIN STEP" << std::endl;
+  //torch::Tensor log_p_new_tensor_2, entropy_tensor_2;
+  //std::tie(log_p_new_tensor_2, entropy_tensor_2) = p_model.model->evaluateAction(state_tensor, action_tensor);
+  //T mean_dbg = torch::mean(log_p_new_tensor_2).item<T>();
+  //std::cout << "DEBUG log_p_new_tensor_2: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(state_tensor).item<T>();
+  //std::cout << "DEBUG state_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(action_tensor).item<T>();
+  //std::cout << "DEBUG action_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(q_tensor).item<T>();
+  //std::cout << "DEBUG q_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(log_p_tensor).item<T>();
+  //std::cout << "DEBUG log_p_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(adv_tensor).item<T>();
+  //std::cout << "DEBUG adv_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(ret_tensor).item<T>();
+  //std::cout << "DEBUG ret_tensor: " << mean_dbg << std::endl;
+  // DEBUG
+
   // normalize advantages if requested
   if ( normalize_advantage && (batch_size > 1) ) {
     // make sure we are not going to compute gradients
@@ -122,11 +142,7 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   torch::Tensor q_new_tensor = q_model.model->forward(std::vector<torch::Tensor>{state_tensor, action_tensor})[0];
 
   // compute policy ratio
-  torch::Tensor log_ratio_tensor = log_p_new_tensor - log_p_tensor;
-
-  //std::cout << "log_p_new_tensor " << log_p_new_tensor << std::endl;
-  //std::cout << "log_ratio_tensor " << log_ratio_tensor << std::endl;
-  
+  torch::Tensor log_ratio_tensor = log_p_new_tensor - log_p_tensor;  
   torch::Tensor ratio_tensor = torch::exp(log_ratio_tensor);
 
   // clipped surrogate loss
@@ -135,10 +151,19 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   // the stable baselines code uses torch.min but I think this is wrong, it has to be torch.minimum
   torch::Tensor p_loss_tensor = -torch::mean(torch::minimum(p_loss_tensor_1, p_loss_tensor_2));
 
-  //std::cout << "ratio_tensor "      << ratio_tensor << std::endl;
-  //std::cout << "p_loss_tensor_1 "      << p_loss_tensor_1 << std::endl;
-  //std::cout << "p_loss_tensor_2 "      << p_loss_tensor_2 << std::endl;
-
+  // DEBUG
+  //mean_dbg = torch::mean(log_p_new_tensor).item<T>();
+  //std::cout << "DEBUG log_p_new_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(log_ratio_tensor).item<T>();
+  //std::cout << "DEBUG log_ratio_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(ratio_tensor).item<T>();
+  //std::cout << "DEBUG ratio_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(p_loss_tensor_1).item<T>();
+  //std::cout << "DEBUG p_loss_tensor_1: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(p_loss_tensor_2).item<T>();
+  //std::cout << "DEBUG p_loss_tensor_2: " << mean_dbg << std::endl;
+  // DEBUG
+  
   //clip value function if requested
   torch::Tensor q_pred_tensor;
   if (clip_q > 0.) {
@@ -227,8 +252,6 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
       if (state->enable_wandb_hook) {
         torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_loss", state->step_train, p_loss_val);
         torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_lr", state->step_train, lrs[0]);
-	torchfort::wandb_log(p_model.state, p_model.comm, "actor", "clip_fraction", state->step_train, clip_fraction);
-	torchfort::wandb_log(p_model.state, p_model.comm, "actor", "kl_divergence", state->step_train, kl_divergence);
       }
     }
   }
@@ -246,8 +269,7 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
     if (!q_model.comm || (q_model.comm && q_model.comm->rank == 0)) {
       torchfort::logging::print(os.str(), torchfort::logging::info);
       if (state->enable_wandb_hook) {
-	torchfort::wandb_log(q_model.state, q_model.comm, "critic", "train_loss", state->step_train,
-			     q_loss_val);
+	torchfort::wandb_log(q_model.state, q_model.comm, "critic", "train_loss", state->step_train, q_loss_val);
 	torchfort::wandb_log(q_model.state, q_model.comm, "critic", "train_lr", state->step_train, lrs[0]);
       }
     }

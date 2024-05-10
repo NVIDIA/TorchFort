@@ -60,6 +60,17 @@ torchfort_result_t torchfort_set_cudnn_benchmark(const bool flag) {
   return TORCHFORT_RESULT_SUCCESS;
 }
 
+torchfort_result_t torchfort_set_cuda_allow_tf32(const bool flag) {
+  at::globalContext().setAllowTF32CuBLAS(flag);
+  at::globalContext().setAllowTF32CuDNN(flag);
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_set_cuda_manual_seed(const int seed) {
+  torch::cuda::manual_seed(static_cast<uint64_t>(seed));
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
 torchfort_result_t torchfort_create_model(const char* name, const char* config_fname, int device) {
   using namespace torchfort;
 

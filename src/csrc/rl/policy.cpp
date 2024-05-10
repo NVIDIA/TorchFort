@@ -66,6 +66,13 @@ std::shared_ptr<NormalDistribution> GaussianACPolicy::getDistribution_(torch::Te
   // predict sigma
   auto action_sigma = torch::exp(torch::clamp(action_log_sigma, log_sigma_min_, log_sigma_max_));
 
+  //DEBUG
+  //float mean_dbg = torch::mean(action_mu).item<float>();
+  //std::cout << "DEBUG getDistribution_ action_mu: " << mean_dbg <<  std::endl;
+  //mean_dbg = torch::mean(action_sigma).item<float>();
+  //std::cout << "DEBUG getDistribution_ action_sigma: " << mean_dbg <<  std::endl;
+  //DEBUG
+  
   // create distribution
   return std::make_shared<NormalDistribution>(action_mu, action_sigma);
 }
@@ -83,7 +90,15 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianACPolicy::evaluateAction(torch:
   }
   
   // compute log prop
-  auto log_prob = torch::sum(torch::flatten(pi_dist->log_prob(gaussian_action), 1), 1, true);
+  torch::Tensor log_prob = torch::sum(torch::flatten(pi_dist->log_prob(gaussian_action), 1), 1, true);
+
+  //DEBUG
+  //float mean_dbg = torch::mean(state).item<float>();
+  //std::cout << "DEBUG evaluateAction state: " << mean_dbg <<  std::endl;
+  //mean_dbg = torch::mean(gaussian_action).item<float>();
+  //std::cout << "DEBUG evaluateAction gaussian_action: " << mean_dbg <<	std::endl;
+  //std::cout << "DEBUG evaluateAction log_prob: " << log_prob << std::endl;
+  //DEBUG
 
   // account for squashing
   torch::Tensor entropy;

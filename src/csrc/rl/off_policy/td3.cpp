@@ -519,13 +519,8 @@ void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
   }
   
   // train step
-  std::vector<float> q_loss_vals;
   train_td3(p_model_, p_model_target_, q_models_, q_models_target_, s, sp, a, ap, r, d,
-            static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_vals, update_policy);
-
-  // compute average of q_loss_vals:
-  q_loss_val = std::accumulate(q_loss_vals.begin(), q_loss_vals.end(), decltype(q_loss_vals)::value_type(0)) /
-               float(q_loss_vals.size());
+            static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_val, update_policy);
 }
 
 } // namespace off_policy

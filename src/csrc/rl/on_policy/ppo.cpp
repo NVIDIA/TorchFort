@@ -82,7 +82,7 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
       THROW_INVALID_USAGE("Missing parameters section in action section in configuration file.");
     }
   } else {
-    THROW_INVALID_USAGE("Missing action section in configuration file.");
+    THROW_INVALID_USAGE("Missing actor section in configuration file.");
   }
 
   if (system_node["rollout_buffer"]) {

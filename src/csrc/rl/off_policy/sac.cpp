@@ -72,20 +72,20 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
   }
 
-  if (system_node["action"]) {
-    auto action_node = system_node["action"];
-    std::string noise_actor_type = sanitize(action_node["type"].as<std::string>());
-    if (action_node["parameters"]) {
-      auto params = get_params(action_node["parameters"]);
+  if (system_node["actor"]) {
+    auto actor_node = system_node["actor"];
+    std::string noise_actor_type = sanitize(actor_node["type"].as<std::string>());
+    if (actor_node["parameters"]) {
+      auto params = get_params(actor_node["parameters"]);
       std::set<std::string> supported_params{"a_low", "a_high"};
       check_params(supported_params, params.keys());
       a_low_ = params.get_param<float>("a_low")[0];
       a_high_ = params.get_param<float>("a_high")[0];
     } else {
-      THROW_INVALID_USAGE("Missing parameters section in action section in configuration file.");
+      THROW_INVALID_USAGE("Missing parameters section in actor section in configuration file.");
     }
   } else {
-    THROW_INVALID_USAGE("Missing action section in configuration file.");
+    THROW_INVALID_USAGE("Missing actor section in configuration file.");
   }
 
   if (system_node["replay_buffer"]) {

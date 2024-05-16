@@ -82,6 +82,7 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
   assert(ret_tensor.size(1) == 1);
 
   // DEBUG
+  T mean_dbg;
   std::cout << "TRAIN STEP" << std::endl;
   mean_dbg = torch::mean(state_tensor).item<T>();
   std::cout << "DEBUG state_tensor: " << mean_dbg << std::endl;
@@ -205,7 +206,7 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     torch::NoGradGuard no_grad;
     std::vector<torch::Tensor> p_loss_mean = {p_loss_tensor};
     pq_model.comm->allreduce(p_loss_mean, true);
-    pq_loss_mean_tensor = p_loss_mean[0];
+    p_loss_mean_tensor = p_loss_mean[0];
   }
   p_loss_val = p_loss_mean_tensor.item<T>();
 

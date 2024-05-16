@@ -219,7 +219,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::forwar
 
 std::tuple<torch::Tensor, torch::Tensor> GaussianACPolicy::forwardDeterministic(torch::Tensor state) {
   // predict mu is the only part
-  auto fwd = p_mu_log_sigma_->forward(std::vector<torch::Tensor>{state});
+  auto fwd = p_mu_log_sigma_value_->forward(std::vector<torch::Tensor>{state});
   auto action = fwd[0];
   auto value = fwd[2];
 

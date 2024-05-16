@@ -111,10 +111,8 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
   // model
   std::shared_ptr<ModelWrapper> pq_model;
   if (system_node["actor_critic_model"]) {
-    pq_model.model = get_model(system_node["actor_critic_model"]);
-    
-    // change weights for models
-    init_parameters(pq_model.model);
+    auto model_node = system_node["actor_critic_model"];
+    pq_model = get_model(model_node);
   } else {
     THROW_INVALID_USAGE("Missing actor_critic_model block in configuration file.");
   }
@@ -217,8 +215,8 @@ void PPOSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
   // model
   {
     std::filesystem::path model_root_dir = root_dir / "actor_critic";
-    if (!std::filesystem::exists(policy_root_dir)) {
-      bool rv = std::filesystem::create_directory(policy_root_dir);
+    if (!std::filesystem::exists(model_root_dir)) {
+      bool rv = std::filesystem::create_directory(model_root_dir);
       if (!rv) {
 	THROW_INVALID_USAGE("Could not create model checkpoint directory.");
       }
@@ -445,7 +443,8 @@ torch::Tensor PPOSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   //}
 
   // do fwd pass
-  auto value = (pq_model_.model)->forwardDeterministic(state)[2];
+  torch::Tensor action_tmp, value;
+  std::tie(action_tmp, value) = (pq_model_.model)->forwardDeterministic(state);
 
   return value;
 }

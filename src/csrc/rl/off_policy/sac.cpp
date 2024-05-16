@@ -148,7 +148,7 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
     THROW_INVALID_USAGE("Missing policy_model block in configuration file.");
   }
   // SAC policies should always be squashed
-  p_model_.model = std::make_shared<GaussianACPolicy>(std::move(p_model), /* squashed = */ true);
+  p_model_.model = std::make_shared<GaussianPolicy>(std::move(p_model), /* squashed = */ true);
   p_model_.state = get_state("actor", system_node);
 
   // get optimizers

@@ -69,8 +69,8 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
   }
 
   std::string noise_actor_type = "gaussian_ac";
-  if (system_node["action"]) {
-    auto action_node = system_node["action"];
+  if (system_node["actor"]) {
+    auto action_node = system_node["actor"];
     noise_actor_type = sanitize(action_node["type"].as<std::string>());
     if (action_node["parameters"]) {
       auto params = get_params(action_node["parameters"]);
@@ -108,65 +108,45 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
   }
 
   // general section
-  // get value model hook
-  if (system_node["critic_model"]) {
-    q_model_.model = get_model(system_node["critic_model"]);
-    q_model_.model->to(model_device_);
+  // model
+  std::shared_ptr<ModelWrapper> pq_model;
+  if (system_node["actor_critic_model"]) {
+    pq_model.model = get_model(system_node["actor_critic_model"]);
     
     // change weights for models
-    init_parameters(q_model_.model);
-    
-    // set state
-    std::string qname = "critic";
-    q_model_.state = get_state("critic", system_node);
+    init_parameters(pq_model.model);
   } else {
-    THROW_INVALID_USAGE("Missing critic_model block in configuration file.");
+    THROW_INVALID_USAGE("Missing actor_critic_model block in configuration file.");
   }
 
-  // get policy model hooks
-  std::shared_ptr<ModelWrapper> p_model;
-  if (system_node["policy_model"]) {
-    auto policy_node = system_node["policy_model"];
-    p_model = get_model(policy_node);
-  } else {
-    THROW_INVALID_USAGE("Missing policy_model block in configuration file.");
-  }
   // PPO policies might be squased
   // TODO: add parameter
   if (noise_actor_type == "gaussian_ac") {
-    p_model_.model = std::make_shared<GaussianACPolicy>(std::move(p_model), /* squashed = */ false);
+    pq_model_.model = std::make_shared<GaussianACPolicy>(std::move(pq_model), /* squashed = */ false);
     actor_normalization_mode_ = ActorNormalizationMode::Clip;
   } else if (noise_actor_type == "squashed_gaussian_ac") {
-    p_model_.model = std::make_shared<GaussianACPolicy>(std::move(p_model), /* squashed = */ true);
+    pq_model_.model = std::make_shared<GaussianACPolicy>(std::move(pq_model), /* squashed = */ true);
     actor_normalization_mode_ =	ActorNormalizationMode::Scale;
   } else {
     THROW_INVALID_USAGE("Invalid actor type specified, supported actor types for PPO are [gaussian_ac, squashed_gaussian_ac]");
   }
-  p_model_.state = get_state("actor", system_node);
-  p_model_.model->to(model_device_);
+  pq_model_.state = get_state("actor_critic", system_node);
+  pq_model_.model->to(model_device_);
 
   // get optimizers
   if (system_node["optimizer"]) {
     // policy model
-    p_model_.optimizer = get_optimizer(system_node["optimizer"], p_model_.model->parameters());
-    // value model
-    q_model_.optimizer = get_optimizer(system_node["optimizer"], q_model_.model);
+    pq_model_.optimizer = get_optimizer(system_node["optimizer"], pq_model_.model->parameters());
   } else {
     THROW_INVALID_USAGE("Missing optimizer block in configuration file.");
   }
 
   // get schedulers
   // policy model
-  if (system_node["policy_lr_scheduler"]) {
-    p_model_.lr_scheduler = get_lr_scheduler(system_node["policy_lr_scheduler"], p_model_.optimizer);
+  if (system_node["lr_scheduler"]) {
+    pq_model_.lr_scheduler = get_lr_scheduler(system_node["lr_scheduler"], pq_model_.optimizer);
   } else {
-    THROW_INVALID_USAGE("Missing policy_lr_scheduler block in configuration file.");
-  }
-  // critic models
-  if (system_node["critic_lr_scheduler"]) {
-    q_model_.lr_scheduler = get_lr_scheduler(system_node["critic_lr_scheduler"], q_model_.optimizer);
-  } else {
-    THROW_INVALID_USAGE("Missing critic_lr_scheduler block in configuration file.");
+    THROW_INVALID_USAGE("Missing lr_scheduler block in configuration file.");
   }
 
   // Setting up general options
@@ -208,26 +188,15 @@ void PPOSystem::initSystemComm(MPI_Comm mpi_comm) {
   system_comm_ = std::make_shared<Comm>(mpi_comm);
   system_comm_->initialize(model_device_.is_cuda());
   // policy
-  p_model_.comm = std::make_shared<Comm>(mpi_comm);
-  p_model_.comm->initialize(model_device_.is_cuda());
-  // critic
-  q_model_.comm = std::make_shared<Comm>(mpi_comm);
-  q_model_.comm->initialize(model_device_.is_cuda());
+  pq_model_.comm = std::make_shared<Comm>(mpi_comm);
+  pq_model_.comm->initialize(model_device_.is_cuda());
 
   // move to device before broadcasting
-  // policy
-  p_model_.model->to(model_device_);
-  // critic
-  q_model_.model->to(model_device_);
+  pq_model_.model->to(model_device_);
 
   // Broadcast initial model parameters from rank 0
-  // policy
-  for (auto& p : p_model_.model->parameters()) {
-    p_model_.comm->broadcast(p, 0);
-  }
-  // critic
-  for (auto& p : q_model_.model->parameters()) {
-    q_model_.comm->broadcast(p, 0);
+  for (auto& p : pq_model_.model->parameters()) {
+    pq_model_.comm->broadcast(p, 0);
   }
 
   return;
@@ -245,30 +214,27 @@ void PPOSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
     }
   }
 
-  // policy
+  // model
   {
-    std::filesystem::path policy_root_dir = root_dir / "policy";
+    std::filesystem::path model_root_dir = root_dir / "actor_critic";
     if (!std::filesystem::exists(policy_root_dir)) {
       bool rv = std::filesystem::create_directory(policy_root_dir);
       if (!rv) {
-	THROW_INVALID_USAGE("Could not create policy checkpoint directory.");
+	THROW_INVALID_USAGE("Could not create model checkpoint directory.");
       }
     } 
-    auto model_path = policy_root_dir / "model.pt";
-    p_model_.model->save(model_path.native());
+    auto model_path = model_root_dir / "model.pt";
+    pq_model_.model->save(model_path.native());
 
-    auto optimizer_path = policy_root_dir / "optimizer.pt";
-    torch::save(*p_model_.optimizer, optimizer_path.native());
+    auto optimizer_path = model_root_dir / "optimizer.pt";
+    torch::save(*pq_model_.optimizer, optimizer_path.native());
 
-    auto lr_path = policy_root_dir / "lr.pt";
-    p_model_.lr_scheduler->save(lr_path.native());
+    auto lr_path = model_root_dir / "lr.pt";
+    pq_model_.lr_scheduler->save(lr_path.native());
 
-    auto state_path = policy_root_dir / "state.pt";
-    p_model_.state->save(state_path.native());
+    auto state_path = model_root_dir / "state.pt";
+    pq_model_.state->save(state_path.native());
   }
-
-  // critic
-  save_model_pack(q_model_, root_dir / "critic", true);
 
   // system state
   {
@@ -287,38 +253,35 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
   using namespace torchfort;
   std::filesystem::path root_dir(checkpoint_dir);
 
-  // policy
+  // model
   {
-    auto model_path = root_dir / "policy" / "model.pt";
+    auto model_path = root_dir / "actor_critic" / "model.pt";
     if (!std::filesystem::exists(model_path)) {
       THROW_INVALID_USAGE("Could not find " + model_path.native() + ".");
     }
-    p_model_.model->load(model_path.native());
+    pq_model_.model->load(model_path.native());
 
     // connect model and optimizer parameters:
-    p_model_.optimizer->parameters() = p_model_.model->parameters();
+    pq_model_.optimizer->parameters() = pq_model_.model->parameters();
 
-    auto optimizer_path = root_dir / "policy" / "optimizer.pt";
+    auto optimizer_path = root_dir / "actor_critic" / "optimizer.pt";
     if (!std::filesystem::exists(optimizer_path)) {
       THROW_INVALID_USAGE("Could not find " + optimizer_path.native() + ".");
     }
-    torch::load(*(p_model_.optimizer), optimizer_path.native());
+    torch::load(*(pq_model_.optimizer), optimizer_path.native());
 
-    auto lr_path = root_dir / "policy" / "lr.pt";
+    auto lr_path = root_dir / "actor_critic" / "lr.pt";
     if (!std::filesystem::exists(lr_path)) {
       THROW_INVALID_USAGE("Could not find " + lr_path.native() + ".");
     }
-    p_model_.lr_scheduler->load(lr_path.native(), *(p_model_.optimizer));
+    pq_model_.lr_scheduler->load(lr_path.native(), *(pq_model_.optimizer));
 
-    auto state_path = root_dir / "policy" / "state.pt";
+    auto state_path = root_dir / "actor_critic" / "state.pt";
     if (!std::filesystem::exists(state_path)) {
       THROW_INVALID_USAGE("Could not find " + state_path.native() + ".");
     }
-    p_model_.state->load(state_path.native());
+    pq_model_.state->load(state_path.native());
   }
-
-  // critic
-  load_model_pack(q_model_, root_dir / "critic", true);
 
   // system state
   {
@@ -360,11 +323,9 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, b
   // we need to unsqueeze s and a to make sure that we can pass them to the NN:
   torch::Tensor ad = torch::unsqueeze(as.to(model_device_), 0);
   torch::Tensor sd = torch::unsqueeze(s.to(model_device_), 0);
-  float q = (q_model_.model)->forward(std::vector<torch::Tensor>{sd, ad})[0].item<float>();
-  
-  // compute log_p:
-  torch::Tensor log_p_tensor, entropy_tensor;
-  std::tie(log_p_tensor, entropy_tensor) = p_model_.model->evaluateAction(sd, ad);
+  torch::Tensor log_p_tensor, entropy_tensor, value;
+  std::tie(log_p_tensor, entropy_tensor, value) = (pq_model_.model)->evaluateAction(sd, ad);
+  float q = value.item<float>();
   float log_p = log_p_tensor.item<float>();
 
   // DEBUG
@@ -412,12 +373,13 @@ torch::Tensor PPOSystem::predict(torch::Tensor state) {
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_.model->to(model_device_);
-  p_model_.model->eval();
+  pq_model_.model->to(model_device_);
+  pq_model_.model->eval();
   state = state.to(model_device_);
 
   // do fwd pass
-  auto action = (p_model_.model)->forwardDeterministic(state);
+  torch::Tensor action, value;
+  std::tie(action, value) = (pq_model_.model)->forwardDeterministic(state);
 
   // clip action
   switch (actor_normalization_mode_) {
@@ -437,13 +399,13 @@ torch::Tensor PPOSystem::predictExplore(torch::Tensor state) {
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_.model->to(model_device_);
-  p_model_.model->eval();
+  pq_model_.model->to(model_device_);
+  pq_model_.model->eval();
   state = state.to(model_device_);
 
   // do fwd pass
-  torch::Tensor action, log_probs;
-  std::tie(action, log_probs) = (p_model_.model)->forwardNoise(state);
+  torch::Tensor action, log_probs, value;
+  std::tie(action, log_probs, value) = (pq_model_.model)->forwardNoise(state);
 
   // clip action
   switch (actor_normalization_mode_) {
@@ -463,29 +425,29 @@ torch::Tensor PPOSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  q_model_.model->to(model_device_);
-  q_model_.model->eval();
+  pq_model_.model->to(model_device_);
+  pq_model_.model->eval();
   state = state.to(model_device_);
-  action = action.to(model_device_);
+  //action = action.to(model_device_);
 
   // scale action
-  switch (actor_normalization_mode_) {
-  case ActorNormalizationMode::Scale:
-    // clamp to [a_low, a_high]
-    action = torch::clamp(action, a_low_, a_high_);
-    // scale to [-1, 1]
-    action = scale_action(action, a_low_, a_high_);
-    break;
-  case ActorNormalizationMode::Clip:
-    // clamp to [a_low, a_high]
-    action = torch::clamp(action, a_low_, a_high_);
-    break;
-  }
+  //switch (actor_normalization_mode_) {
+  //case ActorNormalizationMode::Scale:
+  //  // clamp to [a_low, a_high]
+  //  action = torch::clamp(action, a_low_, a_high_);
+  //  // scale to [-1, 1]
+  //  action = scale_action(action, a_low_, a_high_);
+  //  break;
+  //case ActorNormalizationMode::Clip:
+  //  // clamp to [a_low, a_high]
+  //  action = torch::clamp(action, a_low_, a_high_);
+  // break;
+  //}
 
   // do fwd pass
-  auto reward = (q_model_.model)->forward(std::vector<torch::Tensor>{state, action})[0];
+  auto value = (pq_model_.model)->forwardDeterministic(state)[2];
 
-  return reward;
+  return value;
 }
 
 void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
@@ -510,8 +472,7 @@ void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   }
 
   // train step
-  train_ppo(p_model_, q_model_,
-	    s, a, q, logp, adv, ret,
+  train_ppo(pq_model_, s, a, q, logp, adv, ret,
 	    epsilon_, clip_q_, entropy_loss_coeff_, value_loss_coeff_, max_grad_norm_, normalize_advantage_,
 	    p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_, explained_variance_);
   

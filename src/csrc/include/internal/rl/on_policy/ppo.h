@@ -59,8 +59,7 @@ namespace on_policy {
 
 // implementing https://spinningup.openai.com/en/latest/algorithms/ppo.html?highlight=PPO#id8
 template <typename T>
-void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
-               torch::Tensor state_tensor, torch::Tensor action_tensor, 
+void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::Tensor action_tensor, 
                torch::Tensor q_tensor, torch::Tensor log_p_tensor, torch::Tensor adv_tensor, torch::Tensor ret_tensor,
 	       const T& epsilon, const T& clip_q, const T& entropy_loss_coeff, const T& q_loss_coeff, const T& max_grad_norm, 
 	       bool normalize_advantage, T& p_loss_val, T& q_loss_val, T& kl_divergence, T& clip_fraction, T& explained_var) {
@@ -84,10 +83,6 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
 
   // DEBUG
   std::cout << "TRAIN STEP" << std::endl;
-  torch::Tensor log_p_new_tensor_2, entropy_tensor_2;
-  std::tie(log_p_new_tensor_2, entropy_tensor_2) = p_model.model->evaluateAction(state_tensor, action_tensor);
-  T mean_dbg = torch::mean(log_p_new_tensor_2).item<T>();
-  std::cout << "DEBUG log_p_new_tensor_2: " << mean_dbg << std::endl;
   mean_dbg = torch::mean(state_tensor).item<T>();
   std::cout << "DEBUG state_tensor: " << mean_dbg << std::endl;
   mean_dbg = torch::mean(action_tensor).item<T>();
@@ -111,19 +106,19 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
     torch::Tensor adv_mean = torch::mean(adv_tensor);
 
     // average mean across all nodes
-    if (p_model.comm) {
+    if (pq_model.comm) {
       std::vector<torch::Tensor> means = {adv_mean};
-      p_model.comm->allreduce(means, true);
+      pq_model.comm->allreduce(means, true);
       adv_mean = means[0];
     }
 
     // compute std
     torch::Tensor adv_std = torch::mean(torch::square(adv_tensor - adv_mean));
 
-    // average across all nodes
-    if (p_model.comm) {
+    // average std across all nodes
+    if (pq_model.comm) {
       std::vector<torch::Tensor> stds = {adv_std};
-      p_model.comm->allreduce(stds, true);
+      pq_model.comm->allreduce(stds, true);
       adv_std = stds[0];
     }
     adv_std = torch::sqrt(adv_std);
@@ -133,13 +128,11 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   }
 
   // set models to train
-  q_model.model->train();
-  p_model.model->train();
+  pq_model.model->train();
   
   // evaluate policies
-  torch::Tensor log_p_new_tensor, entropy_tensor;
-  std::tie(log_p_new_tensor, entropy_tensor) = p_model.model->evaluateAction(state_tensor, action_tensor);
-  torch::Tensor q_new_tensor = q_model.model->forward(std::vector<torch::Tensor>{state_tensor, action_tensor})[0];
+  torch::Tensor log_p_new_tensor, entropy_tensor, q_new_tensor;
+  std::tie(log_p_new_tensor, entropy_tensor, q_new_tensor) = pq_model.model->evaluateAction(state_tensor, action_tensor);
 
   // compute policy ratio
   torch::Tensor log_ratio_tensor = log_p_new_tensor - log_p_tensor;  
@@ -184,101 +177,64 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   torch::Tensor loss_tensor = p_loss_tensor + q_loss_coeff * q_loss_tensor + entropy_loss_coeff * entropy_loss_tensor;
 
   // backward pass
-  p_model.optimizer->zero_grad();
-  q_model.optimizer->zero_grad();
+  pq_model.optimizer->zero_grad();
   loss_tensor.backward();
 
   // allreduces
-  // policy
-  if (p_model.comm) {
+  if (pq_model.comm) {
     std::vector<torch::Tensor> grads;
-    grads.reserve(p_model.model->parameters().size());
-    for (const auto& p : p_model.model->parameters()) {
+    grads.reserve(pq_model.model->parameters().size());
+    for (const auto& p : pq_model.model->parameters()) {
       grads.push_back(p.grad());
     }
-    p_model.comm->allreduce(grads, true);
+    pq_model.comm->allreduce(grads, true);
   }
   // clip
   if (max_grad_norm > 0.) {
-    torch::nn::utils::clip_grad_norm_(p_model.model->parameters(), max_grad_norm);
-  }
-
-  // critic
-  if (q_model.comm) {
-    std::vector<torch::Tensor> grads;
-    grads.reserve(q_model.model->parameters().size());
-    for (const auto& p : q_model.model->parameters()) {
-      grads.push_back(p.grad());
-    }
-    q_model.comm->allreduce(grads, true);
-  }
-  // clip
-  if (max_grad_norm > 0.) {
-    torch::nn::utils::clip_grad_norm_(q_model.model->parameters(), max_grad_norm);
+    torch::nn::utils::clip_grad_norm_(pq_model.model->parameters(), max_grad_norm);
   }
 
   // optimizer step
   // policy
-  p_model.optimizer->step();
-  p_model.lr_scheduler->step();
-  // critic
-  q_model.optimizer->step();
-  q_model.lr_scheduler->step();
+  pq_model.optimizer->step();
+  pq_model.lr_scheduler->step();
 
   // reduce losses across ranks for printing
   torch::Tensor p_loss_mean_tensor = p_loss_tensor;
-  if (p_model.comm) {
+  if (pq_model.comm) {
     torch::NoGradGuard no_grad;
     std::vector<torch::Tensor> p_loss_mean = {p_loss_tensor};
-    p_model.comm->allreduce(p_loss_mean, true);
-    p_loss_mean_tensor = p_loss_mean[0];
+    pq_model.comm->allreduce(p_loss_mean, true);
+    pq_loss_mean_tensor = p_loss_mean[0];
   }
   p_loss_val = p_loss_mean_tensor.item<T>();
 
   torch::Tensor q_loss_mean_tensor = q_loss_tensor;
-  if (q_model.comm) {
+  if (pq_model.comm) {
     torch::NoGradGuard no_grad;
     std::vector<torch::Tensor> q_loss_mean = {q_loss_tensor};
-    q_model.comm->allreduce(q_loss_mean, true);
+    pq_model.comm->allreduce(q_loss_mean, true);
     q_loss_mean_tensor = q_loss_mean[0];
   }
   q_loss_val = q_loss_mean_tensor.item<T>();
     
   // policy function
-  auto state = p_model.state;
+  auto state = pq_model.state;
   state->step_train++;
   if ((state->report_frequency > 0) && (state->step_train % state->report_frequency == 0))
   {
     std::stringstream os;
-    os << "model: " << "actor" << ", ";
+    os << "model: " << "actor_critic" << ", ";
     os << "step_train: " << state->step_train << ", ";
     os << "loss: " << p_loss_val << ", ";
-    auto lrs = get_current_lrs(p_model.optimizer);
+    auto lrs = get_current_lrs(pq_model.optimizer);
     os << "lr: " << lrs[0];
-    if (!p_model.comm || (p_model.comm && p_model.comm->rank == 0)) {
+    if (!pq_model.comm || (pq_model.comm && pq_model.comm->rank == 0)) {
       torchfort::logging::print(os.str(), torchfort::logging::info);
       if (state->enable_wandb_hook) {
-        torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_loss", state->step_train, p_loss_val);
-        torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_lr", state->step_train, lrs[0]);
-      }
-    }
-  }
-
-  state = q_model.state;
-  state->step_train++;
-  if ((state->report_frequency > 0) && (state->step_train % state->report_frequency == 0))
-  {
-    std::stringstream os;
-    os << "model: " << "critic" << ", ";
-    os << "step_train: " << state->step_train << ", ";
-    os << "loss: " << q_loss_val << ", ";
-    auto lrs = get_current_lrs(q_model.optimizer);
-    os << "lr: " << lrs[0];
-    if (!q_model.comm || (q_model.comm && q_model.comm->rank == 0)) {
-      torchfort::logging::print(os.str(), torchfort::logging::info);
-      if (state->enable_wandb_hook) {
-	torchfort::wandb_log(q_model.state, q_model.comm, "critic", "train_loss", state->step_train, q_loss_val);
-	torchfort::wandb_log(q_model.state, q_model.comm, "critic", "train_lr", state->step_train, lrs[0]);
+        torchfort::wandb_log(pq_model.state, pq_model.comm, "actor_critic", "train_loss_p", state->step_train, p_loss_val);
+	torchfort::wandb_log(pq_model.state, pq_model.comm, "actor_critic", "train_loss_q", state->step_train, q_loss_val);
+        torchfort::wandb_log(pq_model.state, pq_model.comm, "actor_critic", "train_lr", state->step_train, lrs[0]);
       }
     }
   }
@@ -289,30 +245,30 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
 
     // kl_divergence
     torch::Tensor kl_divergence_tensor = torch::mean((ratio_tensor - 1.) - log_ratio_tensor);
-    if (q_model.comm)
+    if (pq_model.comm)
     {
       std::vector<torch::Tensor> kl_divergence_mean = {kl_divergence_tensor};
-      q_model.comm->allreduce(kl_divergence_mean, true);
+      pq_model.comm->allreduce(kl_divergence_mean, true);
       kl_divergence_tensor = kl_divergence_mean[0];
     }
     kl_divergence = kl_divergence_tensor.item<T>();
 
     // clip_fraction
     torch::Tensor clip_fraction_tensor = torch::mean((torch::abs(ratio_tensor - 1.) > epsilon).to(torch::kFloat32));
-    if (q_model.comm)
+    if (pq_model.comm)
     {
       std::vector<torch::Tensor> clip_fraction_mean = {clip_fraction_tensor};
-      q_model.comm->allreduce(clip_fraction_mean, true);
+      pq_model.comm->allreduce(clip_fraction_mean, true);
       clip_fraction_tensor = clip_fraction_mean[0];
     }
     clip_fraction = clip_fraction_tensor.item<T>();
 
     // explained variance
     torch::Tensor expvar_tensor = explained_variance(q_tensor, ret_tensor);
-    if (q_model.comm)
+    if (pq_model.comm)
     {
       std::vector<torch::Tensor> expvar_mean = {expvar_tensor};
-      q_model.comm->allreduce(expvar_mean, true);
+      pq_model.comm->allreduce(expvar_mean, true);
       expvar_tensor = expvar_mean[0];
     }
     explained_var = expvar_tensor.item<T>();
@@ -364,8 +320,7 @@ private:
   std::shared_ptr<Comm> getSystemComm_();
 
   // models
-  ACPolicyPack p_model_;
-  ModelPack q_model_;
+  ACPolicyPack pq_model_;
 
   // replay buffer
   std::shared_ptr<RolloutBuffer> rollout_buffer_;

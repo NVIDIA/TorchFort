@@ -250,10 +250,10 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* na
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_rl_on_policy_reset_rollout_buffer(const char* name) {
+torchfort_result_t torchfort_rl_on_policy_reset_rollout_buffer(const char* name, bool start_new_episode) {
   using namespace torchfort;
   try {
-    rl::on_policy::registry[name]->resetRolloutBuffer();
+    rl::on_policy::registry[name]->resetRolloutBuffer(start_new_episode);
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();

@@ -62,7 +62,7 @@ public:
   // some important functions which have to be implemented by the base class
   virtual void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, bool) = 0;
   //virtual void finalizeRolloutBuffer(float, bool) = 0;
-  virtual void resetRolloutBuffer() = 0;
+  virtual void resetRolloutBuffer(bool) = 0;
   virtual bool isReady() = 0;
 
   // these have to be implemented

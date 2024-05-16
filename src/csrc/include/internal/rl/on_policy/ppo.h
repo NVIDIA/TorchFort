@@ -82,20 +82,20 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
   assert(ret_tensor.size(1) == 1);
 
   // DEBUG
-  T mean_dbg;
-  std::cout << "TRAIN STEP" << std::endl;
-  mean_dbg = torch::mean(state_tensor).item<T>();
-  std::cout << "DEBUG state_tensor: " << mean_dbg << std::endl;
-  mean_dbg = torch::mean(action_tensor).item<T>();
-  std::cout << "DEBUG action_tensor: " << mean_dbg << std::endl;
-  mean_dbg = torch::mean(q_tensor).item<T>();
-  std::cout << "DEBUG q_tensor: " << mean_dbg << std::endl;
-  mean_dbg = torch::mean(log_p_tensor).item<T>();
-  std::cout << "DEBUG log_p_tensor: " << mean_dbg << std::endl;
-  mean_dbg = torch::mean(adv_tensor).item<T>();
-  std::cout << "DEBUG adv_tensor: " << mean_dbg << std::endl;
-  mean_dbg = torch::mean(ret_tensor).item<T>();
-  std::cout << "DEBUG ret_tensor: " << mean_dbg << std::endl;
+  //T mean_dbg;
+  //std::cout << "TRAIN STEP" << std::endl;
+  //mean_dbg = torch::mean(state_tensor).item<T>();
+  //std::cout << "DEBUG state_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(action_tensor).item<T>();
+  //std::cout << "DEBUG action_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(q_tensor).item<T>();
+  //std::cout << "DEBUG q_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(log_p_tensor).item<T>();
+  //std::cout << "DEBUG log_p_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(adv_tensor).item<T>();
+  //std::cout << "DEBUG adv_tensor: " << mean_dbg << std::endl;
+  //mean_dbg = torch::mean(ret_tensor).item<T>();
+  //std::cout << "DEBUG ret_tensor: " << mean_dbg << std::endl;
   // DEBUG
 
   // normalize advantages if requested
@@ -227,7 +227,8 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     std::stringstream os;
     os << "model: " << "actor_critic" << ", ";
     os << "step_train: " << state->step_train << ", ";
-    os << "loss: " << p_loss_val << ", ";
+    os << "p_loss: " << p_loss_val << ", ";
+    os << "q_loss: " << q_loss_val << ", ";
     auto lrs = get_current_lrs(pq_model.optimizer);
     os << "lr: " << lrs[0];
     if (!pq_model.comm || (pq_model.comm && pq_model.comm->rank == 0)) {
@@ -291,7 +292,7 @@ public:
   // we should pass a tuple (s, a, r, e)
   void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, bool);
   //void finalizeRolloutBuffer(float, bool);
-  void resetRolloutBuffer();
+  void resetRolloutBuffer(bool);
   bool isReady();
 
   // train step

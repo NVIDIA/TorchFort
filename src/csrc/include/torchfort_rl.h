@@ -499,9 +499,11 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* na
  * @details This function call clears the rollout buffer and resets all variables except for the end of episode tracker.
  *
  * @param[in] name The name of system instance to use, as defined during system creation. 
+ * @param[in] start_new_episode This flag signals the rollout buffer to set the new episode flag. This is important in order
+ * to guarantee correct rollouts.
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure. 
 */
-torchfort_result_t torchfort_rl_on_policy_reset_rollout_buffer(const char* name);
+  torchfort_result_t torchfort_rl_on_policy_reset_rollout_buffer(const char* name, bool start_new_episode);
 
 // RL on-policy checkpoint save and loading functions
 /**

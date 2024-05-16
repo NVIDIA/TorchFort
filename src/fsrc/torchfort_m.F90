@@ -456,10 +456,11 @@ module torchfort
       integer(c_int) :: res
     end function torchfort_rl_on_policy_update_rollout_buffer_c
 
-    function torchfort_rl_on_policy_reset_rollout_buffer_c(mname) result(res) &
+    function torchfort_rl_on_policy_reset_rollout_buffer_c(mname, start_new_episode) result(res) &
       bind(C, name="torchfort_rl_on_policy_reset_rollout_buffer")
       import
       character(kind=c_char) :: mname(*)
+      logical :: start_new_episode
       integer(c_int) :: res
     end function torchfort_rl_on_policy_reset_rollout_buffer_c
 
@@ -2550,10 +2551,11 @@ contains
   end function torchfort_rl_on_policy_update_rollout_buffer_float_3d_1d_dev
 #endif
 
-  function torchfort_rl_on_policy_reset_rollout_buffer(mname) result(res)
+  function torchfort_rl_on_policy_reset_rollout_buffer(mname, start_new_episode) result(res)
     character(len=*) :: mname
     integer(c_int) :: res
-    res = torchfort_rl_on_policy_reset_rollout_buffer_c([trim(mname), C_NULL_CHAR])
+    logical :: start_new_episode
+    res = torchfort_rl_on_policy_reset_rollout_buffer_c([trim(mname), C_NULL_CHAR], start_new_episode)
   end function torchfort_rl_on_policy_reset_rollout_buffer
   
   function torchfort_rl_on_policy_is_ready(mname, ready) result(res)

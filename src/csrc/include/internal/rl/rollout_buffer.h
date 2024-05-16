@@ -56,7 +56,7 @@ public:
   // disable copy constructor
   RolloutBuffer(const RolloutBuffer&) = delete;
   // base constructor
-  RolloutBuffer(size_t size, int device) : size_(size), device_(get_device(device)), next_state_initial_(true) {}
+  RolloutBuffer(size_t size, int device) : size_(size), device_(get_device(device)), last_episode_starts_(true) {}
 
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, float, float, float, bool) = 0;
@@ -64,7 +64,7 @@ public:
   virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
   sample(int) = 0;
   virtual bool isReady() const = 0;
-  virtual void reset() = 0;
+  virtual void reset(bool start_new_episode) = 0;
   virtual void printInfo() const = 0;
   virtual void save(const std::string& fname) const = 0;
   virtual void load(const std::string& fname) = 0;
@@ -73,7 +73,7 @@ public:
 protected:
   size_t size_;
   torch::Device device_;
-  bool next_state_initial_;
+  bool last_episode_starts_;
 };
 
 class GAELambdaRolloutBuffer : public RolloutBuffer, public std::enable_shared_from_this<RolloutBuffer> {
@@ -102,39 +102,33 @@ public:
       // clone the tensors and move to device
       auto sc = s.to(device_, s.dtype(), /* non_blocking = */ false, /* copy = */ true);
       auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
-    
+
+      // 
+      
       // add the newest/latest element in back
       // TODO: is that right? should be
-      buffer_.push_back(std::make_tuple(sc, ac, r, q, log_p, next_state_initial_));
+      buffer_.push_back(std::make_tuple(sc, ac, r, q, log_p, last_episode_starts_));
     }
 
     // set next_state_inital to done:
-    next_state_initial_ = d;
+    last_episode_starts_ = d;
   }
 
   // compute returns and advantages
   void finalize(float last_value, bool done) {
-    float last_gae_lam = 0.;
 
+    // temporary variables
+    torch::Tensor s, a;
+    float r, q, log_p, delta;
+    bool e;
+    
+    // we need to keep track of those
     // initialize starting values
+    float last_gae_lam = 0.;
     float next_non_terminal = (done ? 0. : 1.);
     float next_value = last_value;
     
-    // get first buffer entry
-    torch::Tensor s, a;
-    float r, q, log_p;
-    bool e;
-    std::tie(s, a, r, q, log_p, e) = buffer_.at(size_ - 1);
-    float delta = r + gamma_ * next_value * next_non_terminal - q;
-    last_gae_lam = delta + gamma_ * lambda_ * next_non_terminal * last_gae_lam;
-    advantages_[size_ - 1] = last_gae_lam;
-    returns_[size_ - 1] = last_gae_lam + q;
-
-    // we need to keep track of those
-    next_value = q;
-    next_non_terminal = (e ? 0. : 1.);
-    
-    for (int64_t step = size_ - 2; step >= 0; step--) {
+    for (int64_t step = size_ - 1; step >= 0; step--) {
       std::tie(s, a, r, q, log_p, e) = buffer_.at(step);
       delta = r + gamma_ * next_value * next_non_terminal - q;
       last_gae_lam = delta + gamma_ * lambda_ * next_non_terminal * last_gae_lam;
@@ -198,7 +192,7 @@ public:
   bool isReady() const { return ((buffer_.size() == size_) && finalized_); }
 
   // reset the buffer
-  void reset() {
+  void reset(bool start_new_episode) {
     buffer_.clear();
 
     // zero out the returns and advantage vectors just to be safe
@@ -208,7 +202,10 @@ public:
     // finally, set the finalized flag to false
     finalized_ = false;
 
-    // do not touch the next state initial parameter here!
+    // we will NOT set the next episode start trigger here
+    if (start_new_episode) {
+      last_episode_starts_ = true;
+    }
     
     return;
   }

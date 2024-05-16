@@ -62,8 +62,8 @@ template <typename T>
 void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
                torch::Tensor state_tensor, torch::Tensor action_tensor, 
                torch::Tensor q_tensor, torch::Tensor log_p_tensor, torch::Tensor adv_tensor, torch::Tensor ret_tensor,
-	       const T& epsilon, const T& clip_q, const T& entropy_loss_coeff, const T& q_loss_coeff, bool normalize_advantage,
-	       T& p_loss_val, T& q_loss_val, T& kl_divergence, T& clip_fraction, T& explained_var) {
+	       const T& epsilon, const T& clip_q, const T& entropy_loss_coeff, const T& q_loss_coeff, const T& max_grad_norm, 
+	       bool normalize_advantage, T& p_loss_val, T& q_loss_val, T& kl_divergence, T& clip_fraction, T& explained_var) {
 
   // nvtx marker
   torchfort::nvtx::rangePush("torchfort_train_ppo");
@@ -83,23 +83,23 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
   assert(ret_tensor.size(1) == 1);
 
   // DEBUG
-  //std::cout << "TRAIN STEP" << std::endl;
-  //torch::Tensor log_p_new_tensor_2, entropy_tensor_2;
-  //std::tie(log_p_new_tensor_2, entropy_tensor_2) = p_model.model->evaluateAction(state_tensor, action_tensor);
-  //T mean_dbg = torch::mean(log_p_new_tensor_2).item<T>();
-  //std::cout << "DEBUG log_p_new_tensor_2: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(state_tensor).item<T>();
-  //std::cout << "DEBUG state_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(action_tensor).item<T>();
-  //std::cout << "DEBUG action_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(q_tensor).item<T>();
-  //std::cout << "DEBUG q_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(log_p_tensor).item<T>();
-  //std::cout << "DEBUG log_p_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(adv_tensor).item<T>();
-  //std::cout << "DEBUG adv_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(ret_tensor).item<T>();
-  //std::cout << "DEBUG ret_tensor: " << mean_dbg << std::endl;
+  std::cout << "TRAIN STEP" << std::endl;
+  torch::Tensor log_p_new_tensor_2, entropy_tensor_2;
+  std::tie(log_p_new_tensor_2, entropy_tensor_2) = p_model.model->evaluateAction(state_tensor, action_tensor);
+  T mean_dbg = torch::mean(log_p_new_tensor_2).item<T>();
+  std::cout << "DEBUG log_p_new_tensor_2: " << mean_dbg << std::endl;
+  mean_dbg = torch::mean(state_tensor).item<T>();
+  std::cout << "DEBUG state_tensor: " << mean_dbg << std::endl;
+  mean_dbg = torch::mean(action_tensor).item<T>();
+  std::cout << "DEBUG action_tensor: " << mean_dbg << std::endl;
+  mean_dbg = torch::mean(q_tensor).item<T>();
+  std::cout << "DEBUG q_tensor: " << mean_dbg << std::endl;
+  mean_dbg = torch::mean(log_p_tensor).item<T>();
+  std::cout << "DEBUG log_p_tensor: " << mean_dbg << std::endl;
+  mean_dbg = torch::mean(adv_tensor).item<T>();
+  std::cout << "DEBUG adv_tensor: " << mean_dbg << std::endl;
+  mean_dbg = torch::mean(ret_tensor).item<T>();
+  std::cout << "DEBUG ret_tensor: " << mean_dbg << std::endl;
   // DEBUG
 
   // normalize advantages if requested
@@ -198,6 +198,10 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
     }
     p_model.comm->allreduce(grads, true);
   }
+  // clip
+  if (max_grad_norm > 0.) {
+    torch::nn::utils::clip_grad_norm_(p_model.model->parameters(), max_grad_norm);
+  }
 
   // critic
   if (q_model.comm) {
@@ -207,6 +211,10 @@ void train_ppo(const ACPolicyPack& p_model, const ModelPack& q_model,
       grads.push_back(p.grad());
     }
     q_model.comm->allreduce(grads, true);
+  }
+  // clip
+  if (max_grad_norm > 0.) {
+    torch::nn::utils::clip_grad_norm_(q_model.model->parameters(), max_grad_norm);
   }
 
   // optimizer step
@@ -376,6 +384,7 @@ private:
   float target_kl_divergence_, current_kl_divergence_, explained_variance_;
   float clip_fraction_;
   float a_low_, a_high_;
+  float max_grad_norm_;
   bool normalize_advantage_;
   ActorNormalizationMode actor_normalization_mode_;
 };

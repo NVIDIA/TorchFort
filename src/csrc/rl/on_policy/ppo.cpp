@@ -52,17 +52,18 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
     std::set<std::string> supported_params{"batch_size", "gamma", "gae_lambda",
 					   "epsilon", "clip_q", "target_kl_divergence",
 					   "entropy_loss_coefficient", "value_loss_coefficient",
-					   "normalize_advantage"};
+					   "max_grad_norm", "normalize_advantage"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     gamma_ = params.get_param<float>("gamma")[0];
     gae_lambda_ = params.get_param<float>("gae_lambda")[0];
     target_kl_divergence_ = params.get_param<float>("target_kl_divergence")[0];
-    epsilon_ = params.get_param<float>("epsilon")[0];
+    epsilon_ = params.get_param<float>("epsilon", 0.2)[0];
     clip_q_ = params.get_param<float>("clip_q", 0.)[0];
-    entropy_loss_coeff_ = params.get_param<float>("entropy_loss_coefficient")[0];
-    value_loss_coeff_ = params.get_param<float>("value_loss_coefficient")[0];
-    normalize_advantage_ = params.get_param<bool>("normalize_advantage")[0];    
+    max_grad_norm_ = params.get_param<float>("max_grad_norm", 0.5)[0];
+    entropy_loss_coeff_ = params.get_param<float>("entropy_loss_coefficient", 0.0)[0];
+    value_loss_coeff_ = params.get_param<float>("value_loss_coefficient", 0.5)[0];
+    normalize_advantage_ = params.get_param<bool>("normalize_advantage", true)[0];    
   } else {
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
   }
@@ -511,7 +512,7 @@ void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   // train step
   train_ppo(p_model_, q_model_,
 	    s, a, q, logp, adv, ret,
-	    epsilon_, clip_q_, entropy_loss_coeff_, value_loss_coeff_, normalize_advantage_,
+	    epsilon_, clip_q_, entropy_loss_coeff_, value_loss_coeff_, max_grad_norm_, normalize_advantage_,
 	    p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_, explained_variance_);
   
   // system logging

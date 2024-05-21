@@ -114,12 +114,33 @@ void set_grad_state(std::shared_ptr<ModelWrapper> model, const bool requires_gra
   return;
 }
 
-torch::Tensor explained_variance(torch::Tensor q_pred, torch::Tensor q_true) {
+torch::Tensor explained_variance(torch::Tensor q_pred, torch::Tensor q_true, std::shared_ptr<Comm> comm) {
   // Computes fraction of variance that ypred explains about y.
   // Returns 1 - Var[y-ypred] / Var[y]
   // see https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/utils.py
-  torch::Tensor var_q_true = torch::var(q_true);
-  return 1. - torch::var(q_true - q_pred) / var_q_true;
+  // the communicator is required for distributed training
+  torch::Tensor result;
+  if (!comm) {
+    torch::Tensor var_q_true = torch::var(q_true);
+    result = 1. - torch::var(q_true - q_pred) / var_q_true;
+  } else {
+    // Compute variance of q_true
+    std::vector<torch::Tensor> mean_vec = {torch::mean(q_true)};
+    comm->allreduce(mean_vec, true);
+    torch::Tensor var_q_true = torch::mean(torch::square(q_true - mean_vec[0]));
+    mean_vec = {var_q_true};
+    comm->allreduce(mean_vec, true);
+    var_q_true = mean_vec[0];
+    // compute variane of difference:
+    mean_vec = {torch::mean(q_true-q_pred)};
+    comm->allreduce(mean_vec, true);
+    torch::Tensor var_q_diff = torch::mean(torch::square(q_true - q_pred - mean_vec[0]));
+    mean_vec = {var_q_diff};
+    comm->allreduce(mean_vec, true);
+    var_q_diff = mean_vec[0];
+    result = 1. - var_q_diff / var_q_true;
+  }
+  return result;
 }
 
 } // namespace rl

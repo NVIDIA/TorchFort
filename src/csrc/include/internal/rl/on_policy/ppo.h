@@ -266,13 +266,7 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     clip_fraction = clip_fraction_tensor.item<T>();
 
     // explained variance
-    torch::Tensor expvar_tensor = explained_variance(q_tensor, ret_tensor);
-    if (pq_model.comm)
-    {
-      std::vector<torch::Tensor> expvar_mean = {expvar_tensor};
-      pq_model.comm->allreduce(expvar_mean, true);
-      expvar_tensor = expvar_mean[0];
-    }
+    torch::Tensor expvar_tensor = explained_variance(q_tensor, ret_tensor, pq_model.comm);
     explained_var = expvar_tensor.item<T>();
   }
 

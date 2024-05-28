@@ -208,7 +208,7 @@ void PPOSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
   if (!std::filesystem::exists(root_dir)) {
     bool rv = std::filesystem::create_directory(root_dir);
     if (!rv) {
-      THROW_INVALID_USAGE("Could not create checkpoint directory.");
+      THROW_INVALID_USAGE("Could not create checkpoint directory " + root_dir.native() + ".");
     }
   }
 
@@ -218,7 +218,7 @@ void PPOSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
     if (!std::filesystem::exists(model_root_dir)) {
       bool rv = std::filesystem::create_directory(model_root_dir);
       if (!rv) {
-	THROW_INVALID_USAGE("Could not create model checkpoint directory.");
+	THROW_INVALID_USAGE("Could not create model checkpoint directory" + model_root_dir.native() + ".");
       }
     } 
     auto model_path = model_root_dir / "model.pt";

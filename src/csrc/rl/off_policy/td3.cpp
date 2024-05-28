@@ -319,7 +319,7 @@ void TD3System::saveCheckpoint(const std::string& checkpoint_dir) const {
   if (!std::filesystem::exists(root_dir)) {
     bool rv = std::filesystem::create_directory(root_dir);
     if (!rv) {
-      THROW_INVALID_USAGE("Could not create checkpoint directory.");
+      THROW_INVALID_USAGE("Could not create checkpoint directory " + root_dir.native() + ".");
     }
   }
 

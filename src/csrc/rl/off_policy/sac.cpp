@@ -270,7 +270,7 @@ void SACSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
   if (!std::filesystem::exists(root_dir)) {
     bool rv = std::filesystem::create_directory(root_dir);
     if (!rv) {
-      THROW_INVALID_USAGE("Could not create checkpoint directory.");
+      THROW_INVALID_USAGE("Could not create checkpoint directory " + root_dir.native() + ".");
     }
   }
 
@@ -280,7 +280,7 @@ void SACSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
     if (!std::filesystem::exists(policy_root_dir)) {
       bool rv = std::filesystem::create_directory(policy_root_dir);
       if (!rv) {
-        THROW_INVALID_USAGE("Could not create policy checkpoint directory.");
+	THROW_INVALID_USAGE("Could not create policy checkpoint directory " + policy_root_dir.native() + ".");
       } 
     }
     auto model_path = policy_root_dir / "model.pt";

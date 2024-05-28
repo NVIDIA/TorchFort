@@ -62,7 +62,8 @@ template <typename T>
 void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::Tensor action_tensor, 
                torch::Tensor q_tensor, torch::Tensor log_p_tensor, torch::Tensor adv_tensor, torch::Tensor ret_tensor,
 	       const T& epsilon, const T& clip_q, const T& entropy_loss_coeff, const T& q_loss_coeff, const T& max_grad_norm, 
-	       bool normalize_advantage, T& p_loss_val, T& q_loss_val, T& kl_divergence, T& clip_fraction, T& explained_var) {
+	       const T& target_kl_divergence, bool normalize_advantage,
+	       T& p_loss_val, T& q_loss_val, T& kl_divergence, T& clip_fraction, T& explained_var) {
 
   // nvtx marker
   torchfort::nvtx::rangePush("torchfort_train_ppo");
@@ -80,23 +81,6 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
   assert(log_p_tensor.size(1) == 1);
   assert(adv_tensor.size(1) == 1);
   assert(ret_tensor.size(1) == 1);
-
-  // DEBUG
-  //T mean_dbg;
-  //std::cout << "TRAIN STEP" << std::endl;
-  //mean_dbg = torch::mean(state_tensor).item<T>();
-  //std::cout << "DEBUG state_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(action_tensor).item<T>();
-  //std::cout << "DEBUG action_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(q_tensor).item<T>();
-  //std::cout << "DEBUG q_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(log_p_tensor).item<T>();
-  //std::cout << "DEBUG log_p_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(adv_tensor).item<T>();
-  //std::cout << "DEBUG adv_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(ret_tensor).item<T>();
-  //std::cout << "DEBUG ret_tensor: " << mean_dbg << std::endl;
-  // DEBUG
 
   // normalize advantages if requested
   if ( normalize_advantage && (batch_size > 1) ) {
@@ -144,19 +128,6 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
   torch::Tensor p_loss_tensor_2 = adv_tensor * torch::clamp(ratio_tensor, 1. - epsilon, 1. + epsilon);
   // the stable baselines code uses torch.min but I think this is wrong, it has to be torch.minimum
   torch::Tensor p_loss_tensor = -torch::mean(torch::minimum(p_loss_tensor_1, p_loss_tensor_2));
-
-  // DEBUG
-  //mean_dbg = torch::mean(log_p_new_tensor).item<T>();
-  //std::cout << "DEBUG log_p_new_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(log_ratio_tensor).item<T>();
-  //std::cout << "DEBUG log_ratio_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(ratio_tensor).item<T>();
-  //std::cout << "DEBUG ratio_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(p_loss_tensor_1).item<T>();
-  //std::cout << "DEBUG p_loss_tensor_1: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(p_loss_tensor_2).item<T>();
-  //std::cout << "DEBUG p_loss_tensor_2: " << mean_dbg << std::endl;
-  // DEBUG
   
   //clip value function if requested
   torch::Tensor q_pred_tensor;
@@ -177,6 +148,27 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
   // combined loss
   torch::Tensor loss_tensor = p_loss_tensor + q_loss_coeff * q_loss_tensor + entropy_loss_coeff * entropy_loss_tensor;
 
+  // compute kl_divergence before doing anything which could destroy the model
+  {
+    torch::NoGradGuard no_grad;
+
+    // kl_divergence
+    torch::Tensor kl_divergence_tensor = torch::mean((ratio_tensor - 1.) - log_ratio_tensor);
+    if (pq_model.comm)
+    {
+      std::vector<torch::Tensor> kl_divergence_mean = {kl_divergence_tensor};
+      pq_model.comm->allreduce(kl_divergence_mean, true);
+      kl_divergence_tensor = kl_divergence_mean[0];
+    }
+    kl_divergence = kl_divergence_tensor.item<T>();
+  }
+
+  // do saftey check to catch breaking training
+  bool skip_step = false;
+  if ((target_kl_divergence > 0.) && (kl_divergence > 1.5 * target_kl_divergence)) {
+    skip_step = true;
+  }
+
   // backward pass
   pq_model.optimizer->zero_grad();
   loss_tensor.backward();
@@ -195,10 +187,12 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     torch::nn::utils::clip_grad_norm_(pq_model.model->parameters(), max_grad_norm);
   }
 
-  // optimizer step
+  // optimizer step, only if not skipped
   // policy
-  pq_model.optimizer->step();
-  pq_model.lr_scheduler->step();
+  if (!skip_step) {
+    pq_model.optimizer->step();
+    pq_model.lr_scheduler->step();
+  }
 
   // reduce losses across ranks for printing
   torch::Tensor p_loss_mean_tensor = p_loss_tensor;
@@ -221,7 +215,7 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     
   // policy function
   auto state = pq_model.state;
-  state->step_train++;
+  if (!skip_step) state->step_train++;
   if ((state->report_frequency > 0) && (state->step_train % state->report_frequency == 0))
   {
     std::stringstream os;
@@ -230,8 +224,9 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     os << "p_loss: " << p_loss_val << ", ";
     os << "q_loss: " << q_loss_val << ", ";
     auto lrs = get_current_lrs(pq_model.optimizer);
-    os << "lr: " << lrs[0];
-    if (!pq_model.comm || (pq_model.comm && pq_model.comm->rank == 0)) {
+    os << "lr: " << lrs[0] << ", ";
+    os << "skipped: " << skip_step;
+    if ((!pq_model.comm || (pq_model.comm && pq_model.comm->rank == 0)) && !skip_step) {
       torchfort::logging::print(os.str(), torchfort::logging::info);
       if (state->enable_wandb_hook) {
         torchfort::wandb_log(pq_model.state, pq_model.comm, "actor_critic", "train_loss_p", state->step_train, p_loss_val);
@@ -241,19 +236,19 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     }
   }
 
-  // some diagnostic variables
+  // some other diagnostic variables
   {
     torch::NoGradGuard no_grad;
 
     // kl_divergence
-    torch::Tensor kl_divergence_tensor = torch::mean((ratio_tensor - 1.) - log_ratio_tensor);
-    if (pq_model.comm)
-    {
-      std::vector<torch::Tensor> kl_divergence_mean = {kl_divergence_tensor};
-      pq_model.comm->allreduce(kl_divergence_mean, true);
-      kl_divergence_tensor = kl_divergence_mean[0];
-    }
-    kl_divergence = kl_divergence_tensor.item<T>();
+    //torch::Tensor kl_divergence_tensor = torch::mean((ratio_tensor - 1.) - log_ratio_tensor);
+    //if (pq_model.comm)
+    //{
+    //  std::vector<torch::Tensor> kl_divergence_mean = {kl_divergence_tensor};
+    //  pq_model.comm->allreduce(kl_divergence_mean, true);
+    //  kl_divergence_tensor = kl_divergence_mean[0];
+    //}
+    //kl_divergence = kl_divergence_tensor.item<T>();
 
     // clip_fraction
     torch::Tensor clip_fraction_tensor = torch::mean((torch::abs(ratio_tensor - 1.) > epsilon).to(torch::kFloat32));

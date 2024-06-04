@@ -325,24 +325,10 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, b
   std::tie(log_p_tensor, entropy_tensor, value) = (pq_model_.model)->evaluateAction(sd, ad);
   float q = value.item<float>();
   float log_p = log_p_tensor.item<float>();
-
-  // DEBUG
-  //float mean_dbg = torch::mean(s).item<float>();
-  //std::cout << "DEBUG update_rollout_buffer state_tensor: " << mean_dbg << std::endl;
-  //mean_dbg = torch::mean(as).item<float>();
-  //std::cout << "DEBUG update_rollout_buffer action_tensor: " << mean_dbg << std::endl;
-  //std::cout << "DEBUG update_rollout_buffer log_p: " << log_p << std::endl;
-  //std::cout << "DEBUG update_rollout_buffer q: " << q << std::endl;
-  // DEBUG     
   
   // the replay buffer only stores scaled actions!
   rollout_buffer_->update(s, as, r, q, log_p, d);
 }
-
-//// we need to be able to finalize the buffer
-//void PPOSystem::finalizeRolloutBuffer(float q, bool d) {
-//  rollout_buffer_->finalize(q, d);
-//}
 
 void PPOSystem::resetRolloutBuffer(bool start_new_episode) {
   rollout_buffer_->reset(start_new_episode);
@@ -426,21 +412,6 @@ torch::Tensor PPOSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   pq_model_.model->to(model_device_);
   pq_model_.model->eval();
   state = state.to(model_device_);
-  //action = action.to(model_device_);
-
-  // scale action
-  //switch (actor_normalization_mode_) {
-  //case ActorNormalizationMode::Scale:
-  //  // clamp to [a_low, a_high]
-  //  action = torch::clamp(action, a_low_, a_high_);
-  //  // scale to [-1, 1]
-  //  action = scale_action(action, a_low_, a_high_);
-  //  break;
-  //case ActorNormalizationMode::Clip:
-  //  // clamp to [a_low, a_high]
-  //  action = torch::clamp(action, a_low_, a_high_);
-  // break;
-  //}
 
   // do fwd pass
   torch::Tensor action_tmp, value;

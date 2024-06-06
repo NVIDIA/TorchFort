@@ -66,6 +66,11 @@ torchfort_result_t torchfort_set_cuda_allow_tf32(const bool flag) {
   return TORCHFORT_RESULT_SUCCESS;
 }
 
+torchfort_result_t torchfort_set_manual_seed(const int seed) {
+  torch::manual_seed(static_cast<uint64_t>(seed));
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
 torchfort_result_t torchfort_set_cuda_manual_seed(const int seed) {
   torch::cuda::manual_seed(static_cast<uint64_t>(seed));
   return TORCHFORT_RESULT_SUCCESS;

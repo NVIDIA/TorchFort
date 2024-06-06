@@ -158,6 +158,13 @@ module torchfort
       integer(c_int) :: res
     end function torchfort_set_cuda_allow_tf32_c
 
+    function torchfort_set_manual_seed_c(seed) result(res) &
+      bind(C, name="torchfort_set_manual_seed")
+      import
+      integer(c_int) :: seed
+      integer(c_int) :: res
+    end function torchfort_set_manual_seed_c
+    
     function torchfort_set_cuda_manual_seed_c(seed) result(res) &
       bind(C, name="torchfort_set_cuda_manual_seed")
       import
@@ -720,6 +727,12 @@ contains
     res = torchfort_set_cuda_allow_tf32_c(flag)
   end function torchfort_set_cuda_allow_tf32
 
+  function torchfort_set_manual_seed(seed) result(res)
+    integer(c_int) :: seed
+    integer(c_int) :: res
+    res = torchfort_set_manual_seed_c(seed)
+  end function torchfort_set_manual_seed
+  
   function torchfort_set_cuda_manual_seed(seed) result(res)
     integer(c_int) :: seed
     integer(c_int) :: res

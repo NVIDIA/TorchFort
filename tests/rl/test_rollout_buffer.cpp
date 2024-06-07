@@ -15,19 +15,20 @@ std::shared_ptr<rl::GAELambdaRolloutBuffer> getTestRolloutBuffer(int buffer_size
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(1,5);
-  std::normal_distribution<std::mt19937::result_type> normal(1.0, 1.0);
+  std::normal_distribution<float> normal(1.0, 1.0);
 
   // fill the buffer
   float	reward, log_p, q;
   bool done;
-  torch::Tensor state = torch::zeros({1}, torch::kFloat32), state_p, action;
-  for (unsigned int i=0; i<buffer_size; ++i) {
+  torch::Tensor state = torch::zeros({1}, torch::kFloat32), action;
+  for (unsigned int i=0; i<buffer_size+1; ++i) {
     action = torch::ones({1}, torch::kFloat32) * static_cast<float>(dist(rng));
     reward = action.item<float>();
     q = reward;
-    log_p = static_cast<float>(normal(rng));
+    log_p = normal(rng);
     done = false;
     rbuff->update(state, action, reward, q, log_p, done);
+    state = state + action;
   }
 
   return rbuff;
@@ -47,25 +48,28 @@ void print_buffer(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
 // check if entries are consistent
 bool TestEntryConsistency() {
   // some parameters
-  unsigned int batch_size = 32;
+  unsigned int batch_size = 2;
   unsigned int buffer_size = 4 * batch_size;
+  unsigned int n_iters = 4;
 
   // get replay buffer
   auto rbuff = getTestRolloutBuffer(buffer_size, 0.95, 1);
 
+  print_buffer(rbuff);
+
   // sample
-  torch::Tensor stens, atens, rtens, qtens, log_p_tens, dtens;
-  float q_diff = 0;
+  torch::Tensor stens, atens, qtens, log_p_tens, advtens, rettens;
+  float q_diff = 0.;
   float reward_diff = 0.;
-  for (unsigned int i=0; i<4; ++i) {
-    std::tie(stens, atens, rtens, qtens, log_p_tens, dtens) = rbuff->sample(batch_size);
+  for (unsigned int i=0; i<n_iters; ++i) {
+    std::tie(stens, atens, qtens, log_p_tens, advtens, rettens) = rbuff->sample(batch_size);
 
     // compute differences:
-    q_diff += torch::sum(torch::abs(qtens - rtens)).item<float>();
-    reward_diff += torch::sum(torch::abs(atens - rtens)).item<float>();
+    q_diff += torch::sum(torch::abs(qtens - (rettens - advtens))).item<float>() / static_cast<float>(n_iters);
+    //reward_diff += torch::sum(torch::abs(atens - rtens)).item<float>();
   }
   // make sure values are consistent:
-  std::cout << "TestEntryConsistency: q-diff " << q_diff << " reward-diff " << reward_diff << std::endl;
+  std::cout << "TestEntryConsistency: q-diff " << q_diff << std::endl;
 
   return (q_diff < 1e-7) && (reward_diff < 1e-7);
 }

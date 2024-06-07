@@ -48,8 +48,6 @@ namespace rl {
 
 using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, float, float, float, bool>;
 
-enum RewardReductionMode { Sum = 1, Mean = 2, WeightedMean = 3, SumNoSkip = 4, MeanNoSkip = 5, WeightedMeanNoSkip = 6 };
-
 // abstract base class for rollout buffer
 class RolloutBuffer {
 public:
@@ -58,11 +56,15 @@ public:
   // base constructor
   RolloutBuffer(size_t size, int device) : size_(size), device_(get_device(device)), last_episode_starts_(true) {}
 
+  // accessors
+  size_t getSize() const {return size_;}
+
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, float, float, float, bool) = 0;
   virtual void finalize(float, bool) = 0;
   virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
   sample(int) = 0;
+  virtual BufferEntry get(int) = 0;
   virtual bool isReady() const = 0;
   virtual void reset(bool start_new_episode) = 0;
   virtual void printInfo() const = 0;
@@ -186,6 +188,24 @@ public:
     auto rettens = torch::from_blob(ret_list.data(), {batch_size, 1}, options).clone();
 
     return std::make_tuple(stens, atens, qtens, logptens, advtens, rettens);
+  }
+
+  BufferEntry get(int index) {
+    // sanity checks
+    if ((index < 0) || (index >= buffer_.size())) {
+      throw std::runtime_error("UniformRolloutBuffer::get: index " + std::to_string(index) + " out of bounds [0, " + std::to_string(buffer_.size()) + ")." );
+    }
+
+    // add no grad guard
+    torch::NoGradGuard no_grad;
+
+    // emit the sample at index
+    torch::Tensor stens, atens;
+    float r, q, log_p;
+    bool d;
+    std::tie(stens, atens, r, q, log_p, d) = buffer_.at(index);
+
+    return std::make_tuple(stens, atens, r, q, log_p, d);
   }
 
   // check functions

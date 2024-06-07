@@ -1,11 +1,18 @@
 set(test_targets
   test_replay_buffer
+  test_rollout_buffer
 )
 
 add_executable(test_replay_buffer)
 target_sources(test_replay_buffer
   PRIVATE
   test_replay_buffer.cpp
+)
+
+add_executable(test_rollout_buffer)
+target_sources(test_rollout_buffer
+  PRIVATE
+  test_rollout_buffer.cpp
 )
 
 find_package(Python 3.6 COMPONENTS Interpreter Development REQUIRED)

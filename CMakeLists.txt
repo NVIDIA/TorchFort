@@ -13,6 +13,7 @@ set(TORCHFORT_NCCL_ROOT CACHE STRING "Path to search for NCCL installation. Defa
 set(TORCHFORT_YAML_CPP_ROOT CACHE STRING "Path to search for yaml-cpp installation.")
 option(TORCHFORT_BUILD_FORTRAN "Build Fortran bindings" ON)
 option(TORCHFORT_BUILD_EXAMPLES "Build examples" OFF)
+option(TORCHFORT_BUILD_TESTS "Build tests" OFF)
 
 # For backward-compatibility with existing variable
 if (YAML_CPP_ROOT)
@@ -219,4 +220,9 @@ if (TORCHFORT_BUILD_EXAMPLES)
   if (TORCHFORT_BUILD_FORTRAN)
     add_subdirectory(examples/fortran/simulation)
   endif()
+endif()
+
+# build tests
+if (TORCHFORT_BUILD_TESTS)
+  add_subdirectory(tests/rl)
 endif()

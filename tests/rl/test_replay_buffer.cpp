@@ -78,8 +78,6 @@ bool TestTrajectoryConsistency() {
 
   // get replay buffer
   auto rbuff = getTestReplayBuffer(buffer_size, 0.95, 1);
-
-  print_buffer(rbuff);
   
   // get a few items and their successors:
   torch::Tensor stens, atens, sptens, sptens_tmp;

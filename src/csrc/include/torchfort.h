@@ -29,6 +29,7 @@
  */
 
 #pragma once
+#include <stdint.h>
 #include <cuda_runtime.h>
 #include <mpi.h>
 

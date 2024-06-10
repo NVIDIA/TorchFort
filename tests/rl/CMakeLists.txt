@@ -1,38 +1,36 @@
 cmake_minimum_required(VERSION 3.14)
 
-# GoogleTest requires at least C++14
-#set(CMAKE_CXX_STANDARD 17)
-#include(FetchContent)
-#FetchContent_Declare(
-#  googletest
-#  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-#)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-#set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
-#FetchContent_MakeAvailable(googletest)
-
-# enable test discovery
-#enable_testing()
-#include(GoogleTest)
-
 set(test_targets
   test_replay_buffer
   test_rollout_buffer
-)
+  test_distributions
+  test_td3
+  )
 
 add_executable(test_replay_buffer)
 target_sources(test_replay_buffer
   PRIVATE
   test_replay_buffer.cpp
   )
-#add_test(NAME TestReplayBuffer COMMAND test_replay_buffer)
 
 add_executable(test_rollout_buffer)
 target_sources(test_rollout_buffer
   PRIVATE
   test_rollout_buffer.cpp
-)
+  )
+
+add_executable(test_distributions)
+target_sources(test_distributions
+  PRIVATE
+  test_distributions.cpp
+  )
+
+add_executable(test_td3)
+target_sources(test_td3
+  PRIVATE
+  test_td3.cpp
+  )
+
 
 find_package(Python 3.6 COMPONENTS Interpreter Development REQUIRED)
 #find_package(pybind11 CONFIG REQUIRED)
@@ -56,8 +54,9 @@ foreach(tgt ${test_targets})
   target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
   target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
 
-  # discover tests
-  gtest_discover_tests(${tgt})
+  # discover tests: we have an issue with the work dir of gtest so disable that for now
+  #gtest_discover_tests(${tgt})
+  add_test(NAME ${tgt} COMMAND ${tgt} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endforeach()
 
 # installation
@@ -66,3 +65,6 @@ install(
   TARGETS ${test_targets}
   RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl
 )
+
+# copy files
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/td3.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)

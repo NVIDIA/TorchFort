@@ -71,6 +71,7 @@ public:
   virtual BufferEntry get(int) = 0;
   // helper functions
   virtual bool isReady() const = 0;
+  virtual void reset() = 0;
   virtual size_t getSize() const = 0;
   virtual void printInfo() const = 0;
   virtual void save(const std::string& fname) const = 0;
@@ -241,6 +242,13 @@ public:
 
   // check functions
   bool isReady() const { return (buffer_.size() >= min_size_); }
+
+  void reset() {
+    buffer_.clear();
+    
+    return;
+  }
+  
 
   size_t getSize() const { return buffer_.size(); }
 

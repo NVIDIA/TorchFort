@@ -1,3 +1,4 @@
+#include <gtest/gtest.h>
 #include <torch/torch.h>
 #include "internal/rl/rollout_buffer.h"
 
@@ -5,7 +6,8 @@ using namespace torchfort;
 using namespace torch::indexing;
 
 // helper functions
-std::shared_ptr<rl::GAELambdaRolloutBuffer> getTestRolloutBuffer(int buffer_size, float gamma=0.95, float lambda=0.99) {
+std::tuple<std::shared_ptr<rl::GAELambdaRolloutBuffer>, float, bool>
+getTestRolloutBuffer(int buffer_size, float gamma=0.95, float lambda=0.99) {
 
   torch::NoGradGuard no_grad;
   
@@ -26,12 +28,47 @@ std::shared_ptr<rl::GAELambdaRolloutBuffer> getTestRolloutBuffer(int buffer_size
     reward = action.item<float>();
     q = reward;
     log_p = normal(rng);
-    done = false;
+    // add one episode break in the middle. Note that this means that
+    // at this index, the state will be the last one in the episode
+    // internally this will be converted such that the next state will be the
+    // first state in a new episode
+    done = (i == (buffer_size / 2) ? true : false);
     rbuff->update(state, action, reward, q, log_p, done);
     state = state + action;
   }
 
-  return rbuff;
+  return std::make_tuple(rbuff, q, done);
+}
+
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+extract_entries(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
+  std::vector<float> svec, avec, rvec, qvec, log_p_vec, advvec, retvec;
+  std::vector<float> dvec;
+  for (unsigned int i=0; i<buffp->getSize(); ++i) {
+    torch::Tensor s, a;
+    float r, q, log_p, adv, ret;
+    bool d;
+    std::tie(s, a, r, q, log_p, adv, ret, d) = buffp->getFull(i);
+    svec.push_back(s.item<float>());
+    avec.push_back(a.item<float>());
+    rvec.push_back(r);
+    qvec.push_back(q);
+    log_p_vec.push_back(log_p);
+    advvec.push_back(adv);
+    retvec.push_back(ret);
+    dvec.push_back((d ? 1. : 0.));
+  }
+  auto options = torch::TensorOptions().dtype(torch::kFloat32);
+  torch::Tensor stens = torch::from_blob(svec.data(), {1}, options).clone();
+  torch::Tensor atens = torch::from_blob(avec.data(), {1}, options).clone();
+  torch::Tensor rtens = torch::from_blob(rvec.data(), {1}, options).clone();
+  torch::Tensor qtens = torch::from_blob(qvec.data(), {1}, options).clone();
+  torch::Tensor log_p_tens = torch::from_blob(log_p_vec.data(), {1}, options).clone();
+  torch::Tensor advtens = torch::from_blob(advvec.data(), {1}, options).clone();
+  torch::Tensor rettens = torch::from_blob(retvec.data(), {1}, options).clone();
+  torch::Tensor dtens = torch::from_blob(dvec.data(), {1}, options).clone();
+  
+  return std::make_tuple(stens, atens, rtens, qtens, log_p_tens, advtens, rettens, dtens);
 }
 
 void print_buffer(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
@@ -46,125 +83,148 @@ void print_buffer(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
 }
 
 // check if entries are consistent
-bool TestEntryConsistency() {
+TEST(RolloutBuffer, EntryConsistency) {
+  // rng
+  torch::manual_seed(666);
+  
   // some parameters
   unsigned int batch_size = 2;
   unsigned int buffer_size = 4 * batch_size;
   unsigned int n_iters = 4;
+  float gamma = 0.95;
+  float lambda = 0.99;
 
   // get replay buffer
-  auto rbuff = getTestRolloutBuffer(buffer_size, 0.95, 1);
-
-  print_buffer(rbuff);
+  std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
+  float last_val;
+  bool last_done;
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, gamma, lambda);
 
   // sample
   torch::Tensor stens, atens, qtens, log_p_tens, advtens, rettens;
   float q_diff = 0.;
-  float reward_diff = 0.;
   for (unsigned int i=0; i<n_iters; ++i) {
     std::tie(stens, atens, qtens, log_p_tens, advtens, rettens) = rbuff->sample(batch_size);
 
     // compute differences:
     q_diff += torch::sum(torch::abs(qtens - (rettens - advtens))).item<float>() / static_cast<float>(n_iters);
-    //reward_diff += torch::sum(torch::abs(atens - rtens)).item<float>();
   }
-  // make sure values are consistent:
-  std::cout << "TestEntryConsistency: q-diff " << q_diff << std::endl;
 
-  return (q_diff < 1e-7) && (reward_diff < 1e-7);
+  // success condition
+  EXPECT_NEAR(q_diff, 0., 1e-5);
 }
 
-#if 0
 // check if ordering between entries are consistent
-bool TestTrajectoryConsistency() {
+TEST(RolloutBuffer, AdvantageComputation) {
+  // rng
+  torch::manual_seed(666);
+  
   // some parameters
-  unsigned int batch_size = 32;
-  unsigned int buffer_size = 4 * batch_size;
+  unsigned int batch_size = 1;
+  unsigned int buffer_size = 8 * batch_size;
+  float gamma = 0.95;
+  float lambda = 0.99;
 
   // get replay buffer
-  auto rbuff = getTestReplayBuffer(buffer_size, 0.95, 1);
+  std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
+  float last_val;
+  bool last_done;
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, gamma, lambda);
   
   // get a few items and their successors:
-  torch::Tensor stens, atens, sptens, sptens_tmp;
-  float reward;
-  bool done;
-  // get item ad index 
-  std::tie(stens, atens, sptens, reward, done) = rbuff->get(0);
-  // get next item
-  float state_diff = 0.;
-  for (unsigned int i=1; i<buffer_size; ++i) {
-    std::tie(stens, atens, sptens_tmp, reward, done) = rbuff->get(i);
-    state_diff += torch::sum(torch::abs(stens - sptens)).item<float>();
-    sptens.copy_(sptens_tmp);
+  torch::Tensor stens, atens;
+  float r, q, log_p, adv, ret, df;
+  bool d;
+  torch::Tensor rtens = torch::empty({buffer_size}, torch::kFloat32);
+  torch::Tensor advtens = torch::empty({buffer_size}, torch::kFloat32);
+  torch::Tensor advtens_compare = torch::empty({buffer_size}, torch::kFloat32);
+  // this tensor needs to be a bit bigger because it needs to hold the final q
+  torch::Tensor qtens =	torch::empty({buffer_size+1}, torch::kFloat32);
+  torch::Tensor dftens = torch::empty({buffer_size+1}, torch::kFloat32);
+  // first, extract all V and r elements of the tensor and move them into a big tensor:
+  for (int i=0; i<buffer_size; ++i) {
+    std::tie(stens, atens, r, q, log_p, adv, ret, d) = rbuff->getFull(i);
+    rtens.index_put_({i}, r);
+    qtens.index_put_({i}, q);
+    df = (d ? 0. : 1.);
+    dftens.index_put_({i}, df);
+    advtens_compare.index_put_({i}, adv);
   }
-  std::cout << "TestTrajectoryConsistency: state-diff " << state_diff << std::endl;
+  qtens.index_put_({static_cast<int>(buffer_size)}, last_val);
+  dftens.index_put_({static_cast<int>(buffer_size)}, (last_done ? 0. : 1.));
 
-  return (state_diff < 1e-7);
+  // compute delta
+  torch::Tensor deltatens = rtens + dftens.index({Slice(1, buffer_size+1, 1)}) * gamma * qtens.index({Slice(1, buffer_size+1, 1)}) - qtens.index({Slice(0, buffer_size, 1)});
+
+  // compute discounted cumulative sum:
+  float delta = deltatens.index({static_cast<int>(buffer_size)-1}).item<float>();
+  advtens.index_put_({static_cast<int>(buffer_size)-1}, delta);
+  for (int i=(buffer_size-2); i>=0; --i) {
+    delta = deltatens.index({i}).item<float>();
+    // do not incorporate next entry if new episode starts
+    advtens.index_put_({i}, delta +  gamma * lambda * dftens.index({i+1}) * advtens.index({i+1}));
+  }
+
+  float adv_diff = torch::sum(advtens_compare - advtens).item<float>();
+  EXPECT_FLOAT_EQ(adv_diff, 0.);
 }
 
-// check if nstep reward calculation is correct
-bool TestNstepConsistency() {
+TEST(RolloutBuffer, SaveRestore) {
+  // rng
+  torch::manual_seed(666);
+
   // some parameters
-  unsigned int batch_size = 32;
+  unsigned int batch_size = 1;
   unsigned int buffer_size = 8 * batch_size;
-  unsigned int nstep = 4;
   float gamma = 0.95;
+  float lambda = 0.99;
 
-  // get replay buffer
-  auto rbuff = getTestReplayBuffer(buffer_size, gamma, nstep);
+  // get rollout buffer
+  std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
+  float last_val;
+  bool last_done;
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, gamma, lambda);
+
+  // extract entries before storing
+  torch::Tensor stens_b, atens_b, rtens_b, qtens_b, log_p_tens_b, advtens_b, rettens_b, dtens_b;
+  std::tie(stens_b, atens_b, rtens_b, qtens_b, log_p_tens_b, advtens_b, rettens_b, dtens_b) = extract_entries(rbuff);
+
+  // store the buffer
+  rbuff->save("/tmp/rollout_buffer.pt");
+
+  // reset the buffer
+  rbuff->reset(false);
+
+  // reload the buffer
+  rbuff->load("/tmp/rollout_buffer.pt");
   
-  // sample a batch
-  torch::Tensor stens, atens, sptens, rtens, dtens;
-  float state_diff = 0;
-  float reward_diff = 0.;
-  std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
+  // extract contents:
+  torch::Tensor stens_a, atens_a, rtens_a, qtens_a, log_p_tens_a, advtens_a, rettens_a, dtens_a;
+  std::tie(stens_a, atens_a, rtens_a, qtens_a, log_p_tens_a, advtens_a, rettens_a, dtens_a) = extract_entries(rbuff);
 
-  // iterate over samples in batch
-  torch::Tensor stemp, atemp, sptemp, sstens;
-  float rtemp, reward, gamma_eff, rdiff, sdiff, sstens_val;
-  bool dtemp;
+  // compute differences:
+  float stens_diff = torch::sum(torch::abs(stens_b-stens_a)).item<float>();
+  float atens_diff = torch::sum(torch::abs(atens_b-atens_a)).item<float>();
+  float rtens_diff = torch::sum(torch::abs(rtens_b-rtens_a)).item<float>();
+  float qtens_diff = torch::sum(torch::abs(qtens_b-qtens_a)).item<float>();
+  float log_p_tens_diff = torch::sum(torch::abs(log_p_tens_b-log_p_tens_a)).item<float>();
+  float advtens_diff = torch::sum(torch::abs(advtens_b-advtens_a)).item<float>();
+  float rettens_diff = torch::sum(torch::abs(rettens_b-rettens_a)).item<float>();
+  float dtens_diff = torch::sum(torch::abs(dtens_b-dtens_a)).item<float>();
 
-  // init differences:
-  rdiff = 0.;
-  sdiff = 0.;
-  for (int64_t s=0; s<batch_size; ++s) {
-    sstens = stens.index({s, "..."});
-    sstens_val = sstens.item<float>();
-    
-    // find the corresponding state
-    for (unsigned int i=0; i<buffer_size; ++i) {
-      std::tie(stemp, atemp, sptemp, rtemp, dtemp) = rbuff->get(i);
-      if (std::abs(stemp.item<float>() - sstens_val) < 1e-7) {
-	
-	// found the right state
-	gamma_eff = 1.;
-	reward = rtemp;
-	for(unsigned int k=1; k<nstep; k++) {
-	  std::tie(stemp, atemp, sptemp, rtemp, dtemp) = rbuff->get(i+k);
-	  gamma_eff *= gamma;
-	  reward += rtemp * gamma_eff;
-	}
-	break;
-      }
-    }
-    rdiff += std::abs(reward - rtens.index({s, "..."}).item<float>());
-    sdiff += torch::sum(torch::abs(sptemp - sptens.index({s, "..."}))).item<float>();
-    //std::cout << "reward = " << reward << " sp = " << sptemp.item<float>() << std::endl;
-    //std::cout << "reward-reference = " << rtens.index({s, "..."}).item<float>()<< " sp-reference = " << sptens.index({s, "..."}).item<float>() << std::endl;
-    //std::cout << "rdiff = " << rdiff << " sdiff = " << sdiff << std::endl;
-  }
-  // make sure values are consistent:
-  std::cout << "TestEntryConsistency: state-diff " << sdiff << " reward-diff " << rdiff << std::endl;
-  
-  return ((rdiff < 1e-7) && (sdiff < 1e-7));
+  // success criteria
+  EXPECT_FLOAT_EQ(stens_diff, 0.);
+  EXPECT_FLOAT_EQ(atens_diff, 0.);
+  EXPECT_FLOAT_EQ(rtens_diff, 0.);
+  EXPECT_FLOAT_EQ(qtens_diff, 0.);
+  EXPECT_FLOAT_EQ(log_p_tens_diff, 0.);
+  EXPECT_FLOAT_EQ(advtens_diff, 0.);
+  EXPECT_FLOAT_EQ(rettens_diff, 0.);
+  EXPECT_FLOAT_EQ(dtens_diff, 0.);
 }
-#endif
 
-int main(int argc, char* argv[]){
-
-  //TestEntryConsistency();
+int main(int argc, char *argv[]) {
+  ::testing::InitGoogleTest(&argc, argv);
   
-  //TestTrajectoryConsistency();
-
-  //TestNstepConsistency();
+  return RUN_ALL_TESTS();
 }

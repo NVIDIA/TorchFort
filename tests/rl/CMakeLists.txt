@@ -26,7 +26,7 @@ target_sources(test_replay_buffer
   PRIVATE
   test_replay_buffer.cpp
   )
-add_test(NAME TestReplayBuffer COMMAND test_replay_buffer)
+#add_test(NAME TestReplayBuffer COMMAND test_replay_buffer)
 
 add_executable(test_rollout_buffer)
 target_sources(test_rollout_buffer
@@ -60,28 +60,9 @@ foreach(tgt ${test_targets})
   gtest_discover_tests(${tgt})
 endforeach()
 
-# test discovery
-#include(GoogleTest)
-
-#foreach(tgt ${test_targets})
-#  gtest_discover_tests(${tgt})
-#endforeach()
-
 # installation
 # executable
 install(
   TARGETS ${test_targets}
   RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl
 )
-
-# config files
-#install(
-#  FILES ${CMAKE_CURRENT_SOURCE_DIR}/config.yaml ${CMAKE_CURRENT_SOURCE_DIR}/config_sim.yaml
-#  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/examples/cpp/cart_pole
-#)
-
-# python files
-#install(
-#  FILES ${CMAKE_CURRENT_SOURCE_DIR}/python/models.py ${CMAKE_CURRENT_SOURCE_DIR}/python/initialize_models.py ${CMAKE_CURRENT_SOURCE_DIR}/python/visualize.py
-#  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/examples/cpp/cart_pole/python
-#)

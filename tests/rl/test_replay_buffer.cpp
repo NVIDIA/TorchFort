@@ -33,6 +33,31 @@ std::shared_ptr<rl::UniformReplayBuffer> getTestReplayBuffer(int buffer_size, fl
   return rbuff;
 }
 
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+extract_entries(std::shared_ptr<rl::UniformReplayBuffer> buffp) {
+  std::vector<float> svec, avec, spvec, rvec;
+  std::vector<float> dvec;
+  for (unsigned int i=0; i<buffp->getSize(); ++i) {
+    torch::Tensor s, a, sp;
+    float r;
+    bool d;
+    std::tie(s, a, sp, r, d) = buffp->get(i);
+    svec.push_back(s.item<float>());
+    avec.push_back(a.item<float>());
+    spvec.push_back(sp.item<float>());
+    rvec.push_back(r);
+    dvec.push_back((d ? 1. : 0.));
+  }
+  auto options = torch::TensorOptions().dtype(torch::kFloat32);
+  torch::Tensor stens = torch::from_blob(svec.data(), {1}, options).clone();
+  torch::Tensor atens = torch::from_blob(avec.data(), {1}, options).clone();
+  torch::Tensor sptens = torch::from_blob(spvec.data(), {1}, options).clone();
+  torch::Tensor rtens = torch::from_blob(rvec.data(), {1}, options).clone();
+  torch::Tensor dtens = torch::from_blob(dvec.data(), {1}, options).clone();
+
+  return std::make_tuple(stens, atens, sptens, rtens, dtens);
+}
+
 void print_buffer(std::shared_ptr<rl::UniformReplayBuffer> buffp) {
   torch::Tensor stens, atens, sptens;
   float reward;
@@ -46,6 +71,10 @@ void print_buffer(std::shared_ptr<rl::UniformReplayBuffer> buffp) {
 
 // check if entries are consistent
 TEST(ReplayBuffer, EntryConsistency) {
+
+  // set rng
+  torch::manual_seed(666);
+  
   // some parameters
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
@@ -75,6 +104,9 @@ TEST(ReplayBuffer, EntryConsistency) {
 // check if ordering between entries are consistent
 TEST(ReplayBuffer, TrajectoryConsistency) {
 
+  // set rng
+  torch::manual_seed(666);
+
   // some parameters
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
@@ -103,6 +135,9 @@ TEST(ReplayBuffer, TrajectoryConsistency) {
 
 // check if nstep reward calculation is correct
 TEST(ReplayBuffer, NStepConsistency) {
+
+  // set rng
+  torch::manual_seed(666);
   
   // some parameters
   unsigned int batch_size = 32;
@@ -160,7 +195,54 @@ TEST(ReplayBuffer, NStepConsistency) {
   EXPECT_FLOAT_EQ(rdiff, 0.);
 }
 
+TEST(ReplayBuffer, SaveRestore) {
+
+  // rng
+  torch::manual_seed(666);
+
+  // some parameters
+  unsigned int batch_size = 1;
+  unsigned int buffer_size = 8 * batch_size;
+  float gamma = 0.95;
+  int nstep = 1;
+
+  // get rollout buffer
+  std::shared_ptr<rl::UniformReplayBuffer> rbuff = getTestReplayBuffer(buffer_size, gamma, nstep);
+
+  // extract entries before storing
+  torch::Tensor stens_b, atens_b, sptens_b, rtens_b, dtens_b;
+  std::tie(stens_b, atens_b, sptens_b, rtens_b, dtens_b) = extract_entries(rbuff);
+
+  // store the buffer
+  rbuff->save("/tmp/replay_buffer.pt");
+
+  // reset the buffer
+  rbuff->reset();
+
+  // reload the buffer
+  rbuff->load("/tmp/replay_buffer.pt");
+  
+  // extract contents:
+  torch::Tensor stens_a, atens_a, sptens_a, rtens_a, dtens_a;
+  std::tie(stens_a, atens_a, sptens_a, rtens_a, dtens_a) = extract_entries(rbuff);
+
+  // compute differences:
+  float stens_diff = torch::sum(torch::abs(stens_b-stens_a)).item<float>();
+  float atens_diff = torch::sum(torch::abs(atens_b-atens_a)).item<float>();
+  float sptens_diff = torch::sum(torch::abs(sptens_b-sptens_a)).item<float>();
+  float rtens_diff = torch::sum(torch::abs(rtens_b-rtens_a)).item<float>();
+  float dtens_diff = torch::sum(torch::abs(dtens_b-dtens_a)).item<float>();
+
+  // success criteria
+  EXPECT_FLOAT_EQ(stens_diff, 0.);
+  EXPECT_FLOAT_EQ(atens_diff, 0.);
+  EXPECT_FLOAT_EQ(sptens_diff, 0.);
+  EXPECT_FLOAT_EQ(rtens_diff, 0.);
+  EXPECT_FLOAT_EQ(dtens_diff, 0.);
+}
+
 int main(int argc, char *argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
+  
   return RUN_ALL_TESTS();
 }

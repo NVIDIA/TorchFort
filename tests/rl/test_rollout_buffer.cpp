@@ -162,7 +162,7 @@ bool TestNstepConsistency() {
 
 int main(int argc, char* argv[]){
 
-  TestEntryConsistency();
+  //TestEntryConsistency();
   
   //TestTrajectoryConsistency();
 

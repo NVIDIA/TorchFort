@@ -1,3 +1,4 @@
+#include <gtest/gtest.h>
 #include <torch/torch.h>
 #include "internal/rl/replay_buffer.h"
 
@@ -44,7 +45,7 @@ void print_buffer(std::shared_ptr<rl::UniformReplayBuffer> buffp) {
 }
 
 // check if entries are consistent
-bool TestEntryConsistency() {
+TEST(ReplayBuffer, EntryConsistency) {
   // some parameters
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
@@ -63,15 +64,17 @@ bool TestEntryConsistency() {
     state_diff += torch::sum(torch::abs(stens + atens - sptens)).item<float>();
     reward_diff += torch::sum(torch::abs(atens - rtens)).item<float>();
   }
-  // make sure values are consistent:
-  std::cout << "TestEntryConsistency: state-diff " << state_diff << " reward-diff " << reward_diff << std::endl;
+  //std::cout << "TestEntryConsistency: state-diff " << state_diff << " reward-diff " << reward_diff << std::endl;
 
-  return (state_diff < 1e-7) && (reward_diff < 1e-7);
+  // success condition
+  EXPECT_FLOAT_EQ(state_diff, 0.);
+  EXPECT_FLOAT_EQ(reward_diff, 0.);
 }
 
 
 // check if ordering between entries are consistent
-bool TestTrajectoryConsistency() {
+TEST(ReplayBuffer, TrajectoryConsistency) {
+
   // some parameters
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
@@ -92,13 +95,15 @@ bool TestTrajectoryConsistency() {
     state_diff += torch::sum(torch::abs(stens - sptens)).item<float>();
     sptens.copy_(sptens_tmp);
   }
-  std::cout << "TestTrajectoryConsistency: state-diff " << state_diff << std::endl;
+  //std::cout << "TestTrajectoryConsistency: state-diff " << state_diff << std::endl;
 
-  return (state_diff < 1e-7);
+  // success condition
+  EXPECT_FLOAT_EQ(state_diff, 0.);
 }
 
 // check if nstep reward calculation is correct
-bool TestNstepConsistency() {
+TEST(ReplayBuffer, NStepConsistency) {
+  
   // some parameters
   unsigned int batch_size = 32;
   unsigned int buffer_size = 8 * batch_size;
@@ -149,17 +154,13 @@ bool TestNstepConsistency() {
     //std::cout << "rdiff = " << rdiff << " sdiff = " << sdiff << std::endl;
   }
   // make sure values are consistent:
-  std::cout << "TestEntryConsistency: state-diff " << sdiff << " reward-diff " << rdiff << std::endl;
-  
-  return ((rdiff < 1e-7) && (sdiff < 1e-7));
+  //std::cout << "TestEntryConsistency: state-diff " << sdiff << " reward-diff " << rdiff << std::endl;
+
+  EXPECT_FLOAT_EQ(sdiff, 0.);
+  EXPECT_FLOAT_EQ(rdiff, 0.);
 }
 
-
-int main(int argc, char* argv[]){
-
-  TestEntryConsistency();
-  
-  TestTrajectoryConsistency();
-
-  TestNstepConsistency();
+int main(int argc, char *argv[]) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

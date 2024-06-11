@@ -4,7 +4,7 @@ set(test_targets
   test_replay_buffer
   test_rollout_buffer
   test_distributions
-  test_td3
+  test_off_policy
   )
 
 add_executable(test_replay_buffer)
@@ -25,10 +25,10 @@ target_sources(test_distributions
   test_distributions.cpp
   )
 
-add_executable(test_td3)
-target_sources(test_td3
+add_executable(test_off_policy)
+target_sources(test_off_policy
   PRIVATE
-  test_td3.cpp
+  test_off_policy.cpp
   )
 
 

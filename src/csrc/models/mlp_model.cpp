@@ -59,7 +59,8 @@ void MLPModel::setup(const ParamMap& params) {
 
 // Implement the forward function.
 std::vector<torch::Tensor> MLPModel::forward(const std::vector<torch::Tensor>& inputs) {
-  auto x = inputs[0];
+  // concatenate inputs
+  auto x = torch::cat(inputs, 1);
   x = x.reshape({x.size(0), -1});
 
   for (int i = 0; i < layer_sizes.size() - 1; ++i) {

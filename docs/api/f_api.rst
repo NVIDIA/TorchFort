@@ -238,7 +238,12 @@ __________________________
 Reinforcement Learning
 **********************
 
-Similar to other reinforcement learning frameworks such as [spinning up](https://spinningup.openai.com/en/latest/) from OpenAI or [stable baselines](https://stable-baselines3.readthedocs.io/en/master/), we distinguish between on-policy and off-policy algorithms since those two types require different APIs.
+Similar to other reinforcement learning frameworks such as [spinning up](https://spinningup.openai.com/en/latest/) 
+from OpenAI or [stable baselines](https://stable-baselines3.readthedocs.io/en/master/), 
+we distinguish between on-policy and off-policy algorithms since those two types require different APIs.
+
+Off-Policy Algorithms
+=====================
 
 System Creation
 -----------------------------------

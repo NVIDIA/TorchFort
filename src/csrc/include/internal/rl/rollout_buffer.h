@@ -64,7 +64,7 @@ public:
   virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
   sample(int) = 0;
   virtual bool isReady() const = 0;
-  virtual void reset(bool start_new_episode) = 0;
+  virtual void reset() = 0;
   virtual void printInfo() const = 0;
   virtual void save(const std::string& fname) const = 0;
   virtual void load(const std::string& fname) = 0;
@@ -189,7 +189,7 @@ public:
   bool isReady() const { return ((buffer_.size() == size_) && finalized_); }
 
   // reset the buffer
-  void reset(bool start_new_episode) {
+  void reset() {
     buffer_.clear();
 
     // zero out the returns and advantage vectors just to be safe
@@ -199,10 +199,8 @@ public:
     // finally, set the finalized flag to false
     finalized_ = false;
 
-    // we will NOT set the next episode start trigger here
-    if (start_new_episode) {
-      last_episode_starts_ = true;
-    }
+    // mark a new episode:
+    last_episode_starts_ = true;
     
     return;
   }

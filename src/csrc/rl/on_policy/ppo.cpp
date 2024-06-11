@@ -330,8 +330,8 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, b
   rollout_buffer_->update(s, as, r, q, log_p, d);
 }
 
-void PPOSystem::resetRolloutBuffer(bool start_new_episode) {
-  rollout_buffer_->reset(start_new_episode);
+void PPOSystem::resetRolloutBuffer() {
+  rollout_buffer_->reset();
 }
 
 bool PPOSystem::isReady() { return (rollout_buffer_->isReady()); }

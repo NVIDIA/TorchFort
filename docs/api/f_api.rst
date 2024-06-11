@@ -659,13 +659,11 @@ ____________________________________________
 torchfort_rl_on_policy_reset_rollout_buffer
 ________________________________
  
-.. f:function:: torchfort_rl_on_policy_reset_rollout_buffer(name, start_new_episode)
+.. f:function:: torchfort_rl_on_policy_reset_rollout_buffer(name)
  
-  This function call clears the rollout buffer and resets all variables except for the end of episode tracker which is
-  handled separately through the :math:`start_new_episode` flag.
+  This function call clears the rollout buffer and resets all variables.
   
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
-  :p logical start_new_episode [in]: Logical indicating whether the buffer starts with a new episode or continues the old one.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
 
 ------

@@ -102,11 +102,8 @@ public:
       // clone the tensors and move to device
       auto sc = s.to(device_, s.dtype(), /* non_blocking = */ false, /* copy = */ true);
       auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
-
-      // 
       
       // add the newest/latest element in back
-      // TODO: is that right? should be
       buffer_.push_back(std::make_tuple(sc, ac, r, q, log_p, last_episode_starts_));
     }
 

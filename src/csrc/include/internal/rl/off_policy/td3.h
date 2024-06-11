@@ -85,7 +85,7 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   // singleton dims
   assert(reward_tensor.size(1) == 1);
   assert(d_tensor.size(1) == 1);
-  
+
   // value functions
   // set to train
   for (const auto& q_model : q_models) {

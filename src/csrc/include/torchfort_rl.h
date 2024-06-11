@@ -464,6 +464,8 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
  * @details Here \f$s\f$ (\p state) is the state for which action \f$a\f$ (\p action) was taken,
  * and receiving reward \f$r\f$ (\p reward).
  * The terminal state flag \f$d\f$ (\p terminal_state) specifies whether \f$s\f$ is the final state of the episode.
+ * Note that value estimates \f$q\f$ as well was log-probabilities are also stored but the user does not need to 
+ * pass those manually, those values are computed internally from the current policy and stored with the other values.
  *
  * @param[in] name The name of system instance to use, as defined during system creation.
  * @param[in] state A pointer to a memory buffer containing state data.
@@ -483,27 +485,28 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
 */
 torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer(const char* name,
-								void* state, size_t state_dim, int64_t* state_shape,
-                                                                void* action, size_t action_dim, int64_t* action_shape,
-								const void* reward, bool initial_state,
-								torchfort_datatype_t dtype, cudaStream_t stream);
+                void* state, size_t state_dim, int64_t* state_shape,
+                void* action, size_t action_dim, int64_t* action_shape,
+                const void* reward, bool initial_state,
+                torchfort_datatype_t dtype, cudaStream_t stream);
 
 torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* name,
-								  void* state, size_t state_dim, int64_t* state_shape,
-								  void* action, size_t action_dim, int64_t* action_shape,
-								  const void* reward, bool initial_state,
-								  torchfort_datatype_t dtype, cudaStream_t stream);
+                void* state, size_t state_dim, int64_t* state_shape,
+                void* action, size_t action_dim, int64_t* action_shape,
+                const void* reward, bool initial_state,
+                torchfort_datatype_t dtype, cudaStream_t stream);
 
 /**
  * @brief Resets the rollout buffer
- * @details This function call clears the rollout buffer and resets all variables except for the end of episode tracker.
+ * @details This function call clears the rollout buffer and resets all variables except for the end of episode tracker 
+ * which is handled separately through the \p start_new_episode flag.
  *
  * @param[in] name The name of system instance to use, as defined during system creation. 
  * @param[in] start_new_episode This flag signals the rollout buffer to set the new episode flag. This is important in order
- * to guarantee correct rollouts.
+ * to guarantee correct advantage computation for rollouts.
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure. 
 */
-  torchfort_result_t torchfort_rl_on_policy_reset_rollout_buffer(const char* name, bool start_new_episode);
+torchfort_result_t torchfort_rl_on_policy_reset_rollout_buffer(const char* name, bool start_new_episode);
 
 // RL on-policy checkpoint save and loading functions
 /**
@@ -537,8 +540,8 @@ torchfort_result_t torchfort_rl_on_policy_load_checkpoint(const char* name, cons
 /**
  * @brief Queries a reinforcement learning system for rediness to start training
  * @details A user should call this method before starting training to make sure the reinforcement learning system is
- * ready. This method ensures that the replay buffer is filled sufficiently with exploration data as specified during
- * system creation.
+ * ready. This method ensures that the rollout buffer is filled sufficiently with exploration data as specified during
+ * system creation. It also checks if the rollout buffer was properly finalized, e.g. all advantages were computed.
  *
  * @param[in] name The name of a system instance to restore the data for, as defined during system creation
  * @param[out] ready A flag indicating whether the system is ready to train (\p true means it is ready to train)

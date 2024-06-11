@@ -68,8 +68,7 @@ void init_parameters(std::shared_ptr<ModelWrapper> model) {
     if (key.find("weight") != std::string::npos) {
       // likely a conv or linear, we can use ortho
       if (dim >= 2) {
-        //torch::nn::init::kaiming_uniform_(val);
-	torch::nn::init::orthogonal_(val, sqrt(2.));
+        torch::nn::init::orthogonal_(val, sqrt(2.));
       } else {
         // likely normalization layer stuff: constant init
         torch::nn::init::constant_(val, 1.);

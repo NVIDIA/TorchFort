@@ -82,7 +82,6 @@ struct PolicyPack {
   std::shared_ptr<Policy> model;
   std::shared_ptr<torch::optim::Optimizer> optimizer;
   std::shared_ptr<BaseLRScheduler> lr_scheduler;
-  //std::shared_ptr<BaseLoss> loss;
   std::shared_ptr<Comm> comm;
   std::shared_ptr<ModelState> state;
 };
@@ -142,7 +141,6 @@ struct ACPolicyPack {
   std::shared_ptr<ACPolicy> model;
   std::shared_ptr<torch::optim::Optimizer> optimizer;
   std::shared_ptr<BaseLRScheduler> lr_scheduler;
-  //std::shared_ptr<BaseLoss> loss;
   std::shared_ptr<Comm> comm;
   std::shared_ptr<ModelState> state;
 };

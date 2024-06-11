@@ -121,25 +121,6 @@ static void update_rollout_buffer(const char* name, T* state, size_t state_dim, 
   return;
 }
 
-  //template <typename T>
-  //static void finalize_rollout_buffer(const char* name, T value, bool final_state,
-  //				    cudaStream_t ext_stream) {
-  //
-  //// no grad
-  //torch::NoGradGuard no_grad;
-  //
-  //c10::cuda::OptionalCUDAStreamGuard guard;
-  //auto rb_device = registry[name]->rbDevice();
-  //if (rb_device.is_cuda()) {
-  //  auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
-  //  guard.reset_stream(stream);
-  //}
-  //
-  //// finalize buffer
-  //registry[name]->finalizeRolloutBuffer(static_cast<float>(value), final_state);
-  //return;
-  //}
-
 template <MemoryLayout L, typename T>
 static void predict_explore(const char* name, T* state, size_t state_dim, int64_t* state_shape, T* action,
 			    size_t action_dim, int64_t* action_shape, cudaStream_t ext_stream) {

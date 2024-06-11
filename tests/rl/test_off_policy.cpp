@@ -1,8 +1,12 @@
 #include "torchfort.h"
 #include "environments.h"
 
+enum EnvMode { Constant, Predictable };
 
-bool TestConstantEnv() {
+bool TestPredictableEnv(EnvMode mode, unsigned int num_episodes) {
+
+  // set seed
+  torch::manual_seed(666);
   
   // create dummy env:
   std::vector<int64_t> state_shape{1};
@@ -10,7 +14,6 @@ bool TestConstantEnv() {
   std::vector<int64_t> state_batch_shape{1,1};
   std::vector<int64_t> action_batch_shape{1,1};
   std::vector<int64_t> reward_batch_shape{1,1};
-  unsigned int num_episodes = 20000;
   unsigned int num_iters_per_episode = 1;
   float reward, reward_estimate, p_loss, q_loss;
   bool final_state=false;
@@ -22,7 +25,12 @@ bool TestConstantEnv() {
   torch::Tensor action = torch::zeros(action_shape, torch::TensorOptions().dtype(torch::kFloat32));
 
   // set up environment
-  auto env = ConstantRewardEnvironment(state_shape, action_shape, 1.);
+  std::shared_ptr<Environment> env;
+  if (mode == Constant) {
+    env = std::make_shared<ConstantRewardEnvironment>(state_shape, action_shape, 1.);
+  } else if (mode == Predictable) {
+    env = std::make_shared<PredictableRewardEnvironment>(state_shape, action_shape);
+  }
 
   // set up td3 learning systems
   torchfort_result_t tstat = torchfort_rl_off_policy_create_system("constant_td3", "configs/td3.yaml",
@@ -31,7 +39,8 @@ bool TestConstantEnv() {
     throw std::runtime_error("RL system creation failed");
   }
 
-  // do training loop
+  // do training loop: initial state
+  std::tie(state, reward) = env->initialize();
   for (unsigned int e=0; e<num_episodes; ++e) {
     for (unsigned int i=0; i<num_iters_per_episode; ++i) {    
       tstat = torchfort_rl_off_policy_predict_explore("constant_td3",
@@ -40,7 +49,7 @@ bool TestConstantEnv() {
 						      TORCHFORT_FLOAT, 0);
 
       // do environment step
-      std::tie(state_new, reward) = env.step(action);
+      std::tie(state_new, reward) = env->step(action);
       
       // update replay buffer
       final_state = (i == num_iters_per_episode-1);
@@ -51,7 +60,6 @@ bool TestConstantEnv() {
       
       // perform training step if requested:
       tstat = torchfort_rl_off_policy_is_ready("constant_td3", is_ready);
-      std::cout << i << " " << is_ready << std::endl;
       if (is_ready) {
 	tstat = torchfort_rl_off_policy_train_step("constant_td3", &p_loss, &q_loss, 0);
       }
@@ -64,7 +72,7 @@ bool TestConstantEnv() {
 					       TORCHFORT_FLOAT, 0);
       
       std::cout << "episode : " << e << " step: " << i << " state: "  << state.item<float>() << " action: " << action.item<float>() << " reward: " << reward << " q: " << reward_estimate << std::endl;
-      
+
       // copy tensors
       state.copy_(state_new);
     }
@@ -75,7 +83,9 @@ bool TestConstantEnv() {
 
 int main(int argc, char *argv[]) {
 
-  TestConstantEnv();
+  //TestPredictableEnv(Constant, 20000);
+ 
+  TestPredictableEnv(Predictable, 20000);
   
   return 0;
 }

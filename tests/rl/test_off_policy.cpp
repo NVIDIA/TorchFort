@@ -1,9 +1,9 @@
 #include "torchfort.h"
 #include "environments.h"
 
-enum EnvMode { Constant, Predictable, Delayed };
+enum EnvMode { Constant, Predictable, Delayed, Action, ActionState };
 
-bool TestValueFunction(EnvMode mode, unsigned int num_episodes) {
+bool TestSystem(EnvMode mode, unsigned int num_explore_iters, unsigned int num_exploit_iters) {
 
   // set seed
   torch::manual_seed(666);
@@ -25,12 +25,22 @@ bool TestValueFunction(EnvMode mode, unsigned int num_episodes) {
 
   // set up environment
   std::shared_ptr<Environment> env;
+  int num_episodes;
   if (mode == Constant) {
     env = std::make_shared<ConstantRewardEnvironment>(1, state_shape, action_shape, 1.);
+    num_episodes = num_explore_iters + num_exploit_iters;
   } else if (mode == Predictable) {
     env = std::make_shared<PredictableRewardEnvironment>(1, state_shape, action_shape);
+    num_episodes = num_explore_iters + num_exploit_iters;
   } else if (mode == Delayed) {
     env = std::make_shared<DelayedRewardEnvironment>(2, state_shape, action_shape, 1.);
+    num_episodes = num_explore_iters + num_exploit_iters;
+  } else if (mode == Action) {
+    env = std::make_shared<ActionRewardEnvironment>(1, state_shape, action_shape);
+    num_episodes = num_explore_iters + num_exploit_iters;
+  } else if (mode == ActionState) {
+    env = std::make_shared<ActionStateRewardEnvironment>(1, state_shape, action_shape);
+    num_episodes = num_explore_iters + num_exploit_iters;
   }
 
   // set up td3 learning systems
@@ -41,15 +51,25 @@ bool TestValueFunction(EnvMode mode, unsigned int num_episodes) {
   }
 
   // do training loop: initial state
+  int iter = 0;
   std::tie(state, reward) = env->initialize();
   for (unsigned int e=0; e<num_episodes; ++e) {
     done = false;
     int i=0;
     while (!done) {
-      tstat = torchfort_rl_off_policy_predict_explore("constant_td3",
-						      state.data_ptr(), 2, state_batch_shape.data(),
-						      action.data_ptr(), 2, action_batch_shape.data(),
-						      TORCHFORT_FLOAT, 0);
+      if (iter < num_explore_iters) {
+	// explore
+	tstat = torchfort_rl_off_policy_predict_explore("constant_td3",
+							state.data_ptr(), 2, state_batch_shape.data(),
+							action.data_ptr(), 2, action_batch_shape.data(),
+							TORCHFORT_FLOAT, 0);
+      } else {
+	// exploit
+	tstat = torchfort_rl_off_policy_predict("constant_td3",
+						state.data_ptr(), 2, state_batch_shape.data(),
+						action.data_ptr(), 2, action_batch_shape.data(),
+						TORCHFORT_FLOAT, 0);
+      }
 
       // do environment step
       std::tie(state_new, reward, done) = env->step(action);
@@ -86,6 +106,7 @@ bool TestValueFunction(EnvMode mode, unsigned int num_episodes) {
 
       // increase counter:
       i++;
+      iter++;
     }
   }
   return true;
@@ -94,11 +115,15 @@ bool TestValueFunction(EnvMode mode, unsigned int num_episodes) {
 
 int main(int argc, char *argv[]) {
 
-  //TestValueFunction(Constant, 20000);
+  //TestSystem(Constant, 20000, 0);
  
-  //TestValueFunction(Predictable, 20000);
+  //TestSystem(Predictable, 20000, 0);
+  
+  //TestSystem(Delayed, 20000, 0);
 
-  TestValueFunction(Delayed, 20000);
+  //TestSystem(Action, 20000, 1000);
+
+  TestSystem(ActionState, 20000, 1000);
   
   return 0;
 }

@@ -4,22 +4,21 @@ general:
   verbose: 1
 
 algorithm:
-  type: ddpg
+  type: sac
   parameters:
     batch_size: 128
+    num_critics: 2
     nstep: 1
     nstep_reward_reduction: sum
-    gamma: 0.95
-    rho: 0.999
+    gamma: 0.99
+    rho: 0.995
+    alpha: 0.2
 
 actor:
-  type: space_noise
+  type: parameter_noise
   parameters:
     a_low: -1.
     a_high: 1.
-    clip: 0.3
-    sigma_train: 0.2
-    sigma_explore: 1.0
 
 replay_buffer:
   type: uniform
@@ -28,10 +27,10 @@ replay_buffer:
     min_size: 512
 
 policy_model:
-  type: MLP
+  type: SACMLP
   parameters:
     dropout: 0.0
-    layer_sizes: [1, 16, 1]
+    layer_sizes: [1, 16, 8, 1]
 
 critic_model:
   type: MLP

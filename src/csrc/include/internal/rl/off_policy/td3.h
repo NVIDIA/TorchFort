@@ -91,9 +91,6 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   for (const auto& q_model : q_models) {
     q_model.model->train();
   }
-  for (const auto& q_model_target : q_models_target) {
-    q_model_target.model->train();
-  }
 
   // opt
   // loss is fixed by algorithm

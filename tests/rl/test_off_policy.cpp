@@ -3,7 +3,9 @@
 
 enum EnvMode { Constant, Predictable, Delayed, Action, ActionState };
 
-bool TestSystem(const EnvMode mode, const std::string& system, unsigned int num_explore_iters, unsigned int num_exploit_iters) {
+std::tuple<float, float> TestSystem(const EnvMode mode, const std::string& system,
+				    unsigned int num_explore_iters, unsigned int num_exploit_iters,
+				    unsigned int num_eval_iters=100, bool verbose=false) {
 
   // set seed
   torch::manual_seed(666);
@@ -17,6 +19,8 @@ bool TestSystem(const EnvMode mode, const std::string& system, unsigned int num_
   float reward, reward_estimate, p_loss, q_loss;
   bool done;
   bool is_ready;
+  float qdiff = 0.;
+  float running_reward = 0.;
 
   // set up tensors:
   torch::Tensor state = torch::zeros(state_shape, torch::TensorOptions().dtype(torch::kFloat32));
@@ -25,23 +29,25 @@ bool TestSystem(const EnvMode mode, const std::string& system, unsigned int num_
 
   // set up environment
   std::shared_ptr<Environment> env;
-  int num_episodes;
+  int num_episodes, num_train_iters, episode_length;
   if (mode == Constant) {
-    env = std::make_shared<ConstantRewardEnvironment>(1, state_shape, action_shape, 1.);
-    num_episodes = num_explore_iters + num_exploit_iters;
+    episode_length = 1;
+    env = std::make_shared<ConstantRewardEnvironment>(episode_length, state_shape, action_shape, 1.);
   } else if (mode == Predictable) {
-    env = std::make_shared<PredictableRewardEnvironment>(1, state_shape, action_shape);
-    num_episodes = num_explore_iters + num_exploit_iters;
+    episode_length = 1;
+    env = std::make_shared<PredictableRewardEnvironment>(episode_length, state_shape, action_shape);
   } else if (mode == Delayed) {
-    env = std::make_shared<DelayedRewardEnvironment>(2, state_shape, action_shape, 1.);
-    num_episodes = num_explore_iters + num_exploit_iters;
+    episode_length = 2;
+    env = std::make_shared<DelayedRewardEnvironment>(episode_length, state_shape, action_shape, 1.);
   } else if (mode == Action) {
-    env = std::make_shared<ActionRewardEnvironment>(1, state_shape, action_shape);
-    num_episodes = num_explore_iters + num_exploit_iters;
+    episode_length = 1;
+    env = std::make_shared<ActionRewardEnvironment>(episode_length, state_shape, action_shape);
   } else if (mode == ActionState) {
-    env = std::make_shared<ActionStateRewardEnvironment>(1, state_shape, action_shape);
-    num_episodes = num_explore_iters + num_exploit_iters;
+    episode_length = 1;
+    env = std::make_shared<ActionStateRewardEnvironment>(episode_length, state_shape, action_shape);
   }
+  num_train_iters = num_explore_iters + num_exploit_iters;
+  num_episodes = (num_train_iters + num_eval_iters) / episode_length;
 
   // set up td3 learning systems
   std::string filename = "configs/" + system + ".yaml";
@@ -75,16 +81,18 @@ bool TestSystem(const EnvMode mode, const std::string& system, unsigned int num_
       // do environment step
       std::tie(state_new, reward, done) = env->step(action);
 
-      // update replay buffer
-      tstat = torchfort_rl_off_policy_update_replay_buffer("test",
-							   state.data_ptr(), state_new.data_ptr(), 1, state_shape.data(),
-							   action.data_ptr(), 1, action_shape.data(), &reward, done,
-							   TORCHFORT_FLOAT, 0);
+      if (iter < num_train_iters) {
+	// update replay buffer
+	tstat = torchfort_rl_off_policy_update_replay_buffer("test",
+							     state.data_ptr(), state_new.data_ptr(), 1, state_shape.data(),
+							     action.data_ptr(), 1, action_shape.data(), &reward, done,
+							     TORCHFORT_FLOAT, 0);
 
-      // perform training step if requested:
-      tstat = torchfort_rl_off_policy_is_ready("test", is_ready);
-      if (is_ready) {
-	tstat = torchfort_rl_off_policy_train_step("test", &p_loss, &q_loss, 0);
+	// perform training step if requested:
+	tstat = torchfort_rl_off_policy_is_ready("test", is_ready);
+	if (is_ready) {
+	  tstat = torchfort_rl_off_policy_train_step("test", &p_loss, &q_loss, 0);
+	}
       }
 
       // evaluate policy:
@@ -94,13 +102,20 @@ bool TestSystem(const EnvMode mode, const std::string& system, unsigned int num_
 					       &reward_estimate, 2, reward_batch_shape.data(),
 					       TORCHFORT_FLOAT, 0);
 
-      std::cout << "episode : " << e
-		<< " step: " << i
-		<< " state: "  << state.item<float>()
-		<< " action: " << action.item<float>()
-		<< " reward: " << reward
-		<< " q: " << reward_estimate
-		<< " done: " << done << std::endl;
+      if (iter >= num_train_iters) {
+	qdiff += std::abs(reward - reward_estimate);
+	running_reward += reward;
+      }
+
+      if (verbose) {
+	std::cout << "episode : " << e
+		  << " step: " << i
+		  << " state: "  << state.item<float>()
+		  << " action: " << action.item<float>()
+		  << " reward: " << reward
+		  << " q: " << reward_estimate
+		  << " done: " << done << std::endl;
+      }
 
       // copy tensors
       state.copy_(state_new);
@@ -110,23 +125,34 @@ bool TestSystem(const EnvMode mode, const std::string& system, unsigned int num_
       iter++;
     }
   }
-  return true;
+
+  // compute averages:
+  qdiff /= float(num_eval_iters);
+  running_reward /= float(num_eval_iters);
+
+  if (verbose) {
+    std::cout << "Q-difference: " << qdiff << " average reward: " << running_reward << std::endl;
+  }
+
+  return std::make_tuple(qdiff, running_reward);
 }
 
 int main(int argc, char *argv[]) {
 
-  std::vector<std::string> system_names = {"ddpg"};
+  //std::vector<std::string> system_names = {"td3"};
+  //std::vector<std::string> system_names = {"ddpg"};
+  std::vector<std::string> system_names = {"sac"};
 
   for (auto& system : system_names) {
-    //TestSystem(Constant, system, 20000, 0);
+    TestSystem(Constant, system, 20000, 0, 100, true);
 
-    //TestSystem(Predictable, system, 20000, 0);
+    //TestSystem(Predictable, system, 20000, 0, 100, true);
 
-    //TestSystem(Delayed, system, 20000, 0);
+    //TestSystem(Delayed, system, 20000, 0, 100, true);
 
-    TestSystem(Action, system, 20000, 1000);
+    //TestSystem(Action, system, 20000, 1000, 100, true);
 
-    //TestSystem(ActionState, system, 20000, 1000);
+    //TestSystem(ActionState, system, 20000, 1000, 100, true);
   }
 
   return 0;

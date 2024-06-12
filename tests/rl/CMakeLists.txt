@@ -69,3 +69,4 @@ install(
 # copy files
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/td3.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/ddpg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/sac.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)

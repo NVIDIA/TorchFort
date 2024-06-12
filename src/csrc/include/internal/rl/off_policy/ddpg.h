@@ -136,8 +136,6 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
   // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
   torch::Tensor p_loss_tensor =
       -torch::mean(q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0]);
-  // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
-  // p_loss_tensor = -p_loss_tensor;
 
   // bwd pass
   p_model.optimizer->zero_grad();

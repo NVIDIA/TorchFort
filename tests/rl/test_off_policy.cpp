@@ -3,7 +3,7 @@
 
 enum EnvMode { Constant, Predictable, Delayed, Action, ActionState };
 
-bool TestSystem(EnvMode mode, unsigned int num_explore_iters, unsigned int num_exploit_iters) {
+bool TestSystem(const EnvMode mode, const std::string& system, unsigned int num_explore_iters, unsigned int num_exploit_iters) {
 
   // set seed
   torch::manual_seed(666);
@@ -44,7 +44,8 @@ bool TestSystem(EnvMode mode, unsigned int num_explore_iters, unsigned int num_e
   }
 
   // set up td3 learning systems
-  torchfort_result_t tstat = torchfort_rl_off_policy_create_system("constant_td3", "configs/td3.yaml",
+  std::string filename = "configs/" + system + ".yaml";
+  torchfort_result_t tstat = torchfort_rl_off_policy_create_system("test", filename.c_str(),
 								   TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU);
   if (tstat != TORCHFORT_RESULT_SUCCESS) {
     throw std::runtime_error("RL system creation failed");
@@ -59,13 +60,13 @@ bool TestSystem(EnvMode mode, unsigned int num_explore_iters, unsigned int num_e
     while (!done) {
       if (iter < num_explore_iters) {
 	// explore
-	tstat = torchfort_rl_off_policy_predict_explore("constant_td3",
+	tstat = torchfort_rl_off_policy_predict_explore("test",
 							state.data_ptr(), 2, state_batch_shape.data(),
 							action.data_ptr(), 2, action_batch_shape.data(),
 							TORCHFORT_FLOAT, 0);
       } else {
 	// exploit
-	tstat = torchfort_rl_off_policy_predict("constant_td3",
+	tstat = torchfort_rl_off_policy_predict("test",
 						state.data_ptr(), 2, state_batch_shape.data(),
 						action.data_ptr(), 2, action_batch_shape.data(),
 						TORCHFORT_FLOAT, 0);
@@ -75,19 +76,19 @@ bool TestSystem(EnvMode mode, unsigned int num_explore_iters, unsigned int num_e
       std::tie(state_new, reward, done) = env->step(action);
       
       // update replay buffer
-      tstat = torchfort_rl_off_policy_update_replay_buffer("constant_td3",
+      tstat = torchfort_rl_off_policy_update_replay_buffer("test",
 							   state.data_ptr(), state_new.data_ptr(), 1, state_shape.data(),
 							   action.data_ptr(), 1, action_shape.data(), &reward, done,
 							   TORCHFORT_FLOAT, 0);
       
       // perform training step if requested:
-      tstat = torchfort_rl_off_policy_is_ready("constant_td3", is_ready);
+      tstat = torchfort_rl_off_policy_is_ready("test", is_ready);
       if (is_ready) {
-	tstat = torchfort_rl_off_policy_train_step("constant_td3", &p_loss, &q_loss, 0);
+	tstat = torchfort_rl_off_policy_train_step("test", &p_loss, &q_loss, 0);
       }
       
       // evaluate policy:
-      tstat = torchfort_rl_off_policy_evaluate("constant_td3",
+      tstat = torchfort_rl_off_policy_evaluate("test",
 					       state.data_ptr(), 2, state_batch_shape.data(),
 					       action.data_ptr(), 2, action_batch_shape.data(),
 					       &reward_estimate, 2, reward_batch_shape.data(),
@@ -115,15 +116,19 @@ bool TestSystem(EnvMode mode, unsigned int num_explore_iters, unsigned int num_e
 
 int main(int argc, char *argv[]) {
 
-  //TestSystem(Constant, 20000, 0);
+  std::vector<std::string> system_names = {"ddpg"};
+
+  for (auto& system : system_names) {
+    //TestSystem(Constant, system, 20000, 0);
  
-  //TestSystem(Predictable, 20000, 0);
+    //TestSystem(Predictable, system, 20000, 0);
   
-  //TestSystem(Delayed, 20000, 0);
+    //TestSystem(Delayed, system, 20000, 0);
+    
+    TestSystem(Action, system, 20000, 1000);
 
-  //TestSystem(Action, 20000, 1000);
-
-  TestSystem(ActionState, 20000, 1000);
+    //TestSystem(ActionState, system, 20000, 1000);
+  }
   
   return 0;
 }

@@ -239,7 +239,7 @@ torch::Device DDPGSystem::modelDevice() const {
 }
 
 torch::Device DDPGSystem::rbDevice() const {
-  return replay_buffer_->device();
+  return rb_device_;
 }
 
 void DDPGSystem::initSystemComm(MPI_Comm mpi_comm) {

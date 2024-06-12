@@ -1,9 +1,9 @@
 #include "torchfort.h"
 #include "environments.h"
 
-enum EnvMode { Constant, Predictable };
+enum EnvMode { Constant, Predictable, Delayed };
 
-bool TestPredictableEnv(EnvMode mode, unsigned int num_episodes) {
+bool TestValueFunction(EnvMode mode, unsigned int num_episodes) {
 
   // set seed
   torch::manual_seed(666);
@@ -14,9 +14,8 @@ bool TestPredictableEnv(EnvMode mode, unsigned int num_episodes) {
   std::vector<int64_t> state_batch_shape{1,1};
   std::vector<int64_t> action_batch_shape{1,1};
   std::vector<int64_t> reward_batch_shape{1,1};
-  unsigned int num_iters_per_episode = 1;
   float reward, reward_estimate, p_loss, q_loss;
-  bool final_state=false;
+  bool done;
   bool is_ready;
 
   // set up tensors:
@@ -27,9 +26,11 @@ bool TestPredictableEnv(EnvMode mode, unsigned int num_episodes) {
   // set up environment
   std::shared_ptr<Environment> env;
   if (mode == Constant) {
-    env = std::make_shared<ConstantRewardEnvironment>(state_shape, action_shape, 1.);
+    env = std::make_shared<ConstantRewardEnvironment>(1, state_shape, action_shape, 1.);
   } else if (mode == Predictable) {
-    env = std::make_shared<PredictableRewardEnvironment>(state_shape, action_shape);
+    env = std::make_shared<PredictableRewardEnvironment>(1, state_shape, action_shape);
+  } else if (mode == Delayed) {
+    env = std::make_shared<DelayedRewardEnvironment>(2, state_shape, action_shape, 1.);
   }
 
   // set up td3 learning systems
@@ -42,20 +43,21 @@ bool TestPredictableEnv(EnvMode mode, unsigned int num_episodes) {
   // do training loop: initial state
   std::tie(state, reward) = env->initialize();
   for (unsigned int e=0; e<num_episodes; ++e) {
-    for (unsigned int i=0; i<num_iters_per_episode; ++i) {    
+    done = false;
+    int i=0;
+    while (!done) {
       tstat = torchfort_rl_off_policy_predict_explore("constant_td3",
 						      state.data_ptr(), 2, state_batch_shape.data(),
 						      action.data_ptr(), 2, action_batch_shape.data(),
 						      TORCHFORT_FLOAT, 0);
 
       // do environment step
-      std::tie(state_new, reward) = env->step(action);
+      std::tie(state_new, reward, done) = env->step(action);
       
       // update replay buffer
-      final_state = (i == num_iters_per_episode-1);
       tstat = torchfort_rl_off_policy_update_replay_buffer("constant_td3",
 							   state.data_ptr(), state_new.data_ptr(), 1, state_shape.data(),
-							   action.data_ptr(), 1, action_shape.data(), &reward, final_state,
+							   action.data_ptr(), 1, action_shape.data(), &reward, done,
 							   TORCHFORT_FLOAT, 0);
       
       // perform training step if requested:
@@ -71,10 +73,19 @@ bool TestPredictableEnv(EnvMode mode, unsigned int num_episodes) {
 					       &reward_estimate, 2, reward_batch_shape.data(),
 					       TORCHFORT_FLOAT, 0);
       
-      std::cout << "episode : " << e << " step: " << i << " state: "  << state.item<float>() << " action: " << action.item<float>() << " reward: " << reward << " q: " << reward_estimate << std::endl;
-
+      std::cout << "episode : " << e 
+		<< " step: " << i
+		<< " state: "  << state.item<float>()
+		<< " action: " << action.item<float>()
+		<< " reward: " << reward
+		<< " q: " << reward_estimate
+		<< " done: " << done << std::endl;
+      
       // copy tensors
       state.copy_(state_new);
+
+      // increase counter:
+      i++;
     }
   }
   return true;
@@ -83,9 +94,11 @@ bool TestPredictableEnv(EnvMode mode, unsigned int num_episodes) {
 
 int main(int argc, char *argv[]) {
 
-  //TestPredictableEnv(Constant, 20000);
+  //TestValueFunction(Constant, 20000);
  
-  TestPredictableEnv(Predictable, 20000);
+  //TestValueFunction(Predictable, 20000);
+
+  TestValueFunction(Delayed, 20000);
   
   return 0;
 }

@@ -1,8 +1,12 @@
 FROM nvcr.io/nvidia/cuda:12.3.1-devel-ubuntu22.04
 
 # Install System Dependencies
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt update -y && \
-    DEBIAN_FRONTEND=noninteractive apt install -y curl unzip wget cmake python3 python-is-python3 python3-pip python3-pybind11 git vim gfortran doxygen libibverbs-dev
+    apt install -y curl unzip wget cmake && \
+    apt install -y python3 python-is-python3 python3-pip python3-pybind11 && \
+    apt install -y git vim gfortran doxygen && \
+    apt install -y libibverbs-dev ibverbs-utils numactl
 
 # Install NVHPC SDK
 RUN wget https://developer.download.nvidia.com/hpc-sdk/24.1/nvhpc_2024_241_Linux_x86_64_cuda_12.3.tar.gz && \

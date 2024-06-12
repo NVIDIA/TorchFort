@@ -185,6 +185,27 @@ torchfort_result_t torchfort_load_checkpoint(const char* name, const char* check
  */
 torchfort_result_t torchfort_set_cudnn_benchmark(const bool flag);
 
+/**
+ * @brief Utility function to enable/disable TF32 support in PyTorch.
+ * @param[in] flag Boolean value to set the TF32 flag to.
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure. 
+ */
+torchfort_result_t torchfort_set_cuda_allow_tf32(const bool flag);
+
+/**
+ * @brief Utility function to set a seed for the host in PyTorch.
+ * @param[in] seed An integer value to be used as seed for any host RNG.
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_set_manual_seed(const int seed);
+  
+/**
+ * @brief Utility function to set a seed for cuda devices in PyTorch.
+ * @param[in] seed An integer value to be used as seed for any device RNG.
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_set_cuda_manual_seed(const int seed);
+  
 // Weights and Bias Logging functions
 /**
  * @brief Write an integer value to a Weights and Bias log. Use the \p _float and  \p _double variants to write \p float

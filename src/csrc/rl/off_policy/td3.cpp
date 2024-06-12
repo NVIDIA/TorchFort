@@ -32,14 +32,15 @@
 #include <torch/torch.h>
 
 #include "internal/exceptions.h"
-#include "internal/rl/distributions.h"
-#include "internal/rl/sac.h"
+#include "internal/rl/off_policy/td3.h"
 
 namespace torchfort {
-
+  
 namespace rl {
 
-SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
+namespace off_policy {
+
+TD3System::TD3System(const char* name, const YAML::Node& system_node,
 		     int model_device, int rb_device)
   : RLOffPolicySystem(model_device, rb_device) {
   
@@ -47,14 +48,14 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
   auto algo_node = system_node["algorithm"];
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
-    std::set<std::string> supported_params{"batch_size", "num_critics", "nstep", "nstep_reward_reduction",
-                                           "gamma",      "rho",         "alpha"};
+    std::set<std::string> supported_params{"batch_size", "num_critics", "policy_lag", "nstep", "nstep_reward_reduction",
+                                           "gamma", "rho"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     num_critics_ = params.get_param<int>("num_critics", 2)[0];
+    policy_lag_ = params.get_param<int>("policy_lag")[0];
     gamma_ = params.get_param<float>("gamma")[0];
     rho_ = params.get_param<float>("rho")[0];
-    alpha_ = params.get_param<float>("rho")[0];
     nstep_ = params.get_param<int>("nstep", 1)[0];
     auto redmode = params.get_param<std::string>("nstep_reward_reduction", "sum")[0];
     if (redmode == "sum") {
@@ -63,6 +64,12 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
       nstep_reward_reduction_ = RewardReductionMode::Mean;
     } else if (redmode == "weighted_mean") {
       nstep_reward_reduction_ = RewardReductionMode::WeightedMean;
+    } else if (redmode == "sum_no_skip") {
+      nstep_reward_reduction_ = RewardReductionMode::SumNoSkip;
+    } else if (redmode == "mean_no_skip") {
+      nstep_reward_reduction_ = RewardReductionMode::MeanNoSkip;
+    } else if (redmode == "weighted_mean_no_skip") {
+      nstep_reward_reduction_ = RewardReductionMode::WeightedMeanNoSkip;
     } else {
       std::invalid_argument("Unknown nstep_reward_reduction specified");
     }
@@ -70,20 +77,47 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
   }
 
-  if (system_node["action"]) {
-    auto action_node = system_node["action"];
-    std::string noise_actor_type = sanitize(action_node["type"].as<std::string>());
-    if (action_node["parameters"]) {
-      auto params = get_params(action_node["parameters"]);
-      std::set<std::string> supported_params{"a_low", "a_high"};
+  if (system_node["actor"]) {
+    auto actor_node = system_node["actor"];
+    std::string noise_actor_type = sanitize(actor_node["type"].as<std::string>());
+    if (actor_node["parameters"]) {
+      auto params = get_params(actor_node["parameters"]);
+      std::set<std::string> supported_params{"a_low", "a_high", "clip",     "sigma_train",     "sigma_explore",
+                                             "xi",    "dt",     "adaptive", "noise_actor_type"};
       check_params(supported_params, params.keys());
       a_low_ = params.get_param<float>("a_low")[0];
       a_high_ = params.get_param<float>("a_high")[0];
+      float clip = params.get_param<float>("clip")[0];
+      float sigma_train = params.get_param<float>("sigma_train")[0];
+      float sigma_explore = params.get_param<float>("sigma_explore")[0];
+      float mu = 0.f;
+      bool adaptive = params.get_param<bool>("adaptive", false)[0];
+
+      // we need to set up the noise actor type:
+      if (noise_actor_type == "space_noise") {
+        noise_actor_train_ = std::make_shared<ActionNoise<float>>(mu, sigma_train, clip, adaptive);
+        noise_actor_exploration_ = std::make_shared<ActionNoise<float>>(mu, sigma_explore, 0.f, adaptive);
+      } else if (noise_actor_type == "space_noise_ou") {
+        float dt = params.get_param<float>("dt")[0];
+        float xi = params.get_param<float>("xi", 0.)[0];
+        noise_actor_train_ = std::make_shared<ActionNoiseOU<float>>(mu, sigma_train, clip, dt, xi, adaptive);
+        noise_actor_exploration_ = std::make_shared<ActionNoiseOU<float>>(mu, sigma_explore, 0.f, dt, xi, adaptive);
+      } else if (noise_actor_type == "parameter_noise") {
+        noise_actor_train_ = std::make_shared<ParameterNoise<float>>(mu, sigma_train, clip, adaptive);
+        noise_actor_exploration_ = std::make_shared<ParameterNoise<float>>(mu, sigma_explore, 0.f, adaptive);
+      } else if (noise_actor_type == "parameter_noise_ou") {
+        float dt = params.get_param<float>("dt")[0];
+        float xi = params.get_param<float>("xi", 0.)[0];
+        noise_actor_train_ = std::make_shared<ParameterNoiseOU<float>>(mu, sigma_train, clip, dt, xi, adaptive);
+        noise_actor_exploration_ = std::make_shared<ParameterNoiseOU<float>>(mu, sigma_explore, 0.f, dt, xi, adaptive);
+      } else {
+        THROW_INVALID_USAGE(noise_actor_type);
+      }
     } else {
-      THROW_INVALID_USAGE("Missing parameters section in action section in configuration file.");
+      THROW_INVALID_USAGE("Missing parameters section in actor section in configuration file.");
     }
   } else {
-    THROW_INVALID_USAGE("Missing action section in configuration file.");
+    THROW_INVALID_USAGE("Missing actor section in configuration file.");
   }
 
   if (system_node["replay_buffer"]) {
@@ -98,7 +132,7 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
 
       // distinction between buffer types
       if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, rb_device);
+        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, gamma_, nstep_, nstep_reward_reduction_, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
       }
@@ -118,7 +152,9 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
   if (system_node["critic_model"]) {
     for (int i = 0; i < q_models_.size(); ++i) {
       q_models_[i].model = get_model(system_node["critic_model"]);
+      q_models_[i].model->to(model_device_);
       q_models_target_[i].model = get_model(system_node["critic_model"]);
+      q_models_target_[i].model->to(model_device_);
       // change weights for models
       init_parameters(q_models_[i].model);
       // copy new parameters
@@ -135,24 +171,27 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
     THROW_INVALID_USAGE("Missing critic_model block in configuration file.");
   }
 
-  // get policy model hooks
-  std::shared_ptr<ModelWrapper> p_model;
+  // get policy model hook
   if (system_node["policy_model"]) {
-    auto policy_node = system_node["policy_model"];
-    
-    // get basic policy parameters:
-    p_model = get_model(policy_node);
+    p_model_.model = get_model(system_node["policy_model"]);
+    p_model_.model->to(model_device_);
+    p_model_target_.model = get_model(system_node["policy_model"]);
+    p_model_target_.model->to(model_device_);
+    // copy parameters
+    copy_parameters(p_model_target_.model, p_model_.model);
+    // freeze weights
+    set_grad_state(p_model_target_.model, false);
+    // set state:
+    p_model_.state = get_state("actor", system_node);
+    p_model_target_.state = get_state("actor_target", system_node);
   } else {
     THROW_INVALID_USAGE("Missing policy_model block in configuration file.");
   }
-  // SAC policies should always be squashed
-  p_model_.model = std::make_shared<ACPolicy>(std::move(p_model), /* squashed = */ true);
-  p_model_.state = get_state("actor", system_node);
 
   // get optimizers
   if (system_node["optimizer"]) {
     // policy model
-    p_model_.optimizer = get_optimizer(system_node["optimizer"], p_model_.model->parameters());
+    p_model_.optimizer = get_optimizer(system_node["optimizer"], p_model_.model);
     // value model
     for (auto& q_model : q_models_) {
       q_model.optimizer = get_optimizer(system_node["optimizer"], q_model.model);
@@ -184,38 +223,49 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
   if (system_state_->verbose) {
     printInfo();
   }
+
+  return;
 }
 
-void SACSystem::printInfo() const {
-  std::cout << "SAC parameters:" << std::endl;
+void TD3System::printInfo() const {
+  std::cout << "TD3 parameters:" << std::endl;
   std::cout << "batch_size = " << batch_size_ << std::endl;
   std::cout << "num_critics = " << num_critics_ << std::endl;
+  std::cout << "policy_lag = " << policy_lag_ << std::endl;
   std::cout << "nstep = " << nstep_ << std::endl;
   std::cout << "reward_nstep_mode = " << nstep_reward_reduction_ << std::endl;
   std::cout << "gamma = " << gamma_ << std::endl;
   std::cout << "rho = " << rho_ << std::endl;
-  std::cout << "alpha = " << alpha_ << std::endl;
   std::cout << "a_low = " << a_low_ << std::endl;
-  std::cout << "a_high = " << a_high_ << std::endl;
+  std::cout << "a_high = " << a_high_ << std::endl << std::endl;
+  std::cout << "training noise:" << std::endl;
+  noise_actor_train_->printInfo();
+  std::cout << "exploration noise:" << std::endl;
+  noise_actor_exploration_->printInfo();
   std::cout << std::endl;
   std::cout << "replay buffer:" << std::endl;
   replay_buffer_->printInfo();
   return;
 }
 
-torch::Device SACSystem::modelDevice() const {
+torch::Device TD3System::modelDevice() const {
   return model_device_;
 }
 
-torch::Device SACSystem::rbDevice() const {
+torch::Device TD3System::rbDevice() const {
   return rb_device_;
 }
   
-void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
+void TD3System::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
+  // system
+  system_comm_ = std::make_shared<Comm>(mpi_comm);
+  system_comm_->initialize(model_device_.is_cuda());
   // policy
   p_model_.comm = std::make_shared<Comm>(mpi_comm);
   p_model_.comm->initialize(model_device_.is_cuda());
+  p_model_target_.comm = std::make_shared<Comm>(mpi_comm);
+  p_model_target_.comm->initialize(model_device_.is_cuda());
   // critic
   for (auto& q_model : q_models_) {
     q_model.comm = std::make_shared<Comm>(mpi_comm);
@@ -229,6 +279,7 @@ void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
   // move to device before broadcasting
   // policy
   p_model_.model->to(model_device_);
+  p_model_target_.model->to(model_device_);
   // critic
   for (auto& q_model : q_models_) {
     q_model.model->to(model_device_);
@@ -241,6 +292,9 @@ void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
   // policy
   for (auto& p : p_model_.model->parameters()) {
     p_model_.comm->broadcast(p, 0);
+  }
+  for (auto& p : p_model_target_.model->parameters()) {
+    p_model_target_.comm->broadcast(p, 0);
   }
   // critic
   for (auto& q_model : q_models_) {
@@ -257,32 +311,24 @@ void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
   return;
 }
 
-// Save checkpoint
-void SACSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
+// saving checkpoints:
+void TD3System::saveCheckpoint(const std::string& checkpoint_dir) const {
   using namespace torchfort;
   std::filesystem::path root_dir(checkpoint_dir);
 
   if (!std::filesystem::exists(root_dir)) {
     bool rv = std::filesystem::create_directory(root_dir);
     if (!rv) {
-      THROW_INVALID_USAGE("Could not create checkpoint directory.");
+      THROW_INVALID_USAGE("Could not create checkpoint directory " + root_dir.native() + ".");
     }
   }
 
+  // save the individual pieces
   // policy
-  {
-    auto model_path = root_dir / "policy" / "model.pt";
-    p_model_.model->save(model_path.native());
+  save_model_pack(p_model_, root_dir / "policy", true);
 
-    auto optimizer_path = root_dir / "policy" / "optimizer.pt";
-    torch::save(*p_model_.optimizer, optimizer_path.native());
-
-    auto lr_path = root_dir / "policy" / "lr.pt";
-    p_model_.lr_scheduler->save(lr_path.native());
-
-    auto state_path = root_dir / "policy" / "state.pt";
-    p_model_.state->save(state_path.native());
-  }
+  // policy target
+  save_model_pack(p_model_target_, root_dir / "policy_target", false);
 
   // critic
   for (int i = 0; i < q_models_.size(); ++i) {
@@ -311,39 +357,16 @@ void SACSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
   }
 }
 
-void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
+// loading checkpoints:
+void TD3System::loadCheckpoint(const std::string& checkpoint_dir) {
   using namespace torchfort;
   std::filesystem::path root_dir(checkpoint_dir);
 
   // policy
-  {
-    auto model_path = root_dir / "policy" / "model.pt";
-    if (!std::filesystem::exists(model_path)) {
-      THROW_INVALID_USAGE("Could not find " + model_path.native() + ".");
-    }
-    p_model_.model->load(model_path.native());
+  load_model_pack(p_model_, root_dir / "policy", true);
 
-    // connect model and optimizer parameters:
-    p_model_.optimizer->parameters() = p_model_.model->parameters();
-
-    auto optimizer_path = root_dir / "policy" / "optimizer.pt";
-    if (!std::filesystem::exists(optimizer_path)) {
-      THROW_INVALID_USAGE("Could not find " + optimizer_path.native() + ".");
-    }
-    torch::load(*(p_model_.optimizer), optimizer_path.native());
-
-    auto lr_path = root_dir / "policy" / "lr.pt";
-    if (!std::filesystem::exists(lr_path)) {
-      THROW_INVALID_USAGE("Could not find " + lr_path.native() + ".");
-    }
-    p_model_.lr_scheduler->load(lr_path.native(), *(p_model_.optimizer));
-
-    auto state_path = root_dir / "policy" / "state.pt";
-    if (!std::filesystem::exists(state_path)) {
-      THROW_INVALID_USAGE("Could not find " + state_path.native() + ".");
-    }
-    p_model_.state->load(state_path.native());
-  }
+  // policy target
+  load_model_pack(p_model_target_, root_dir / "policy_target", false);
 
   // critic
   for (int i = 0; i < q_models_.size(); ++i) {
@@ -379,23 +402,36 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
 }
 
 // we should pass a tuple (s, a, s', r, d)
-void SACSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d) {
-  // note that we have to rescale the action: [a_low, a_high] -> [-1, 1]
-  auto as = scale_action(a, a_low_, a_high_);
-
-  // the replay buffer only stores scaled actions!
-  replay_buffer_->update(s, as, sp, r, d);
+void TD3System::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d) {
+  replay_buffer_->update(s, a, sp, r, d);
 }
 
-bool SACSystem::isReady() { return (replay_buffer_->isReady()); }
+bool TD3System::isReady() { return (replay_buffer_->isReady()); }
 
-std::shared_ptr<ModelState> SACSystem::getSystemState_() { return system_state_; }
+std::shared_ptr<ModelState> TD3System::getSystemState_() { return system_state_; }
 
-std::shared_ptr<Comm> SACSystem::getSystemComm_() { return system_comm_; }
+std::shared_ptr<Comm> TD3System::getSystemComm_() { return system_comm_; }
+
+torch::Tensor TD3System::predictWithNoiseTrain_(torch::Tensor state) {
+  // no grad guard
+  torch::NoGradGuard no_grad;
+
+  // prepare inputs
+  p_model_target_.model->to(model_device_);
+  p_model_target_.model->eval();
+  state = state.to(model_device_);
+
+  // get noisy prediction
+  auto action = (*noise_actor_train_)(p_model_target_, state);
+
+  // clip action
+  action = torch::clamp(action, a_low_, a_high_);
+  return action;
+}
 
 // do exploration step without knowledge about the state
 // for example, apply random action
-torch::Tensor SACSystem::explore(torch::Tensor action) {
+torch::Tensor TD3System::explore(torch::Tensor action) {
   // no grad guard
   torch::NoGradGuard no_grad;
 
@@ -405,7 +441,25 @@ torch::Tensor SACSystem::explore(torch::Tensor action) {
   return result;
 }
 
-torch::Tensor SACSystem::predict(torch::Tensor state) {
+torch::Tensor TD3System::predict(torch::Tensor state) {
+  // no grad guard
+  torch::NoGradGuard no_grad;
+
+  // prepare inputs
+  p_model_target_.model->to(model_device_);
+  p_model_target_.model->eval();
+  state = state.to(model_device_);
+
+  // do fwd pass
+  auto action = (p_model_target_.model)->forward(std::vector<torch::Tensor>{state})[0];
+
+  // clip action
+  action = torch::clamp(action, a_low_, a_high_);
+
+  return action;
+}
+
+torch::Tensor TD3System::predictExplore(torch::Tensor state) {
   // no grad guard
   torch::NoGradGuard no_grad;
 
@@ -415,34 +469,15 @@ torch::Tensor SACSystem::predict(torch::Tensor state) {
   state = state.to(model_device_);
 
   // do fwd pass
-  auto action = (p_model_.model)->forwardDeterministic(state);
+  auto action = (*noise_actor_exploration_)(p_model_, state);
 
   // clip action
-  action = unscale_action(action, a_low_, a_high_);
+  action = torch::clamp(action, a_low_, a_high_);
 
   return action;
 }
 
-torch::Tensor SACSystem::predictExplore(torch::Tensor state) {
-  // no grad guard
-  torch::NoGradGuard no_grad;
-
-  // prepare inputs
-  p_model_.model->to(model_device_);
-  p_model_.model->eval();
-  state = state.to(model_device_);
-
-  // do fwd pass
-  torch::Tensor action, log_probs;
-  std::tie(action, log_probs) = (p_model_.model)->forwardNoise(state);
-
-  // clip action
-  action = unscale_action(action, a_low_, a_high_);
-
-  return action;
-}
-
-torch::Tensor SACSystem::evaluate(torch::Tensor state, torch::Tensor action) {
+torch::Tensor TD3System::evaluate(torch::Tensor state, torch::Tensor action) {
   // no grad guard
   torch::NoGradGuard no_grad;
 
@@ -452,26 +487,25 @@ torch::Tensor SACSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   state = state.to(model_device_);
   action = action.to(model_device_);
 
-  // scale action
-  auto action_scale = scale_action(action, a_low_, a_high_);
-
   // do fwd pass
   auto reward = (q_models_target_[0].model)->forward(std::vector<torch::Tensor>{state, action})[0];
 
   return reward;
 }
 
-void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
+void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
   // increment train step counter first, this avoids an initial policy update at start
   train_step_count_++;
 
-  // we need these
+  // update policy?
+  bool update_policy = (train_step_count_ % policy_lag_ == 0);
+  
   torch::Tensor s, a, ap, sp, r, d;
   {
     torch::NoGradGuard no_grad;
 
     // get a sample from the replay buffer
-    std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_, gamma_, nstep_, nstep_reward_reduction_);
+    std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_);
 
     // upload to device
     s = s.to(model_device_);
@@ -479,18 +513,18 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     sp = sp.to(model_device_);
     r = r.to(model_device_);
     d = d.to(model_device_);
+
+    // get a new action by predicting one with target network
+    ap = predictWithNoiseTrain_(sp);
   }
   
   // train step
-  std::vector<float> q_loss_vals;
-  train_sac(p_model_, q_models_, q_models_target_, s, sp, a, r, d, static_cast<float>(std::pow(gamma_, nstep_)), rho_,
-            alpha_, p_loss_val, q_loss_vals);
-
-  // compute average of q_loss_vals:
-  q_loss_val = std::accumulate(q_loss_vals.begin(), q_loss_vals.end(), decltype(q_loss_vals)::value_type(0)) /
-               float(q_loss_vals.size());
+  train_td3(p_model_, p_model_target_, q_models_, q_models_target_, s, sp, a, ap, r, d,
+            static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_val, update_policy);
 }
 
+} // namespace off_policy
+  
 } // namespace rl
 
 } // namespace torchfort

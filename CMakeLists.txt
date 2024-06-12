@@ -118,13 +118,16 @@ target_sources(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/polynomial_lr.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/scheduler_setup.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/step_lr.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/linear_lr.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/models/mlp_model.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/rl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/policy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/utils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/ddpg.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/td3.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/sac.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/off_policy/interface.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/off_policy/ddpg.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/off_policy/td3.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/off_policy/sac.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/on_policy/interface.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/on_policy/ppo.cpp
 )
 
 target_include_directories(${PROJECT_NAME}

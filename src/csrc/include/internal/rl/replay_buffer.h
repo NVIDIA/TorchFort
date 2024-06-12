@@ -61,7 +61,7 @@ public:
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, torch::Tensor, float, bool) = 0;
   virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
-  sample(int, float, int, RewardReductionMode) = 0;
+  sample(int) = 0;
   virtual bool isReady() const = 0;
   virtual void printInfo() const = 0;
   virtual void save(const std::string& fname) const = 0;
@@ -78,8 +78,26 @@ class UniformReplayBuffer : public ReplayBuffer, public std::enable_shared_from_
 
 public:
   // constructor
-  UniformReplayBuffer(size_t max_size, size_t min_size, int device)
-    : ReplayBuffer(max_size, min_size, device), rng_() {}
+  UniformReplayBuffer(size_t max_size, size_t min_size, float gamma, int nstep,
+		      RewardReductionMode reward_reduction_mode, int device)
+    : ReplayBuffer(max_size, min_size, device), rng_(),
+      gamma_(gamma), nstep_(nstep) {
+
+    // set up reward reduction mode
+    skip_incomplete_steps_ = true;
+    if (reward_reduction_mode == RewardReductionMode::MeanNoSkip) {
+      reward_reduction_mode_ = RewardReductionMode::Mean;
+      skip_incomplete_steps_ = false;
+    } else if (reward_reduction_mode == RewardReductionMode::WeightedMeanNoSkip) {
+      reward_reduction_mode_ = RewardReductionMode::WeightedMean;
+      skip_incomplete_steps_ = false;
+    } else if (reward_reduction_mode == RewardReductionMode::SumNoSkip) {
+      reward_reduction_mode_ = RewardReductionMode::Sum;
+      skip_incomplete_steps_ = false;
+    } else {
+      reward_reduction_mode_ = reward_reduction_mode;
+    }
+  }
 
   // disable copy constructor
   UniformReplayBuffer(const UniformReplayBuffer&) = delete;
@@ -95,18 +113,17 @@ public:
     auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
     auto spc = sp.to(device_, sp.dtype(), /* non_blocking = */ false, /* copy = */ true);
 
-    // add the newest element in front
-    buffer_.push_front(std::make_tuple(sc, ac, spc, r, d));
+    // add the newest element to the back
+    buffer_.push_back(std::make_tuple(sc, ac, spc, r, d));
 
     // if we reached max size already, remove the oldest element
     if (buffer_.size() > max_size_) {
-      buffer_.pop_back();
+      buffer_.pop_front();
     }
   }
 
   std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
-  sample(int batch_size, float gamma = 1., int nstep = 1,
-         RewardReductionMode reduction_mode = RewardReductionMode::Sum) {
+  sample(int batch_size) {
 
     // add no grad guard
     torch::NoGradGuard no_grad;
@@ -118,22 +135,8 @@ public:
     auto r_list = std::vector<float>(batch_size);
     auto d_list = std::vector<float>(batch_size);
 
-    // do we want to skip incomplete nsteps?
-    RewardReductionMode reduction_mode_ = reduction_mode;
-    bool skip_enabled = true;
-    if (reduction_mode == RewardReductionMode::MeanNoSkip) {
-      reduction_mode_ = RewardReductionMode::Mean;
-      skip_enabled = false;
-    } else if (reduction_mode == RewardReductionMode::WeightedMeanNoSkip) {
-      reduction_mode_ = RewardReductionMode::WeightedMean;
-      skip_enabled = false;
-    } else if (reduction_mode == RewardReductionMode::SumNoSkip) {
-      reduction_mode_ = RewardReductionMode::Sum;
-      skip_enabled = false;
-    }
-
     // be careful, the interval is CLOSED! We need to exclude the upper bound
-    std::uniform_int_distribution<size_t> uniform_dist(0, buffer_.size() - nstep);
+    std::uniform_int_distribution<size_t> uniform_dist(0, buffer_.size() - nstep_);
     int sample = 0;
     while (sample < batch_size) {
 
@@ -154,25 +157,26 @@ public:
 
       // if nstep > 1, perform rollout
       bool skip = false;
-      for (int off = 1; off < nstep; ++off) {
+      float deff = 1. - d_list[sample];
+      for (int off = 1; off < nstep_; ++off) {
         torch::Tensor stmp, atmp;
         std::tie(stmp, atmp, sptens_list[sample], r, d) = buffer_.at(index + off);
-        auto gamma_eff = static_cast<float>(std::pow(gamma, off));
+        auto gamma_eff = static_cast<float>(std::pow(gamma_, off));
         r_list[sample] += gamma_eff * r;
         r_norm += gamma_eff;
         r_count++;
         if (d) {
-          d_list[sample] = 1.;
-          // we want to skip this sample
-          // if we hit a terminal state before the end of the rollout
-          if ((off != nstep - 1) && skip_enabled) {
+	  // 1-d = 0
+          deff *= 0.;
+	  if ((off != nstep_ - 1) && skip_incomplete_steps_) {
             skip = true;
           }
-          break;
-        } else {
-          d_list[sample] = 0.;
-        }
+	} else {
+	  // 1-d = 1
+	  deff *= 1.;
+	}
       }
+      d_list[sample] = 1. - deff;
 
       if (skip) {
         continue;
@@ -181,7 +185,7 @@ public:
       // reward normalization if requested:
       // mean mode is useful for infinite episodes
       // where there is no final reward
-      switch (reduction_mode_) {
+      switch (reward_reduction_mode_) {
       case RewardReductionMode::Mean:
         r_list[sample] /= static_cast<float>(r_count);
         break;
@@ -296,6 +300,11 @@ private:
   std::deque<BufferEntry> buffer_;
   // rng
   std::mt19937_64 rng_;
+  // some parameters:
+  float gamma_;
+  int nstep_;
+  RewardReductionMode reward_reduction_mode_;
+  bool skip_incomplete_steps_;
 };
 
 } // namespace rl

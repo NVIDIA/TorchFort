@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,33 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <algorithm>
+#include <vector>
 
-#include "internal/rl/off_policy.h"
-#include "internal/rl/on_policy.h"
+#include "internal/base_lr_scheduler.h"
+#include "internal/lr_schedulers.h"
+
+namespace torchfort {
+
+LinearLR::LinearLR(torch::optim::Optimizer& optimizer, const unsigned total_iters, const double start_factor, const double end_factor)
+  : BaseLRScheduler(optimizer), total_iters_(total_iters), start_factor_(start_factor), end_factor_(end_factor) {}
+
+std::vector<double> LinearLR::get_lrs() {
+
+  double factor;
+  if (step_count_ == 0) {
+    factor = start_factor_;
+  } else if (step_count_ > total_iters_) {
+    factor = 1.;
+  } else {
+    factor = (1. + (end_factor_ - start_factor_) / double(total_iters_ * start_factor_ + (step_count_ - 1) * (end_factor_ - start_factor_)));
+  }
+
+  // get current lrs and modify
+  std::vector<double> lrs = get_current_lrs();
+  std::transform(lrs.begin(), lrs.end(), lrs.begin(), [factor](const double& v) { return factor * v; });
+
+  return lrs;
+}
+
+} // namespace torchfort

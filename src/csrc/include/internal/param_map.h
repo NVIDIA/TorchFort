@@ -85,7 +85,7 @@ template <typename T> struct ParamMapConverter {
         return s;
       }
     } catch (std::invalid_argument) {
-      THROW_INVALID_USAGE("Could not convert provided parameter value to required type.");
+      THROW_INVALID_USAGE("Could not convert provided parameter value " + s + " to required type.");
     }
 
     THROW_INTERNAL_ERROR("Unknown conversion type.");

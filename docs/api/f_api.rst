@@ -238,6 +238,17 @@ __________________________
 Reinforcement Learning
 **********************
 
+Similar to other reinforcement learning frameworks such as [spinning up](https://spinningup.openai.com/en/latest/) 
+from OpenAI or [stable baselines](https://stable-baselines3.readthedocs.io/en/master/), 
+we distinguish between on-policy and off-policy algorithms since those two types require different APIs.
+
+------
+
+.. _torchfort_rl_off_policy_f-ref:
+
+Off-Policy Algorithms
+=====================
+
 System Creation
 -----------------------------------
 
@@ -255,7 +266,7 @@ _____________________________________
   :p character(:) name [in]: A name to assign to the created training system instance to use as a key for other TorchFort routines.
   :p character(:) config_fname [in]: The filesystem path to the user-defined configuration file to use.
   :p integer model_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
-  :p integer rb_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
+  :p integer rb_device [in]: Which device to place and run the replay buffer on. For ``TORCHFORT_DEVICE_CPU`` (-1), replay buffer will be placed on CPU. For values >= 0, it will be placed on GPU with index corresponding to value.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
   
 ------
@@ -273,7 +284,7 @@ _________________________________________________
   :p character(:) config_fname [in]: The filesystem path to the user-defined configuration file to use.
   :p integer mpi_comm [in]: MPI communicator to use to initialize NCCL communication library for data-parallel communication.
   :p integer model_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
-  :p integer rb_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
+  :p integer rb_device [in]: Which device to place the replay buffer on. For ``TORCHFORT_DEVICE_CPU`` (-1), replay buffer will be placed on CPU. For values >= 0, it will be placed on GPU with index corresponding to value.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
   
 ------
@@ -443,6 +454,8 @@ _______________________________________
   :p character(:) checkpoint_dir [in]: A filesystem path to a directory which contains the checkpoint data to load.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
 
+------
+
 Weights and Biases Logging
 --------------------------
 
@@ -478,4 +491,273 @@ torchfort_rl_off_policy_wandb_log_double
 ________________________________________
 
 .. f:function:: torchfort_rl_off_policy_wandb_log_double(mname, metric_name, step, val)
+
+------
+
+.. _torchfort_rl_on_policy_f-ref:
+
+On-Policy Algorithms
+=====================
+
+System Creation
+-----------------------------------
+
+Basic routines to create and register a reinforcement learning system in the internal registry. 
+A (synchronous) data parallel distributed option is available.
+
+.. _torchfort_rl_on_policy_create_system-f-ref:
+
+torchfort_rl_on_policy_create_system
+_____________________________________
+
+.. f:function:: torchfort_rl_on_policy_create_system(name, config_fname, model_device, rb_device)
+
+  Creates an on-policy reinforcement learning training system instance from a provided configuration file.
+
+  :p character(:) name [in]: A name to assign to the created training system instance to use as a key for other TorchFort routines.
+  :p character(:) config_fname [in]: The filesystem path to the user-defined configuration file to use.
+  :p integer model_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
+  :p integer rb_device [in]: Which device to place the rollout buffer on. For ``TORCHFORT_DEVICE_CPU`` (-1), rollout buffer will be placed on CPU. For values >= 0, it will be placed on GPU with index corresponding to value.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+  
+------
+
+.. _torchfort_rl_on_policy_create_distributed_system-f-ref:
+
+torchfort_rl_on_policy_create_distributed_system
+_________________________________________________
+
+.. f:function:: torchfort_rl_on_policy_create_distributed_system(name, config_fname, mpi_comm, model_device, rb_device)
+
+  Creates a (synchronous) data-parallel on-policy reinforcement learning system instance from a provided configuration file.
+
+  :p character(:) name [in]: A name to assign to the created training system instance to use as a key for other TorchFort routines.
+  :p character(:) config_fname [in]: The filesystem path to the user-defined configuration file to use.
+  :p integer mpi_comm [in]: MPI communicator to use to initialize NCCL communication library for data-parallel communication.
+  :p integer model_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
+  :p integer rb_device [in]: Which device to place the rollout buffer on. For ``TORCHFORT_DEVICE_CPU`` (-1), rollout buffer will be placed on CPU. For values >= 0, it will be placed on GPU with index corresponding to value.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+  
+------
+
+Training/Evaluation
+-----------------------------------------
+
+These routines are be used for training the reinforcement learning system or for steering the environment. 
+
+.. _torchfort_rl_on_policy_train_step-f-ref:
+
+torchfort_rl_on_policy_train_step
+__________________________________
+
+.. f:function:: torchfort_rl_on_policy_train_step(name, p_loss_val, q_loss_val, stream)
+
+  Runs a training iteration of an on-policy refinforcement learning instance and returns loss values for policy and value functions.
+  This routine samples a batch of specified size from the rollout buffer according to the buffers sampling procedure
+  and performs a train step using this sample. The details of the training procedure are abstracted away from the user and depend on the 
+  chosen system algorithm. Note that the rollout buffer needs to be finalized or otherwise the train step will be skipped.
+  For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
+  
+  :p character(:) name [in]: The name of system instance to use, as defined during system creation.
+  :p T p_loss_val [out]: A single or double precision variable which will hold the policy loss value computed during the training iteration.
+  :p T q_loss_val [out]: A single or double precision variable which will hold the critic loss value computed during the training iteration, averaged over all available critics (depends on the chosen algorithm).
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+  
+------
+
+.. _torchfort_rl_on_policy_predict_explore-f-ref:
+
+torchfort_rl_on_policy_predict_explore
+_______________________________________
+
+.. f:function:: torchfort_rl_on_policy_predict_explore(name, state, act, stream)
+
+  Suggests an action based on the current state of the system and adds noise as specified by the coprresponding reinforcement learning system. 
+  Depending on the reinforcement learning algorithm used, the prediction is performed by the main network (not the target network). In contrast to :code:`torchfort_rl_off_policy_predict`, this routine adds noise and thus is called explorative. The kind of noise is specified during system creation.
+  
+  For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
+  
+  :p character(:) name [in]: The name of system instance to use, as defined during system creation.
+  :p T state [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the state space.
+  :p T act [out]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the action space.
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
+------
+
+.. _torchfort_rl_on_policy_predict-f-ref:
+
+torchfort_rl_on_policy_predict
+_______________________________________
+
+.. f:function:: torchfort_rl_on_policy_predict(name, state, act, stream)
+
+  Suggests an action based on the current state of the system. 
+  Depending on the algorithm used, the prediction is performed by the target network. 
+  In contrast to :code:`torchfort_rl_on_policy_predict_explore`, this routine does not add noise, which means it is exploitative.
+  
+  For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
+  
+  :p character(:) name [in]: The name of system instance to use, as defined during system creation.
+  :p T state [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the state space.
+  :p T act [out]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the action space.
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+  
+------
+
+.. _torchfort_rl_on_policy_evaluate-f-ref:
+
+torchfort_rl_on_policy_evaluate
+________________________________
+
+.. f:function:: torchfort_rl_on_policy_evaluate(name, state, act, reward, stream)
+
+  Predicts the future reward based on the current state and selected action.
+  Depending on the learning algorithm, the routine queries the target critic networks for this. 
+  The routine averages the predictions over all critics.
+  
+  For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
+  
+  :p character(:) name [in]: The name of system instance to use, as defined during system creation.
+  :p T state [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the state space.
+  :p T act [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the action space.
+  :p T reward [out]: Two-dimensional array of size (1, :code:`batch_size`) which will hold the predicted reward values.
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+ 
+------
+
+System Management
+-----------------
+
+.. _torchfort_rl_on_policy_update_rollout_buffer-f-ref:
+
+torchfort_rl_on_policy_update_rollout_buffer
+____________________________________________
+
+.. f:function:: torchfort_rl_on_policy_update_rollout_buffer(name, state_old, act_old, state_new, reward, terminal, stream)
+  
+  Adds a new :math:`(s, a, r, d)` tuple to the rollout buffer. Here :math:`s` (:code:`state`) is the state for which action :math:`a` (:code:`action`) was taken, leading to reward :math:`r` (:code:`reward`). The terminal state flag :math:`d` (:code:`terminal`) specifies whether the state is the final state in the episode.
+  Note that value estimates :math:`q` as well was log-probabilities are also stored but the user does not need to pass those manually, , those values are computed internally from the current policy and stored with the other values.
+  
+  For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
+  
+  :p character(:) name [in]: The name of system instance to use, as defined during system creation.
+  :p T state [in]: Multi-dimensional array of size of the state space.
+  :p T act [in]: Multi-dimensional array of size of the action space.
+  :p T reward [in]: Reward value.
+  :p logical terminal [in]: Terminal flag.
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
+------
+
+.. _torchfort_rl_on_policy_reset_rollout_buffer-f-ref:
+ 
+torchfort_rl_on_policy_reset_rollout_buffer
+________________________________
+ 
+.. f:function:: torchfort_rl_on_policy_reset_rollout_buffer(name)
+ 
+  This function call clears the rollout buffer and resets all variables.
+  
+  :p character(:) name [in]: The name of system instance to use, as defined during system creation.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
+------
+ 
+.. _torchfort_rl_on_policy_is_ready-f-ref:
+ 
+torchfort_rl_on_policy_is_ready
+________________________________
+ 
+.. f:function:: torchfort_rl_on_policy_is_ready(name, ready)
+ 
+  Queries a reinforcement learning system for rediness to start training.
+  A user should call this method before starting training to make sure the reinforcement learning system is ready.
+  This ensures that the rollout buffer is filled sufficiently with exploration data as specified during system creation. 
+  It also checks if the rollout buffer was properly finalized, e.g. all advantages were computed.
+  
+  :p character(:) name [in]: The name of system instance to use, as defined during system creation.
+  :p logical ready [out]: Logical indicating if the system is ready for training.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
+------
+
+.. _torchfort_rl_on_policy_save_checkpoint-f-ref:
+ 
+torchfort_rl_on_policy_save_checkpoint
+_______________________________________
+ 
+.. f:function:: torchfort_rl_on_policy_save_checkpoint(name, checkpoint_dir)
+
+  Saves a reinforcement learning training checkpoint to a directory. 
+  This method saves all models (policies, critics, target models if available) together with their corresponding optimizer and LR scheduler.
+  states. It also saves the state of the rollout buffer, to allow for smooth restarts of reinforcement learning training processes.
+  This function should be used in conjunction with :code:`torchfort_rl_on_policy_load_checkpoint`.
+  
+  :p character(:) name [in]: The name of system instance to use, as defined during system creation.
+  :p character(:) checkpoint_dir [in]: A filesystem path to a directory to save the checkpoint data to.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+  
+------
+
+.. _torchfort_rl_on_policy_load_checkpoint-f-ref:
+ 
+torchfort_rl_on_policy_load_checkpoint
+_______________________________________
+ 
+.. f:function:: torchfort_rl_on_policy_load_checkpoint(name, checkpoint_dir)
+
+  Restores a reinforcement learning system from a checkpoint. 
+  This method restores all models (policies, critics, target models if available) together with their corresponding optimizer and LR scheduler
+  states. It also fully restores the state of the rollout buffer, but not the current RNG seed.
+  This function should be used in conjunction with :code:`torchfort_rl_on_policy_save_checkpoint`.
+  
+  :p character(:) name [in]: The name of system instance to use, as defined during system creation.
+  :p character(:) checkpoint_dir [in]: A filesystem path to a directory which contains the checkpoint data to load.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
+------
+
+Weights and Biases Logging
+--------------------------
+
+.. _torchfort_rl_on_policy_wandb_log_int-f-ref:
+
+torchfort_rl_on_policy_wandb_log_int
+_____________________________________
+
+.. f:function:: torchfort_rl_on_policy_wandb_log_int(mname, metric_name, step, val)
+   
+   Write an integer value to a Weights and Bias log. Use the :code:`_float` and :code:`_double` variants to write :code:`real32` and :code:`real64` values respectively. 
+   
+   :p character(:) mname [in]: The name of model instance to associate this metric value with, as defined during model creation.
+   :p character(:) metric_name [in]: Metric label.
+   :p integer step [in]: Training/inference step to associate with metric value.
+   :p integer val [in]: Metric value to log.
+   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
+------
+
+.. _torchfort_rl_on_policy_wandb_log_float-f-ref:
+
+torchfort_rl_on_policy_wandb_log_float
+_______________________________________
+
+.. f:function:: torchfort_rl_on_policy_wandb_log_float(mname, metric_name, step, val)
+
+------
+
+.. _torchfort_rl_on_policy_wandb_log_double-f-ref:
+
+torchfort_rl_on_policy_wandb_log_double
+________________________________________
+
+.. f:function:: torchfort_rl_on_policy_wandb_log_double(mname, metric_name, step, val)
+
+------
+
 

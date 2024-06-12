@@ -32,11 +32,14 @@
 #include <torch/torch.h>
 
 #include "internal/exceptions.h"
-#include "internal/rl/ddpg.h"
+#include "internal/rl/off_policy/ddpg.h"
 #include "torchfort.h"
 
 namespace torchfort {
+
 namespace rl {
+
+namespace off_policy {
 
 DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node,
 		       int model_device, int rb_device)
@@ -72,11 +75,11 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node,
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
   }
 
-  if (system_node["action"]) {
-    auto action_node = system_node["action"];
-    std::string noise_actor_type = sanitize(action_node["type"].as<std::string>());
-    if (action_node["parameters"]) {
-      auto params = get_params(action_node["parameters"]);
+  if (system_node["actor"]) {
+    auto actor_node = system_node["actor"];
+    std::string noise_actor_type = sanitize(actor_node["type"].as<std::string>());
+    if (actor_node["parameters"]) {
+      auto params = get_params(actor_node["parameters"]);
       std::set<std::string> supported_params{"a_low", "a_high", "clip",     "sigma_train",     "sigma_explore",
                                              "xi",    "dt",     "adaptive", "noise_actor_type"};
       check_params(supported_params, params.keys());
@@ -109,10 +112,10 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node,
         THROW_INVALID_USAGE(noise_actor_type);
       }
     } else {
-      THROW_INVALID_USAGE("Missing parameters section in action section in configuration file.");
+      THROW_INVALID_USAGE("Missing parameters section in actor section in configuration file.");
     }
   } else {
-    THROW_INVALID_USAGE("Missing action section in configuration file.");
+    THROW_INVALID_USAGE("Missing actor section in configuration file.");
   }
 
   if (system_node["replay_buffer"]) {
@@ -127,7 +130,7 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node,
 
       // distinction between buffer types
       if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, rb_device);
+        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, gamma_, nstep_, nstep_reward_reduction_, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
       }
@@ -241,6 +244,9 @@ torch::Device DDPGSystem::rbDevice() const {
 
 void DDPGSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
+  // system
+  system_comm_ = std::make_shared<Comm>(mpi_comm);
+  system_comm_->initialize(model_device_.is_cuda());
   // policy
   p_model_.comm = std::make_shared<Comm>(mpi_comm);
   p_model_.comm->initialize(model_device_.is_cuda());
@@ -285,7 +291,7 @@ void DDPGSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
   if (!std::filesystem::exists(root_dir)) {
     bool rv = std::filesystem::create_directory(root_dir);
     if (!rv) {
-      THROW_INVALID_USAGE("Could not create checkpoint directory.");
+      THROW_INVALID_USAGE("Could not create checkpoint directory " + root_dir.native() + ".");
     }
   }
 
@@ -451,7 +457,7 @@ void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     torch::NoGradGuard no_grad;
 
     // get a sample from the replay buffer
-    std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_, gamma_, nstep_, nstep_reward_reduction_);
+    std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_);
 
     // upload to device
     s = s.to(model_device_);
@@ -469,5 +475,8 @@ void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
              static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_val);
 }
 
+} // off_policy
+  
 } // namespace rl
+
 } // namespace torchfort

@@ -129,6 +129,32 @@ std::shared_ptr<BaseLRScheduler> get_lr_scheduler(const YAML::Node& lr_scheduler
       THROW_INVALID_USAGE("multistep_lr: milestones parameter is required.");
     }
     lr_scheduler = std::shared_ptr<BaseLRScheduler>(new MultiStepLR(*optimizer, milestones, gamma));
+  } else if (type == "linear") {
+    std::set<std::string> supported_params{"total_iters", "start_factor", "end_factor"};
+    check_params(supported_params, params.keys());
+
+    int total_iters;
+    try {
+      total_iters = params.get_param<int>("total_iters")[0];
+    } catch (std::out_of_range) {
+      THROW_INVALID_USAGE("linear_lr: total_iters parameter is required.");
+    }
+    
+    double start_factor;
+    try {
+      start_factor = params.get_param<double>("start_factor")[0];
+    } catch (std::out_of_range) {
+      start_factor = 0.3333333; // default
+    }
+
+    double end_factor;
+    try {
+      end_factor = params.get_param<double>("end_factor")[0];
+    } catch (std::out_of_range) {
+      end_factor = 1.0; // default
+    }
+
+    lr_scheduler = std::shared_ptr<BaseLRScheduler>(new LinearLR(*optimizer, total_iters, start_factor, end_factor));
   } else {
     THROW_INVALID_USAGE("Unknown lr_scheduler type provided.");
   }

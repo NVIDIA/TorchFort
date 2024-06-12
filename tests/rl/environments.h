@@ -12,7 +12,7 @@ public:
 
   virtual std::tuple<torch::Tensor, float, bool> step(torch::Tensor) = 0;
   virtual std::tuple<torch::Tensor, float> initialize() = 0;
-  
+
 protected:
   unsigned int num_steps_per_episode_;
   unsigned int num_steps_;
@@ -29,7 +29,7 @@ public:
 			    float default_reward) : default_reward_(default_reward),
 						    state_shape_(state_shape), action_shape_(action_shape),
 						    Environment(num_steps_per_episode) {}
-  
+
   std::tuple<torch::Tensor, float, bool> step(torch::Tensor action) {
     torch::NoGradGuard no_grad;
     num_steps_++;
@@ -39,7 +39,7 @@ public:
   std::tuple<torch::Tensor, float> initialize() {
     return std::make_tuple(torch::zeros(state_shape_, torch::kFloat32), default_reward_);
   }
-  
+
 private:
   float default_reward_;
   torch::IntArrayRef state_shape_;
@@ -82,7 +82,7 @@ public:
 			       torch::IntArrayRef state_shape,
 			       torch::IntArrayRef action_shape) : state_shape_(state_shape), action_shape_(action_shape),
 								  udist_(0,1), Environment(num_steps_per_episode) {
-    
+
     std::random_device dev;
     rngptr_ = std::make_shared<std::mt19937>(dev());
     reward_ = 2 * static_cast<float>(udist_(*rngptr_)) - 1.;
@@ -93,20 +93,20 @@ public:
   std::tuple<torch::Tensor, float> initialize() {
     return std::make_tuple(state_.clone(), 1.);
   }
-  
+
   std::tuple<torch::Tensor, float, bool> step(torch::Tensor action) {
     torch::NoGradGuard no_grad;
     num_steps_++;
 
     // backup the current reward
     float reward = reward_;
-    
+
     // compute next reward
     reward_ = 2 * static_cast<float>(udist_(*rngptr_)) - 1.;
     state_.fill_(reward_);
     return std::make_tuple(state_.clone(), reward, (num_steps_ % num_steps_per_episode_ == 0));
   }
-  
+
 private:
   std::shared_ptr<std::mt19937> rngptr_;
   std::uniform_int_distribution<std::mt19937::result_type> udist_;

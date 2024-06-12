@@ -22,13 +22,13 @@ actor:
     clip: 0.3
     sigma_train: 0.2
     sigma_explore: 1.0
-    
+
 replay_buffer:
   type: uniform
   parameters:
     max_size: 4096
     min_size: 512
-  
+
 policy_model:
   type: MLP
   parameters:

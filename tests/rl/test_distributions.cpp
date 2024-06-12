@@ -11,7 +11,7 @@ TEST(NormalDistribution, RandomSampling) {
 
   // no grad guard
   torch::NoGradGuard no_grad;
-  
+
   // create normal distribution with given shape
   torch::Tensor mutens = torch::empty({4,8}, torch::kFloat32);
   torch::Tensor log_sigmatens = torch::empty({4,8}, torch::kFloat32);
@@ -20,7 +20,7 @@ TEST(NormalDistribution, RandomSampling) {
   mutens.normal_();
   log_sigmatens.normal_();
   torch::Tensor sigmatens = torch::exp(log_sigmatens);
-  
+
   auto ndist = rl::NormalDistribution(mutens, sigmatens);
   torch::Tensor sample = ndist.rsample();
 
@@ -33,6 +33,6 @@ TEST(NormalDistribution, RandomSampling) {
 
 int main(int argc, char *argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
-  
+
   return RUN_ALL_TESTS();
 }

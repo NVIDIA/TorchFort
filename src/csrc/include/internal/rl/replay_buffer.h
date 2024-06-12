@@ -61,7 +61,7 @@ public:
   // accessor functions
   size_t getMinSize() const { return min_size_; }
   size_t getMaxSize() const { return max_size_; }
-  
+
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, torch::Tensor, float, bool) = 0;
   // sample element randomly
@@ -227,7 +227,7 @@ public:
     if ((index < 0) || (index >= buffer_.size())) {
       throw std::runtime_error("UniformReplayBuffer::get: index " + std::to_string(index) + " out of bounds [0, " + std::to_string(buffer_.size()) + ")." );
     }
-    
+
     // add no grad guard
     torch::NoGradGuard no_grad;
 
@@ -245,10 +245,9 @@ public:
 
   void reset() {
     buffer_.clear();
-    
+
     return;
   }
-  
 
   size_t getSize() const { return buffer_.size(); }
 

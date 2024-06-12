@@ -10,7 +10,7 @@ std::tuple<std::shared_ptr<rl::GAELambdaRolloutBuffer>, float, bool>
 getTestRolloutBuffer(int buffer_size, float gamma=0.95, float lambda=0.99) {
 
   torch::NoGradGuard no_grad;
-  
+
   auto rbuff = std::make_shared<rl::GAELambdaRolloutBuffer>(buffer_size, gamma, lambda, -1);
 
   // initialize rng
@@ -67,7 +67,7 @@ extract_entries(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
   torch::Tensor advtens = torch::from_blob(advvec.data(), {1}, options).clone();
   torch::Tensor rettens = torch::from_blob(retvec.data(), {1}, options).clone();
   torch::Tensor dtens = torch::from_blob(dvec.data(), {1}, options).clone();
-  
+
   return std::make_tuple(stens, atens, rtens, qtens, log_p_tens, advtens, rettens, dtens);
 }
 
@@ -86,7 +86,7 @@ void print_buffer(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
 TEST(RolloutBuffer, EntryConsistency) {
   // rng
   torch::manual_seed(666);
-  
+
   // some parameters
   unsigned int batch_size = 2;
   unsigned int buffer_size = 4 * batch_size;
@@ -118,7 +118,7 @@ TEST(RolloutBuffer, EntryConsistency) {
 TEST(RolloutBuffer, AdvantageComputation) {
   // rng
   torch::manual_seed(666);
-  
+
   // some parameters
   unsigned int batch_size = 1;
   unsigned int buffer_size = 8 * batch_size;
@@ -130,7 +130,7 @@ TEST(RolloutBuffer, AdvantageComputation) {
   float last_val;
   bool last_done;
   std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, gamma, lambda);
-  
+
   // get a few items and their successors:
   torch::Tensor stens, atens;
   float r, q, log_p, adv, ret, df;
@@ -193,11 +193,11 @@ TEST(RolloutBuffer, SaveRestore) {
   rbuff->save("/tmp/rollout_buffer.pt");
 
   // reset the buffer
-  rbuff->reset(false);
+  rbuff->reset();
 
   // reload the buffer
   rbuff->load("/tmp/rollout_buffer.pt");
-  
+
   // extract contents:
   torch::Tensor stens_a, atens_a, rtens_a, qtens_a, log_p_tens_a, advtens_a, rettens_a, dtens_a;
   std::tie(stens_a, atens_a, rtens_a, qtens_a, log_p_tens_a, advtens_a, rettens_a, dtens_a) = extract_entries(rbuff);
@@ -225,6 +225,6 @@ TEST(RolloutBuffer, SaveRestore) {
 
 int main(int argc, char *argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
-  
+
   return RUN_ALL_TESTS();
 }

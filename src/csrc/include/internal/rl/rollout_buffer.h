@@ -256,7 +256,7 @@ public:
     std::vector<torch::Tensor> s_data, a_data;
     std::vector<torch::Tensor> r_data, q_data, log_p_data, e_data, adv_data, ret_data;
     std::vector<torch::Tensor> state_data;
-    
+
     auto options_f = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCPU);
     auto options_b = torch::TensorOptions().dtype(torch::kBool).device(torch::kCPU);
     for (size_t index = 0; index < buffer_.size(); ++index) {
@@ -356,7 +356,7 @@ public:
       // add the newest/latest element in back
       buffer_.push_back(std::make_tuple(sc, ac, r, q, log_p, e));
     }
-    
+
     // restore buffer state
     last_episode_starts_ = state_data[0].item<bool>();
     finalized_ = state_data[1].item<bool>();

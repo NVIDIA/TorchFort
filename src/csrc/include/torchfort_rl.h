@@ -464,11 +464,8 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
  * @details Here \f$s\f$ (\p state) is the state for which action \f$a\f$ (\p action) was taken,
  * and receiving reward \f$r\f$ (\p reward).
  * The terminal state flag \f$d\f$ (\p terminal_state) specifies whether \f$s\f$ is the final state of the episode.
-<<<<<<< HEAD
-=======
  * Note that value estimates \f$q\f$ as well was log-probabilities are also stored but the user does not need to 
  * pass those manually, those values are computed internally from the current policy and stored with the other values.
->>>>>>> alt-master
  *
  * @param[in] name The name of system instance to use, as defined during system creation.
  * @param[in] state A pointer to a memory buffer containing state data.

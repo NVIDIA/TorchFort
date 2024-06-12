@@ -7,7 +7,7 @@ bool TestSystem(const EnvMode mode, const std::string& system, unsigned int num_
 
   // set seed
   torch::manual_seed(666);
-  
+
   // create dummy env:
   std::vector<int64_t> state_shape{1};
   std::vector<int64_t> action_shape{1};
@@ -74,34 +74,34 @@ bool TestSystem(const EnvMode mode, const std::string& system, unsigned int num_
 
       // do environment step
       std::tie(state_new, reward, done) = env->step(action);
-      
+
       // update replay buffer
       tstat = torchfort_rl_off_policy_update_replay_buffer("test",
 							   state.data_ptr(), state_new.data_ptr(), 1, state_shape.data(),
 							   action.data_ptr(), 1, action_shape.data(), &reward, done,
 							   TORCHFORT_FLOAT, 0);
-      
+
       // perform training step if requested:
       tstat = torchfort_rl_off_policy_is_ready("test", is_ready);
       if (is_ready) {
 	tstat = torchfort_rl_off_policy_train_step("test", &p_loss, &q_loss, 0);
       }
-      
+
       // evaluate policy:
       tstat = torchfort_rl_off_policy_evaluate("test",
 					       state.data_ptr(), 2, state_batch_shape.data(),
 					       action.data_ptr(), 2, action_batch_shape.data(),
 					       &reward_estimate, 2, reward_batch_shape.data(),
 					       TORCHFORT_FLOAT, 0);
-      
-      std::cout << "episode : " << e 
+
+      std::cout << "episode : " << e
 		<< " step: " << i
 		<< " state: "  << state.item<float>()
 		<< " action: " << action.item<float>()
 		<< " reward: " << reward
 		<< " q: " << reward_estimate
 		<< " done: " << done << std::endl;
-      
+
       // copy tensors
       state.copy_(state_new);
 
@@ -113,22 +113,21 @@ bool TestSystem(const EnvMode mode, const std::string& system, unsigned int num_
   return true;
 }
 
-
 int main(int argc, char *argv[]) {
 
   std::vector<std::string> system_names = {"ddpg"};
 
   for (auto& system : system_names) {
     //TestSystem(Constant, system, 20000, 0);
- 
+
     //TestSystem(Predictable, system, 20000, 0);
-  
+
     //TestSystem(Delayed, system, 20000, 0);
-    
+
     TestSystem(Action, system, 20000, 1000);
 
     //TestSystem(ActionState, system, 20000, 1000);
   }
-  
+
   return 0;
 }

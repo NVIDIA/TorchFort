@@ -47,7 +47,7 @@ namespace torchfort {
 namespace rl {
 
 using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, float, float, float, bool>;
-  using ExtendedBufferEntry = std::tuple<torch::Tensor, torch::Tensor, float, float, float, float, float, bool>;
+using ExtendedBufferEntry = std::tuple<torch::Tensor, torch::Tensor, float, float, float, float, float, bool>;
 
 // abstract base class for rollout buffer
 class RolloutBuffer {
@@ -68,7 +68,7 @@ public:
   virtual BufferEntry get(int) = 0;
   virtual ExtendedBufferEntry getFull(int) = 0;
   virtual bool isReady() const = 0;
-  virtual void reset(bool start_new_episode) = 0;
+  virtual void reset() = 0;
   virtual void printInfo() const = 0;
   virtual void save(const std::string& fname) const = 0;
   virtual void load(const std::string& fname) = 0;
@@ -235,7 +235,7 @@ public:
   bool isReady() const { return ((buffer_.size() == size_) && finalized_); }
 
   // reset the buffer
-  void reset(bool start_new_episode) {
+  void reset() {
     buffer_.clear();
 
     // zero out the returns and advantage vectors just to be safe
@@ -245,10 +245,8 @@ public:
     // finally, set the finalized flag to false
     finalized_ = false;
 
-    // we will NOT set the next episode start trigger here
-    if (start_new_episode) {
-      last_episode_starts_ = true;
-    }
+    // mark a new episode:
+    last_episode_starts_ = true;
     
     return;
   }
@@ -258,6 +256,7 @@ public:
     std::vector<torch::Tensor> s_data, a_data;
     std::vector<torch::Tensor> r_data, q_data, log_p_data, e_data, adv_data, ret_data;
     std::vector<torch::Tensor> state_data;
+    
     auto options_f = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCPU);
     auto options_b = torch::TensorOptions().dtype(torch::kBool).device(torch::kCPU);
     for (size_t index = 0; index < buffer_.size(); ++index) {
@@ -290,7 +289,7 @@ public:
     tmpbool = finalized_;
     st = torch::from_blob(&tmpbool, {1}, options_b).clone();
     state_data.push_back(st);
-    
+
     // create subdirectory:
     using namespace torchfort;
     std::filesystem::path root_dir(fname);

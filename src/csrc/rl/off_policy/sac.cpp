@@ -393,10 +393,10 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
 // we should pass a tuple (s, a, s', r, d)
 void SACSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d) {
   // note that we have to rescale the action: [a_low, a_high] -> [-1, 1]
-  auto as = scale_action(a, a_low_, a_high_);
+  //auto as = scale_action(a, a_low_, a_high_);
 
   // the replay buffer only stores scaled actions!
-  replay_buffer_->update(s, as, sp, r, d);
+  replay_buffer_->update(s, a, sp, r, d);
 }
 
 bool SACSystem::isReady() { return (replay_buffer_->isReady()); }
@@ -463,9 +463,6 @@ torch::Tensor SACSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   q_models_target_[0].model->eval();
   state = state.to(model_device_);
   action = action.to(model_device_);
-
-  // scale action
-  auto action_scale = scale_action(action, a_low_, a_high_);
 
   // do fwd pass
   auto reward = (q_models_target_[0].model)->forward(std::vector<torch::Tensor>{state, action})[0];

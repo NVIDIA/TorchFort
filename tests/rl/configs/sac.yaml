@@ -17,8 +17,8 @@ algorithm:
 actor:
   type: parameter_noise
   parameters:
-    a_low: -1.
-    a_high: 1.
+    a_low: -3.0
+    a_high: 3.0
 
 replay_buffer:
   type: uniform
@@ -31,6 +31,8 @@ policy_model:
   parameters:
     dropout: 0.0
     layer_sizes: [1, 16, 8, 1]
+    state_dependent_sigma: False
+    log_sigma_init: 0.
 
 critic_model:
   type: MLP

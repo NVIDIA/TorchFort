@@ -10,8 +10,8 @@ algorithm:
     num_critics: 2
     nstep: 1
     nstep_reward_reduction: sum
-    gamma: 0.99
-    rho: 0.995
+    gamma: 0.95
+    rho: 0.999
     alpha: 0.2
 
 actor:

@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> system_names = {"sac"};
 
   for (auto& system : system_names) {
-    TestSystem(Constant, system, 20000, 0, 100, true);
+    //TestSystem(Constant, system, 20000, 0, 100, true);
 
     //TestSystem(Predictable, system, 20000, 0, 100, true);
 
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
 
     //TestSystem(Action, system, 20000, 1000, 100, true);
 
-    //TestSystem(ActionState, system, 20000, 1000, 100, true);
+    TestSystem(ActionState, system, 20000, 1000, 100, true);
   }
 
   return 0;

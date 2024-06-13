@@ -38,7 +38,7 @@ std::vector<torch::Tensor> SACMLPModel::forward(const std::vector<torch::Tensor>
   // concatenate inputs
   auto x = torch::cat(inputs, 1);
   x = x.reshape({x.size(0), -1});
-  torch::Tensor y;
+  torch::Tensor y, z;
 
   for (int i = 0; i < layer_sizes.size() - 1; ++i) {
     if (i < layer_sizes.size() - 2) {
@@ -46,13 +46,13 @@ std::vector<torch::Tensor> SACMLPModel::forward(const std::vector<torch::Tensor>
       x = torch::relu(encoder_layers[i]->forward(x) + biases[i]);
       x = torch::dropout(x, dropout, is_training());
     } else {
-      // x
-      x = out_layers[0]->forward(x) + out_biases[0];
       // y
-      y = out_layers[1]->forward(x) + out_biases[1];
+      y = out_layers[0]->forward(x) + out_biases[0];
+      // z
+      z = out_layers[1]->forward(x) + out_biases[1];
     }
   }
-  return std::vector<torch::Tensor>{x, y};
+  return std::vector<torch::Tensor>{y, z};
 }
 
 } // namespace torchfort

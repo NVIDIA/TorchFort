@@ -59,11 +59,12 @@ void GaussianPolicy::load(const std::string& fname) { p_mu_log_sigma_->load(fnam
 torch::Device GaussianPolicy::device() const{ return p_mu_log_sigma_->device(); }
 
 std::shared_ptr<NormalDistribution> GaussianPolicy::getDistribution_(torch::Tensor state) {
-  // predict mu
+  // forward step
   auto fwd = p_mu_log_sigma_->forward(std::vector<torch::Tensor>{state});
+  // extract mu
   auto& action_mu = fwd[0];
+  // extract sigma
   auto& action_log_sigma = fwd[1];
-  // predict sigma
   auto action_sigma = torch::exp(torch::clamp(action_log_sigma, log_sigma_min_, log_sigma_max_));
   
   // create distribution
@@ -154,11 +155,13 @@ torch::Device GaussianACPolicy::device() const{ return p_mu_log_sigma_value_->de
 std::tuple<std::shared_ptr<NormalDistribution>, torch::Tensor> GaussianACPolicy::getDistributionValue_(torch::Tensor state) {
   // run fwd pass
   auto fwd = p_mu_log_sigma_value_->forward(std::vector<torch::Tensor>{state});
+  // extract mu
   auto& action_mu = fwd[0];
+  // extract sigma
   auto& action_log_sigma = fwd[1];
-  auto& value = fwd[2];
-  // predict sigma
   auto action_sigma = torch::exp(torch::clamp(action_log_sigma, log_sigma_min_, log_sigma_max_));
+  // extract value
+  auto& value = fwd[2];
 
   // create distribution
   return std::make_tuple(std::make_shared<NormalDistribution>(action_mu, action_sigma), value);

@@ -159,8 +159,6 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     q_tens = torch::minimum(q_tens, q_tmp_tensor);
   }
   torch::Tensor p_loss_tensor = -torch::mean(q_tens - action_old_pred_log_prob * alpha);
-  // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
-  // p_loss_tensor = -p_loss_tensor;
 
   // bwd pass
   p_model.optimizer->zero_grad();

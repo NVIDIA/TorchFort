@@ -5,6 +5,7 @@ set(test_targets
   test_rollout_buffer
   test_distributions
   test_off_policy
+  test_on_policy
   )
 
 add_executable(test_replay_buffer)
@@ -29,6 +30,12 @@ add_executable(test_off_policy)
 target_sources(test_off_policy
   PRIVATE
   test_off_policy.cpp
+  )
+
+add_executable(test_on_policy)
+target_sources(test_on_policy
+  PRIVATE
+  test_on_policy.cpp
   )
 
 
@@ -70,3 +77,4 @@ install(
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/td3.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/ddpg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/sac.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/ppo.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)

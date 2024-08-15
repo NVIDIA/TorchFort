@@ -55,7 +55,10 @@ public:
   // disable copy constructor
   RolloutBuffer(const RolloutBuffer&) = delete;
   // base constructor
-  RolloutBuffer(size_t size, int device) : size_(size), device_(get_device(device)), last_episode_starts_(true) {}
+  RolloutBuffer(size_t size, int device) : size_(size), device_(get_device(device)), last_episode_starts_(true), indices_(size), pos_(0), rng_() {
+    // fill index vector with indices
+    std::generate(indices_.begin(), indices_.end(), [n = 0] () mutable { return n++; });
+  }
 
   // accessors
   size_t getSize() const {return size_;}
@@ -75,9 +78,19 @@ public:
   virtual torch::Device device() const = 0;
 
 protected:
+
+   // shuffling
+  void resetIndices_() {
+    std::shuffle(indices_.begin(), indices_.end(), rng_);
+    pos_ = 0;
+  }
+  
   size_t size_;
   torch::Device device_;
   bool last_episode_starts_;
+  std::vector<int> indices_;
+  size_t pos_;
+  std::mt19937_64 rng_;
 };
 
 class GAELambdaRolloutBuffer : public RolloutBuffer, public std::enable_shared_from_this<RolloutBuffer> {
@@ -85,7 +98,7 @@ class GAELambdaRolloutBuffer : public RolloutBuffer, public std::enable_shared_f
 public:
   // constructor
   GAELambdaRolloutBuffer(size_t size, float gamma, float lambda, int device)
-    : RolloutBuffer(size, device), finalized_(false), gamma_(gamma), lambda_(lambda), rng_(), returns_(size), advantages_(size) {}
+    : RolloutBuffer(size, device), finalized_(false), gamma_(gamma), lambda_(lambda), returns_(size), advantages_(size) {}
 
   // disable copy constructor
   GAELambdaRolloutBuffer(const GAELambdaRolloutBuffer&) = delete;
@@ -138,6 +151,11 @@ public:
       next_value = q;
       next_non_terminal = (e ? 0. : 1.);
     }
+
+    // create shuffled index list for sampling:
+    resetIndices_();
+
+    // set finalized to true
     finalized_ = true;
     
     return;
@@ -155,25 +173,35 @@ public:
     torch::NoGradGuard no_grad;
 
     // we need those
-    auto stens_list = std::vector<torch::Tensor>(batch_size);
-    auto atens_list = std::vector<torch::Tensor>(batch_size);
-    auto q_list = std::vector<float>(batch_size);
-    auto log_p_list = std::vector<float>(batch_size);
-    auto adv_list = std::vector<float>(batch_size);
-    auto ret_list = std::vector<float>(batch_size);
+    std::vector<torch::Tensor> stens_list, atens_list;
+    std::vector<float> q_list, log_p_list, adv_list, ret_list;
 
-    // we need to exclude the last element here, since it is a closed interval
-    std::uniform_int_distribution<size_t> uniform_dist(0, size_ - 1);
-    for (int sample = 0; sample < batch_size; sample++) {
-      auto index = uniform_dist(rng_);
+    //std::uniform_int_distribution<size_t> uniform_dist(0, size_ - 1);
+    // go through the buffer in random order
+    auto lower = pos_;
+    auto upper = std::min(pos_ + static_cast<size_t>(batch_size), size_);
+    for (size_t sample = lower; sample < upper; sample++) {
+      //auto index = uniform_dist(rng_);
+      // switch to sampling without replacement
+      auto index = indices_[sample];
 
       // get buffer entry
-      float r;
+      torch::Tensor stens, atens;
+      float r, q, log_p;
       bool d;
-      std::tie(stens_list[sample], atens_list[sample], r, q_list[sample], log_p_list[sample], d) = buffer_.at(index);
-      adv_list[sample] = advantages_[index];
-      ret_list[sample] = returns_[index];
+      std::tie(stens, atens, r, q, log_p, d) = buffer_.at(index);
+
+      // append to lists
+      stens_list.push_back(stens);
+      atens_list.push_back(atens);
+      q_list.push_back(q);
+      log_p_list.push_back(log_p);
+      adv_list.push_back(advantages_[index]);
+      ret_list.push_back(returns_[index]);
     }
+
+    // update buffer position
+    pos_ = upper;
     
     // stack the lists
     auto stens = torch::stack(stens_list, 0).clone();
@@ -185,6 +213,12 @@ public:
     auto logptens = torch::from_blob(log_p_list.data(), {batch_size, 1}, options).clone();
     auto advtens = torch::from_blob(adv_list.data(), {batch_size, 1}, options).clone();
     auto rettens = torch::from_blob(ret_list.data(), {batch_size, 1}, options).clone();
+
+    // some finalization checks:
+    if (pos_ >= size_) {
+      // shuffle vector and reset position: this allows for continued sampling
+      resetIndices_();
+    }
 
     return std::make_tuple(stens, atens, qtens, logptens, advtens, rettens);
   }
@@ -384,8 +418,6 @@ private:
   std::deque<BufferEntry> buffer_;
   // additional storage for returns and advantage
   std::vector<float> returns_, advantages_;
-  // rng
-  std::mt19937_64 rng_;
 };
 
 } // namespace rl

@@ -12,6 +12,8 @@ public:
 
   virtual std::tuple<torch::Tensor, float, bool> step(torch::Tensor) = 0;
   virtual std::tuple<torch::Tensor, float> initialize() = 0;
+  virtual float expectedReward(const float&, const float&) = 0;
+  virtual float spotValue(const float&, const float&, const float&) = 0;
 
 protected:
   unsigned int num_steps_per_episode_;
@@ -40,6 +42,14 @@ public:
     return std::make_tuple(torch::zeros(state_shape_, torch::kFloat32), default_reward_);
   }
 
+  float expectedReward(const float& action_min, const float& action_max) {
+    return default_reward_;
+  }
+
+  float spotValue(const float& action_min, const float& action_max, const float& gamma) {
+    return default_reward_;
+  }
+
 private:
   float default_reward_;
   torch::IntArrayRef state_shape_;
@@ -66,6 +76,15 @@ public:
 
   std::tuple<torch::Tensor, float> initialize() {
     return std::make_tuple(torch::zeros(state_shape_, torch::kFloat32), 0.);
+  }
+
+  float	expectedReward(const float& action_min, const float& action_max) {
+    return final_reward_;
+  }
+
+  float spotValue(const float& action_min, const float& action_max, const float& gamma) {
+    unsigned int steps_remaining = (num_steps_ % num_steps_per_episode_);
+    return std::pow(gamma, steps_remaining) * final_reward_;
   }
 
 private:
@@ -98,13 +117,19 @@ public:
     torch::NoGradGuard no_grad;
     num_steps_++;
 
-    // backup the current reward
-    float reward = reward_;
-
-    // compute next reward
+    // compute next reward: backup old reward before
+    reward_prev_ = reward_;
     reward_ = 2 * static_cast<float>(udist_(*rngptr_)) - 1.;
     state_.fill_(reward_);
-    return std::make_tuple(state_.clone(), reward, (num_steps_ % num_steps_per_episode_ == 0));
+    return std::make_tuple(state_.clone(), reward_prev_, (num_steps_ % num_steps_per_episode_ == 0));
+  }
+
+  float expectedReward(const float& action_min, const float& action_max) {
+    return 0.;
+  }
+
+  float spotValue(const float& action_min, const float& action_max, const float& gamma) {
+    return reward_prev_;
   }
 
 private:
@@ -113,7 +138,7 @@ private:
   torch::IntArrayRef state_shape_;
   torch::IntArrayRef action_shape_;
   torch::Tensor state_;
-  float reward_;
+  float reward_, reward_prev_;
 };
 
 // this env produces a reward proprotional to the mean value of the action: useful to test if the
@@ -139,6 +164,14 @@ public:
 
     // compute next reward
     return std::make_tuple(torch::zeros(state_shape_, torch::kFloat32), reward, done);
+  }
+
+  float expectedReward(const float& action_min, const float& action_max) {
+    return action_max;
+  }
+
+  float spotValue(const float& action_min, const float& action_max, const float& gamma) {
+    return action_max;
   }
 
 private:
@@ -173,10 +206,19 @@ public:
     float reward_fact = torch::mean(action).item<float>();
     float reward = reward_fact * state_val_;
 
-    // compute next reward
+    // compute next reward, backup old state value before
+    state_val_prev_ = state_val_;
     state_val_ = 2 * static_cast<float>(udist_(*rngptr_)) - 1.;
     state_.fill_(state_val_);
     return std::make_tuple(state_.clone(), reward, (num_steps_ % num_steps_per_episode_ == 0));
+  }
+
+  float expectedReward(const float& action_min, const float& action_max) {
+    return 0.5 * ((-1. * action_min) + (1. * action_max));
+  }
+
+  float spotValue(const float& action_min, const float& action_max, const float& gamma) {
+    return (state_val_prev_ < 0 ? action_min : action_max) * state_val_prev_;
   }
 
 private:
@@ -185,5 +227,5 @@ private:
   torch::IntArrayRef state_shape_;
   torch::IntArrayRef action_shape_;
   torch::Tensor state_;
-  float state_val_;
+  float state_val_, state_val_prev_;
 };

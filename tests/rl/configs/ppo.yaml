@@ -1,0 +1,56 @@
+general:
+  report_frequency: 1
+  enable_wandb_hook: 0
+  verbose: 1
+
+algorithm:
+  type: ppo
+  parameters:
+    batch_size: 8
+    gamma: 0.99
+    gae_lambda: 0.95
+    epsilon: 0.2
+    clip_q: 0.
+    target_kl_divergence: 0.02
+    entropy_loss_coefficient: 0.
+    value_loss_coefficient: 0.5
+    max_grad_norm: 0.5
+    normalize_advantage: True
+
+actor:
+  type: gaussian_ac
+  parameters:
+    a_low: -1.0
+    a_high: 1.0
+    
+rollout_buffer:
+  type: gae_lambda
+  parameters:
+    size: 64
+
+actor_critic_model:
+  type: ActorCriticMLP
+  parameters:
+    dropout: 0.0
+    encoder_layer_sizes: [1, 16, 8]
+    actor_layer_sizes: [8, 1]
+    value_layer_sizes: [8, 1]
+    state_dependent_sigma: False
+    log_sigma_init: 0.
+
+optimizer:
+  type: adam
+  parameters:
+    learning_rate: 1e-4
+    beta1: 0.9
+    beta2: 0.999
+    weight_decay: 0
+    eps: 1e-6
+    amsgrad: 0
+
+lr_scheduler:
+  type: linear
+  parameters:
+    total_iters: 40000
+    start_factor: 1.0
+    end_factor: 0.01

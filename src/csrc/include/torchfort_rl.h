@@ -487,13 +487,13 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
 torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer(const char* name,
                 void* state, size_t state_dim, int64_t* state_shape,
                 void* action, size_t action_dim, int64_t* action_shape,
-                const void* reward, bool initial_state,
+                const void* reward, bool final_state,
                 torchfort_datatype_t dtype, cudaStream_t stream);
 
 torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* name,
                 void* state, size_t state_dim, int64_t* state_shape,
                 void* action, size_t action_dim, int64_t* action_shape,
-                const void* reward, bool initial_state,
+                const void* reward, bool final_state,
                 torchfort_datatype_t dtype, cudaStream_t stream);
 
 /**

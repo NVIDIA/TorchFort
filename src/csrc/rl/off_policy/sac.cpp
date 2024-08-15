@@ -41,6 +41,33 @@ namespace rl {
 
 namespace off_policy {
 
+void AlphaModel::setup(const float& alpha_value) {
+  float alpha_val = alpha_value;
+  alpha_coeff_ = true;
+  if (alpha_val < 0.) {
+    THROW_INVALID_USAGE("Invalid entropy coefficient alpha: has to be >= 0.");
+  }
+  
+  if (alpha_val == 0.) {
+    alpha_coeff_ = false;
+    // make sure the log does not blow up, we check for alpha_coeff later                                                                                                
+    alpha_val = 0.01;
+  }
+  log_alpha_ = register_parameter("log_alpha", torch::tensor({std::log(alpha_val)}, torch::TensorOptions().dtype(torch::kFloat32)));
+}
+
+// Implement the forward function.
+torch::Tensor AlphaModel::forward(torch::Tensor input) {
+  torch::Tensor output;
+  if (alpha_coeff_) {
+    output = torch::exp(log_alpha_) * input;
+  } else {
+    output = input * 0.;
+  }
+  return output;
+}
+
+
 SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
 		     int model_device, int rb_device)
   : RLOffPolicySystem(model_device, rb_device) {
@@ -50,13 +77,17 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
     std::set<std::string> supported_params{"batch_size", "num_critics", "nstep", "nstep_reward_reduction",
-                                           "gamma",      "rho",         "alpha"};
+                                           "gamma",      "rho",         "alpha", "target_entropy"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     num_critics_ = params.get_param<int>("num_critics", 2)[0];
     gamma_ = params.get_param<float>("gamma")[0];
     rho_ = params.get_param<float>("rho")[0];
-    alpha_ = params.get_param<float>("rho")[0];
+    // alpha needs special care
+    AlphaModel am;
+    am.setup(params.get_param<float>("alpha", 0.)[0]);
+    alpha_model_ = std::make_shared<AlphaModel>(am);
+    target_entropy_ = params.get_param<float>("target_entropy_", 1.)[0];
     nstep_ = params.get_param<int>("nstep", 1)[0];
     auto redmode = params.get_param<std::string>("nstep_reward_reduction", "sum")[0];
     if (redmode == "sum") {
@@ -163,6 +194,14 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
     THROW_INVALID_USAGE("Missing optimizer block in configuration file.");
   }
 
+  // in this case we want to optimize the entropy coefficient
+  if (system_node["alpha_optimizer"]) {
+    // register alpha as a new parameter
+    alpha_optimizer_ = get_optimizer(system_node["alpha_optimizer"], alpha_model_->parameters());
+  } else {
+    alpha_optimizer_ = nullptr;
+  }
+
   // get schedulers
   // policy model
   if (system_node["policy_lr_scheduler"]) {
@@ -178,6 +217,15 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
   } else {
     THROW_INVALID_USAGE("Missing critic_lr_scheduler block in configuration file.");
   }
+
+  // alpha parameter
+#if 0
+  if (system_node["alpha_lr_scheduler"] && alpha_optimizer_) {
+    alpha_lr_scheduler_ = get_lr_scheduler(system_node["alpha_lr_scheduler"], alpha_optimizer_);
+  } else {
+    alpha_lr_scheduler_ = nullptr;
+  }
+#endif
 
   // Setting up general options
   system_state_ = get_state(name, system_node);
@@ -196,7 +244,16 @@ void SACSystem::printInfo() const {
   std::cout << "reward_nstep_mode = " << nstep_reward_reduction_ << std::endl;
   std::cout << "gamma = " << gamma_ << std::endl;
   std::cout << "rho = " << rho_ << std::endl;
-  std::cout << "alpha = " << alpha_ << std::endl;
+  if (alpha_model_->alpha_coeff_) {
+    std::cout << "alpha = " << torch::exp(alpha_model_->log_alpha_).item<float>() << std::endl;
+  } else {
+    std::cout << "alpha = " << 0. << std::endl;
+  }
+  if (alpha_optimizer_) {
+    std::cout << "learnable alpha = " << true << std::endl;
+  } else {
+    std::cout << "learnable alpha = " << false << std::endl;
+  }
   std::cout << "a_low = " << a_low_ << std::endl;
   std::cout << "a_high = " << a_high_ << std::endl;
   std::cout << std::endl;
@@ -310,6 +367,31 @@ void SACSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
     save_model_pack(q_model_target, root_dir / subdir, false);
   }
 
+  // alpha
+  if (alpha_optimizer_) {
+
+    std::filesystem::path alpha_root_dir = root_dir / "alpha";
+    if (!std::filesystem::exists(alpha_root_dir)) {
+      bool rv = std::filesystem::create_directory(alpha_root_dir);
+      if (!rv) {
+        THROW_INVALID_USAGE("Could not create alpha checkpoint directory " + alpha_root_dir.native() + ".");
+      }
+    }
+    
+    auto model_path = alpha_root_dir / "model.pt";
+    alpha_model_->to(torch::Device(torch::kCPU));
+    torch::save(alpha_model_, model_path.native());
+    alpha_model_->to(model_device_);
+
+    auto optimizer_path = alpha_root_dir / "optimizer.pt";
+    torch::save(*alpha_optimizer_, optimizer_path.native());
+
+    if (alpha_lr_scheduler_) {
+      auto lr_path = alpha_root_dir / "lr.pt";
+      alpha_lr_scheduler_->save(lr_path.native());
+    }
+  }
+
   // system state
   {
     auto state_path = root_dir / "state.pt";
@@ -369,6 +451,34 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     auto q_model_target = q_models_target_[i];
     std::string subdir = "critic_target_" + std::to_string(i);
     load_model_pack(q_model_target, root_dir / subdir, false);
+  }
+
+  // alpha
+  if (alpha_optimizer_) {
+    auto model_path = root_dir / "alpha" / "model.pt";
+    if (!std::filesystem::exists(model_path)) {
+      THROW_INVALID_USAGE("Could not find " + model_path.native() + ".");
+    }
+    alpha_model_->to(torch::Device(torch::kCPU));
+    torch::load(alpha_model_, model_path.native());
+    alpha_model_->to(model_device_);
+
+    // connect model and optimizer parameters:
+    alpha_optimizer_->parameters() = alpha_model_->parameters();
+
+    auto optimizer_path = root_dir / "alpha" / "optimizer.pt";
+    if (!std::filesystem::exists(optimizer_path)) {
+      THROW_INVALID_USAGE("Could not find " + optimizer_path.native() + ".");
+    }
+    torch::load(*(alpha_optimizer_), optimizer_path.native());
+
+    if (alpha_lr_scheduler_) {
+      auto lr_path = root_dir / "alpha" / "lr.pt";
+      if (!std::filesystem::exists(lr_path)) {
+	THROW_INVALID_USAGE("Could not find " + lr_path.native() + ".");
+      }
+      alpha_lr_scheduler_->load(lr_path.native(), *(alpha_optimizer_));
+    }
   }
 
   // system state
@@ -491,13 +601,11 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   }
   
   // train step
-  std::vector<float> q_loss_vals;
-  train_sac(p_model_, q_models_, q_models_target_, s, sp, a, r, d, static_cast<float>(std::pow(gamma_, nstep_)), rho_,
-            alpha_, p_loss_val, q_loss_vals);
-
-  // compute average of q_loss_vals:
-  q_loss_val = std::accumulate(q_loss_vals.begin(), q_loss_vals.end(), decltype(q_loss_vals)::value_type(0)) /
-               float(q_loss_vals.size());
+  train_sac(p_model_, q_models_, q_models_target_,
+	    s, sp, a, r, d,
+	    alpha_model_, alpha_optimizer_, alpha_lr_scheduler_,
+	    target_entropy_, static_cast<float>(std::pow(gamma_, nstep_)), rho_,
+            p_loss_val, q_loss_val);
 }
 
 } // namespace off_policy

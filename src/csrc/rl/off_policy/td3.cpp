@@ -519,8 +519,10 @@ void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
   }
   
   // train step
-  train_td3(p_model_, p_model_target_, q_models_, q_models_target_, s, sp, a, ap, r, d,
-            static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_val, update_policy);
+  train_td3(p_model_, p_model_target_, q_models_, q_models_target_,
+	    s, sp, a, ap, r, d,
+            static_cast<float>(std::pow(gamma_, nstep_)), rho_,
+	    p_loss_val, q_loss_val, update_policy);
 }
 
 } // namespace off_policy

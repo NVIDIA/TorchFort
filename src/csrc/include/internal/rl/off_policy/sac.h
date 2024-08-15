@@ -57,13 +57,28 @@ namespace rl {
 
 namespace off_policy {
 
+  //small helper model for trainable alpha coefficient 
+struct AlphaModel: torch::nn::Module {
+  
+  torch::Tensor forward(torch::Tensor input);
+  void setup(const float& alpha_value);
+
+  bool alpha_coeff_;
+  torch::Tensor log_alpha_;
+  
+};
+
 // implementing https://spinningup.openai.com/en/latest/algorithms/sac.html#pseudocode
 template <typename T>
 void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models,
-               const std::vector<ModelPack>& q_models_target, torch::Tensor state_old_tensor,
-               torch::Tensor state_new_tensor, torch::Tensor action_old_tensor, torch::Tensor reward_tensor,
-               torch::Tensor d_tensor, const T& alpha, const T& gamma, const T& rho, T& p_loss_val,
-               std::vector<T>& q_loss_vals) {
+               const std::vector<ModelPack>& q_models_target,
+	       torch::Tensor state_old_tensor, torch::Tensor state_new_tensor,
+	       torch::Tensor action_old_tensor, torch::Tensor reward_tensor, torch::Tensor d_tensor,
+	       const std::shared_ptr<AlphaModel>& alpha_model,
+	       const std::shared_ptr<torch::optim::Optimizer>& alpha_optimizer,
+	       const std::shared_ptr<BaseLRScheduler>& alpha_lr_scheduler,
+	       const T& target_entropy, const T& gamma, const T& rho,
+	       T& p_loss_val, T& q_loss_val) {
 
   // nvtx marker
   torchfort::nvtx::rangePush("torchfort_train_sac");
@@ -92,6 +107,48 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   // loss is fixed by algorithm
   auto q_loss_func = torch::nn::MSELoss(torch::nn::MSELossOptions().reduction(torch::kMean));
 
+  // if we are updating the entropy coefficient, do that first
+  torch::Tensor alpha_loss;
+  if (alpha_optimizer) {
+    // compute target entropy
+    float targ_ent;
+    if (target_entropy > 0.) {
+      // we exclude the first dim which is the batch dim
+      targ_ent = - float(action_old_tensor.size(1));
+      for(int i=2; i<action_old_tensor.dim(); ++i) {
+	targ_ent *= float(action_old_tensor.size(i));
+      }
+    } else {
+      targ_ent = target_entropy;
+    }
+
+    // compute action log prob
+    torch::Tensor action_tensor, action_log_prob;
+    {
+      torch::NoGradGuard no_grad;
+      std::tie(action_tensor, action_log_prob) = p_model.model->forwardNoise(state_old_tensor);
+      action_log_prob =	action_log_prob + targ_ent;
+    }
+
+    alpha_loss = - torch::mean(alpha_model->log_alpha_ * action_log_prob);
+    alpha_loss.backward();
+
+    // reduce gradients
+    if (p_model.comm) {
+      std::vector<torch::Tensor> grads;
+      grads.reserve(alpha_model->parameters().size());
+      for (const auto& p : alpha_model->parameters()) {
+	grads.push_back(p.grad());
+      }
+      p_model.comm->allreduce(grads, true);
+    }
+    
+    alpha_optimizer->step();
+    if (alpha_lr_scheduler) {
+      alpha_lr_scheduler->step();
+    }
+  }
+  
   // policy function
   // compute y: use the target models for q_new, no grads
   torch::Tensor y_tensor;
@@ -108,18 +165,27 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
           q_models_target[i].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
       q_new_tensor = torch::minimum(q_new_tensor, q_tmp_tensor);
     }
-    y_tensor = torch::Tensor(reward_tensor + (q_new_tensor - alpha * action_new_log_prob) * gamma * (1. - d_tensor));
+    // entropy regularization
+    q_new_tensor = q_new_tensor - alpha_model->forward(action_new_log_prob);
+
+    // target construction
+    y_tensor = torch::Tensor(reward_tensor + q_new_tensor * gamma * (1. - d_tensor));
   }
 
   // backward and update step
-  q_loss_vals.clear();
-  for (const auto& q_model : q_models) {
+  torch::Tensor q_old_tensor = q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+  torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
+  q_models[0].optimizer->zero_grad();
+  for (int i = 1; i < q_models.size(); ++i) {
     // compute loss
-    auto q_old_tensor = q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
-    auto q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
-    q_model.optimizer->zero_grad();
-    q_loss_tensor.backward();
+    q_old_tensor = q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+    q_loss_tensor = q_loss_tensor + q_loss_func->forward(q_old_tensor, y_tensor);
+    q_models[i].optimizer->zero_grad();
+  }
+  q_loss_tensor.backward();
 
+  // update critics
+  for (const auto& q_model : q_models) {
     // grad comm
     if (q_model.comm) {
       std::vector<torch::Tensor> grads;
@@ -133,10 +199,17 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     // optimizer step
     q_model.optimizer->step();
     q_model.lr_scheduler->step();
-
-    // save loss values
-    q_loss_vals.push_back(q_loss_tensor.item<T>());
   }
+
+  // save loss values
+  torch::Tensor q_loss_mean_tensor = q_loss_tensor;
+  if (q_models[0].comm) {
+    torch::NoGradGuard no_grad;
+    std::vector<torch::Tensor> q_loss_mean = {q_loss_tensor};
+    q_models[0].comm->allreduce(q_loss_mean, true);
+    q_loss_mean_tensor = q_loss_mean[0];
+  }
+  q_loss_val = q_loss_mean_tensor.item<T>();
 
   // policy function
   // freeze the q_models
@@ -158,7 +231,11 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
         q_models_target[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
     q_tens = torch::minimum(q_tens, q_tmp_tensor);
   }
-  torch::Tensor p_loss_tensor = -torch::mean(q_tens - action_old_pred_log_prob * alpha);
+  // entropy regularization
+  q_tens = q_tens - alpha_model->forward(action_old_pred_log_prob);
+
+  // compute loss
+  torch::Tensor p_loss_tensor = -torch::mean(q_tens);
 
   // bwd pass
   p_model.optimizer->zero_grad();
@@ -193,25 +270,21 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
 
   // print some info
   // value functions
-  for (int i = 0; i < q_models.size(); ++i) {
-    auto q_model = q_models[i];
-    auto state = q_models[i].state;
-    std::string qname = "critic_" + std::to_string(i);
-    state->step_train++;
-    if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
-      std::stringstream os;
-      os << "model: " << qname << ", ";
-      os << "step_train: " << state->step_train << ", ";
-      os << "loss: " << q_loss_vals[i] << ", ";
-      auto lrs = get_current_lrs(q_model.optimizer);
-      os << "lr: " << lrs[0];
-      if (!q_model.comm || (q_model.comm && q_model.comm->rank == 0)) {
-        torchfort::logging::print(os.str(), torchfort::logging::info);
-        if (state->enable_wandb_hook) {
-          torchfort::wandb_log(q_model.state, q_model.comm, qname.c_str(), "train_loss", state->step_train,
-                               q_loss_vals[i]);
-          torchfort::wandb_log(q_model.state, q_model.comm, qname.c_str(), "train_lr", state->step_train, lrs[0]);
-        }
+  auto q_model = q_models[0];
+  auto qstate = q_models[0].state;
+  qstate->step_train++;
+  if (qstate->report_frequency > 0 && qstate->step_train % qstate->report_frequency == 0) {
+    std::stringstream os;
+    os << "model: critic,";
+    os << "step_train: " << qstate->step_train << ", ";
+    os << "loss: " << q_loss_val << ", ";
+    auto lrs = get_current_lrs(q_model.optimizer);
+    os << "lr: " << lrs[0];
+    if (!q_model.comm || (q_model.comm && q_model.comm->rank == 0)) {
+      torchfort::logging::print(os.str(), torchfort::logging::info);
+      if (qstate->enable_wandb_hook) {
+	torchfort::wandb_log(qstate, q_model.comm, "critic_0", "train_loss", qstate->step_train, q_loss_val);
+	torchfort::wandb_log(qstate, q_model.comm, "critic_0", "train_lr", qstate->step_train, lrs[0]);
       }
     }
   }
@@ -221,9 +294,7 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   state->step_train++;
   if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
     std::stringstream os;
-    os << "model: "
-       << "actor"
-       << ", ";
+    os << "model: actor, ";
     os << "step_train: " << state->step_train << ", ";
     os << "loss: " << p_loss_val << ", ";
     auto lrs = get_current_lrs(p_model.optimizer);
@@ -231,8 +302,25 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     if (!p_model.comm || (p_model.comm && p_model.comm->rank == 0)) {
       torchfort::logging::print(os.str(), torchfort::logging::info);
       if (state->enable_wandb_hook) {
-        torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_loss", state->step_train, p_loss_val);
-        torchfort::wandb_log(p_model.state, p_model.comm, "actor", "train_lr", state->step_train, lrs[0]);
+        torchfort::wandb_log(state, p_model.comm, "actor", "train_loss", state->step_train, p_loss_val);
+        torchfort::wandb_log(state, p_model.comm, "actor", "train_lr", state->step_train, lrs[0]);
+      }
+    }
+
+    if (alpha_optimizer) {
+      float alpha_loss_val = alpha_loss.item<T>();
+      std::stringstream osa;
+      osa << "model: alpha, ";
+      osa << "step_train: " << state->step_train << ", ";
+      osa << "loss: " << alpha_loss_val << ", ";
+      auto lrs = get_current_lrs(alpha_optimizer);
+      osa << "lr: " << lrs[0];
+      if (!p_model.comm || (p_model.comm && p_model.comm->rank == 0)) {
+	torchfort::logging::print(osa.str(), torchfort::logging::info);
+	if (state->enable_wandb_hook) {
+	  torchfort::wandb_log(state, p_model.comm, "alpha", "train_loss", state->step_train, alpha_loss_val);
+	  torchfort::wandb_log(state, p_model.comm, "alpha", "train_lr", state->step_train, lrs[0]);
+	}
       }
     }
   }
@@ -300,8 +388,11 @@ private:
   RewardReductionMode nstep_reward_reduction_;
   float gamma_;
   float rho_;
-  float alpha_;
   float a_low_, a_high_;
+  std::shared_ptr<AlphaModel> alpha_model_;
+  std::shared_ptr<torch::optim::Optimizer> alpha_optimizer_;
+  std::shared_ptr<BaseLRScheduler> alpha_lr_scheduler_;
+  float target_entropy_;
 };
 
 } // namespace off_policy

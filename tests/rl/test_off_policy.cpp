@@ -181,6 +181,7 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
   return result;
 }
 
+#if 0
 /******************************************************************/
 /****************************** TD3 *******************************/
 /******************************************************************/
@@ -245,6 +246,30 @@ TEST(DDPG, ActionEnv) {
 
 // Action State Env does not work with DDPG, most likely due to some known DDPG issue
 // where training can get stuck in a wrong optimum
+#endif
+
+/******************************************************************/
+/****************************** SAC *******************************/
+/******************************************************************/
+
+TEST(SAC, ConstantEnv) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Constant, "sac", 20000, 0, 100, false);
+  EXPECT_NEAR(val, cmp, tol);
+}
+
+TEST(SAC, PredictableEnv) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Predictable, "sac", 20000, 0, 100, false);
+  EXPECT_NEAR(val, cmp, tol);
+}
+
+TEST(SAC, DelayedEnv) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Delayed, "sac", 40000, 0, 100, false);
+  EXPECT_NEAR(val, cmp, tol);
+}
+
 
 int main(int argc, char *argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

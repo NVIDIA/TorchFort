@@ -1,12 +1,33 @@
+#include <gtest/gtest.h>
+#include <sstream>
 #include "torchfort.h"
 #include "environments.h"
 
 enum EnvMode { Constant, Predictable, Delayed, Action, ActionState };
 
-std::tuple<float, float> TestSystem(const EnvMode mode, const std::string& system,
-				    unsigned int num_explore_iters, unsigned int num_exploit_iters,
-				    unsigned int num_eval_iters=100, unsigned int num_grad_steps=1,
-				    bool verbose=false) {
+struct CoutRedirect {
+  CoutRedirect( std::streambuf * new_buffer ) : old( std::cout.rdbuf( new_buffer ) ) {}
+
+  ~CoutRedirect( ) {
+    std::cout.rdbuf( old );
+  }
+
+private:
+  std::streambuf * old;
+};
+
+std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string& system,
+					   unsigned int num_explore_iters, unsigned int num_exploit_iters,
+					   unsigned int num_eval_iters=100, unsigned int num_grad_steps=1,
+					   bool verbose=false) {
+
+  // capture stdout
+  std::stringstream buffer;
+
+  std::shared_ptr<CoutRedirect> red;
+  if (!verbose) {
+    red = std::make_shared<CoutRedirect>(buffer.rdbuf());
+  }
 
   // set seed
   torch::manual_seed(666);
@@ -17,7 +38,7 @@ std::tuple<float, float> TestSystem(const EnvMode mode, const std::string& syste
   std::vector<int64_t> state_batch_shape{1,1};
   std::vector<int64_t> action_batch_shape{1,1};
   std::vector<int64_t> reward_batch_shape{1,1};
-  float reward, reward_estimate, p_loss, q_loss;
+  float reward, q_estimate, p_loss, q_loss;
   bool done;
   bool is_ready;
   float qdiff = 0.;
@@ -104,11 +125,12 @@ std::tuple<float, float> TestSystem(const EnvMode mode, const std::string& syste
       tstat = torchfort_rl_on_policy_evaluate("test",
 					      state.data_ptr(), 2, state_batch_shape.data(),
 					      action.data_ptr(), 2, action_batch_shape.data(),
-					      &reward_estimate, 2, reward_batch_shape.data(),
+					      &q_estimate, 2, reward_batch_shape.data(),
 					      TORCHFORT_FLOAT, 0);
 
       if (iter >= num_train_iters) {
-	qdiff += std::abs(reward - reward_estimate);
+	auto q_expected = env->spotValue(-1., 1., 0.95);
+	qdiff += std::abs(q_expected - q_estimate);
 	running_reward += reward;
       }
 
@@ -118,7 +140,7 @@ std::tuple<float, float> TestSystem(const EnvMode mode, const std::string& syste
 		  << " state: "  << state.item<float>()
 		  << " action: " << action.item<float>()
 		  << " reward: " << reward
-		  << " q: " << reward_estimate
+		  << " q: " << q_estimate
 		  << " done: " << done << std::endl;
       }
 
@@ -130,33 +152,61 @@ std::tuple<float, float> TestSystem(const EnvMode mode, const std::string& syste
       iter++;
     }
   }
-
+  
   // compute averages:
   qdiff /= float(num_eval_iters);
   running_reward /= float(num_eval_iters);
 
   if (verbose) {
-    std::cout << "Q-difference: " << qdiff << " average reward: " << running_reward << std::endl;
+    std::cout << "Q-difference: " << qdiff
+              << " average reward: " << running_reward
+              << " (expected: " << env->expectedReward(-1., 1.) << ")" << std::endl;
   }
 
-  return std::make_tuple(qdiff, running_reward);
+  // do evaluation                                                                                                                                                         
+  std::tuple<float, float, float> result;
+  if (mode == Constant) {
+    // the test is successful if reward is predicted correctly
+    result = std::make_tuple(qdiff, 0., 1e-2);
+  } else if (mode == Predictable) {
+    // the test is successful if reward is predicted correctly
+    result = std::make_tuple(qdiff, 0., 1e-2);
+  } else if (mode == Delayed) {
+    // the test is successful if reward is predicted correctly
+    result = std::make_tuple(qdiff, 0., 1e-1);
+  } else if (mode == Action) {
+    // here we just check whether we achieve good reward
+    result = std::make_tuple(running_reward, 1., 1e-2);
+  } else if (mode == ActionState) {
+    // here we also expect great reward
+    result = std::make_tuple(running_reward, 1., 1e-2);
+  }
+
+  return result;
+}
+
+
+/******************************************************************/
+/****************************** PPO *******************************/
+/******************************************************************/
+
+#if 0
+TEST(PPO, ConstantEnv) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Constant, "ppo", 20000, 0, 100, 8, true);
+  EXPECT_NEAR(val, cmp, tol);
+}
+#endif
+
+TEST(PPO, PredictableEnv) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Predictable, "ppo", 20000, 0, 100, 8, false);
+  EXPECT_NEAR(val, cmp, tol);
 }
 
 int main(int argc, char *argv[]) {
 
-  std::vector<std::string> system_names = {"ppo"};
+  ::testing::InitGoogleTest(&argc, argv);
 
-  for (auto& system : system_names) {
-    //TestSystem(Constant, system, 20000, 0, 100, 8, true);
-
-    TestSystem(Predictable, system, 20000, 0, 100, 8, true);
-
-    //TestSystem(Delayed, system, 40000, 0, 100, 8, true);
-
-    //TestSystem(Action, system, 40000, 1000, 100, 8, true);
-
-    //TestSystem(ActionState, system, 40000, 1000, 100, 8, true);
-  }
-
-  return 0;
+  return RUN_ALL_TESTS();
 }

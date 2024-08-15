@@ -17,8 +17,8 @@ algorithm:
 actor:
   type: parameter_noise
   parameters:
-    a_low: -3.0
-    a_high: 3.0
+    a_low: -1.0
+    a_high: 1.0
 
 replay_buffer:
   type: uniform

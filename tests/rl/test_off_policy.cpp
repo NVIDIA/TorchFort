@@ -181,7 +181,7 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
   return result;
 }
 
-#if 0
+
 /******************************************************************/
 /****************************** TD3 *******************************/
 /******************************************************************/
@@ -246,7 +246,6 @@ TEST(DDPG, ActionEnv) {
 
 // Action State Env does not work with DDPG, most likely due to some known DDPG issue
 // where training can get stuck in a wrong optimum
-#endif
 
 /******************************************************************/
 /****************************** SAC *******************************/
@@ -268,6 +267,18 @@ TEST(SAC, DelayedEnv) {
   float val, cmp, tol;
   std::tie(val, cmp, tol) = TestSystem(Delayed, "sac", 40000, 0, 100, false);
   EXPECT_NEAR(val, cmp, tol);
+}
+
+TEST(SAC, ActionEnv) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Action, "sac", 20000, 1000, 100, false);
+  EXPECT_NEAR(val, cmp, 0.3);
+}
+
+TEST(SAC, ActionStateEnv) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(ActionState, "sac", 20000, 0, 100, true);
+  EXPECT_NEAR(val, cmp, 0.3);
 }
 
 

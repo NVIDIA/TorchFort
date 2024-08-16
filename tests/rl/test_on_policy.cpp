@@ -190,19 +190,36 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
 /****************************** PPO *******************************/
 /******************************************************************/
 
-#if 0
 TEST(PPO, ConstantEnv) {
   float val, cmp, tol;
-  std::tie(val, cmp, tol) = TestSystem(Constant, "ppo", 20000, 0, 100, 8, true);
+  std::tie(val, cmp, tol) = TestSystem(Constant, "ppo", 50000, 0, 100, 8, false);
   EXPECT_NEAR(val, cmp, tol);
 }
-#endif
 
 TEST(PPO, PredictableEnv) {
   float val, cmp, tol;
-  std::tie(val, cmp, tol) = TestSystem(Predictable, "ppo", 20000, 0, 100, 8, false);
+  std::tie(val, cmp, tol) = TestSystem(Predictable, "ppo", 70000, 0, 100, 8, false);
   EXPECT_NEAR(val, cmp, tol);
 }
+
+TEST(PPO, DelayedEnv) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Delayed, "ppo", 70000, 0, 100, 8, false);
+  EXPECT_NEAR(val, cmp, tol);
+}
+
+TEST(PPO, ActionEnv) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Action, "ppo", 40000, 1000, 100, 8, false);
+  EXPECT_NEAR(val, cmp, 0.3);
+}
+
+TEST(PPO, ActionStateEnv) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(ActionState, "ppo", 40000, 0, 100, 8, false);
+  EXPECT_NEAR(val, cmp, 0.3);
+}
+
 
 int main(int argc, char *argv[]) {
 

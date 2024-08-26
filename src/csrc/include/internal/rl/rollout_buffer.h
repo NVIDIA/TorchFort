@@ -176,13 +176,11 @@ public:
     std::vector<torch::Tensor> stens_list, atens_list;
     std::vector<float> q_list, log_p_list, adv_list, ret_list;
 
-    //std::uniform_int_distribution<size_t> uniform_dist(0, size_ - 1);
     // go through the buffer in random order
     auto lower = pos_;
     auto upper = std::min(pos_ + static_cast<size_t>(batch_size), size_);
     for (size_t sample = lower; sample < upper; sample++) {
-      //auto index = uniform_dist(rng_);
-      // switch to sampling without replacement
+      // use sampling without replacement
       auto index = indices_[sample];
 
       // get buffer entry

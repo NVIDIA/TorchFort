@@ -219,13 +219,11 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
   }
 
   // alpha parameter
-#if 0
   if (system_node["alpha_lr_scheduler"] && alpha_optimizer_) {
     alpha_lr_scheduler_ = get_lr_scheduler(system_node["alpha_lr_scheduler"], alpha_optimizer_);
   } else {
     alpha_lr_scheduler_ = nullptr;
   }
-#endif
 
   // Setting up general options
   system_state_ = get_state(name, system_node);
@@ -502,10 +500,8 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
 
 // we should pass a tuple (s, a, s', r, d)
 void SACSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d) {
-  // note that we have to rescale the action: [a_low, a_high] -> [-1, 1]
-  //auto as = scale_action(a, a_low_, a_high_);
-
-  // the replay buffer only stores scaled actions!
+  // note that we have to rescale the action: [a_low, a_high] -> [-1, 1],
+  // but the replay buffer only stores scaled actions!
   replay_buffer_->update(s, a, sp, r, d);
 }
 

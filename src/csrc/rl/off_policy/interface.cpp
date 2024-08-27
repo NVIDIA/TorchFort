@@ -211,7 +211,7 @@ torchfort_result_t torchfort_rl_off_policy_update_replay_buffer(const char* name
     case TORCHFORT_DOUBLE: {
       double reward_val = *reinterpret_cast<const double*>(reward);
       rl::off_policy::update_replay_buffer<RowMajor>(
-                 name, reinterpret_cast<double*>(state_old), reinterpret_cast<double*>(state_new), state_dim, state_shape,
+		 name, reinterpret_cast<double*>(state_old), reinterpret_cast<double*>(state_new), state_dim, state_shape,
                  reinterpret_cast<double*>(action_old), action_dim, action_shape, reward_val, final_state, ext_stream);
       break;
     }

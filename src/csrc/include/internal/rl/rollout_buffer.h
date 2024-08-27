@@ -47,8 +47,7 @@ namespace torchfort {
 namespace rl {
 
 using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, float, float, float, bool>;
-
-enum RewardReductionMode { Sum = 1, Mean = 2, WeightedMean = 3, SumNoSkip = 4, MeanNoSkip = 5, WeightedMeanNoSkip = 6 };
+using ExtendedBufferEntry = std::tuple<torch::Tensor, torch::Tensor, float, float, float, float, float, bool>;
 
 // abstract base class for rollout buffer
 class RolloutBuffer {
@@ -56,13 +55,21 @@ public:
   // disable copy constructor
   RolloutBuffer(const RolloutBuffer&) = delete;
   // base constructor
-  RolloutBuffer(size_t size, int device) : size_(size), device_(get_device(device)), last_episode_starts_(true) {}
+  RolloutBuffer(size_t size, int device) : size_(size), device_(get_device(device)), last_episode_starts_(true), indices_(size), pos_(0), rng_() {
+    // fill index vector with indices
+    std::generate(indices_.begin(), indices_.end(), [n = 0] () mutable { return n++; });
+  }
+
+  // accessors
+  size_t getSize() const {return size_;}
 
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, float, float, float, bool) = 0;
   virtual void finalize(float, bool) = 0;
   virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
   sample(int) = 0;
+  virtual BufferEntry get(int) = 0;
+  virtual ExtendedBufferEntry getFull(int) = 0;
   virtual bool isReady() const = 0;
   virtual void reset() = 0;
   virtual void printInfo() const = 0;
@@ -71,9 +78,19 @@ public:
   virtual torch::Device device() const = 0;
 
 protected:
+
+   // shuffling
+  void resetIndices_() {
+    std::shuffle(indices_.begin(), indices_.end(), rng_);
+    pos_ = 0;
+  }
+  
   size_t size_;
   torch::Device device_;
   bool last_episode_starts_;
+  std::vector<int> indices_;
+  size_t pos_;
+  std::mt19937_64 rng_;
 };
 
 class GAELambdaRolloutBuffer : public RolloutBuffer, public std::enable_shared_from_this<RolloutBuffer> {
@@ -81,7 +98,7 @@ class GAELambdaRolloutBuffer : public RolloutBuffer, public std::enable_shared_f
 public:
   // constructor
   GAELambdaRolloutBuffer(size_t size, float gamma, float lambda, int device)
-    : RolloutBuffer(size, device), finalized_(false), gamma_(gamma), lambda_(lambda), rng_(), returns_(size), advantages_(size) {}
+    : RolloutBuffer(size, device), finalized_(false), gamma_(gamma), lambda_(lambda), returns_(size), advantages_(size) {}
 
   // disable copy constructor
   GAELambdaRolloutBuffer(const GAELambdaRolloutBuffer&) = delete;
@@ -134,6 +151,11 @@ public:
       next_value = q;
       next_non_terminal = (e ? 0. : 1.);
     }
+
+    // create shuffled index list for sampling:
+    resetIndices_();
+
+    // set finalized to true
     finalized_ = true;
     
     return;
@@ -151,25 +173,33 @@ public:
     torch::NoGradGuard no_grad;
 
     // we need those
-    auto stens_list = std::vector<torch::Tensor>(batch_size);
-    auto atens_list = std::vector<torch::Tensor>(batch_size);
-    auto q_list = std::vector<float>(batch_size);
-    auto log_p_list = std::vector<float>(batch_size);
-    auto adv_list = std::vector<float>(batch_size);
-    auto ret_list = std::vector<float>(batch_size);
+    std::vector<torch::Tensor> stens_list, atens_list;
+    std::vector<float> q_list, log_p_list, adv_list, ret_list;
 
-    // we need to exclude the last element here, since it is a closed interval
-    std::uniform_int_distribution<size_t> uniform_dist(0, size_ - 1);
-    for (int sample = 0; sample < batch_size; sample++) {
-      auto index = uniform_dist(rng_);
+    // go through the buffer in random order
+    auto lower = pos_;
+    auto upper = std::min(pos_ + static_cast<size_t>(batch_size), size_);
+    for (size_t sample = lower; sample < upper; sample++) {
+      // use sampling without replacement
+      auto index = indices_[sample];
 
       // get buffer entry
-      float r;
+      torch::Tensor stens, atens;
+      float r, q, log_p;
       bool d;
-      std::tie(stens_list[sample], atens_list[sample], r, q_list[sample], log_p_list[sample], d) = buffer_.at(index);
-      adv_list[sample] = advantages_[index];
-      ret_list[sample] = returns_[index];
+      std::tie(stens, atens, r, q, log_p, d) = buffer_.at(index);
+
+      // append to lists
+      stens_list.push_back(stens);
+      atens_list.push_back(atens);
+      q_list.push_back(q);
+      log_p_list.push_back(log_p);
+      adv_list.push_back(advantages_[index]);
+      ret_list.push_back(returns_[index]);
     }
+
+    // update buffer position
+    pos_ = upper;
     
     // stack the lists
     auto stens = torch::stack(stens_list, 0).clone();
@@ -182,7 +212,55 @@ public:
     auto advtens = torch::from_blob(adv_list.data(), {batch_size, 1}, options).clone();
     auto rettens = torch::from_blob(ret_list.data(), {batch_size, 1}, options).clone();
 
+    // some finalization checks:
+    if (pos_ >= size_) {
+      // shuffle vector and reset position: this allows for continued sampling
+      resetIndices_();
+    }
+
     return std::make_tuple(stens, atens, qtens, logptens, advtens, rettens);
+  }
+
+  BufferEntry get(int index) {
+    // sanity checks
+    if ((index < 0) || (index >= buffer_.size())) {
+      throw std::runtime_error("GAELambdaRolloutBuffer::get: index " + std::to_string(index) + " out of bounds [0, " + std::to_string(buffer_.size()) + ")." );
+    }
+
+    // add no grad guard
+    torch::NoGradGuard no_grad;
+
+    // emit the sample at index
+    torch::Tensor stens, atens;
+    float r, q, log_p;
+    bool d;
+    std::tie(stens, atens, r, q, log_p, d) = buffer_.at(index);
+
+    return std::make_tuple(stens, atens, r, q, log_p, d);
+  }
+
+  ExtendedBufferEntry getFull(int index) {
+    // sanity checks
+    if ((index < 0) || (index >= buffer_.size())) {
+      throw std::runtime_error("GAELambdaRolloutBuffer::getFull: index " + std::to_string(index) + " out of bounds [0, " + std::to_string(buffer_.size()) + ")." );
+    }
+
+    if (!finalized_) {
+      throw std::runtime_error("GAELambdaRolloutBuffer::getFull: the buffer needs to be finalized before calling getFull.");
+    }
+
+    // add no grad guard
+    torch::NoGradGuard no_grad;
+
+    // emit the sample at index
+    torch::Tensor stens, atens;
+    float r, q, log_p, adv, ret;
+    bool d;
+    std::tie(stens, atens, r, q, log_p, d) = buffer_.at(index);
+    adv = advantages_[index];
+    ret = returns_[index];
+
+    return std::make_tuple(stens, atens, r, q, log_p, adv, ret, d);
   }
 
   // check functions
@@ -208,7 +286,9 @@ public:
   void save(const std::string& fname) const {
     // create an ordered dict with the buffer contents:
     std::vector<torch::Tensor> s_data, a_data;
-    std::vector<torch::Tensor> r_data, q_data, log_p_data, e_data;
+    std::vector<torch::Tensor> r_data, q_data, log_p_data, e_data, adv_data, ret_data;
+    std::vector<torch::Tensor> state_data;
+
     auto options_f = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCPU);
     auto options_b = torch::TensorOptions().dtype(torch::kBool).device(torch::kCPU);
     for (size_t index = 0; index < buffer_.size(); ++index) {
@@ -227,7 +307,20 @@ public:
       log_p_data.push_back(log_pt);
       auto et = torch::from_blob(&e, {1}, options_b).clone();
       e_data.push_back(et);
+      float adv = advantages_[index];
+      auto advt = torch::from_blob(&adv, {1}, options_f).clone();
+      adv_data.push_back(advt);
+      float ret = returns_[index];
+      auto rett = torch::from_blob(&ret, {1}, options_f).clone();
+      ret_data.push_back(rett);
     }
+    // state vector
+    bool tmpbool = last_episode_starts_;
+    auto st = torch::from_blob(&tmpbool, {1}, options_b).clone();
+    state_data.push_back(st);
+    tmpbool = finalized_;
+    st = torch::from_blob(&tmpbool, {1}, options_b).clone();
+    state_data.push_back(st);
 
     // create subdirectory:
     using namespace torchfort;
@@ -247,6 +340,9 @@ public:
     torch::save(q_data, root_dir / "q_data.pt");
     torch::save(log_p_data, root_dir / "log_p_data.pt");
     torch::save(e_data, root_dir / "e_data.pt");
+    torch::save(adv_data, root_dir / "adv_data.pt");
+    torch::save(ret_data, root_dir / "ret_data.pt");
+    torch::save(state_data, root_dir / "buffer_state.pt");
 
     return;
   }
@@ -254,7 +350,8 @@ public:
   void load(const std::string& fname) {
     // get vectors for buffers:
     std::vector<torch::Tensor> s_data, a_data;
-    std::vector<torch::Tensor> r_data, q_data, log_p_data, e_data;
+    std::vector<torch::Tensor> r_data, q_data, log_p_data, e_data, adv_data, ret_data;
+    std::vector<torch::Tensor> state_data;
 
     using namespace torchfort;
     std::filesystem::path root_dir(fname);
@@ -265,9 +362,14 @@ public:
     torch::load(q_data, root_dir / "q_data.pt");
     torch::load(log_p_data, root_dir / "log_p_data.pt");
     torch::load(e_data, root_dir / "e_data.pt");
+    torch::load(adv_data, root_dir / "adv_data.pt");
+    torch::load(ret_data, root_dir / "ret_data.pt");
+    torch::load(state_data, root_dir / "buffer_state.pt");
 
     // iterate over loaded data and populate buffer
     buffer_.clear();
+    advantages_.resize(s_data.size());
+    returns_.resize(s_data.size());
     for (size_t index = 0; index < s_data.size(); ++index) {
       auto s = s_data[index];
       auto a = a_data[index];
@@ -275,10 +377,23 @@ public:
       float q = q_data[index].item<float>();
       float log_p = log_p_data[index].item<float>();
       bool e = e_data[index].item<bool>();
+      advantages_[index] = adv_data[index].item<float>();
+      returns_[index] = ret_data[index].item<float>();
 
-      // update buffer
-      this->update(s, a, r, q, log_p, e);
+      // writing manual update here instead of using the member function to override the next last episode logic:
+      // clone the tensors and move to device
+      auto sc = s.to(device_, s.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
+
+      // add the newest/latest element in back
+      buffer_.push_back(std::make_tuple(sc, ac, r, q, log_p, e));
     }
+
+    // restore buffer state
+    last_episode_starts_ = state_data[0].item<bool>();
+    finalized_ = state_data[1].item<bool>();
+
+    return;
   }
 
   void printInfo() const {
@@ -301,8 +416,6 @@ private:
   std::deque<BufferEntry> buffer_;
   // additional storage for returns and advantage
   std::vector<float> returns_, advantages_;
-  // rng
-  std::mt19937_64 rng_;
 };
 
 } // namespace rl

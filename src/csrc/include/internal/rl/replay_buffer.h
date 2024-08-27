@@ -58,11 +58,21 @@ public:
   // base constructor
   ReplayBuffer(size_t max_size, size_t min_size, int device) : max_size_(max_size), min_size_(min_size), device_(get_device(device)) {}
 
+  // accessor functions
+  size_t getMinSize() const { return min_size_; }
+  size_t getMaxSize() const { return max_size_; }
+
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, torch::Tensor, float, bool) = 0;
+  // sample element randomly
   virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
   sample(int) = 0;
+  // get specific element
+  virtual BufferEntry get(int) = 0;
+  // helper functions
   virtual bool isReady() const = 0;
+  virtual void reset() = 0;
+  virtual size_t getSize() const = 0;
   virtual void printInfo() const = 0;
   virtual void save(const std::string& fname) const = 0;
   virtual void load(const std::string& fname) = 0;
@@ -211,9 +221,37 @@ public:
     return std::make_tuple(stens, atens, sptens, rtens, dtens);
   }
 
+  BufferEntry get(int index) {
+
+    // sanity checks
+    if ((index < 0) || (index >= buffer_.size())) {
+      throw std::runtime_error("UniformReplayBuffer::get: index " + std::to_string(index) + " out of bounds [0, " + std::to_string(buffer_.size()) + ")." );
+    }
+
+    // add no grad guard
+    torch::NoGradGuard no_grad;
+
+    // emit the sample at index
+    torch::Tensor stens, atens, sptens, rtens, dtens;
+    float r;
+    bool d;
+    std::tie(stens, atens, sptens, r, d) = buffer_.at(index);
+
+    return std::make_tuple(stens, atens, sptens, r, d);
+  }
+
   // check functions
   bool isReady() const { return (buffer_.size() >= min_size_); }
 
+  void reset() {
+    buffer_.clear();
+
+    return;
+  }
+
+  size_t getSize() const { return buffer_.size(); }
+
+  // save and restore
   void save(const std::string& fname) const {
     // create an ordered dict with the buffer contents:
     std::vector<torch::Tensor> s_data, a_data, sp_data;
@@ -242,7 +280,7 @@ public:
     if (!std::filesystem::exists(root_dir)) {
       bool rv = std::filesystem::create_directory(root_dir);
       if (!rv) {
-        throw std::runtime_error("Could not create directory for replay buffer.");
+        throw std::runtime_error("UniformReplayBuffer::save: uable to create directory " + root_dir.native() + ".");
       }
     }
 

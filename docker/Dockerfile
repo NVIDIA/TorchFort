@@ -71,6 +71,7 @@ RUN cd /torchfort && mkdir build && cd build && \
     -DTORCHFORT_YAML_CPP_ROOT=/opt/yaml-cpp \
     -DTORCHFORT_NCCL_ROOT=/opt/nccl/build \
     -DTORCHFORT_BUILD_EXAMPLES=1 \
+    -DTORCHFORT_BUILD_TESTS=1 \
     -DCMAKE_PREFIX_PATH="`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`" \
     .. && \
     make VERBOSE=1 -j$(nproc) install && \

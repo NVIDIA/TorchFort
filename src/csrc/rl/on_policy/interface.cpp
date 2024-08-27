@@ -70,7 +70,7 @@ RLOnPolicySystem::RLOnPolicySystem(int model_device, int rb_device) : train_step
 } // namespace torchfort
 
 torchfort_result_t torchfort_rl_on_policy_create_system(const char* name, const char* config_fname,
-                                                        int model_device, int rb_device) {
+							int model_device, int rb_device) {
   using namespace torchfort;
 
   try {

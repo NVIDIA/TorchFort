@@ -13,6 +13,7 @@ set(TORCHFORT_NCCL_ROOT CACHE STRING "Path to search for NCCL installation. Defa
 set(TORCHFORT_YAML_CPP_ROOT CACHE STRING "Path to search for yaml-cpp installation.")
 option(TORCHFORT_BUILD_FORTRAN "Build Fortran bindings" ON)
 option(TORCHFORT_BUILD_EXAMPLES "Build examples" OFF)
+option(TORCHFORT_BUILD_TESTS "Build tests" OFF)
 
 # For backward-compatibility with existing variable
 if (YAML_CPP_ROOT)
@@ -32,6 +33,22 @@ else()
   set(LANGS CXX)
 endif()
 project(torchfort LANGUAGES ${LANGS})
+
+# unit testing with gtest
+if (TORCHFORT_BUILD_TESTS)
+  enable_testing()
+  include(CTest)
+  include(FetchContent)
+  FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+    )
+  # For Windows: Prevent overriding the parent project's compiler/linker settings
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+  FetchContent_MakeAvailable(googletest)
+  include(GoogleTest)
+endif()
 
 # MPI
 find_package(MPI REQUIRED)
@@ -120,6 +137,8 @@ target_sources(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/step_lr.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/linear_lr.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/models/mlp_model.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/models/sac_model.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/models/actor_critic_model.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/policy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/off_policy/interface.cpp
@@ -219,4 +238,9 @@ if (TORCHFORT_BUILD_EXAMPLES)
   if (TORCHFORT_BUILD_FORTRAN)
     add_subdirectory(examples/fortran/simulation)
   endif()
+endif()
+
+# build tests
+if (TORCHFORT_BUILD_TESTS)
+  add_subdirectory(tests/rl)
 endif()

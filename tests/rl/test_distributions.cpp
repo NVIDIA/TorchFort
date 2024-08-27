@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,50 +28,41 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <vector>
-
+#include <gtest/gtest.h>
 #include <torch/torch.h>
+#include "internal/rl/distributions.h"
 
-#include "internal/models.h"
-#include "internal/param_map.h"
-#include "internal/setup.h"
+using namespace torchfort;
+using namespace torch::indexing;
 
-namespace torchfort {
+TEST(NormalDistribution, RandomSampling) {
+  // rng
+  torch::manual_seed(666);
 
-// MLP model in C++ using libtorch
-void MLPModel::setup(const ParamMap& params) {
-  // Extract params from input map.
-  std::set<std::string> supported_params{"dropout", "layer_sizes"};
-  check_params(supported_params, params.keys());
+  // no grad guard
+  torch::NoGradGuard no_grad;
 
-  dropout = params.get_param<double>("dropout", 0.0)[0];
-  layer_sizes = params.get_param<int>("layer_sizes");
+  // create normal distribution with given shape
+  torch::Tensor mutens = torch::empty({4,8}, torch::kFloat32);
+  torch::Tensor log_sigmatens = torch::empty({4,8}, torch::kFloat32);
 
-  // Construct and register submodules.
-  for (int i = 0; i < layer_sizes.size() - 1; ++i) {
-    fc_layers.push_back(
-        register_module("fc" + std::to_string(i), torch::nn::Linear(layer_sizes[i], layer_sizes[i + 1])));
-    if (i < layer_sizes.size() - 2) {
-      biases.push_back(register_parameter("b" + std::to_string(i), torch::zeros(layer_sizes[i + 1])));
-    }
-  }
+  // fill with random elements
+  mutens.normal_();
+  log_sigmatens.normal_();
+  torch::Tensor sigmatens = torch::exp(log_sigmatens);
+
+  auto ndist = rl::NormalDistribution(mutens, sigmatens);
+  torch::Tensor sample = ndist.rsample();
+
+  // do direct sampling without reparametrization trick
+  torch::Tensor sample_compare = at::normal(mutens, sigmatens);
+
+  // expect that shapes match: I am not sure how to compare the values as well
+  EXPECT_NO_THROW(torch::sum(sample-sample_compare).item<float>());
 }
 
-// Implement the forward function.
-std::vector<torch::Tensor> MLPModel::forward(const std::vector<torch::Tensor>& inputs) {
-  // concatenate inputs
-  auto x = torch::cat(inputs, 1);
-  x = x.reshape({x.size(0), -1});
+int main(int argc, char *argv[]) {
+  ::testing::InitGoogleTest(&argc, argv);
 
-  for (int i = 0; i < layer_sizes.size() - 1; ++i) {
-    if (i < layer_sizes.size() - 2) {
-      x = torch::relu(fc_layers[i]->forward(x) + biases[i]);
-      x = torch::dropout(x, dropout, is_training());
-    } else {
-      x = fc_layers[i]->forward(x);
-    }
-  }
-  return std::vector<torch::Tensor>{x};
+  return RUN_ALL_TESTS();
 }
-
-} // namespace torchfort

@@ -240,16 +240,6 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
   {
     torch::NoGradGuard no_grad;
 
-    // kl_divergence
-    //torch::Tensor kl_divergence_tensor = torch::mean((ratio_tensor - 1.) - log_ratio_tensor);
-    //if (pq_model.comm)
-    //{
-    //  std::vector<torch::Tensor> kl_divergence_mean = {kl_divergence_tensor};
-    //  pq_model.comm->allreduce(kl_divergence_mean, true);
-    //  kl_divergence_tensor = kl_divergence_mean[0];
-    //}
-    //kl_divergence = kl_divergence_tensor.item<T>();
-
     // clip_fraction
     torch::Tensor clip_fraction_tensor = torch::mean((torch::abs(ratio_tensor - 1.) > epsilon).to(torch::kFloat32));
     if (pq_model.comm)

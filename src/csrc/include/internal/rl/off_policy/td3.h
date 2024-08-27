@@ -91,9 +91,6 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   for (const auto& q_model : q_models) {
     q_model.model->train();
   }
-  for (const auto& q_model_target : q_models_target) {
-    q_model_target.model->train();
-  }
 
   // opt
   // loss is fixed by algorithm
@@ -224,8 +221,8 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
     if (!q_model.comm || (q_model.comm && q_model.comm->rank == 0)) {
       torchfort::logging::print(os.str(), torchfort::logging::info);
       if (state->enable_wandb_hook) {
-	torchfort::wandb_log(q_model.state, q_model.comm, "critic_0", "train_loss", state->step_train, q_loss_val);
-	torchfort::wandb_log(q_model.state, q_model.comm, "critic_0", "train_lr", state->step_train, lrs[0]);
+	torchfort::wandb_log(state, q_model.comm, "critic_0", "train_loss", state->step_train, q_loss_val);
+	torchfort::wandb_log(state, q_model.comm, "critic_0", "train_lr", state->step_train, lrs[0]);
       }
     }
   }

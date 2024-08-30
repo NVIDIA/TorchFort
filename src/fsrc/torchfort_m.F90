@@ -134,7 +134,7 @@ module torchfort
       import
       character(kind=c_char) :: mname(*)
       !dir$ ignore_tkr (dk)input, (dk)label, (k)loss_val
-      !GCC$ attributes no_arg_check :: input, label
+      !GCC$ attributes no_arg_check :: input, label, loss_val
       real(c_float) :: input(*), label(*)
       real(c_float) :: loss_val
       integer(c_size_t), value :: input_dim, label_dim
@@ -2491,7 +2491,7 @@ contains
 
   function torchfort_rl_off_policy_predict_float_4d_2d(mname, state, act, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: state(:, :, :, :), act(:, :, :, :)
+    real(real32) :: state(:, :, :, :), act(:, :)
     integer(int64), optional :: stream
     integer(c_int) :: res
 

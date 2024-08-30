@@ -14,6 +14,7 @@ set(TORCHFORT_YAML_CPP_ROOT CACHE STRING "Path to search for yaml-cpp installati
 option(TORCHFORT_BUILD_FORTRAN "Build Fortran bindings" ON)
 option(TORCHFORT_BUILD_EXAMPLES "Build examples" OFF)
 option(TORCHFORT_BUILD_TESTS "Build tests" OFF)
+option(TORCHFORT_ENABLE_GPU "Enable GPU/CUDA support" ON)
 
 # For backward-compatibility with existing variable
 if (YAML_CPP_ROOT)
@@ -54,50 +55,52 @@ endif()
 find_package(MPI REQUIRED)
 
 # CUDA
-find_package(CUDAToolkit REQUIRED)
+if (TORCHFORT_ENABLE_GPU)
+  find_package(CUDAToolkit REQUIRED)
 
-# HPC SDK
-# Locate and append NVHPC CMake configuration if available
-find_program(NVHPC_CXX_BIN "nvc++")
-if (NVHPC_CXX_BIN)
-  string(REPLACE "compilers/bin/nvc++" "cmake" NVHPC_CMAKE_DIR ${NVHPC_CXX_BIN})
-  set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${NVHPC_CMAKE_DIR}")
-  find_package(NVHPC COMPONENTS "")
-endif()
-
-# Get NCCL library (with optional override)
-if (TORCHFORT_NCCL_ROOT)
-  find_path(NCCL_INCLUDE_DIR REQUIRED
-    NAMES nccl.h
-    HINTS ${TORCHFORT_NCCL_ROOT}/include
-  )
-
-  find_library(NCCL_LIBRARY REQUIRED
-    NAMES nccl
-    HINTS ${TORCHFORT_NCCL_ROOT}/lib
-  )
-else()
-  if (NVHPC_FOUND)
-    find_package(NVHPC REQUIRED COMPONENTS NCCL)
-    find_library(NCCL_LIBRARY
-      NAMES nccl
-      HINTS ${NVHPC_NCCL_LIBRARY_DIR}
-    )
-    string(REPLACE "/lib" "/include" NCCL_INCLUDE_DIR ${NVHPC_NCCL_LIBRARY_DIR})
-  else()
-    message(FATAL_ERROR "Cannot find NCCL library. Please set TORCHFORT_NCCL_ROOT to NCCL installation directory.")
+  # HPC SDK
+  # Locate and append NVHPC CMake configuration if available
+  find_program(NVHPC_CXX_BIN "nvc++")
+  if (NVHPC_CXX_BIN)
+    string(REPLACE "compilers/bin/nvc++" "cmake" NVHPC_CMAKE_DIR ${NVHPC_CXX_BIN})
+    set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${NVHPC_CMAKE_DIR}")
+    find_package(NVHPC COMPONENTS "")
   endif()
+  
+  # Get NCCL library (with optional override)
+  if (TORCHFORT_NCCL_ROOT)
+    find_path(NCCL_INCLUDE_DIR REQUIRED
+      NAMES nccl.h
+      HINTS ${TORCHFORT_NCCL_ROOT}/include
+    )
+  
+    find_library(NCCL_LIBRARY REQUIRED
+      NAMES nccl
+      HINTS ${TORCHFORT_NCCL_ROOT}/lib
+    )
+  else()
+    if (NVHPC_FOUND)
+      find_package(NVHPC REQUIRED COMPONENTS NCCL)
+      find_library(NCCL_LIBRARY
+        NAMES nccl
+        HINTS ${NVHPC_NCCL_LIBRARY_DIR}
+      )
+      string(REPLACE "/lib" "/include" NCCL_INCLUDE_DIR ${NVHPC_NCCL_LIBRARY_DIR})
+    else()
+      message(FATAL_ERROR "Cannot find NCCL library. Please set TORCHFORT_NCCL_ROOT to NCCL installation directory.")
+    endif()
+  endif()
+  
+  message(STATUS "Using NCCL library: ${NCCL_LIBRARY}")
+
+  # PyTorch
+  # Set TORCH_CUDA_ARCH_LIST string to match TORCHFORT_CUDA_CC_LIST
+  foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
+      string(REGEX REPLACE "([0-9])$" ".\\1" CUDA_CC_W_DOT ${CUDA_CC})
+    list(APPEND TORCH_CUDA_ARCH_LIST ${CUDA_CC_W_DOT})
+  endforeach()
+  list(JOIN TORCH_CUDA_ARCH_LIST " " TORCH_CUDA_ARCH_LIST)
 endif()
-
-message(STATUS "Using NCCL library: ${NCCL_LIBRARY}")
-
-# PyTorch
-# Set TORCH_CUDA_ARCH_LIST string to match TORCHFORT_CUDA_CC_LIST
-foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
-    string(REGEX REPLACE "([0-9])$" ".\\1" CUDA_CC_W_DOT ${CUDA_CC})
-  list(APPEND TORCH_CUDA_ARCH_LIST ${CUDA_CC_W_DOT})
-endforeach()
-list(JOIN TORCH_CUDA_ARCH_LIST " " TORCH_CUDA_ARCH_LIST)
 
 find_package(Torch REQUIRED)
 
@@ -160,16 +163,22 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${NCCL_LIBRARY})
 target_link_libraries(${PROJECT_NAME} PRIVATE MPI::MPI_CXX)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${YAML_CPP_LIBRARY})
-target_link_libraries(${PROJECT_NAME} PRIVATE CUDA::cudart)
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
     ${YAML_CPP_INCLUDE_DIR}
     ${MPI_CXX_INCLUDE_DIRS}
     ${TORCH_INCLUDE_DIRS}
+)
+if (TORCHFORT_ENABLE_GPU)
+  target_include_directories(${PROJECT_NAME}
+    PRIVATE
     ${CUDAToolkit_INCLUDE_DIRS}
     ${NCCL_INCLUDE_DIR}
-)
+  )
+  target_link_libraries(${PROJECT_NAME} PRIVATE CUDA::cudart)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE ENABLE_GPU)
+endif()
 target_compile_definitions(${PROJECT_NAME} PRIVATE YAML_CPP_STATIC_DEFINE)
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
 

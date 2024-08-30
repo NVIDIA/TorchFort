@@ -32,13 +32,16 @@
 
 #include <string>
 
+#ifdef ENABLE_GPU
 #include <nvtx3/nvToolsExt.h>
+#endif
 
 namespace torchfort {
 
 // Helper class for NVTX ranges
 class nvtx {
 public:
+#ifdef ENABLE_GPU
   static void rangePush(const std::string& range_name) {
     static constexpr int ncolors_ = 8;
     static constexpr int colors_[ncolors_] = {0x3366CC, 0xDC3912, 0xFF9900, 0x109618,
@@ -56,6 +59,10 @@ public:
   }
 
   static void rangePop() { nvtxRangePop(); }
+#else
+  static void rangePush(const std::string& range_name) {}
+  static void rangePop() {}
+#endif
 };
 
 } // namespace torchfort

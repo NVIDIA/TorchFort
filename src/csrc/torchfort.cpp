@@ -36,7 +36,9 @@
 #include <memory>
 #include <unordered_map>
 
+#ifdef ENABLE_GPU
 #include <cuda_runtime.h>
+#endif
 #include <torch/script.h>
 #include <torch/torch.h>
 #include <yaml-cpp/yaml.h>

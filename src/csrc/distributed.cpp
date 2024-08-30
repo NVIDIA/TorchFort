@@ -29,9 +29,11 @@
  */
 
 #include <mpi.h>
+#ifdef ENABLE_GPU
 #include <nccl.h>
 
 #include <c10/cuda/CUDAStream.h>
+#endif
 #include <torch/torch.h>
 
 #include "internal/defines.h"
@@ -51,6 +53,7 @@ static MPI_Datatype get_mpi_dtype(torch::Tensor tensor) {
   }
 }
 
+#ifdef ENABLE_GPU
 static ncclDataType_t get_nccl_dtype(torch::Tensor tensor) {
   auto dtype = tensor.dtype();
 
@@ -77,11 +80,13 @@ static ncclComm_t ncclCommFromMPIComm(MPI_Comm mpi_comm) {
 
   return nccl_comm;
 }
+#endif
 
 void Comm::initialize(bool initialize_nccl) {
   CHECK_MPI(MPI_Comm_rank(mpi_comm, &rank));
   CHECK_MPI(MPI_Comm_size(mpi_comm, &size));
 
+#ifdef ENABLE_GPU
   if (initialize_nccl) {
     nccl_comm = ncclCommFromMPIComm(mpi_comm);
 
@@ -91,17 +96,21 @@ void Comm::initialize(bool initialize_nccl) {
 
     CHECK_CUDA(cudaEventCreateWithFlags(&event, cudaEventDisableTiming));
   }
+#endif
 
   initialized = true;
 }
 
 void Comm::finalize() {
+#ifdef ENABLE_GPU
   if (nccl_comm) CHECK_NCCL(ncclCommDestroy(nccl_comm));
   if (stream) CHECK_CUDA(cudaStreamDestroy(stream));
   if (event) CHECK_CUDA(cudaEventDestroy(event));
+#endif
 }
 
 void Comm::allreduce(torch::Tensor& tensor, bool average) const {
+#ifdef ENABLE_GPU
   if (tensor.device().type() == torch::kCUDA) {
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
     CHECK_CUDA(cudaEventRecord(event, torch_stream));
@@ -121,6 +130,7 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
     CHECK_CUDA(cudaEventRecord(event, stream));
     CHECK_CUDA(cudaStreamWaitEvent(torch_stream, event));
   } else if (tensor.device().type() == torch::kCPU) {
+#endif
     auto count = torch::numel(tensor);
     MPI_Datatype mpi_dtype;
     if (torch::is_complex(tensor)) {
@@ -135,28 +145,34 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
     if (average) {
       tensor /= size;
     }
+#ifdef ENABLE_GPU
   }
+#endif
 }
 
 void Comm::allreduce(std::vector<torch::Tensor>& tensors, bool average) const {
 
+#ifdef ENABLE_GPU
   if (tensors[0].device().type() == torch::kCUDA) {
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
     CHECK_CUDA(cudaEventRecord(event, torch_stream));
     CHECK_CUDA(cudaStreamWaitEvent(stream, event));
     CHECK_NCCL(ncclGroupStart());
   }
+#endif
 
   for (auto& t : tensors) {
     allreduce(t, average);
   }
 
+#ifdef ENABLE_GPU
   if (tensors[0].device().type() == torch::kCUDA) {
     CHECK_NCCL(ncclGroupEnd());
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
     CHECK_CUDA(cudaEventRecord(event, stream));
     CHECK_CUDA(cudaStreamWaitEvent(torch_stream, event));
   }
+#endif
 }
 void Comm::allreduce(double& val, bool average) const {
   CHECK_MPI(MPI_Allreduce(MPI_IN_PLACE, &val, 1, MPI_DOUBLE, MPI_SUM, mpi_comm));
@@ -174,6 +190,7 @@ void Comm::allreduce(float& val, bool average) const {
 void Comm::broadcast(torch::Tensor& tensor, int root) const {
   auto count = torch::numel(tensor);
 
+#ifdef ENABLE_GPU
   if (tensor.device().type() == torch::kCUDA) {
     // Use NCCL for GPU tensors
     ncclDataType_t nccl_dtype;
@@ -194,6 +211,7 @@ void Comm::broadcast(torch::Tensor& tensor, int root) const {
     CHECK_CUDA(cudaEventRecord(event, stream));
     CHECK_CUDA(cudaStreamWaitEvent(torch_stream, event));
   } else if (tensor.device().type() == torch::kCPU) {
+#endif
     // Use MPI for CPU tensors
     MPI_Datatype mpi_dtype;
     if (torch::is_complex(tensor)) {
@@ -205,7 +223,9 @@ void Comm::broadcast(torch::Tensor& tensor, int root) const {
 
     CHECK_MPI(MPI_Bcast(tensor.data_ptr(), count, mpi_dtype, root, mpi_comm));
 
+#ifdef ENABLE_GPU
   }
+#endif
 }
 
 } // namespace torchfort

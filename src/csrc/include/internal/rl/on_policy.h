@@ -33,10 +33,12 @@
 
 #include <yaml-cpp/yaml.h>
 
+#ifdef ENABLE_GPU
 #include <cuda_runtime.h>
 
 #include <c10/cuda/CUDAGuard.h>
 #include <c10/cuda/CUDAStream.h>
+#endif
 #include <torch/torch.h>
 
 #include "internal/defines.h"
@@ -98,9 +100,10 @@ static void update_rollout_buffer(const char* name, T* state, size_t state_dim, 
   torch::NoGradGuard no_grad;
 
   // we need to sync carefully here
-  c10::cuda::OptionalCUDAStreamGuard guard;
   auto model_device = registry[name]->modelDevice();
   auto rb_device = registry[name]->rbDevice();
+#ifdef ENABLE_GPU
+  c10::cuda::OptionalCUDAStreamGuard guard;
   if (model_device.is_cuda()) {
     auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
     guard.reset_stream(stream);
@@ -108,6 +111,7 @@ static void update_rollout_buffer(const char* name, T* state, size_t state_dim, 
     auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
     guard.reset_stream(stream);
   }
+#endif
 
   // get tensors and copy:
   torch::Tensor state_tensor = get_tensor<L>(state, state_dim, state_shape)
@@ -125,6 +129,7 @@ template <MemoryLayout L, typename T>
 static void predict_explore(const char* name, T* state, size_t state_dim, int64_t* state_shape, T* action,
 			    size_t action_dim, int64_t* action_shape, cudaStream_t ext_stream) {
 
+#ifdef ENABLE_GPU
   // device and stream handling
   c10::cuda::OptionalCUDAStreamGuard guard;
   auto model_device = registry[name]->modelDevice();
@@ -132,6 +137,7 @@ static void predict_explore(const char* name, T* state, size_t state_dim, int64_
     auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
     guard.reset_stream(stream);
   }
+#endif
 
   // create tensors
   auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
@@ -149,6 +155,7 @@ template <MemoryLayout L, typename T>
 static void predict(const char* name, T* state, size_t state_dim, int64_t* state_shape, T* action, size_t action_dim,
 		    int64_t* action_shape, cudaStream_t ext_stream) {
 
+#ifdef ENABLE_GPU
   // device and stream handling
   c10::cuda::OptionalCUDAStreamGuard guard;
   auto model_device = registry[name]->modelDevice();
@@ -156,6 +163,7 @@ static void predict(const char* name, T* state, size_t state_dim, int64_t* state
     auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
     guard.reset_stream(stream);
   }
+#endif
   
   // create tensors
   auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
@@ -174,6 +182,7 @@ static void policy_evaluate(const char* name, T* state, size_t state_dim, int64_
 			    int64_t* action_shape, T* reward, size_t reward_dim, int64_t* reward_shape,
 			    cudaStream_t ext_stream) {
 
+#ifdef ENABLE_GPU
   // device and stream handling
   c10::cuda::OptionalCUDAStreamGuard guard;
   auto model_device = registry[name]->modelDevice();
@@ -181,6 +190,7 @@ static void policy_evaluate(const char* name, T* state, size_t state_dim, int64_
     auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
     guard.reset_stream(stream);
   }
+#endif
 
   // create tensors
   auto state_tensor = get_tensor<L>(state, state_dim, state_shape)

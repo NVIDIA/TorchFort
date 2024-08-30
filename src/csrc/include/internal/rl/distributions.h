@@ -29,8 +29,6 @@
  */
 
 #pragma once
-#include <cuda_runtime.h>
-
 #include <cmath>
 #include <torch/torch.h>
 

@@ -33,7 +33,9 @@
 #include <string>
 #include <vector>
 
+#ifdef ENABLE_GPU
 #include <cuda_runtime.h>
+#endif
 #include <torch/script.h>
 #include <torch/torch.h>
 

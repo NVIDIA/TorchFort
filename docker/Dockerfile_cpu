@@ -1,0 +1,55 @@
+FROM ubuntu:22.04
+
+# Install System Dependencies
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt update -y && \
+    apt install -y build-essential && \
+    apt install -y curl unzip wget cmake python3 python-is-python3 python3-pip python3-pybind11 git vim gfortran doxygen libibverbs-dev
+
+# Download HPCX and compile with Fortran support
+RUN cd /opt && \
+    wget https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-5.0.5.tar.gz && \
+    tar xzf openmpi-5.0.5.tar.gz && \
+    cd openmpi-5.0.5 && \
+    FC=gfortran CC=gcc CXX=g++ ./configure --prefix=/opt/openmpi \
+                                           --with-libevent=internal \
+                                           --enable-mpi1-compatibility \
+                                           --without-xpmem \
+                                           --with-slurm && \
+    make -j$(nproc) install && \
+    cd /opt && rm -rf openmpi-5.0.5 && rm openmpi-5.0.5.tar.gz 
+
+ENV PATH /opt/openmpi/bin:$PATH
+ENV LD_LIBRARY_PATH /opt/openmpi/lib:$LD_LIBRARY_PATH
+
+# Install PyTorch
+RUN pip3 install torch==2.2.1 torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# Install yaml-cpp
+RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \
+    cd yaml-cpp && \
+    mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/yaml-cpp \
+          -DCMAKE_CXX_FLAGS:="-D_GLIBCXX_USE_CXX11_ABI=0" \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DCMAKE_POSITION_INDEPENDENT_CODE=ON .. && \
+    make -j$(nproc) && make install
+ENV LD_LIBRARY_PATH /opt/yaml-cpp/lib:${LD_LIBRARY_PATH}
+
+# Install HDF5
+RUN wget https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_14_3.tar.gz && \
+    tar xzf hdf5-1_14_3.tar.gz && \
+    cd hdf5-hdf5-1_14_3 && \
+    CC=mpicc FC=mpifort \
+    ./configure --enable-parallel \
+                --enable-fortran \
+                --prefix=/opt/hdf5 && \
+    make -j$(nproc) install && \
+    cd .. && \
+    rm -rf hdf5-hdf5-1_14_3 hdf5-1_14_3.tar.gz
+ENV LD_LIBRARY_PATH /opt/hdf5/lib:$LD_LIBRARY_PATH
+
+# Install additional Python dependencies
+RUN pip3 install wandb ruamel-yaml h5py matplotlib pygame moviepy
+
+ENTRYPOINT bash

@@ -243,10 +243,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/docs DESTINATION ${CMAKE_INSTALL_P
 
 # build examples
 if (TORCHFORT_BUILD_EXAMPLES)
-  if (TORCHFORT_ENABLE_GPU)
-    # TODO: Enable cart_pole example for CPU only builds
-    add_subdirectory(examples/cpp/cart_pole)
-  endif()
+  add_subdirectory(examples/cpp/cart_pole)
   if (TORCHFORT_BUILD_FORTRAN)
     add_subdirectory(examples/fortran/simulation)
   endif()

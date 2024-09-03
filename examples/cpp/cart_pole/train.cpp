@@ -28,6 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 #include <yaml-cpp/yaml.h>
@@ -48,6 +49,7 @@
       throw std::runtime_error(os.str().c_str());                                                                      \
     }                                                                                                                  \
   } while (false)
+
 
 int main(int argc, char* argv[]) {
 
@@ -91,8 +93,13 @@ int main(int argc, char* argv[]) {
   float theta_width = state_max[2] - state_min[2];
 
   // instantiate torchfort
+#if ENABLE_GPU
   CHECK_TORCHFORT(torchfort_rl_off_policy_create_system("td3_system", "config.yaml",
 							0, TORCHFORT_DEVICE_CPU));
+#else
+  CHECK_TORCHFORT(torchfort_rl_off_policy_create_system("td3_system", "config.yaml",
+                                                        TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
+#endif
 
   // define variables
   StateVector state, state_new;
@@ -103,11 +110,17 @@ int main(int argc, char* argv[]) {
   bool terminate;
 
   // allocate cuda arrays
-  cudaSetDevice(0);
   float *dstate, *dstate_new, *daction, *dreward;
+#ifdef ENABLE_GPU
+  cudaSetDevice(0);
   cudaMalloc(&dstate, state.size() * sizeof(float));
   cudaMalloc(&dstate_new, state.size() * sizeof(float));
   cudaMalloc(&daction, action.size() * sizeof(float));
+#else
+  dstate = static_cast<float*>(std::malloc(state.size() * sizeof(float)));
+  dstate_new = static_cast<float*>(std::malloc(state.size() * sizeof(float)));
+  daction = static_cast<float*>(std::malloc(action.size() * sizeof(float)));
+#endif
 
   int64_t step_total = 0;
   bool is_eval = false;
@@ -136,7 +149,11 @@ int main(int argc, char* argv[]) {
       step_total++;
 
       // copy data to device
+#ifdef ENABLE_GPU
       cudaMemcpy(dstate, state.data(), state.size() * sizeof(float), cudaMemcpyHostToDevice);
+#else
+      std::memcpy(dstate, state.data(), state.size() * sizeof(float));
+#endif
 
       // state check
       std::cout << prefix + "state: " << state[0] << ", " << state[1] << ", " << state[2] << ", " << state[3]
@@ -151,7 +168,11 @@ int main(int argc, char* argv[]) {
                                                                 0));
 
       // copy data to host
+#ifdef ENABLE_GPU
       cudaMemcpy(action.data(), daction, action.size() * sizeof(float), cudaMemcpyDeviceToHost);
+#else
+      std::memcpy(action.data(), daction, action.size() * sizeof(float));
+#endif
 
       // action check
       std::cout << prefix + "action: " << action[0] << std::endl;
@@ -167,7 +188,11 @@ int main(int argc, char* argv[]) {
       }
 
       // copy data to device
+#ifdef ENABLE_GPU
       cudaMemcpy(dstate_new, state_new.data(), state_new.size() * sizeof(float), cudaMemcpyHostToDevice);
+#else
+      std::memcpy(dstate_new, state_new.data(), state_new.size() * sizeof(float));
+#endif
 
       // update replay buffer
       CHECK_TORCHFORT(torchfort_rl_off_policy_update_replay_buffer(
@@ -211,9 +236,15 @@ int main(int argc, char* argv[]) {
   }
 
   // clean up
+#ifdef ENABLE_GPU
   cudaFree(dstate);
   cudaFree(dstate_new);
   cudaFree(daction);
+#else
+  std::free(dstate);
+  std::free(dstate_new);
+  std::free(daction);
+#endif
 
   return 0;
 }

@@ -14,7 +14,7 @@ algorithm:
     gamma: 0.99
     rho: 0.99
 
-action:
+actor:
   type: space_noise
   parameters:
     a_low: -1.0

@@ -42,8 +42,11 @@ def main():
   model = Net()
   print("FCN model:", model)
 
-  # Move model to GPU, JIT, and save
-  model.to("cuda")
+  try:
+    # Move model to GPU, JIT, and save
+    model.to("cuda")
+  except:
+    print("PyTorch does not have CUDA support. Saving model on CPU.")
   model_jit = torch.jit.script(model)
   model_jit.save("fcn_torchscript.pt")
 

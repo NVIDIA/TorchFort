@@ -1,8 +1,12 @@
 FROM nvcr.io/nvidia/cuda:12.3.1-devel-ubuntu22.04
 
 # Install System Dependencies
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt update -y && \
-    DEBIAN_FRONTEND=noninteractive apt install -y curl unzip wget cmake python3 python-is-python3 python3-pip python3-pybind11 git vim gfortran doxygen libibverbs-dev
+    apt install -y curl unzip wget cmake && \
+    apt install -y python3 python-is-python3 python3-pip python3-pybind11 && \
+    apt install -y git vim gfortran doxygen && \
+    apt install -y libibverbs-dev ibverbs-utils numactl
 
 # Download HPCX and compile with Fortran support
 RUN cd /opt && \
@@ -32,7 +36,7 @@ ENV LD_LIBRARY_PATH /opt/hpcx/ompi/lib:$LD_LIBRARY_PATH
 
 RUN echo "source /opt/hpcx/hpcx-init.sh; hpcx_load" >>  /root/.bashrc
 
-# Install NCCL 2.20.3 for compatibility with PyTorch 2.2.1
+# Install newer NCCL for compatibility with PyTorch 2.2.1+
 RUN cd /opt && \
     git clone --branch v2.20.3-1 https://github.com/NVIDIA/nccl.git && \
     cd nccl && \
@@ -40,7 +44,7 @@ RUN cd /opt && \
 ENV LD_LIBRARY_PATH /opt/nccl/build/lib:$LD_LIBRARY_PATH
 
 # Install PyTorch
-RUN pip3 install torch==2.2.1 torchvision torchaudio
+RUN pip3 install torch==2.4.0
 
 # Install yaml-cpp
 RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \
@@ -78,6 +82,7 @@ RUN cd /torchfort && mkdir build && cd build && \
     -DTORCHFORT_YAML_CPP_ROOT=/opt/yaml-cpp \
     -DTORCHFORT_NCCL_ROOT=/opt/nccl/build \
     -DTORCHFORT_BUILD_EXAMPLES=1 \
+    -DTORCHFORT_BUILD_TESTS=1 \
     -DCMAKE_PREFIX_PATH="`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`" \
     .. && \
     make -j$(nproc) install && \

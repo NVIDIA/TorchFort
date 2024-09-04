@@ -32,7 +32,7 @@ RUN cd /opt && \
 ENV LD_LIBRARY_PATH /opt/nccl/build/lib:$LD_LIBRARY_PATH
 
 # Install PyTorch
-RUN pip3 install torch==2.2.1 torchvision torchaudio
+RUN pip3 install torch==2.4.0
 
 # Install yaml-cpp
 RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \

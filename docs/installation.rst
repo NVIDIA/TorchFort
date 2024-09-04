@@ -1,5 +1,6 @@
+############
 Installation
-============
+############
 
 TorchFort can be installed in multiple ways but we highly recommend building and using a Docker container. 
 

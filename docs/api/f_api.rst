@@ -11,12 +11,12 @@ General
 ********
 
 Types
------
+=====
 
 .. _torchfort_datatype_t-f-ref:
 
 torchfort_datatype
-__________________
+------------------
 See documentation for equivalent C enumerator, :ref:`torchfort_datatype_t-ref`.
 
 ------
@@ -24,20 +24,20 @@ See documentation for equivalent C enumerator, :ref:`torchfort_datatype_t-ref`.
 .. _torchfort_result_t-f-ref:
 
 torchfort_result
-________________
+----------------
 See documentation for equivalent C enumerator, :ref:`torchfort_result_t-ref`.
 
 ------
 
 Global Context Settings
-------------------------
+========================
 
 These are global routines which affect the behavior of the libtorch backend. It is therefore recommended to call these functions before any other TorchFort calls are made. 
 
 .. _torchfort_set_cudnn_benchmark-f-ref:
 
 torchfort_set_cudnn_benchmark
-_____________________________
+-----------------------------
 .. f:function :: torchfort_set_cudnn_benchmark(flag)
 
   Enables or disables cuDNN benchmark mode. See the `PyTorch documentation <https://pytorch.org/docs/stable/backends.html#torch.backends.cudnn.torch.backends.cudnn.benchmark>`_ for more details.
@@ -54,12 +54,12 @@ Supervised Learning
 *******************
 
 Model Creation
------------------------------------
+===================================
 
 .. _torchfort_create_model-f-ref:
 
 torchfort_create_model
-______________________
+----------------------
 
 .. f:function:: torchfort_create_model(name, config_fname, device)
 
@@ -75,7 +75,7 @@ ______________________
 .. _torchfort_create_distributed_model-f-ref:
 
 torchfort_create_distributed_model
-__________________________________
+----------------------------------
 
 .. f:function:: torchfort_create_distributed_model(name, config_fname, mpi_comm, device)
 
@@ -90,12 +90,12 @@ __________________________________
 ------
 
 Model Training/Inference
------------------------------------
+===================================
 
 .. _torchfort_train-f-ref:
 
 torchfort_train
-_______________
+---------------
 
 .. f:function:: torchfort_train(mname, input, label, loss_val, stream)
 
@@ -115,7 +115,7 @@ _______________
 .. _torchfort_inference-f-ref:
 
 torchfort_inference
-___________________
+-------------------
 
 .. f:function:: torchfort_inference(mname, input, output, stream)
 
@@ -132,12 +132,12 @@ ___________________
 ------
 
 Model Management
-----------------
+================
 
 .. _torchfort_save_model-f-ref:
 
 torchfort_save_model
-____________________
+--------------------
 
 .. f:function:: torchfort_save_model(mname, fname)
 
@@ -152,7 +152,7 @@ ____________________
 .. _torchfort_load_model-f-ref:
 
 torchfort_load_model
-____________________
+--------------------
 
 .. f:function:: torchfort_load_model(mname, fname)
 
@@ -167,7 +167,7 @@ ____________________
 .. _torchfort_save_checkpoint-f-ref:
 
 torchfort_save_checkpoint
-_________________________
+-------------------------
 
 .. f:function:: torchfort_save_checkpoint(mname, checkpoint_dir)
 
@@ -182,7 +182,7 @@ _________________________
 .. _torchfort_load_checkpoint-f-ref:
 
 torchfort_load_checkpoint
-_________________________
+-------------------------
 
 .. f:function:: torchfort_load_checkpoint(mname, checkpoint_dir)
 
@@ -195,12 +195,12 @@ _________________________
 ------
 
 Weights and Biases Logging
---------------------------
+==========================
 
 .. _torchfort_wandb_log_int-f-ref:
 
 torchfort_wandb_log_int
-_______________________
+-----------------------
 
 .. f:function:: torchfort_wandb_log_int(mname, metric_name, step, val)
    
@@ -217,7 +217,7 @@ _______________________
 .. _torchfort_wandb_log_float-f-ref:
 
 torchfort_wandb_log_float
-_________________________
+-------------------------
 
 .. f:function:: torchfort_wandb_log_float(mname, metric_name, step, val)
 
@@ -226,7 +226,7 @@ _________________________
 .. _torchfort_wandb_log_double-f-ref:
 
 torchfort_wandb_log_double
-__________________________
+--------------------------
 
 .. f:function:: torchfort_wandb_log_double(mname, metric_name, step, val)
 
@@ -238,8 +238,8 @@ __________________________
 Reinforcement Learning
 **********************
 
-Similar to other reinforcement learning frameworks such as [spinning up](https://spinningup.openai.com/en/latest/) 
-from OpenAI or [stable baselines](https://stable-baselines3.readthedocs.io/en/master/), 
+Similar to other reinforcement learning frameworks such as `Spinning Up <https://spinningup.openai.com/en/latest/>`_ 
+from OpenAI or `Stable Baselines <https://stable-baselines3.readthedocs.io/en/master/>`_, 
 we distinguish between on-policy and off-policy algorithms since those two types require different APIs.
 
 ------
@@ -257,7 +257,7 @@ Basic routines to create and register a reinforcement learning system in the int
 .. _torchfort_rl_off_policy_create_system-f-ref:
 
 torchfort_rl_off_policy_create_system
-_____________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_off_policy_create_system(name, config_fname, model_device, rb_device)
 
@@ -274,7 +274,7 @@ _____________________________________
 .. _torchfort_rl_off_policy_create_distributed_system-f-ref:
 
 torchfort_rl_off_policy_create_distributed_system
-_________________________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_off_policy_create_distributed_system(name, config_fname, mpi_comm, model_device, rb_device)
 
@@ -297,7 +297,7 @@ These routines are be used for training the reinforcement learning system or for
 .. _torchfort_rl_off_policy_train_step-f-ref:
 
 torchfort_rl_off_policy_train_step
-__________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_off_policy_train_step(name, p_loss_val, q_loss_val, stream)
 
@@ -318,7 +318,7 @@ __________________________________
 .. _torchfort_rl_off_policy_predict_explore-f-ref:
 
 torchfort_rl_off_policy_predict_explore
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_off_policy_predict_explore(name, state, act, stream)
 
@@ -338,7 +338,7 @@ _______________________________________
 .. _torchfort_rl_off_policy_predict-f-ref:
 
 torchfort_rl_off_policy_predict
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_off_policy_predict(name, state, act, stream)
 
@@ -359,7 +359,7 @@ _______________________________________
 .. _torchfort_rl_off_policy_evaluate-f-ref:
 
 torchfort_rl_off_policy_evaluate
-________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_off_policy_evaluate(name, state, act, reward, stream)
 
@@ -384,7 +384,7 @@ System Management
 .. _torchfort_rl_off_policy_update_replay_buffer-f-ref:
 
 torchfort_rl_off_policy_update_replay_buffer
-____________________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_off_policy_update_replay_buffer(name, state_old, act_old, state_new, reward, terminal, stream)
   
@@ -406,7 +406,7 @@ ____________________________________________
 .. _torchfort_rl_off_policy_is_ready-f-ref:
  
 torchfort_rl_off_policy_is_ready
-________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  
 .. f:function:: torchfort_rl_off_policy_is_ready(name, ready)
  
@@ -423,7 +423,7 @@ ________________________________
 .. _torchfort_rl_off_policy_save_checkpoint-f-ref:
  
 torchfort_rl_off_policy_save_checkpoint
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  
 .. f:function:: torchfort_rl_off_policy_save_checkpoint(name, checkpoint_dir)
 
@@ -441,7 +441,7 @@ _______________________________________
 .. _torchfort_rl_off_policy_load_checkpoint-f-ref:
  
 torchfort_rl_off_policy_load_checkpoint
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  
 .. f:function:: torchfort_rl_off_policy_load_checkpoint(name, checkpoint_dir)
 
@@ -462,7 +462,7 @@ Weights and Biases Logging
 .. _torchfort_rl_off_policy_wandb_log_int-f-ref:
 
 torchfort_rl_off_policy_wandb_log_int
-_____________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_off_policy_wandb_log_int(mname, metric_name, step, val)
    
@@ -479,7 +479,7 @@ _____________________________________
 .. _torchfort_rl_off_policy_wandb_log_float-f-ref:
 
 torchfort_rl_off_policy_wandb_log_float
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_off_policy_wandb_log_float(mname, metric_name, step, val)
 
@@ -488,7 +488,7 @@ _______________________________________
 .. _torchfort_rl_off_policy_wandb_log_double-f-ref:
 
 torchfort_rl_off_policy_wandb_log_double
-________________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_off_policy_wandb_log_double(mname, metric_name, step, val)
 
@@ -508,7 +508,7 @@ A (synchronous) data parallel distributed option is available.
 .. _torchfort_rl_on_policy_create_system-f-ref:
 
 torchfort_rl_on_policy_create_system
-_____________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_on_policy_create_system(name, config_fname, model_device, rb_device)
 
@@ -525,7 +525,7 @@ _____________________________________
 .. _torchfort_rl_on_policy_create_distributed_system-f-ref:
 
 torchfort_rl_on_policy_create_distributed_system
-_________________________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_on_policy_create_distributed_system(name, config_fname, mpi_comm, model_device, rb_device)
 
@@ -548,7 +548,7 @@ These routines are be used for training the reinforcement learning system or for
 .. _torchfort_rl_on_policy_train_step-f-ref:
 
 torchfort_rl_on_policy_train_step
-__________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_on_policy_train_step(name, p_loss_val, q_loss_val, stream)
 
@@ -569,7 +569,7 @@ __________________________________
 .. _torchfort_rl_on_policy_predict_explore-f-ref:
 
 torchfort_rl_on_policy_predict_explore
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_on_policy_predict_explore(name, state, act, stream)
 
@@ -589,7 +589,7 @@ _______________________________________
 .. _torchfort_rl_on_policy_predict-f-ref:
 
 torchfort_rl_on_policy_predict
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_on_policy_predict(name, state, act, stream)
 
@@ -610,7 +610,7 @@ _______________________________________
 .. _torchfort_rl_on_policy_evaluate-f-ref:
 
 torchfort_rl_on_policy_evaluate
-________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_on_policy_evaluate(name, state, act, reward, stream)
 
@@ -635,7 +635,7 @@ System Management
 .. _torchfort_rl_on_policy_update_rollout_buffer-f-ref:
 
 torchfort_rl_on_policy_update_rollout_buffer
-____________________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_on_policy_update_rollout_buffer(name, state_old, act_old, state_new, reward, terminal, stream)
   
@@ -657,7 +657,7 @@ ____________________________________________
 .. _torchfort_rl_on_policy_reset_rollout_buffer-f-ref:
  
 torchfort_rl_on_policy_reset_rollout_buffer
-________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  
 .. f:function:: torchfort_rl_on_policy_reset_rollout_buffer(name)
  
@@ -671,7 +671,7 @@ ________________________________
 .. _torchfort_rl_on_policy_is_ready-f-ref:
  
 torchfort_rl_on_policy_is_ready
-________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  
 .. f:function:: torchfort_rl_on_policy_is_ready(name, ready)
  
@@ -689,7 +689,7 @@ ________________________________
 .. _torchfort_rl_on_policy_save_checkpoint-f-ref:
  
 torchfort_rl_on_policy_save_checkpoint
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  
 .. f:function:: torchfort_rl_on_policy_save_checkpoint(name, checkpoint_dir)
 
@@ -707,7 +707,7 @@ _______________________________________
 .. _torchfort_rl_on_policy_load_checkpoint-f-ref:
  
 torchfort_rl_on_policy_load_checkpoint
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  
 .. f:function:: torchfort_rl_on_policy_load_checkpoint(name, checkpoint_dir)
 
@@ -728,7 +728,7 @@ Weights and Biases Logging
 .. _torchfort_rl_on_policy_wandb_log_int-f-ref:
 
 torchfort_rl_on_policy_wandb_log_int
-_____________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_on_policy_wandb_log_int(mname, metric_name, step, val)
    
@@ -745,7 +745,7 @@ _____________________________________
 .. _torchfort_rl_on_policy_wandb_log_float-f-ref:
 
 torchfort_rl_on_policy_wandb_log_float
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_on_policy_wandb_log_float(mname, metric_name, step, val)
 
@@ -754,10 +754,8 @@ _______________________________________
 .. _torchfort_rl_on_policy_wandb_log_double-f-ref:
 
 torchfort_rl_on_policy_wandb_log_double
-________________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. f:function:: torchfort_rl_on_policy_wandb_log_double(mname, metric_name, step, val)
-
-------
 
 

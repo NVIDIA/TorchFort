@@ -1,5 +1,6 @@
+###########
 Usage Guide
-===========
+###########
 
 TorchFort provides API functions to support two common Deep Learning paradigms: supervised learning and reinforcement learning. Due to the differences in structure between these approaches, the API
 is organized largely into separate sets of functions designed to facilitate each approach. 
@@ -7,7 +8,7 @@ is organized largely into separate sets of functions designed to facilitate each
 .. _supervised_learning-ref:
 
 Supervised Learning
--------------------
+===================
 
 Supervised learning approaches are by far the most common within Deep Learning. TorchFort provides functions to create/load/save models and run supervised training and inference on models, all directly within a C/C++/Fortran program.
 For a complete list of functions available, see :ref:`torchfort_general_c-ref` for C/C++ or :ref:`torchfort_general_f-ref` for Fortran bindings.
@@ -16,7 +17,7 @@ For a complete list of functions available, see :ref:`torchfort_general_c-ref` f
 Here, we will provide a high-level guide to using TorchFort for a supervised learning problem. For a more detailed usage example, we refer to the ``simulation`` example provided in this repository in the ``examples/fortran`` directory.
 
 Creating a model
-~~~~~~~~~~~~~~~~~
+----------------
 First, create a model instance.
 
 .. tabs::
@@ -34,7 +35,7 @@ on the YAML configuration file format and options.
 The last argument ``device`` specifies where to place and run the model on. Values 0 or greater correspond to GPU device indices (e.g., a value of ``0`` will place the model on GPU device 0). The constant ``TORCHFORT_DEVICE_GPU (-1)`` can be used to place the model on the CPU.
 
 Run a Training Step
-~~~~~~~~~~~~~~~~~~~
+-------------------
 Run a training step on input and label data generated from your program.
 
 .. tabs::
@@ -55,7 +56,7 @@ In the Fortran API, ``input`` and ``label`` are multi-dimensional Fortran arrays
 The ``stream`` argument specifies a CUDA stream to enqueue the training operations into. This argument is ignored if the model was placed on the CPU.
 
 Run Inference to generate predicted output
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------
 After training the model on one or more samples, we can run an inference to generate a predicted output.
 
 .. tabs::
@@ -77,7 +78,7 @@ The ``stream`` argument specifies a CUDA stream to enqueue the inference operati
 
 
 Checkpoint/Restart
-~~~~~~~~~~~~~~~~~~
+------------------
 The complete training state (current model parameters, optimizer state, learning rate scheduler progress) can be written to a checkpoint directory at any point during training.
 
 .. tabs::
@@ -126,7 +127,7 @@ can be one generated using the ``torchfort_save_model`` function or one found wi
 .. _reinforcement_learning-ref:
 
 Reinforcement Learning
-----------------------
+======================
 
 Most modern reinforcement learning (RL) algorithms utilize different neural networks for policy and value functions and often require keeping track of multiple copies for each of the models (e.g., the `DDPG <https://spinningup.openai.com/en/latest/algorithms/ddpg.html>`_ or `TD3 <https://spinningup.openai.com/en/latest/algorithms/td3.html>`_ algorithms). Furthermore, the training algorithm causes those networks to interact in a non-trivial way. Additionally, off-policy methods require keeping track of historic data stored in a replay buffers, keeping track of actions and system states and rewards. Many reinforcement learning algorithms are deterministic in nature and thus require manual injection of randomness into the training process by employing parameter or action space noise. 
 
@@ -136,7 +137,7 @@ Currently, TorchFort only provides off-policy methods as those have been proven 
 We will provide a high-level guide for users who would like to add reinforcement learning functionality to their code. We assume that the user is familiar with the basic concepts of deep and reinforcement learning and understands the possibilities and limitations of these methods. This guide is far from exhaustive and for a complete list of reinforcement learning functions see :ref:`torchfort_rl_c-ref` for C/C++ or :ref:`torchfort_rl_f-ref` for Fortran respectively. We also suggest reviewing the ``example`` folder where we have implemented the cartpole RL problem in C++ using TorchFort.
 
 Creating an RL system
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 To start, a TorchFort rl system has to be initialized with the call:
 
@@ -154,7 +155,7 @@ where ``system_name`` is a name which used by TorchFort to identify the system c
 The last two arguments ``model_device`` and ``rb_device`` specify where to place the model and replay buffer on respectively. Values 0 or greater correspond to GPU device indices (e.g., a value of ``0`` will place the model or replay buffer on GPU device 0). The constant ``TORCHFORT_DEVICE_GPU (-1)`` can be used to place the model or replay buffer on the CPU.
 
 Replay Buffer Management
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 The user application (usually called *environment* in the RL context) will generate states and rewards based on actions suggested by the policy function or some other mechanism. For off-policy methods, this information needs to be passed to the replay buffer from which the training process will sample. This is performed via:
     
@@ -193,7 +194,7 @@ Before training can start, the replay buffer needs to contain a minimum number o
 
 
 Generating Action Predictions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 TorchFort provides the following two functions to generate action predictions from the policy network infrastructure:
 
@@ -224,7 +225,7 @@ The ``stream`` argument specifies a CUDA stream to enqueue the prediction operat
     The prediction methods are inference methods and thus expect a batch of data. Therefore, the state and action arrays need to include a batch dimension.
 
 Training Step
-~~~~~~~~~~~~~
+-------------
 
 Once the system is ready, a training step (forward, backward, optimizer step, learning rate decay) can be performed by calling:
 
@@ -245,7 +246,7 @@ The ``stream`` argument specifies a CUDA stream to enqueue the training operatio
     If the RL algorithm uses a policy lag bigger than zero, for some steps only the value function networks are updated. In this case, ``p_loss`` is not computed and will be equal to zero.
 
 Checkpoint/Restart
-~~~~~~~~~~~~~~~~~~
+------------------
 
 At any time during or after training, a checkpoint of the full system can be stored using:
 

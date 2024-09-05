@@ -70,7 +70,7 @@ extern "C" {
  * @param[in] name A name to assign to the created training system instance to use as a key for other TorchFort
  * routines.
  * @param[in] config_fname The filesystem path to the user-defined configuration file to use.
- * @param[in] model device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
+ * @param[in] model_device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
  * values >= 0, model will be placed on GPU with index corresponding to value.
  * @param[in] rb_device Which device to place the replay buffer on. For TORCHFORT_DEVICE_CPU (-1), the replay buffer will be placed on CPU. For 
  * values >= 0, the replay buffer will be placed on GPU with index corresponding to value.
@@ -88,7 +88,7 @@ torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const
  * routines.
  * @param[in] config_fname The filesystem path to the user-defined configuration file to use.
  * @param[in] mpi_comm MPI communicator to use to initialize NCCL communication library for data-parallel communication.
- * @param[in] model device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
+ * @param[in] model_device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
  * values >= 0, model will be placed on GPU with index corresponding to value.
  * @param[in] rb_device Which device to place the replay buffer on. For TORCHFORT_DEVICE_CPU (-1), the replay buffer will be placed on CPU. For 
  * values >= 0, the replay buffer will be placed on GPU with index corresponding to value.
@@ -234,7 +234,7 @@ torchfort_result_t torchfort_rl_off_policy_evaluate_F(const char* name, void* st
  * @param[in] action_shape A pointer to an array specifying the shape of the action data. Length should be equal to the
  * rank of the action data.
  * @param[in] reward A pointer to a memory buffer with reward data.
- * @param[in] final_state A flag indicating whether \pstate_new is the final state in the current episode (set to \p
+ * @param[in] final_state A flag indicating whether \p state_new is the final state in the current episode (set to \p
  * true if it is the final state, otherwise \p false).
  * @param[out] dtype The TorchFort datatype to use for this operation.
  * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
@@ -481,7 +481,7 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
  * @param[in] action_shape A pointer to an array specifying the shape of the action data. Length should be equal to the
  * rank of the action data.
  * @param[in] reward A pointer to a memory buffer with reward data.
- * @param[in] final_state. A flag indicating whether the state after \p state is the final state in the episode (set to \p
+ * @param[in] final_state A flag indicating whether the state after \p state is the final state in the episode (set to \p
  * true if this is true, otherwise \p false).
  * @param[out] dtype The TorchFort datatype to use for this operation.
  * @param[out] stream CUDA stream to enqueue the action prediction operations.
@@ -505,8 +505,6 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* na
  * @details This function call clears the rollout buffer and resets all variables.
  *
  * @param[in] name The name of system instance to use, as defined during system creation. 
- * @param[in] start_new_episode This flag signals the rollout buffer to set the new episode flag. This is important in order
- * to guarantee correct advantage computation for rollouts.
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure. 
 */
 torchfort_result_t torchfort_rl_on_policy_reset_rollout_buffer(const char* name);

@@ -11,12 +11,12 @@ General
 *******
 
 Types
------
+=====
 
 .. _torchfort_datatype_t-ref:
 
 torchfort_datatype_t
-____________________
+--------------------
 .. doxygenenum :: torchfort_datatype_t
 
 ------
@@ -24,20 +24,20 @@ ____________________
 .. _torchfort_result_t-ref:
 
 torchfort_result_t
-__________________
+------------------
 .. doxygenenum :: torchfort_result_t
 
 ------
 
 Global Context Settings
-------------------------
+=======================
 
 These are global routines which affect the behavior of the libtorch backend. It is therefore recommended to call these functions before any other TorchFort calls are made. 
 
 .. _torchfort_set_cudnn_benchmark-ref:
 
 torchfort_set_cudnn_benchmark
-_____________________________
+-----------------------------
 .. doxygenfunction:: torchfort_set_cudnn_benchmark
 
 
@@ -48,12 +48,12 @@ Supervised Learning
 *******************
 
 Model Creation
------------------------------------
+==============
 
 .. _torchfort_create_model-ref:
 
 torchfort_create_model
-______________________
+----------------------
 .. doxygenfunction:: torchfort_create_model
 
 ------
@@ -61,18 +61,18 @@ ______________________
 .. _torchfort_create_distributed-model-ref:
 
 torchfort_create_distributed_model
-__________________________________
+----------------------------------
 .. doxygenfunction:: torchfort_create_distributed_model
 
 ------
 
 Model Training/Inference
------------------------------------
+========================
 
 .. _torchfort_train-ref:
 
 torchfort_train
-_______________
+---------------
 .. doxygenfunction:: torchfort_train
 
 ------
@@ -80,18 +80,18 @@ _______________
 .. _torchfort_inference-ref:
 
 torchfort_inference
-___________________
+-------------------
 .. doxygenfunction:: torchfort_inference
 
 ------
 
 Model Management
-----------------
+================
 
 .. _torchfort_save_model-ref:
 
 torchfort_save_model
-____________________
+--------------------
 .. doxygenfunction:: torchfort_save_model
 
 ------
@@ -99,7 +99,7 @@ ____________________
 .. _torchfort_load_model-ref:
 
 torchfort_load_model
-____________________
+--------------------
 .. doxygenfunction:: torchfort_load_model
 
 ------
@@ -107,7 +107,7 @@ ____________________
 .. _torchfort_save_checkpoint-ref:
 
 torchfort_save_checkpoint
-_________________________
+-------------------------
 .. doxygenfunction:: torchfort_save_checkpoint
 
 ------
@@ -115,18 +115,18 @@ _________________________
 .. _torchfort_load_checkpoint-ref:
 
 torchfort_load_checkpoint
-_________________________
+-------------------------
 .. doxygenfunction:: torchfort_load_checkpoint
 
 ------
 
 Weights and Biases Logging
---------------------------
+==========================
 
 .. _torchfort_wandb_log_int-ref:
 
 torchfort_wandb_log_int
-_______________________
+-----------------------
 .. doxygenfunction:: torchfort_wandb_log_int
 
 ------
@@ -134,7 +134,7 @@ _______________________
 .. _torchfort_wandb_log_float-ref:
 
 torchfort_wandb_log_float
-_________________________
+-------------------------
 .. doxygenfunction:: torchfort_wandb_log_float
 
 ------
@@ -142,7 +142,7 @@ _________________________
 .. _torchfort_wandb_log_double-ref:
 
 torchfort_wandb_log_double
-__________________________
+--------------------------
 .. doxygenfunction:: torchfort_wandb_log_double
 
 ------
@@ -153,8 +153,8 @@ __________________________
 Reinforcement Learning
 **********************
 
-Similar to other reinforcement learning frameworks such as [spinning up](https://spinningup.openai.com/en/latest/) 
-from OpenAI or [stable baselines](https://stable-baselines3.readthedocs.io/en/master/), 
+Similar to other reinforcement learning frameworks such as `Spinning Up <https://spinningup.openai.com/en/latest/>`_ 
+from OpenAI or `Stable Baselines <https://stable-baselines3.readthedocs.io/en/master/>`_, 
 we distinguish between on-policy and off-policy algorithms since those two types require different APIs.
 
 ------
@@ -172,7 +172,7 @@ Basic routines to create and register a reinforcement learning system in the int
 .. _torchfort_rl_off_policy_create_system-ref:
 		     
 torchfort_rl_off_policy_create_system
-_____________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_create_system
 
 ------
@@ -180,20 +180,20 @@ _____________________________________
 .. _torchfort_rl_off_policy_create_distributed_system-ref:
 
 torchfort_rl_off_policy_create_distributed_system
-_________________________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_create_distributed_system
 
 ------
 
 Training/Evaluation
------------------------------------------
+-------------------
 
 These routines are used for training the reinforcement learning system or for steering the environment. 
 
 .. _torchfort_rl_off_policy_train_step-ref:
 
 torchfort_rl_off_policy_train_step
-__________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_train_step
 
 ------
@@ -201,7 +201,7 @@ __________________________________
 .. _torchfort_rl_off_policy_predict_explore-ref:
 
 torchfort_rl_off_policy_predict_explore
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_predict_explore
 
 ------
@@ -209,7 +209,7 @@ _______________________________________
 .. _torchfort_rl_off_policy_predict-ref:
 
 torchfort_rl_off_policy_predict
-_______________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_predict
 
 ------
@@ -217,7 +217,7 @@ _______________________________
 .. _torchfort_rl_off_policy_evaluate-ref:
 
 torchfort_rl_off_policy_evaluate
-________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_evaluate
 
 ------
@@ -230,7 +230,7 @@ The purpose of these routines is to manage the reinforcement learning systems in
 .. _torchfort_rl_off_policy_update_replay_buffer-ref:
 
 torchfort_rl_off_policy_update_replay_buffer
-____________________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_update_replay_buffer
 
 ------
@@ -238,7 +238,7 @@ ____________________________________________
 .. _torchfort_rl_off_policy_is_ready-ref:
 
 torchfort_rl_off_policy_is_ready
-________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_is_ready
 
 ------
@@ -246,7 +246,7 @@ ________________________________
 .. _torchfort_rl_off_policy_save_checkpoint-ref:
 
 torchfort_rl_off_policy_save_checkpoint
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_save_checkpoint
 
 ------
@@ -254,7 +254,7 @@ _______________________________________
 .. _torchfort_rl_off_policy_load_checkpoint-ref:
 
 torchfort_rl_off_policy_load_checkpoint
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_load_checkpoint
 
 ------
@@ -268,7 +268,7 @@ The reinforcement learning system performs logging for all involved networks aut
 .. _torchfort_rl_off_policy_wandb_log_int-ref:
 
 torchfort_rl_off_policy_wandb_log_int
-_____________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_wandb_log_int
 
 ------
@@ -276,7 +276,7 @@ _____________________________________
 .. _torchfort_rl_off_policy_wandb_log_float-ref:
 
 torchfort_rl_off_policy_wandb_log_float
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_wandb_log_float
 
 ------
@@ -284,7 +284,7 @@ _______________________________________
 .. _torchfort_rl_off_policy_wandb_log_double-ref:
 
 torchfort_rl_off_policy_wandb_log_double
-________________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_wandb_log_double
 
 ------
@@ -303,7 +303,7 @@ A (synchronous) data parallel distributed option is available.
 .. _torchfort_rl_on_policy_create_system-ref:
 		     
 torchfort_rl_on_policy_create_system
-_____________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_create_system
 
 ------
@@ -311,7 +311,7 @@ _____________________________________
 .. _torchfort_rl_on_policy_create_distributed_system-ref:
 
 torchfort_rl_on_policy_create_distributed_system
-_________________________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_create_distributed_system
 
 ------
@@ -324,7 +324,7 @@ These routines are used for training the reinforcement learning system or for st
 .. _torchfort_rl_on_policy_train_step-ref:
 
 torchfort_rl_on_policy_train_step
-__________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_train_step
 
 ------
@@ -332,7 +332,7 @@ __________________________________
 .. _torchfort_rl_on_policy_predict_explore-ref:
 
 torchfort_rl_on_policy_predict_explore
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_predict_explore
 
 ------
@@ -340,7 +340,7 @@ _______________________________________
 .. _torchfort_rl_on_policy_predict-ref:
 
 torchfort_rl_on_policy_predict
-_______________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_predict
 
 ------
@@ -348,7 +348,7 @@ _______________________________
 .. _torchfort_rl_on_policy_evaluate-ref:
 
 torchfort_rl_on_policy_evaluate
-________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_evaluate
 
 ------
@@ -363,15 +363,15 @@ Additionally, save and restore functionality is also provided.
 .. _torchfort_rl_on_policy_update_rollout_buffer-ref:
 
 torchfort_rl_on_policy_update_rollout_buffer
-____________________________________________
-.. doxygenfunction:: torchfort_rl_ob_policy_update_rollout_buffer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. doxygenfunction:: torchfort_rl_on_policy_update_rollout_buffer
 
 ------
 
 .. _torchfort_rl_on_policy_is_ready-ref:
 
 torchfort_rl_on_policy_is_ready
-________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_is_ready
 
 ------
@@ -379,7 +379,7 @@ ________________________________
 .. _torchfort_rl_on_policy_save_checkpoint-ref:
 
 torchfort_rl_on_policy_save_checkpoint
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_save_checkpoint
 
 ------
@@ -387,7 +387,7 @@ _______________________________________
 .. _torchfort_rl_on_policy_load_checkpoint-ref:
 
 torchfort_rl_on_policy_load_checkpoint
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_load_checkpoint
 
 ------
@@ -403,7 +403,7 @@ the accumulated reward.
 .. _torchfort_rl_on_policy_wandb_log_int-ref:
 
 torchfort_rl_on_policy_wandb_log_int
-_____________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_wandb_log_int
 
 ------
@@ -411,7 +411,7 @@ _____________________________________
 .. _torchfort_rl_on_policy_wandb_log_float-ref:
 
 torchfort_rl_on_policy_wandb_log_float
-_______________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_wandb_log_float
 
 ------
@@ -419,7 +419,6 @@ _______________________________________
 .. _torchfort_rl_on_policy_wandb_log_double-ref:
 
 torchfort_rl_on_policy_wandb_log_double
-________________________________________
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_wandb_log_double
 
-------

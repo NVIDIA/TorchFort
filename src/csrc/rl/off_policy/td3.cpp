@@ -35,21 +35,20 @@
 #include "internal/rl/off_policy/td3.h"
 
 namespace torchfort {
-  
+
 namespace rl {
 
 namespace off_policy {
 
-TD3System::TD3System(const char* name, const YAML::Node& system_node,
-		     int model_device, int rb_device)
-  : RLOffPolicySystem(model_device, rb_device) {
-  
+TD3System::TD3System(const char* name, const YAML::Node& system_node, int model_device, int rb_device)
+    : RLOffPolicySystem(model_device, rb_device) {
+
   // get basic parameters first
   auto algo_node = system_node["algorithm"];
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
     std::set<std::string> supported_params{"batch_size", "num_critics", "policy_lag", "nstep", "nstep_reward_reduction",
-                                           "gamma", "rho"};
+                                           "gamma",      "rho"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     num_critics_ = params.get_param<int>("num_critics", 2)[0];
@@ -132,7 +131,8 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node,
 
       // distinction between buffer types
       if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, gamma_, nstep_, nstep_reward_reduction_, rb_device);
+        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, gamma_, nstep_,
+                                                               nstep_reward_reduction_, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
       }
@@ -248,14 +248,10 @@ void TD3System::printInfo() const {
   return;
 }
 
-torch::Device TD3System::modelDevice() const {
-  return model_device_;
-}
+torch::Device TD3System::modelDevice() const { return model_device_; }
 
-torch::Device TD3System::rbDevice() const {
-  return rb_device_;
-}
-  
+torch::Device TD3System::rbDevice() const { return rb_device_; }
+
 void TD3System::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // system
@@ -499,7 +495,7 @@ void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
 
   // update policy?
   bool update_policy = (train_step_count_ % policy_lag_ == 0);
-  
+
   torch::Tensor s, a, ap, sp, r, d;
   {
     torch::NoGradGuard no_grad;
@@ -517,16 +513,14 @@ void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
     // get a new action by predicting one with target network
     ap = predictWithNoiseTrain_(sp);
   }
-  
+
   // train step
-  train_td3(p_model_, p_model_target_, q_models_, q_models_target_,
-	    s, sp, a, ap, r, d,
-            static_cast<float>(std::pow(gamma_, nstep_)), rho_,
-	    p_loss_val, q_loss_val, update_policy);
+  train_td3(p_model_, p_model_target_, q_models_, q_models_target_, s, sp, a, ap, r, d,
+            static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_val, update_policy);
 }
 
 } // namespace off_policy
-  
+
 } // namespace rl
 
 } // namespace torchfort

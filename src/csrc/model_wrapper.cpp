@@ -158,8 +158,6 @@ void ModelWrapper::load(const std::string& fname) {
   }
 }
 
-torch::Device ModelWrapper::device() const {
-  return device_;
-}
+torch::Device ModelWrapper::device() const { return device_; }
 
 } // namespace torchfort

@@ -63,7 +63,7 @@ public:
 
   // some important functions which have to be implemented by the base class
   virtual void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, bool) = 0;
-  //virtual void finalizeRolloutBuffer(float, bool) = 0;
+  // virtual void finalizeRolloutBuffer(float, bool) = 0;
   virtual void resetRolloutBuffer() = 0;
   virtual bool isReady() = 0;
 
@@ -92,9 +92,9 @@ extern std::unordered_map<std::string, std::shared_ptr<RLOnPolicySystem>> regist
 
 // some convenience wrappers
 template <MemoryLayout L, typename T>
-static void update_rollout_buffer(const char* name, T* state, size_t state_dim, int64_t* state_shape,
-				  T* action, size_t action_dim, int64_t* action_shape,
-				  T reward, bool final_state, cudaStream_t ext_stream) {
+static void update_rollout_buffer(const char* name, T* state, size_t state_dim, int64_t* state_shape, T* action,
+                                  size_t action_dim, int64_t* action_shape, T reward, bool final_state,
+                                  cudaStream_t ext_stream) {
 
   // no grad
   torch::NoGradGuard no_grad;
@@ -114,20 +114,18 @@ static void update_rollout_buffer(const char* name, T* state, size_t state_dim, 
 #endif
 
   // get tensors and copy:
-  torch::Tensor state_tensor = get_tensor<L>(state, state_dim, state_shape)
-                      .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  torch::Tensor state_tensor =
+      get_tensor<L>(state, state_dim, state_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
   torch::Tensor action_tensor = get_tensor<L>(action, action_dim, action_shape)
-                      .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  
-  registry[name]->updateRolloutBuffer(state_tensor, action_tensor, 
-			 	      static_cast<float>(reward),
-				      final_state);
+                                    .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+
+  registry[name]->updateRolloutBuffer(state_tensor, action_tensor, static_cast<float>(reward), final_state);
   return;
 }
 
 template <MemoryLayout L, typename T>
 static void predict_explore(const char* name, T* state, size_t state_dim, int64_t* state_shape, T* action,
-			    size_t action_dim, int64_t* action_shape, cudaStream_t ext_stream) {
+                            size_t action_dim, int64_t* action_shape, cudaStream_t ext_stream) {
 
 #ifdef ENABLE_GPU
   // device and stream handling
@@ -140,8 +138,8 @@ static void predict_explore(const char* name, T* state, size_t state_dim, int64_
 #endif
 
   // create tensors
-  auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
-                          .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  auto state_tensor =
+      get_tensor<L>(state, state_dim, state_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
   auto action_tensor = get_tensor<L>(action, action_dim, action_shape);
 
   // fwd pass
@@ -153,7 +151,7 @@ static void predict_explore(const char* name, T* state, size_t state_dim, int64_
 
 template <MemoryLayout L, typename T>
 static void predict(const char* name, T* state, size_t state_dim, int64_t* state_shape, T* action, size_t action_dim,
-		    int64_t* action_shape, cudaStream_t ext_stream) {
+                    int64_t* action_shape, cudaStream_t ext_stream) {
 
 #ifdef ENABLE_GPU
   // device and stream handling
@@ -164,10 +162,10 @@ static void predict(const char* name, T* state, size_t state_dim, int64_t* state
     guard.reset_stream(stream);
   }
 #endif
-  
+
   // create tensors
-  auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
-                          .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  auto state_tensor =
+      get_tensor<L>(state, state_dim, state_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
   auto action_tensor = get_tensor<L>(action, action_dim, action_shape);
 
   // fwd pass
@@ -178,9 +176,9 @@ static void predict(const char* name, T* state, size_t state_dim, int64_t* state
 }
 
 template <MemoryLayout L, typename T>
-static void policy_evaluate(const char* name, T* state, size_t state_dim, int64_t* state_shape, T* action, size_t action_dim,
-			    int64_t* action_shape, T* reward, size_t reward_dim, int64_t* reward_shape,
-			    cudaStream_t ext_stream) {
+static void policy_evaluate(const char* name, T* state, size_t state_dim, int64_t* state_shape, T* action,
+                            size_t action_dim, int64_t* action_shape, T* reward, size_t reward_dim,
+                            int64_t* reward_shape, cudaStream_t ext_stream) {
 
 #ifdef ENABLE_GPU
   // device and stream handling
@@ -193,8 +191,8 @@ static void policy_evaluate(const char* name, T* state, size_t state_dim, int64_
 #endif
 
   // create tensors
-  auto state_tensor = get_tensor<L>(state, state_dim, state_shape)
-                          .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  auto state_tensor =
+      get_tensor<L>(state, state_dim, state_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
   auto action_tensor = get_tensor<L>(action, action_dim, action_shape)
                            .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
   auto reward_tensor = get_tensor<L>(reward, reward_dim, reward_shape);
@@ -214,6 +212,6 @@ template <typename T> void wandb_log_system(const char* name, const char* metric
 }
 
 } // namespace on_policy
-  
+
 } // namespace rl
 } // namespace torchfort

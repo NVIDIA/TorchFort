@@ -103,9 +103,12 @@ void Comm::initialize(bool initialize_nccl) {
 
 void Comm::finalize() {
 #ifdef ENABLE_GPU
-  if (nccl_comm) CHECK_NCCL(ncclCommDestroy(nccl_comm));
-  if (stream) CHECK_CUDA(cudaStreamDestroy(stream));
-  if (event) CHECK_CUDA(cudaEventDestroy(event));
+  if (nccl_comm)
+    CHECK_NCCL(ncclCommDestroy(nccl_comm));
+  if (stream)
+    CHECK_CUDA(cudaStreamDestroy(stream));
+  if (event)
+    CHECK_CUDA(cudaEventDestroy(event));
 #endif
 }
 
@@ -124,8 +127,8 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
     } else {
       nccl_dtype = get_nccl_dtype(tensor);
     }
-    CHECK_NCCL(ncclAllReduce(tensor.data_ptr(), tensor.data_ptr(), count, nccl_dtype,
-                             (average) ? ncclAvg : ncclSum, nccl_comm, stream));
+    CHECK_NCCL(ncclAllReduce(tensor.data_ptr(), tensor.data_ptr(), count, nccl_dtype, (average) ? ncclAvg : ncclSum,
+                             nccl_comm, stream));
 
     CHECK_CUDA(cudaEventRecord(event, stream));
     CHECK_CUDA(cudaStreamWaitEvent(torch_stream, event));
@@ -139,8 +142,7 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
     } else {
       mpi_dtype = get_mpi_dtype(tensor);
     }
-    CHECK_MPI(MPI_Allreduce(MPI_IN_PLACE, tensor.data_ptr(), count, mpi_dtype,
-                            MPI_SUM, mpi_comm));
+    CHECK_MPI(MPI_Allreduce(MPI_IN_PLACE, tensor.data_ptr(), count, mpi_dtype, MPI_SUM, mpi_comm));
 
     if (average) {
       tensor /= size;
@@ -205,8 +207,7 @@ void Comm::broadcast(torch::Tensor& tensor, int root) const {
     CHECK_CUDA(cudaEventRecord(event, torch_stream));
     CHECK_CUDA(cudaStreamWaitEvent(stream, event));
 
-    CHECK_NCCL(
-        ncclBroadcast(tensor.data_ptr(), tensor.data_ptr(), count, nccl_dtype, root, nccl_comm, stream));
+    CHECK_NCCL(ncclBroadcast(tensor.data_ptr(), tensor.data_ptr(), count, nccl_dtype, root, nccl_comm, stream));
 
     CHECK_CUDA(cudaEventRecord(event, stream));
     CHECK_CUDA(cudaStreamWaitEvent(torch_stream, event));

@@ -53,7 +53,7 @@ namespace rl {
 // helpers for sanitizing devices
 // check if both devices are different, one device has to be a cpu device.
 bool validate_devices(int device1, int device2);
-  
+
 // helpers for extracting LRS from optimizer
 std::vector<double> get_current_lrs(std::shared_ptr<torch::optim::Optimizer> optimizer);
 
@@ -107,8 +107,8 @@ template <typename T> torch::Tensor unscale_action(torch::Tensor scaled_action, 
 }
 
 // explained variance
-  torch::Tensor explained_variance(torch::Tensor q_pred, torch::Tensor q_true, std::shared_ptr<Comm> comm);
-  
+torch::Tensor explained_variance(torch::Tensor q_pred, torch::Tensor q_true, std::shared_ptr<Comm> comm);
+
 } // namespace rl
 
 } // namespace torchfort

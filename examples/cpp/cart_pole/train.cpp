@@ -50,7 +50,6 @@
     }                                                                                                                  \
   } while (false)
 
-
 int main(int argc, char* argv[]) {
 
   // load config file
@@ -94,11 +93,10 @@ int main(int argc, char* argv[]) {
 
   // instantiate torchfort
 #if ENABLE_GPU
-  CHECK_TORCHFORT(torchfort_rl_off_policy_create_system("td3_system", "config.yaml",
-							0, TORCHFORT_DEVICE_CPU));
+  CHECK_TORCHFORT(torchfort_rl_off_policy_create_system("td3_system", "config.yaml", 0, TORCHFORT_DEVICE_CPU));
 #else
-  CHECK_TORCHFORT(torchfort_rl_off_policy_create_system("td3_system", "config.yaml",
-                                                        TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
+  CHECK_TORCHFORT(
+      torchfort_rl_off_policy_create_system("td3_system", "config.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
 #endif
 
   // define variables
@@ -167,7 +165,7 @@ int main(int argc, char* argv[]) {
                                                                 daction, 2, action_shape_batch.data(), TORCHFORT_FLOAT,
                                                                 0));
 
-      // copy data to host
+        // copy data to host
 #ifdef ENABLE_GPU
       cudaMemcpy(action.data(), daction, action.size() * sizeof(float), cudaMemcpyDeviceToHost);
 #else

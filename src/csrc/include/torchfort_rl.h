@@ -48,16 +48,15 @@ typedef void* cudaStream_t;
                                                                int64_t step, dtype value);
 
 #define RL_ON_POLICY_WANDB_LOG_FUNC(dtype)                                                                             \
-  torchfort_result_t torchfort_rl_on_policy_wandb_log_##dtype(const char* name, const char* metric_name,               \
-                                                               int64_t step, dtype value) {                            \
+  torchfort_result_t torchfort_rl_on_policy_wandb_log_##dtype(const char* name, const char* metric_name, int64_t step, \
+                                                              dtype value) {                                           \
     torchfort::rl::on_policy::wandb_log_system(name, metric_name, step, value);                                        \
     return TORCHFORT_RESULT_SUCCESS;                                                                                   \
   }
 
 #define RL_ON_POLICY_WANDB_LOG_PROTO(dtype)                                                                            \
-  torchfort_result_t torchfort_rl_on_policy_wandb_log_##dtype(const char* name, const char* metric_name,               \
-                                                               int64_t step, dtype value);
-
+  torchfort_result_t torchfort_rl_on_policy_wandb_log_##dtype(const char* name, const char* metric_name, int64_t step, \
+                                                              dtype value);
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,15 +69,15 @@ extern "C" {
  * @param[in] name A name to assign to the created training system instance to use as a key for other TorchFort
  * routines.
  * @param[in] config_fname The filesystem path to the user-defined configuration file to use.
- * @param[in] model_device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
- * values >= 0, model will be placed on GPU with index corresponding to value.
- * @param[in] rb_device Which device to place the replay buffer on. For TORCHFORT_DEVICE_CPU (-1), the replay buffer will be placed on CPU. For 
- * values >= 0, the replay buffer will be placed on GPU with index corresponding to value.
+ * @param[in] model_device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be
+ * placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
+ * @param[in] rb_device Which device to place the replay buffer on. For TORCHFORT_DEVICE_CPU (-1), the replay buffer
+ * will be placed on CPU. For values >= 0, the replay buffer will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const char* config_fname,
-							 int model_device, int rb_device);
+torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const char* config_fname, int model_device,
+                                                         int rb_device);
 
 /**
  * @brief Creates a (synchronous) data-parallel off-policy reinforcement learning system instance from a provided
@@ -88,15 +87,16 @@ torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const
  * routines.
  * @param[in] config_fname The filesystem path to the user-defined configuration file to use.
  * @param[in] mpi_comm MPI communicator to use to initialize NCCL communication library for data-parallel communication.
- * @param[in] model_device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
- * values >= 0, model will be placed on GPU with index corresponding to value.
- * @param[in] rb_device Which device to place the replay buffer on. For TORCHFORT_DEVICE_CPU (-1), the replay buffer will be placed on CPU. For 
- * values >= 0, the replay buffer will be placed on GPU with index corresponding to value.
+ * @param[in] model_device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be
+ * placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
+ * @param[in] rb_device Which device to place the replay buffer on. For TORCHFORT_DEVICE_CPU (-1), the replay buffer
+ * will be placed on CPU. For values >= 0, the replay buffer will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char* name, const char* config_fname, MPI_Comm mpi_comm,
-								     int model_device, int rb_device);
+torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char* name, const char* config_fname,
+                                                                     MPI_Comm mpi_comm, int model_device,
+                                                                     int rb_device);
 
 // RL off-policy training/prediction/evaluation functions
 /**
@@ -313,20 +313,22 @@ RL_OFF_POLICY_WANDB_LOG_PROTO(int)
 RL_OFF_POLICY_WANDB_LOG_PROTO(float)
 RL_OFF_POLICY_WANDB_LOG_PROTO(double)
 
-// RL on-policy system creation functions                                                                                                                                 
+// RL on-policy system creation functions
 /**
  * @brief Creates an on-policy reinforcement learning training system instance from a provided configuration file.
  *
  * @param[in] name A name to assign to the created training system instance to use as a key for other TorchFort
  * routines.
  * @param[in] config_fname The filesystem path to the user-defined configuration file to use.
- * @param[in] model_device Which device type to place and run the model on. For a value >= 0, the model will be placed on corresponding GPU.
- * @param[in] rb_device Which device type to place the replay buffer on. For a value >= 0, the buffer will be placed on the corresponding GPU.
+ * @param[in] model_device Which device type to place and run the model on. For a value >= 0, the model will be placed
+ * on corresponding GPU.
+ * @param[in] rb_device Which device type to place the replay buffer on. For a value >= 0, the buffer will be placed on
+ * the corresponding GPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_rl_on_policy_create_system(const char* name, const char* config_fname,
-							int model_device, int rb_device);
+torchfort_result_t torchfort_rl_on_policy_create_system(const char* name, const char* config_fname, int model_device,
+                                                        int rb_device);
 
 /**
  * @brief Creates a (synchronous) data-parallel on-policy reinforcement learning system instance from a provided
@@ -336,13 +338,15 @@ torchfort_result_t torchfort_rl_on_policy_create_system(const char* name, const 
  * routines.
  * @param[in] config_fname The filesystem path to the user-defined configuration file to use.
  * @param[in] mpi_comm MPI communicator to use to initialize NCCL communication library for data-parallel communication.
- * @param[in] model_device Which device type to place and run the model on. For a value >= 0, the model will be placed on corresponding GPU.
- * @param[in] rb_device Which device type to place the replay buffer on. For a value >= 0, the buffer will be placed on the corresponding GPU.
+ * @param[in] model_device Which device type to place and run the model on. For a value >= 0, the model will be placed
+ * on corresponding GPU.
+ * @param[in] rb_device Which device type to place the replay buffer on. For a value >= 0, the buffer will be placed on
+ * the corresponding GPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_rl_on_policy_create_distributed_system(const char* name, const char* config_fname, MPI_Comm mpi_comm,
-								    int model_device, int rb_device);
+torchfort_result_t torchfort_rl_on_policy_create_distributed_system(const char* name, const char* config_fname,
+                                                                    MPI_Comm mpi_comm, int model_device, int rb_device);
 
 // RL on-policy training/prediction/evaluation functions
 /**
@@ -364,7 +368,7 @@ torchfort_result_t torchfort_rl_on_policy_create_distributed_system(const char* 
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_rl_on_policy_train_step(const char* name, float* p_loss_val, float* q_loss_val,
-						     cudaStream_t stream);
+                                                     cudaStream_t stream);
 
 /**
  * @brief Suggests an action based on the current state of the system and adds noise as specified by the coprresponding
@@ -388,14 +392,14 @@ torchfort_result_t torchfort_rl_on_policy_train_step(const char* name, float* p_
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_rl_on_policy_predict_explore(const char* name, void* state, size_t state_dim,
-							  int64_t* state_shape, void* action, size_t action_dim,
-							  int64_t* action_shape, torchfort_datatype_t dtype,
-							  cudaStream_t stream);
-  
+                                                          int64_t* state_shape, void* action, size_t action_dim,
+                                                          int64_t* action_shape, torchfort_datatype_t dtype,
+                                                          cudaStream_t stream);
+
 torchfort_result_t torchfort_rl_on_policy_predict_explore_F(const char* name, void* state, size_t state_dim,
-							    int64_t* state_shape, void* action, size_t action_dim,
-							    int64_t* action_shape, torchfort_datatype_t dtype,
-							    cudaStream_t stream);
+                                                            int64_t* state_shape, void* action, size_t action_dim,
+                                                            int64_t* action_shape, torchfort_datatype_t dtype,
+                                                            cudaStream_t stream);
 
 /**
  * @brief Suggests an action based on the current state of the system.
@@ -417,16 +421,15 @@ torchfort_result_t torchfort_rl_on_policy_predict_explore_F(const char* name, vo
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_rl_on_policy_predict(const char* name, void* state, size_t state_dim,
-						  int64_t* state_shape, void* action, size_t action_dim,
-						  int64_t* action_shape, torchfort_datatype_t dtype,
-						  cudaStream_t stream);
-  
+torchfort_result_t torchfort_rl_on_policy_predict(const char* name, void* state, size_t state_dim, int64_t* state_shape,
+                                                  void* action, size_t action_dim, int64_t* action_shape,
+                                                  torchfort_datatype_t dtype, cudaStream_t stream);
+
 torchfort_result_t torchfort_rl_on_policy_predict_F(const char* name, void* state, size_t state_dim,
-						    int64_t* state_shape, void* action, size_t action_dim,
-						    int64_t* action_shape, torchfort_datatype_t dtype,
-						    cudaStream_t stream);
-  
+                                                    int64_t* state_shape, void* action, size_t action_dim,
+                                                    int64_t* action_shape, torchfort_datatype_t dtype,
+                                                    cudaStream_t stream);
+
 /**
  * @brief Predicts the future reward based on the current state and selected action
  * @details Depending on the learning algorithm, the routine queries the target critic networks for this.
@@ -451,16 +454,16 @@ torchfort_result_t torchfort_rl_on_policy_predict_F(const char* name, void* stat
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_rl_on_policy_evaluate(const char* name, void* state, size_t state_dim,
-						   int64_t* state_shape, void* action, size_t action_dim,
-						   int64_t* action_shape, void* reward, size_t reward_dim,
-						   int64_t* reward_shape, torchfort_datatype_t dtype,
-						   cudaStream_t stream);
-  
+                                                   int64_t* state_shape, void* action, size_t action_dim,
+                                                   int64_t* action_shape, void* reward, size_t reward_dim,
+                                                   int64_t* reward_shape, torchfort_datatype_t dtype,
+                                                   cudaStream_t stream);
+
 torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* state, size_t state_dim,
-						     int64_t* state_shape, void* action, size_t action_dim,
-						     int64_t* action_shape, void* reward, size_t reward_dim,
-						     int64_t* reward_shape, torchfort_datatype_t dtype,
-						     cudaStream_t stream);
+                                                     int64_t* state_shape, void* action, size_t action_dim,
+                                                     int64_t* action_shape, void* reward, size_t reward_dim,
+                                                     int64_t* reward_shape, torchfort_datatype_t dtype,
+                                                     cudaStream_t stream);
 
 // RL on-policy rollout buffer update functions
 /**
@@ -468,7 +471,7 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
  * @details Here \f$s\f$ (\p state) is the state for which action \f$a\f$ (\p action) was taken,
  * and receiving reward \f$r\f$ (\p reward).
  * The terminal state flag \f$d\f$ (\p terminal_state) specifies whether \f$s\f$ is the final state of the episode.
- * Note that value estimates \f$q\f$ as well was log-probabilities are also stored but the user does not need to 
+ * Note that value estimates \f$q\f$ as well was log-probabilities are also stored but the user does not need to
  * pass those manually, those values are computed internally from the current policy and stored with the other values.
  *
  * @param[in] name The name of system instance to use, as defined during system creation.
@@ -481,32 +484,32 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
  * @param[in] action_shape A pointer to an array specifying the shape of the action data. Length should be equal to the
  * rank of the action data.
  * @param[in] reward A pointer to a memory buffer with reward data.
- * @param[in] final_state A flag indicating whether the state after \p state is the final state in the episode (set to \p
- * true if this is true, otherwise \p false).
+ * @param[in] final_state A flag indicating whether the state after \p state is the final state in the episode (set to
+ * \p true if this is true, otherwise \p false).
  * @param[out] dtype The TorchFort datatype to use for this operation.
  * @param[out] stream CUDA stream to enqueue the action prediction operations.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
-*/
-torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer(const char* name,
-                void* state, size_t state_dim, int64_t* state_shape,
-                void* action, size_t action_dim, int64_t* action_shape,
-                const void* reward, bool final_state,
-                torchfort_datatype_t dtype, cudaStream_t stream);
+ */
+torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer(const char* name, void* state, size_t state_dim,
+                                                                int64_t* state_shape, void* action, size_t action_dim,
+                                                                int64_t* action_shape, const void* reward,
+                                                                bool final_state, torchfort_datatype_t dtype,
+                                                                cudaStream_t stream);
 
-torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* name,
-                void* state, size_t state_dim, int64_t* state_shape,
-                void* action, size_t action_dim, int64_t* action_shape,
-                const void* reward, bool final_state,
-                torchfort_datatype_t dtype, cudaStream_t stream);
+torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* name, void* state, size_t state_dim,
+                                                                  int64_t* state_shape, void* action, size_t action_dim,
+                                                                  int64_t* action_shape, const void* reward,
+                                                                  bool final_state, torchfort_datatype_t dtype,
+                                                                  cudaStream_t stream);
 
 /**
  * @brief Resets the rollout buffer
  * @details This function call clears the rollout buffer and resets all variables.
  *
- * @param[in] name The name of system instance to use, as defined during system creation. 
- * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure. 
-*/
+ * @param[in] name The name of system instance to use, as defined during system creation.
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
 torchfort_result_t torchfort_rl_on_policy_reset_rollout_buffer(const char* name);
 
 // RL on-policy checkpoint save and loading functions
@@ -550,18 +553,18 @@ torchfort_result_t torchfort_rl_on_policy_load_checkpoint(const char* name, cons
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_rl_on_policy_is_ready(const char* name, bool& ready);
-  
+
 // RL on-policy Weights and Bias Logging functions
 /**
- * @brief Write an integer value to a Weights and Bias log using the system logging tag.  \p *_float and \p *_double                           
- * variants to write \p float and \p double values respectively.                                                                               
- *                                                                                                                                             
- * @param[in] name The name of system instance to associate this metric value with, as defined during system creation.                         
- * @param[in] metric_name Metric label.                                                                                                        
- * @param[in] step Training/inference step to associate with metric value.                                                                     
- * @param[in] value Metric value to log.                                                                                                       
- *                                                                                                                                             
- * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.                                                                    
+ * @brief Write an integer value to a Weights and Bias log using the system logging tag.  \p *_float and \p *_double
+ * variants to write \p float and \p double values respectively.
+ *
+ * @param[in] name The name of system instance to associate this metric value with, as defined during system creation.
+ * @param[in] metric_name Metric label.
+ * @param[in] step Training/inference step to associate with metric value.
+ * @param[in] value Metric value to log.
+ *
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 RL_ON_POLICY_WANDB_LOG_PROTO(int)
 RL_ON_POLICY_WANDB_LOG_PROTO(float)

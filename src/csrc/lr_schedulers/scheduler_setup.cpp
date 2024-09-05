@@ -139,7 +139,7 @@ std::shared_ptr<BaseLRScheduler> get_lr_scheduler(const YAML::Node& lr_scheduler
     } catch (std::out_of_range) {
       THROW_INVALID_USAGE("linear_lr: total_iters parameter is required.");
     }
-    
+
     double start_factor;
     try {
       start_factor = params.get_param<double>("start_factor")[0];

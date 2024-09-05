@@ -42,10 +42,10 @@
 #include "internal/setup.h"
 
 // rl stuff
-#include "internal/rl/replay_buffer.h"
 #include "internal/rl/off_policy.h"
-#include "internal/rl/utils.h"
 #include "internal/rl/policy.h"
+#include "internal/rl/replay_buffer.h"
+#include "internal/rl/utils.h"
 
 namespace torchfort {
 
@@ -53,28 +53,25 @@ namespace rl {
 
 namespace off_policy {
 
-  //small helper model for trainable alpha coefficient 
-struct AlphaModel: torch::nn::Module {
-  
+// small helper model for trainable alpha coefficient
+struct AlphaModel : torch::nn::Module {
+
   torch::Tensor forward(torch::Tensor input);
   void setup(const float& alpha_value);
 
   bool alpha_coeff_;
   torch::Tensor log_alpha_;
-  
 };
 
 // implementing https://spinningup.openai.com/en/latest/algorithms/sac.html#pseudocode
 template <typename T>
 void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models,
-               const std::vector<ModelPack>& q_models_target,
-	       torch::Tensor state_old_tensor, torch::Tensor state_new_tensor,
-	       torch::Tensor action_old_tensor, torch::Tensor reward_tensor, torch::Tensor d_tensor,
-	       const std::shared_ptr<AlphaModel>& alpha_model,
-	       const std::shared_ptr<torch::optim::Optimizer>& alpha_optimizer,
-	       const std::shared_ptr<BaseLRScheduler>& alpha_lr_scheduler,
-	       const T& target_entropy, const T& gamma, const T& rho,
-	       T& p_loss_val, T& q_loss_val) {
+               const std::vector<ModelPack>& q_models_target, torch::Tensor state_old_tensor,
+               torch::Tensor state_new_tensor, torch::Tensor action_old_tensor, torch::Tensor reward_tensor,
+               torch::Tensor d_tensor, const std::shared_ptr<AlphaModel>& alpha_model,
+               const std::shared_ptr<torch::optim::Optimizer>& alpha_optimizer,
+               const std::shared_ptr<BaseLRScheduler>& alpha_lr_scheduler, const T& target_entropy, const T& gamma,
+               const T& rho, T& p_loss_val, T& q_loss_val) {
 
   // nvtx marker
   torchfort::nvtx::rangePush("torchfort_train_sac");
@@ -110,9 +107,9 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     float targ_ent;
     if (target_entropy > 0.) {
       // we exclude the first dim which is the batch dim
-      targ_ent = - float(action_old_tensor.size(1));
-      for(int i=2; i<action_old_tensor.dim(); ++i) {
-	targ_ent *= float(action_old_tensor.size(i));
+      targ_ent = -float(action_old_tensor.size(1));
+      for (int i = 2; i < action_old_tensor.dim(); ++i) {
+        targ_ent *= float(action_old_tensor.size(i));
       }
     } else {
       targ_ent = target_entropy;
@@ -123,10 +120,10 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     {
       torch::NoGradGuard no_grad;
       std::tie(action_tensor, action_log_prob) = p_model.model->forwardNoise(state_old_tensor);
-      action_log_prob =	action_log_prob + targ_ent;
+      action_log_prob = action_log_prob + targ_ent;
     }
 
-    alpha_loss = - torch::mean(alpha_model->log_alpha_ * action_log_prob);
+    alpha_loss = -torch::mean(alpha_model->log_alpha_ * action_log_prob);
     alpha_loss.backward();
 
     // reduce gradients
@@ -134,17 +131,17 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
       std::vector<torch::Tensor> grads;
       grads.reserve(alpha_model->parameters().size());
       for (const auto& p : alpha_model->parameters()) {
-	grads.push_back(p.grad());
+        grads.push_back(p.grad());
       }
       p_model.comm->allreduce(grads, true);
     }
-    
+
     alpha_optimizer->step();
     if (alpha_lr_scheduler) {
       alpha_lr_scheduler->step();
     }
   }
-  
+
   // policy function
   // compute y: use the target models for q_new, no grads
   torch::Tensor y_tensor;
@@ -169,7 +166,8 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   }
 
   // backward and update step
-  torch::Tensor q_old_tensor = q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+  torch::Tensor q_old_tensor =
+      q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
   q_models[0].optimizer->zero_grad();
   for (int i = 1; i < q_models.size(); ++i) {
@@ -221,7 +219,8 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
 
   // just q1 is used
   // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
-  torch::Tensor q_tens = q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0];
+  torch::Tensor q_tens =
+      q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0];
   for (int i = 1; i < q_models_target.size(); ++i) {
     auto q_tmp_tensor =
         q_models_target[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
@@ -279,8 +278,8 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     if (!q_model.comm || (q_model.comm && q_model.comm->rank == 0)) {
       torchfort::logging::print(os.str(), torchfort::logging::info);
       if (qstate->enable_wandb_hook) {
-	torchfort::wandb_log(qstate, q_model.comm, "critic_0", "train_loss", qstate->step_train, q_loss_val);
-	torchfort::wandb_log(qstate, q_model.comm, "critic_0", "train_lr", qstate->step_train, lrs[0]);
+        torchfort::wandb_log(qstate, q_model.comm, "critic_0", "train_loss", qstate->step_train, q_loss_val);
+        torchfort::wandb_log(qstate, q_model.comm, "critic_0", "train_lr", qstate->step_train, lrs[0]);
       }
     }
   }
@@ -312,11 +311,11 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
       auto lrs = get_current_lrs(alpha_optimizer);
       osa << "lr: " << lrs[0];
       if (!p_model.comm || (p_model.comm && p_model.comm->rank == 0)) {
-	torchfort::logging::print(osa.str(), torchfort::logging::info);
-	if (state->enable_wandb_hook) {
-	  torchfort::wandb_log(state, p_model.comm, "alpha", "train_loss", state->step_train, alpha_loss_val);
-	  torchfort::wandb_log(state, p_model.comm, "alpha", "train_lr", state->step_train, lrs[0]);
-	}
+        torchfort::logging::print(osa.str(), torchfort::logging::info);
+        if (state->enable_wandb_hook) {
+          torchfort::wandb_log(state, p_model.comm, "alpha", "train_loss", state->step_train, alpha_loss_val);
+          torchfort::wandb_log(state, p_model.comm, "alpha", "train_lr", state->step_train, lrs[0]);
+        }
       }
     }
   }
@@ -392,7 +391,7 @@ private:
 };
 
 } // namespace off_policy
-  
+
 } // namespace rl
 
 } // namespace torchfort

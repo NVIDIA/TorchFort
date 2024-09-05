@@ -62,9 +62,11 @@ namespace off_policy {
 std::unordered_map<std::string, std::shared_ptr<RLOffPolicySystem>> registry;
 
 // default constructor:
-RLOffPolicySystem::RLOffPolicySystem(int model_device, int rb_device) : train_step_count_(0), model_device_(get_device(model_device)), rb_device_(get_device(rb_device)) {
-  if ( !(torchfort::rl::validate_devices(model_device, rb_device)) ) {
-    THROW_INVALID_USAGE("The parameters model_device and rb_device have to specify the same GPU or one has to specify a GPU and the other the CPU.");
+RLOffPolicySystem::RLOffPolicySystem(int model_device, int rb_device)
+    : train_step_count_(0), model_device_(get_device(model_device)), rb_device_(get_device(rb_device)) {
+  if (!(torchfort::rl::validate_devices(model_device, rb_device))) {
+    THROW_INVALID_USAGE("The parameters model_device and rb_device have to specify the same GPU or one has to specify "
+                        "a GPU and the other the CPU.");
   }
 }
 
@@ -73,8 +75,8 @@ RLOffPolicySystem::RLOffPolicySystem(int model_device, int rb_device) : train_st
 } // namespace rl
 } // namespace torchfort
 
-torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const char* config_fname,
-                                                         int model_device, int rb_device) {
+torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const char* config_fname, int model_device,
+                                                         int rb_device) {
   using namespace torchfort;
 
   try {
@@ -87,11 +89,14 @@ torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const
         auto algorithm_type = sanitize(algorith_node["type"].as<std::string>());
 
         if (algorithm_type == "td3") {
-          rl::off_policy::registry[sanitize(name)] = std::make_shared<rl::off_policy::TD3System>(name, config, model_device, rb_device);
+          rl::off_policy::registry[sanitize(name)] =
+              std::make_shared<rl::off_policy::TD3System>(name, config, model_device, rb_device);
         } else if (algorithm_type == "sac") {
-          rl::off_policy::registry[sanitize(name)] = std::make_shared<rl::off_policy::SACSystem>(name, config, model_device, rb_device);
+          rl::off_policy::registry[sanitize(name)] =
+              std::make_shared<rl::off_policy::SACSystem>(name, config, model_device, rb_device);
         } else if (algorithm_type == "ddpg") {
-          rl::off_policy::registry[sanitize(name)] = std::make_shared<rl::off_policy::DDPGSystem>(name, config, model_device, rb_device);
+          rl::off_policy::registry[sanitize(name)] =
+              std::make_shared<rl::off_policy::DDPGSystem>(name, config, model_device, rb_device);
         } else {
           THROW_INVALID_USAGE(algorithm_type);
         }
@@ -108,8 +113,9 @@ torchfort_result_t torchfort_rl_off_policy_create_system(const char* name, const
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char* name, const char* config_fname, MPI_Comm mpi_comm,
-                                                                     int model_device, int rb_device) {
+torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char* name, const char* config_fname,
+                                                                     MPI_Comm mpi_comm, int model_device,
+                                                                     int rb_device) {
   using namespace torchfort;
 
   try {
@@ -207,16 +213,15 @@ torchfort_result_t torchfort_rl_off_policy_update_replay_buffer(const char* name
     case TORCHFORT_FLOAT: {
       float reward_val = *reinterpret_cast<const float*>(reward);
       rl::off_policy::update_replay_buffer<RowMajor>(
-                      name, reinterpret_cast<float*>(state_old), reinterpret_cast<float*>(state_new),
-                      state_dim, state_shape, reinterpret_cast<float*>(action_old), action_dim,
-                      action_shape, reward_val, final_state, ext_stream);
+          name, reinterpret_cast<float*>(state_old), reinterpret_cast<float*>(state_new), state_dim, state_shape,
+          reinterpret_cast<float*>(action_old), action_dim, action_shape, reward_val, final_state, ext_stream);
       break;
     }
     case TORCHFORT_DOUBLE: {
       double reward_val = *reinterpret_cast<const double*>(reward);
       rl::off_policy::update_replay_buffer<RowMajor>(
-		 name, reinterpret_cast<double*>(state_old), reinterpret_cast<double*>(state_new), state_dim, state_shape,
-                 reinterpret_cast<double*>(action_old), action_dim, action_shape, reward_val, final_state, ext_stream);
+          name, reinterpret_cast<double*>(state_old), reinterpret_cast<double*>(state_new), state_dim, state_shape,
+          reinterpret_cast<double*>(action_old), action_dim, action_shape, reward_val, final_state, ext_stream);
       break;
     }
     default: {
@@ -243,16 +248,15 @@ torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_F(const char* na
     case TORCHFORT_FLOAT: {
       float reward_val = *reinterpret_cast<const float*>(reward);
       rl::off_policy::update_replay_buffer<ColMajor>(
-                      name, reinterpret_cast<float*>(state_old), reinterpret_cast<float*>(state_new),
-                      state_dim, state_shape, reinterpret_cast<float*>(action_old), action_dim,
-                      action_shape, reward_val, final_state, stream);
+          name, reinterpret_cast<float*>(state_old), reinterpret_cast<float*>(state_new), state_dim, state_shape,
+          reinterpret_cast<float*>(action_old), action_dim, action_shape, reward_val, final_state, stream);
       break;
     }
     case TORCHFORT_DOUBLE: {
       double reward_val = *reinterpret_cast<const double*>(reward);
       rl::off_policy::update_replay_buffer<ColMajor>(
-                      name, reinterpret_cast<double*>(state_old), reinterpret_cast<double*>(state_new), state_dim, state_shape,
-                      reinterpret_cast<double*>(action_old), action_dim, action_shape, reward_val, final_state, stream);
+          name, reinterpret_cast<double*>(state_old), reinterpret_cast<double*>(state_new), state_dim, state_shape,
+          reinterpret_cast<double*>(action_old), action_dim, action_shape, reward_val, final_state, stream);
       break;
     }
     default: {
@@ -275,13 +279,14 @@ torchfort_result_t torchfort_rl_off_policy_predict_explore(const char* name, voi
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT:
-      rl::off_policy::predict_explore<torchfort::RowMajor>(
-                      name, reinterpret_cast<float*>(state), state_dim, state_shape,
-                      reinterpret_cast<float*>(action), action_dim, action_shape, stream);
+      rl::off_policy::predict_explore<torchfort::RowMajor>(name, reinterpret_cast<float*>(state), state_dim,
+                                                           state_shape, reinterpret_cast<float*>(action), action_dim,
+                                                           action_shape, stream);
       break;
     case TORCHFORT_DOUBLE:
-      rl::off_policy::predict_explore<torchfort::RowMajor>(name, reinterpret_cast<double*>(state), state_dim, state_shape,
-                      reinterpret_cast<double*>(action), action_dim, action_shape, stream);
+      rl::off_policy::predict_explore<torchfort::RowMajor>(name, reinterpret_cast<double*>(state), state_dim,
+                                                           state_shape, reinterpret_cast<double*>(action), action_dim,
+                                                           action_shape, stream);
       break;
     default:
       THROW_INVALID_USAGE("Unknown datatype provided.");
@@ -302,14 +307,14 @@ torchfort_result_t torchfort_rl_off_policy_predict_explore_F(const char* name, v
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT:
-      rl::off_policy::predict_explore<torchfort::ColMajor>(
-                      name, reinterpret_cast<float*>(state), state_dim, state_shape,
-                      reinterpret_cast<float*>(action), action_dim, action_shape, stream);
+      rl::off_policy::predict_explore<torchfort::ColMajor>(name, reinterpret_cast<float*>(state), state_dim,
+                                                           state_shape, reinterpret_cast<float*>(action), action_dim,
+                                                           action_shape, stream);
       break;
     case TORCHFORT_DOUBLE:
-      rl::off_policy::predict_explore<torchfort::ColMajor>(
-                      name, reinterpret_cast<double*>(state), state_dim, state_shape,
-                      reinterpret_cast<double*>(action), action_dim, action_shape, stream);
+      rl::off_policy::predict_explore<torchfort::ColMajor>(name, reinterpret_cast<double*>(state), state_dim,
+                                                           state_shape, reinterpret_cast<double*>(action), action_dim,
+                                                           action_shape, stream);
       break;
     default:
       THROW_INVALID_USAGE("Unknown datatype provided.");
@@ -330,14 +335,12 @@ torchfort_result_t torchfort_rl_off_policy_predict(const char* name, void* state
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT:
-      rl::off_policy::predict<RowMajor>(
-                      name, reinterpret_cast<float*>(state), state_dim, state_shape,
-                      reinterpret_cast<float*>(action), action_dim, action_shape, stream);
+      rl::off_policy::predict<RowMajor>(name, reinterpret_cast<float*>(state), state_dim, state_shape,
+                                        reinterpret_cast<float*>(action), action_dim, action_shape, stream);
       break;
     case TORCHFORT_DOUBLE:
-      rl::off_policy::predict<RowMajor>(
-                      name, reinterpret_cast<double*>(state), state_dim, state_shape,
-                      reinterpret_cast<double*>(action), action_dim, action_shape, stream);
+      rl::off_policy::predict<RowMajor>(name, reinterpret_cast<double*>(state), state_dim, state_shape,
+                                        reinterpret_cast<double*>(action), action_dim, action_shape, stream);
       break;
     default:
       THROW_INVALID_USAGE("Unknown datatype provided.");
@@ -358,14 +361,12 @@ torchfort_result_t torchfort_rl_off_policy_predict_F(const char* name, void* sta
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT:
-      rl::off_policy::predict<ColMajor>(
-                      name, reinterpret_cast<float*>(state), state_dim, state_shape,
-                      reinterpret_cast<float*>(action), action_dim, action_shape, stream);
+      rl::off_policy::predict<ColMajor>(name, reinterpret_cast<float*>(state), state_dim, state_shape,
+                                        reinterpret_cast<float*>(action), action_dim, action_shape, stream);
       break;
     case TORCHFORT_DOUBLE:
-      rl::off_policy::predict<ColMajor>(
-                      name, reinterpret_cast<double*>(state), state_dim, state_shape,
-                      reinterpret_cast<double*>(action), action_dim, action_shape, stream);
+      rl::off_policy::predict<ColMajor>(name, reinterpret_cast<double*>(state), state_dim, state_shape,
+                                        reinterpret_cast<double*>(action), action_dim, action_shape, stream);
       break;
     default:
       THROW_INVALID_USAGE("Unknown datatype provided.");
@@ -387,16 +388,14 @@ torchfort_result_t torchfort_rl_off_policy_evaluate(const char* name, void* stat
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT:
-      rl::off_policy::policy_evaluate<RowMajor>(
-                      name, reinterpret_cast<float*>(state), state_dim, state_shape,
-                      reinterpret_cast<float*>(action), action_dim, action_shape,
-                      reinterpret_cast<float*>(reward), reward_dim, reward_shape, stream);
+      rl::off_policy::policy_evaluate<RowMajor>(name, reinterpret_cast<float*>(state), state_dim, state_shape,
+                                                reinterpret_cast<float*>(action), action_dim, action_shape,
+                                                reinterpret_cast<float*>(reward), reward_dim, reward_shape, stream);
       break;
     case TORCHFORT_DOUBLE:
-      rl::off_policy::policy_evaluate<RowMajor>(
-                      name, reinterpret_cast<double*>(state), state_dim, state_shape,
-                      reinterpret_cast<double*>(action), action_dim, action_shape,
-                      reinterpret_cast<double*>(reward), reward_dim, reward_shape, stream);
+      rl::off_policy::policy_evaluate<RowMajor>(name, reinterpret_cast<double*>(state), state_dim, state_shape,
+                                                reinterpret_cast<double*>(action), action_dim, action_shape,
+                                                reinterpret_cast<double*>(reward), reward_dim, reward_shape, stream);
       break;
     default:
       THROW_INVALID_USAGE("Unknown datatype provided.");
@@ -418,16 +417,14 @@ torchfort_result_t torchfort_rl_off_policy_evaluate_F(const char* name, void* st
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT:
-      rl::off_policy::policy_evaluate<ColMajor>(
-                      name, reinterpret_cast<float*>(state), state_dim, state_shape,
-                      reinterpret_cast<float*>(action), action_dim, action_shape,
-                      reinterpret_cast<float*>(reward), reward_dim, reward_shape, stream);
+      rl::off_policy::policy_evaluate<ColMajor>(name, reinterpret_cast<float*>(state), state_dim, state_shape,
+                                                reinterpret_cast<float*>(action), action_dim, action_shape,
+                                                reinterpret_cast<float*>(reward), reward_dim, reward_shape, stream);
       break;
     case TORCHFORT_DOUBLE:
-      rl::off_policy::policy_evaluate<ColMajor>(
-                      name, reinterpret_cast<double*>(state), state_dim, state_shape,
-                      reinterpret_cast<double*>(action), action_dim, action_shape,
-                      reinterpret_cast<double*>(reward), reward_dim, reward_shape, stream);
+      rl::off_policy::policy_evaluate<ColMajor>(name, reinterpret_cast<double*>(state), state_dim, state_shape,
+                                                reinterpret_cast<double*>(action), action_dim, action_shape,
+                                                reinterpret_cast<double*>(reward), reward_dim, reward_shape, stream);
       break;
     default:
       THROW_INVALID_USAGE("Unknown datatype provided.");

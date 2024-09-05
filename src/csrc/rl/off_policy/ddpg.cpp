@@ -41,9 +41,8 @@ namespace rl {
 
 namespace off_policy {
 
-DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node,
-		       int model_device, int rb_device)
-  : RLOffPolicySystem(model_device, rb_device) {
+DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node, int model_device, int rb_device)
+    : RLOffPolicySystem(model_device, rb_device) {
 
   // get basic parameters first
   auto algo_node = system_node["algorithm"];
@@ -130,7 +129,8 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node,
 
       // distinction between buffer types
       if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, gamma_, nstep_, nstep_reward_reduction_, rb_device);
+        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, gamma_, nstep_,
+                                                               nstep_reward_reduction_, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
       }
@@ -234,13 +234,9 @@ void DDPGSystem::printInfo() const {
   return;
 }
 
-torch::Device DDPGSystem::modelDevice() const {
-  return model_device_;
-}
+torch::Device DDPGSystem::modelDevice() const { return model_device_; }
 
-torch::Device DDPGSystem::rbDevice() const {
-  return rb_device_;
-}
+torch::Device DDPGSystem::rbDevice() const { return rb_device_; }
 
 void DDPGSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
@@ -475,8 +471,8 @@ void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
              static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_val);
 }
 
-} // off_policy
-  
+} // namespace off_policy
+
 } // namespace rl
 
 } // namespace torchfort

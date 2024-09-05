@@ -85,7 +85,8 @@ private:
 
 class LinearLR : public BaseLRScheduler {
 public:
-  LinearLR(torch::optim::Optimizer& optimizer, const unsigned total_iters, const double start_factor=0.333, const double end_factor = 1.0);
+  LinearLR(torch::optim::Optimizer& optimizer, const unsigned total_iters, const double start_factor = 0.333,
+           const double end_factor = 1.0);
 
 private:
   std::vector<double> get_lrs() override;

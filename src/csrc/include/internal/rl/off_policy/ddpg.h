@@ -43,8 +43,8 @@
 
 // rl stuff
 #include "internal/rl/noise_actor.h"
-#include "internal/rl/replay_buffer.h"
 #include "internal/rl/off_policy.h"
+#include "internal/rl/replay_buffer.h"
 #include "internal/rl/utils.h"
 
 namespace torchfort {
@@ -52,7 +52,7 @@ namespace torchfort {
 namespace rl {
 
 namespace off_policy {
-    
+
 // implementing https://spinningup.openai.com/en/latest/algorithms/ddpg.html#pseudocode
 // we implement the update on a single batch with (s, a, r, s', d):
 // gamma is a tensor here to support multi-step delayed learning. Here, gamma^n
@@ -100,7 +100,8 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
 
   // backward and update step
   // compute loss
-  torch::Tensor q_old_tensor = q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+  torch::Tensor q_old_tensor =
+      q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
   q_model.optimizer->zero_grad();
   q_loss_tensor.backward();
@@ -277,7 +278,7 @@ private:
 };
 
 } // namespace off_policy
-  
+
 } // namespace rl
 
 } // namespace torchfort

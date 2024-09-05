@@ -51,13 +51,14 @@ public:
   // disable copy constructor
   RolloutBuffer(const RolloutBuffer&) = delete;
   // base constructor
-  RolloutBuffer(size_t size, int device) : size_(size), device_(get_device(device)), last_episode_starts_(true), indices_(size), pos_(0), rng_() {
+  RolloutBuffer(size_t size, int device)
+      : size_(size), device_(get_device(device)), last_episode_starts_(true), indices_(size), pos_(0), rng_() {
     // fill index vector with indices
-    std::generate(indices_.begin(), indices_.end(), [n = 0] () mutable { return n++; });
+    std::generate(indices_.begin(), indices_.end(), [n = 0]() mutable { return n++; });
   }
 
   // accessors
-  size_t getSize() const {return size_;}
+  size_t getSize() const { return size_; }
 
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, float, float, float, bool) = 0;
@@ -74,13 +75,12 @@ public:
   virtual torch::Device device() const = 0;
 
 protected:
-
-   // shuffling
+  // shuffling
   void resetIndices_() {
     std::shuffle(indices_.begin(), indices_.end(), rng_);
     pos_ = 0;
   }
-  
+
   size_t size_;
   torch::Device device_;
   bool last_episode_starts_;
@@ -94,7 +94,8 @@ class GAELambdaRolloutBuffer : public RolloutBuffer, public std::enable_shared_f
 public:
   // constructor
   GAELambdaRolloutBuffer(size_t size, float gamma, float lambda, int device)
-    : RolloutBuffer(size, device), finalized_(false), gamma_(gamma), lambda_(lambda), returns_(size), advantages_(size) {}
+      : RolloutBuffer(size, device), finalized_(false), gamma_(gamma), lambda_(lambda), returns_(size),
+        advantages_(size) {}
 
   // disable copy constructor
   GAELambdaRolloutBuffer(const GAELambdaRolloutBuffer&) = delete;
@@ -104,18 +105,18 @@ public:
 
     // add no grad guard
     torch::NoGradGuard no_grad;
-    
+
     // do not push anything if buffer is full, instead check if buffer is finalized
     if (buffer_.size() == size_) {
       if (!finalized_) {
-	finalize(q, d);
+        finalize(q, d);
       }
     } else {
-    
+
       // clone the tensors and move to device
       auto sc = s.to(device_, s.dtype(), /* non_blocking = */ false, /* copy = */ true);
       auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
-      
+
       // add the newest/latest element in back
       buffer_.push_back(std::make_tuple(sc, ac, r, q, log_p, last_episode_starts_));
     }
@@ -131,13 +132,13 @@ public:
     torch::Tensor s, a;
     float r, q, log_p, delta;
     bool e;
-    
+
     // we need to keep track of those
     // initialize starting values
     float last_gae_lam = 0.;
     float next_non_terminal = (done ? 0. : 1.);
     float next_value = last_value;
-    
+
     for (int64_t step = size_ - 1; step >= 0; step--) {
       std::tie(s, a, r, q, log_p, e) = buffer_.at(step);
       delta = r + gamma_ * next_value * next_non_terminal - q;
@@ -153,7 +154,7 @@ public:
 
     // set finalized to true
     finalized_ = true;
-    
+
     return;
   }
 
@@ -164,7 +165,7 @@ public:
     if (!finalized_) {
       throw std::runtime_error("Finalize the rollout buffers trajectory before you start sampling from it.");
     }
-    
+
     // add no grad guard
     torch::NoGradGuard no_grad;
 
@@ -196,7 +197,7 @@ public:
 
     // update buffer position
     pos_ = upper;
-    
+
     // stack the lists
     auto stens = torch::stack(stens_list, 0).clone();
     auto atens = torch::stack(atens_list, 0).clone();
@@ -220,7 +221,8 @@ public:
   BufferEntry get(int index) {
     // sanity checks
     if ((index < 0) || (index >= buffer_.size())) {
-      throw std::runtime_error("GAELambdaRolloutBuffer::get: index " + std::to_string(index) + " out of bounds [0, " + std::to_string(buffer_.size()) + ")." );
+      throw std::runtime_error("GAELambdaRolloutBuffer::get: index " + std::to_string(index) + " out of bounds [0, " +
+                               std::to_string(buffer_.size()) + ").");
     }
 
     // add no grad guard
@@ -238,11 +240,13 @@ public:
   ExtendedBufferEntry getFull(int index) {
     // sanity checks
     if ((index < 0) || (index >= buffer_.size())) {
-      throw std::runtime_error("GAELambdaRolloutBuffer::getFull: index " + std::to_string(index) + " out of bounds [0, " + std::to_string(buffer_.size()) + ")." );
+      throw std::runtime_error("GAELambdaRolloutBuffer::getFull: index " + std::to_string(index) +
+                               " out of bounds [0, " + std::to_string(buffer_.size()) + ").");
     }
 
     if (!finalized_) {
-      throw std::runtime_error("GAELambdaRolloutBuffer::getFull: the buffer needs to be finalized before calling getFull.");
+      throw std::runtime_error(
+          "GAELambdaRolloutBuffer::getFull: the buffer needs to be finalized before calling getFull.");
     }
 
     // add no grad guard
@@ -275,7 +279,7 @@ public:
 
     // mark a new episode:
     last_episode_starts_ = true;
-    
+
     return;
   }
 
@@ -399,9 +403,7 @@ public:
     std::cout << "lambda = " << lambda_ << std::endl;
   }
 
-  torch::Device device() const {
-    return device_;
-  }
+  torch::Device device() const { return device_; }
 
 private:
   // keep track of whether buffer is finalized_:

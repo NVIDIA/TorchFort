@@ -72,8 +72,7 @@ template <typename T> torch::Dtype make_type() {
 
 enum MemoryLayout { RowMajor = 0, ColMajor = 1 };
 
-template <MemoryLayout L, typename T>
-torch::Tensor get_tensor(T* tensor_ptr, size_t dim, int64_t* shape) {
+template <MemoryLayout L, typename T> torch::Tensor get_tensor(T* tensor_ptr, size_t dim, int64_t* shape) {
   torchfort::nvtx::rangePush("get_tensor");
   // Set tensor options
   auto dev = get_device(tensor_ptr);

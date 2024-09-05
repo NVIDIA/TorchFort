@@ -97,7 +97,6 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
       THROW_INVALID_USAGE("Missing model block in configuration file.");
     }
 
-
     // Setting up loss
     if (config["loss"]) {
       models[name].loss = get_loss(config["loss"]);

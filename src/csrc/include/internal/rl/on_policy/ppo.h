@@ -42,10 +42,10 @@
 #include "internal/setup.h"
 
 // rl stuff
-#include "internal/rl/rollout_buffer.h"
 #include "internal/rl/on_policy.h"
-#include "internal/rl/utils.h"
 #include "internal/rl/policy.h"
+#include "internal/rl/rollout_buffer.h"
+#include "internal/rl/utils.h"
 
 namespace torchfort {
 
@@ -55,11 +55,11 @@ namespace on_policy {
 
 // implementing https://spinningup.openai.com/en/latest/algorithms/ppo.html?highlight=PPO#id8
 template <typename T>
-void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::Tensor action_tensor, 
+void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::Tensor action_tensor,
                torch::Tensor q_tensor, torch::Tensor log_p_tensor, torch::Tensor adv_tensor, torch::Tensor ret_tensor,
-	       const T& epsilon, const T& clip_q, const T& entropy_loss_coeff, const T& q_loss_coeff, const T& max_grad_norm, 
-	       const T& target_kl_divergence, bool normalize_advantage,
-	       T& p_loss_val, T& q_loss_val, T& kl_divergence, T& clip_fraction, T& explained_var) {
+               const T& epsilon, const T& clip_q, const T& entropy_loss_coeff, const T& q_loss_coeff,
+               const T& max_grad_norm, const T& target_kl_divergence, bool normalize_advantage, T& p_loss_val,
+               T& q_loss_val, T& kl_divergence, T& clip_fraction, T& explained_var) {
 
   // nvtx marker
   torchfort::nvtx::rangePush("torchfort_train_ppo");
@@ -79,10 +79,10 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
   assert(ret_tensor.size(1) == 1);
 
   // normalize advantages if requested
-  if ( normalize_advantage && (batch_size > 1) ) {
+  if (normalize_advantage && (batch_size > 1)) {
     // make sure we are not going to compute gradients
     torch::NoGradGuard no_grad;
-    
+
     // compute mean
     torch::Tensor adv_mean = torch::mean(adv_tensor);
 
@@ -110,13 +110,14 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
 
   // set models to train
   pq_model.model->train();
-  
+
   // evaluate policies
   torch::Tensor log_p_new_tensor, entropy_tensor, q_new_tensor;
-  std::tie(log_p_new_tensor, entropy_tensor, q_new_tensor) = pq_model.model->evaluateAction(state_tensor, action_tensor);
+  std::tie(log_p_new_tensor, entropy_tensor, q_new_tensor) =
+      pq_model.model->evaluateAction(state_tensor, action_tensor);
 
   // compute policy ratio
-  torch::Tensor log_ratio_tensor = log_p_new_tensor - log_p_tensor;  
+  torch::Tensor log_ratio_tensor = log_p_new_tensor - log_p_tensor;
   torch::Tensor ratio_tensor = torch::exp(log_ratio_tensor);
 
   // clipped surrogate loss
@@ -124,15 +125,15 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
   torch::Tensor p_loss_tensor_2 = adv_tensor * torch::clamp(ratio_tensor, 1. - epsilon, 1. + epsilon);
   // the stable baselines code uses torch.min but I think this is wrong, it has to be torch.minimum
   torch::Tensor p_loss_tensor = -torch::mean(torch::minimum(p_loss_tensor_1, p_loss_tensor_2));
-  
-  //clip value function if requested
+
+  // clip value function if requested
   torch::Tensor q_pred_tensor;
   if (clip_q > 0.) {
     q_pred_tensor = q_tensor + torch::clamp(q_new_tensor - q_tensor, -clip_q, clip_q);
   } else {
     q_pred_tensor = q_new_tensor;
   }
-  
+
   // critic loss
   // loss function is fixed by algorithm
   auto q_loss_func = torch::nn::MSELoss(torch::nn::MSELossOptions().reduction(torch::kMean));
@@ -150,8 +151,7 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
 
     // kl_divergence
     torch::Tensor kl_divergence_tensor = torch::mean((ratio_tensor - 1.) - log_ratio_tensor);
-    if (pq_model.comm)
-    {
+    if (pq_model.comm) {
       std::vector<torch::Tensor> kl_divergence_mean = {kl_divergence_tensor};
       pq_model.comm->allreduce(kl_divergence_mean, true);
       kl_divergence_tensor = kl_divergence_mean[0];
@@ -208,14 +208,16 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     q_loss_mean_tensor = q_loss_mean[0];
   }
   q_loss_val = q_loss_mean_tensor.item<T>();
-    
+
   // policy function
   auto state = pq_model.state;
-  if (!skip_step) state->step_train++;
-  if ((state->report_frequency > 0) && (state->step_train % state->report_frequency == 0))
-  {
+  if (!skip_step)
+    state->step_train++;
+  if ((state->report_frequency > 0) && (state->step_train % state->report_frequency == 0)) {
     std::stringstream os;
-    os << "model: " << "actor_critic" << ", ";
+    os << "model: "
+       << "actor_critic"
+       << ", ";
     os << "step_train: " << state->step_train << ", ";
     os << "p_loss: " << p_loss_val << ", ";
     os << "q_loss: " << q_loss_val << ", ";
@@ -225,8 +227,10 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     if ((!pq_model.comm || (pq_model.comm && pq_model.comm->rank == 0)) && !skip_step) {
       torchfort::logging::print(os.str(), torchfort::logging::info);
       if (state->enable_wandb_hook) {
-        torchfort::wandb_log(pq_model.state, pq_model.comm, "actor_critic", "train_loss_p", state->step_train, p_loss_val);
-	torchfort::wandb_log(pq_model.state, pq_model.comm, "actor_critic", "train_loss_q", state->step_train, q_loss_val);
+        torchfort::wandb_log(pq_model.state, pq_model.comm, "actor_critic", "train_loss_p", state->step_train,
+                             p_loss_val);
+        torchfort::wandb_log(pq_model.state, pq_model.comm, "actor_critic", "train_loss_q", state->step_train,
+                             q_loss_val);
         torchfort::wandb_log(pq_model.state, pq_model.comm, "actor_critic", "train_lr", state->step_train, lrs[0]);
       }
     }
@@ -238,8 +242,7 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
 
     // clip_fraction
     torch::Tensor clip_fraction_tensor = torch::mean((torch::abs(ratio_tensor - 1.) > epsilon).to(torch::kFloat32));
-    if (pq_model.comm)
-    {
+    if (pq_model.comm) {
       std::vector<torch::Tensor> clip_fraction_mean = {clip_fraction_tensor};
       pq_model.comm->allreduce(clip_fraction_mean, true);
       clip_fraction_tensor = clip_fraction_mean[0];
@@ -266,7 +269,7 @@ public:
 
   // we should pass a tuple (s, a, r, e)
   void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, bool);
-  //void finalizeRolloutBuffer(float, bool);
+  // void finalizeRolloutBuffer(float, bool);
   void resetRolloutBuffer();
   bool isReady();
 
@@ -322,7 +325,7 @@ private:
 };
 
 } // namespace on_policy
-  
+
 } // namespace rl
 
 } // namespace torchfort

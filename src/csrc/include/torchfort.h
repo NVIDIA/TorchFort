@@ -64,8 +64,8 @@ extern "C" {
  *
  * @param[in] name A name to assign to the created model instance to use as a key for other TorchFort routines.
  * @param[in] config_fname The filesystem path to the user-defined model configuration file to use.
- * @param[in] device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
- * values >= 0, model will be placed on GPU with index corresponding to value.
+ * @param[in] device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on
+ * CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -76,8 +76,8 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
  * @param[in] name A name to assign to created model to use as a key for other TorchFort routines.
  * @param[in] config_fname The filesystem path to the user-defined model configuration file to use.
  * @param[in] mpi_comm MPI communicator to use to initialize NCCL communication library for data-parallel communication.
- * @param[in] device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on CPU. For 
- * values >= 0, model will be placed on GPU with index corresponding to value.
+ * @param[in] device Which device to place and run the model on. For TORCHFORT_DEVICE_CPU (-1), model will be placed on
+ * CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -193,7 +193,7 @@ torchfort_result_t torchfort_set_cudnn_benchmark(const bool flag);
 /**
  * @brief Utility function to enable/disable TF32 support in PyTorch.
  * @param[in] flag Boolean value to set the TF32 flag to.
- * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure. 
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_set_cuda_allow_tf32(const bool flag);
 
@@ -203,14 +203,14 @@ torchfort_result_t torchfort_set_cuda_allow_tf32(const bool flag);
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_set_manual_seed(const int seed);
-  
+
 /**
  * @brief Utility function to set a seed for cuda devices in PyTorch.
  * @param[in] seed An integer value to be used as seed for any device RNG.
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_set_cuda_manual_seed(const int seed);
-  
+
 // Weights and Bias Logging functions
 /**
  * @brief Write an integer value to a Weights and Bias log. Use the \p _float and  \p _double variants to write \p float

@@ -52,7 +52,8 @@ public:
   // disable copy constructor
   ReplayBuffer(const ReplayBuffer&) = delete;
   // base constructor
-  ReplayBuffer(size_t max_size, size_t min_size, int device) : max_size_(max_size), min_size_(min_size), device_(get_device(device)) {}
+  ReplayBuffer(size_t max_size, size_t min_size, int device)
+      : max_size_(max_size), min_size_(min_size), device_(get_device(device)) {}
 
   // accessor functions
   size_t getMinSize() const { return min_size_; }
@@ -61,8 +62,7 @@ public:
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, torch::Tensor, float, bool) = 0;
   // sample element randomly
-  virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
-  sample(int) = 0;
+  virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(int) = 0;
   // get specific element
   virtual BufferEntry get(int) = 0;
   // helper functions
@@ -85,9 +85,8 @@ class UniformReplayBuffer : public ReplayBuffer, public std::enable_shared_from_
 public:
   // constructor
   UniformReplayBuffer(size_t max_size, size_t min_size, float gamma, int nstep,
-		      RewardReductionMode reward_reduction_mode, int device)
-    : ReplayBuffer(max_size, min_size, device), rng_(),
-      gamma_(gamma), nstep_(nstep) {
+                      RewardReductionMode reward_reduction_mode, int device)
+      : ReplayBuffer(max_size, min_size, device), rng_(), gamma_(gamma), nstep_(nstep) {
 
     // set up reward reduction mode
     skip_incomplete_steps_ = true;
@@ -128,8 +127,7 @@ public:
     }
   }
 
-  std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
-  sample(int batch_size) {
+  std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(int batch_size) {
 
     // add no grad guard
     torch::NoGradGuard no_grad;
@@ -172,15 +170,15 @@ public:
         r_norm += gamma_eff;
         r_count++;
         if (d) {
-	  // 1-d = 0
+          // 1-d = 0
           deff *= 0.;
-	  if ((off != nstep_ - 1) && skip_incomplete_steps_) {
+          if ((off != nstep_ - 1) && skip_incomplete_steps_) {
             skip = true;
           }
-	} else {
-	  // 1-d = 1
-	  deff *= 1.;
-	}
+        } else {
+          // 1-d = 1
+          deff *= 1.;
+        }
       }
       d_list[sample] = 1. - deff;
 
@@ -221,7 +219,8 @@ public:
 
     // sanity checks
     if ((index < 0) || (index >= buffer_.size())) {
-      throw std::runtime_error("UniformReplayBuffer::get: index " + std::to_string(index) + " out of bounds [0, " + std::to_string(buffer_.size()) + ")." );
+      throw std::runtime_error("UniformReplayBuffer::get: index " + std::to_string(index) + " out of bounds [0, " +
+                               std::to_string(buffer_.size()) + ").");
     }
 
     // add no grad guard
@@ -324,9 +323,7 @@ public:
     std::cout << "min_size = " << min_size_ << std::endl;
   }
 
-  torch::Device device() const {
-    return device_;
-  }
+  torch::Device device() const { return device_; }
 
 private:
   // the rbuffer contains tuples: (s, a, s', r, d)

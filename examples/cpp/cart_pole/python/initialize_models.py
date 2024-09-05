@@ -40,10 +40,13 @@ def main(args):
 
     # set seed
     torch.manual_seed(666)
-    torch.cuda.manual_seed(666)
-    
-    # script model:
-    device = torch.device("cuda:0")
+
+    # CUDA check
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(666)
+        device = torch.device("cuda:0")
+    else:
+        device = torch.device("cpu")
 
     # parameters
     batch_size = 64

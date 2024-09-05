@@ -61,15 +61,20 @@ std::string filename_sanitize(std::string s) {
 torch::Device get_device(int device) {
   torch::Device device_torch(torch::kCPU);
   if (device != TORCHFORT_DEVICE_CPU) {
+#ifdef ENABLE_GPU
     device_torch = torch::Device(torch::kCUDA, device);
+#else
+    THROW_NOT_SUPPORTED("Attempted to place a model or other component on GPU but TorchFort was build without GPU support.");
+#endif
   }
   return device_torch;
 }
 
 torch::Device get_device(const void* ptr) {
+  torch::Device device = torch::Device(torch::kCPU);
+#ifdef ENABLE_GPU
   cudaPointerAttributes attr;
   CHECK_CUDA(cudaPointerGetAttributes(&attr, ptr));
-  torch::Device device = torch::Device(torch::kCPU);
   switch (attr.type) {
     case cudaMemoryTypeHost:
     case cudaMemoryTypeUnregistered:
@@ -78,6 +83,7 @@ torch::Device get_device(const void* ptr) {
     case cudaMemoryTypeDevice:
       device = torch::Device(torch::kCUDA); break;
   }
+#endif
   return device;
 }
 

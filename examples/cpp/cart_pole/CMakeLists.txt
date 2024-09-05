@@ -35,9 +35,15 @@ foreach(tgt ${cart_pole_example_targets})
   target_link_libraries(${tgt} PRIVATE MPI::MPI_CXX)
   target_link_libraries(${tgt} PRIVATE ${YAML_CPP_LIBRARY})
   target_link_libraries(${tgt} PRIVATE environments)
-  target_link_libraries(${tgt} PRIVATE CUDA::cudart)
   target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
   target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
+  if (TORCHFORT_ENABLE_GPU)
+    target_include_directories(${tgt}
+      PRIVATE
+      ${CUDAToolkit_INCLUDE_DIRS}
+    )
+    target_link_libraries(${tgt} PRIVATE CUDA::cudart)
+  endif()
 endforeach()
 
 # installation

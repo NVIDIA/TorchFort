@@ -37,7 +37,9 @@
 #include <c10/core/TensorOptions.h>
 #include <torch/torch.h>
 
+#ifdef ENABLE_GPU
 #include <cuda_runtime.h>
+#endif
 
 #include "internal/exceptions.h"
 #include "internal/nvtx.h"

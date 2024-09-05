@@ -30,7 +30,11 @@
 
 #pragma once
 #include "torchfort_enums.h"
+#ifdef ENABLE_GPU
 #include <cuda_runtime.h>
+#else
+typedef void* cudaStream_t;
+#endif
 
 #define RL_OFF_POLICY_WANDB_LOG_FUNC(dtype)                                                                            \
   torchfort_result_t torchfort_rl_off_policy_wandb_log_##dtype(const char* name, const char* metric_name,              \

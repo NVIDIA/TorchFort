@@ -56,10 +56,12 @@ foreach(tgt ${test_targets})
   target_link_libraries(${tgt} PRIVATE ${TORCH_LIBRARIES})
   target_link_libraries(${tgt} PRIVATE ${YAML_CPP_LIBRARY})
   target_link_libraries(${tgt} PRIVATE MPI::MPI_CXX)
-  target_link_libraries(${tgt} PRIVATE CUDA::cudart)
   target_link_libraries(${tgt} PRIVATE GTest::gtest_main)
   target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
   target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
+if (TORCHFORT_ENABLE_GPU)
+  target_link_libraries(${tgt} PRIVATE CUDA::cudart)
+endif()
 
   # discover tests: we have an issue with the work dir of gtest so disable that for now
   #gtest_discover_tests(${tgt})

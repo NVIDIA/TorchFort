@@ -30,7 +30,11 @@
 
 #pragma once
 #include <stdint.h>
+#ifdef ENABLE_GPU
 #include <cuda_runtime.h>
+#else
+typedef void* cudaStream_t;
+#endif
 #include <mpi.h>
 
 #include "torchfort_enums.h"

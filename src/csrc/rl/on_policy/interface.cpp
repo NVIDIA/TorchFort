@@ -33,7 +33,9 @@
 #include <memory>
 #include <unordered_map>
 
+#ifdef ENABLE_GPU
 #include <cuda_runtime.h>
+#endif
 #include <torch/script.h>
 #include <torch/torch.h>
 #include <yaml-cpp/yaml.h>
@@ -157,6 +159,7 @@ torchfort_result_t torchfort_rl_on_policy_train_step(const char* name, float* p_
                                                       cudaStream_t ext_stream) {
   using namespace torchfort;
 
+#ifdef ENABLE_GPU
   // TODO: we need to figure out what to do if RB and Model streams are different
   c10::cuda::OptionalCUDAStreamGuard guard;
   auto model_device = rl::on_policy::registry[name]->modelDevice();
@@ -164,6 +167,7 @@ torchfort_result_t torchfort_rl_on_policy_train_step(const char* name, float* p_
     auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
     guard.reset_stream(stream);
   }
+#endif
 
   try {
     // perform a training step

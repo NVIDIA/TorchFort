@@ -30,9 +30,11 @@
 
 #pragma once
 
+#ifdef ENABLE_GPU
 #include <cuda_runtime.h>
-#include <mpi.h>
 #include <nccl.h>
+#endif
+#include <mpi.h>
 
 #include <torch/torch.h>
 
@@ -50,9 +52,11 @@ struct Comm {
   int rank;
   int size;
   MPI_Comm mpi_comm;
+#ifdef ENABLE_GPU
   ncclComm_t nccl_comm = nullptr;
   cudaStream_t stream = nullptr;
   cudaEvent_t event = nullptr;
+#endif
   bool initialized = false;
 
   Comm(MPI_Comm mpi_comm) : mpi_comm(mpi_comm) {};

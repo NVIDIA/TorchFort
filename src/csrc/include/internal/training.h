@@ -32,10 +32,12 @@
 #include <unordered_map>
 #include <vector>
 
+#ifdef ENABLE_GPU
 #include <cuda_runtime.h>
 
 #include <c10/cuda/CUDAGuard.h>
 #include <c10/cuda/CUDAStream.h>
+#endif
 #include <torch/torch.h>
 
 #include <internal/defines.h>
@@ -60,11 +62,13 @@ void inference(const char* name, T* input, size_t input_dim, int64_t* input_shap
 
   auto model = models[name].model.get();
 
+#if ENABLE_GPU
   c10::cuda::OptionalCUDAStreamGuard guard;
   if (model->device().is_cuda()) {
     auto stream = c10::cuda::getStreamFromExternal(ext_stream, model->device().index());
     guard.reset_stream(stream);
   }
+#endif
 
   auto input_tensor_in = get_tensor<L>(input, input_dim, input_shape);
   auto output_tensor_in = get_tensor<L>(output, output_dim, output_shape);
@@ -93,11 +97,13 @@ void train(const char* name, T* input, size_t input_dim, int64_t* input_shape, T
 
   auto model = models[name].model.get();
 
+#ifdef ENABLE_GPU
   c10::cuda::OptionalCUDAStreamGuard guard;
   if (model->device().is_cuda()) {
     auto stream = c10::cuda::getStreamFromExternal(ext_stream, model->device().index());
     guard.reset_stream(stream);
   }
+#endif
 
   auto input_tensor_in = get_tensor<L>(input, input_dim, input_shape);
   auto label_tensor_in = get_tensor<L>(label, label_dim, label_shape);

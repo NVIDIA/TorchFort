@@ -41,7 +41,7 @@ typedef void* cudaStream_t;
 #include "torchfort_rl.h"
 
 #define TORCHFORT_MAJOR 0
-#define TORCHFORT_MINOR 1
+#define TORCHFORT_MINOR 2
 #define TORCHFORT_PATCH 0
 
 #define WANDB_LOG_FUNC(dtype)                                                                                          \

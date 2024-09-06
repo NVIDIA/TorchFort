@@ -16,9 +16,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -118,9 +116,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a></li>
-          <li class="breadcrumb-item"><a href="../api.html">TorchFort API</a></li>
-      <li class="breadcrumb-item active">TorchFort Configuration Files</li>
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../api.html">TorchFort API</a> &raquo;</li>
+      <li>TorchFort Configuration Files</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/api/config.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -131,7 +129,7 @@
            <div itemprop="articleBody">
              
   <section id="torchfort-configuration-files">
-<span id="torchfort-config-ref"></span><h1>TorchFort Configuration Files<a class="headerlink" href="#torchfort-configuration-files" title="Permalink to this heading">¶</a></h1>
+<span id="torchfort-config-ref"></span><h1>TorchFort Configuration Files<a class="headerlink" href="#torchfort-configuration-files" title="Permalink to this headline">¶</a></h1>
 <p>The TorchFort library relies on a user-defined YAML configuration file to define several aspects of the training procedure,
 with specific blocks to control:</p>
 <blockquote>
@@ -145,13 +143,13 @@ with specific blocks to control:</p>
 </div></blockquote>
 <p>The following sections define each configuration block and available options.</p>
 <section id="common">
-<h2>Common<a class="headerlink" href="#common" title="Permalink to this heading">¶</a></h2>
+<h2>Common<a class="headerlink" href="#common" title="Permalink to this headline">¶</a></h2>
 <p>The following sections list configuration file blocks common to supervised learning and reinforcement learning configuration files.</p>
 <section id="general-properties">
-<h3>General Properties<a class="headerlink" href="#general-properties" title="Permalink to this heading">¶</a></h3>
+<h3>General Properties<a class="headerlink" href="#general-properties" title="Permalink to this headline">¶</a></h3>
 <p>The block in the configuration file defining general properties takes the following structure:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">general</span><span class="p">:</span>
-<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">general</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 </pre></div>
 </div>
 <p>The following table lists the available options:</p>
@@ -185,12 +183,12 @@ with specific blocks to control:</p>
 <p>For more information about the wandb hook, see <a class="reference internal" href="../extras.html#wandb-support-ref"><span class="std std-ref">Weights and Biases Support</span></a>.</p>
 </section>
 <section id="optimizer-properties">
-<span id="optimizer-properties-ref"></span><h3>Optimizer Properties<a class="headerlink" href="#optimizer-properties" title="Permalink to this heading">¶</a></h3>
+<span id="optimizer-properties-ref"></span><h3>Optimizer Properties<a class="headerlink" href="#optimizer-properties" title="Permalink to this headline">¶</a></h3>
 <p>The block in the configuration file defining optimizer properties takes the following structure:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">optimizer</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;optimizer_type&gt;</span>
-<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">optimizer</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;optimizer_type&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 </pre></div>
 </div>
 <p>The following table lists the available optimizer types:</p>
@@ -279,12 +277,12 @@ with specific blocks to control:</p>
 </table>
 </section>
 <section id="learning-rate-schedule-properties">
-<span id="lr-schedule-properties-ref"></span><h3>Learning Rate Schedule Properties<a class="headerlink" href="#learning-rate-schedule-properties" title="Permalink to this heading">¶</a></h3>
+<span id="lr-schedule-properties-ref"></span><h3>Learning Rate Schedule Properties<a class="headerlink" href="#learning-rate-schedule-properties" title="Permalink to this headline">¶</a></h3>
 <p>The block in the configuration file defining learning rate schedule properties takes the following structure:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">lr_scheduler</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;schedule_type&gt;</span>
-<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">lr_scheduler</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;schedule_type&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 </pre></div>
 </div>
 <p>The following table lists the available schedule types:</p>
@@ -371,15 +369,15 @@ with specific blocks to control:</p>
 </section>
 </section>
 <section id="supervised-learning">
-<h2>Supervised Learning<a class="headerlink" href="#supervised-learning" title="Permalink to this heading">¶</a></h2>
+<h2>Supervised Learning<a class="headerlink" href="#supervised-learning" title="Permalink to this headline">¶</a></h2>
 <p>The following sections list configuration file blocks specific to supervised learning configuration files.</p>
 <section id="model-properties">
-<span id="model-properties-ref"></span><h3>Model Properties<a class="headerlink" href="#model-properties" title="Permalink to this heading">¶</a></h3>
+<span id="model-properties-ref"></span><h3>Model Properties<a class="headerlink" href="#model-properties" title="Permalink to this headline">¶</a></h3>
 <p>The block in the configuration file defining model properties takes the following structure:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;model_type&gt;</span>
-<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;model_type&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 </pre></div>
 </div>
 <p>The following table lists the available model types:</p>
@@ -436,12 +434,12 @@ with specific blocks to control:</p>
 </table>
 </section>
 <section id="loss-properties">
-<h3>Loss Properties<a class="headerlink" href="#loss-properties" title="Permalink to this heading">¶</a></h3>
+<h3>Loss Properties<a class="headerlink" href="#loss-properties" title="Permalink to this headline">¶</a></h3>
 <p>The block in the configuration file defining loss properties takes the following structure:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">loss</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;loss_type&gt;</span>
-<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">loss</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;loss_type&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 </pre></div>
 </div>
 <p>The following table lists the available loss types:</p>
@@ -495,15 +493,15 @@ with specific blocks to control:</p>
 </section>
 </section>
 <section id="reinforcement-learning">
-<h2>Reinforcement Learning<a class="headerlink" href="#reinforcement-learning" title="Permalink to this heading">¶</a></h2>
+<h2>Reinforcement Learning<a class="headerlink" href="#reinforcement-learning" title="Permalink to this headline">¶</a></h2>
 <p>The following sections list configuration file blocks specific to reinforcement learning system configuration files.</p>
 <section id="reinforcement-learning-training-algorithm-properties">
-<h3>Reinforcement Learning Training Algorithm Properties<a class="headerlink" href="#reinforcement-learning-training-algorithm-properties" title="Permalink to this heading">¶</a></h3>
+<h3>Reinforcement Learning Training Algorithm Properties<a class="headerlink" href="#reinforcement-learning-training-algorithm-properties" title="Permalink to this headline">¶</a></h3>
 <p>The block in the configuration file defining algorithm properties takes the following structure:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">algorithm</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;algorithm_type&gt;</span>
-<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">algorithm</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;algorithm_type&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 </pre></div>
 </div>
 <p>The following table lists the available algorithm types:</p>
@@ -653,12 +651,12 @@ with specific blocks to control:</p>
 <p>In this case, it is useful to use the modes with the additional suffix <code class="docutils literal notranslate"><span class="pre">_no_skip</span></code>. In this case, <span class="math notranslate nohighlight">\(N^{\ast}\)</span> in the formulas will be equal to the minimum of <span class="math notranslate nohighlight">\(N\)</span> and the number of steps needed to reach the end of the trajectory. The regular and no-skip modes are both useful in different occasions, so it is important to be clear about how the reward structure has to be designed in order to achieve the desired goals.</p>
 </section>
 <section id="replay-buffer-properties">
-<h3>Replay Buffer Properties<a class="headerlink" href="#replay-buffer-properties" title="Permalink to this heading">¶</a></h3>
+<h3>Replay Buffer Properties<a class="headerlink" href="#replay-buffer-properties" title="Permalink to this headline">¶</a></h3>
 <p>The block in the configuration file defining algorithm properties takes the following structure:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">replay_buffer</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;replay_buffer_type&gt;</span>
-<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">replay_buffer</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;replay_buffer_type&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 </pre></div>
 </div>
 <p>Currently, only type <code class="docutils literal notranslate"><span class="pre">uniform</span></code> is supported. The following table lists the available options:</p>
@@ -690,12 +688,12 @@ with specific blocks to control:</p>
 </table>
 </section>
 <section id="action-properties">
-<h3>Action Properties<a class="headerlink" href="#action-properties" title="Permalink to this heading">¶</a></h3>
+<h3>Action Properties<a class="headerlink" href="#action-properties" title="Permalink to this headline">¶</a></h3>
 <p>The block in the configuration file defining action properties takes the following structure:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">action</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;action_type&gt;</span>
-<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">action</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;action_type&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 </pre></div>
 </div>
 <p>The following table lists the available options for every action type for <code class="docutils literal notranslate"><span class="pre">ddpg</span></code> and <code class="docutils literal notranslate"><span class="pre">td3</span></code> algorithms:</p>
@@ -790,17 +788,17 @@ However, some parameters require a more detailed explanation: in general, the su
 <p>For algorithm type <code class="docutils literal notranslate"><span class="pre">sac</span></code>, only action bounds are supported as the noise is built into the algorithm and cannot be customized.</p>
 </section>
 <section id="policy-and-critic-properties">
-<h3>Policy and Critic Properties<a class="headerlink" href="#policy-and-critic-properties" title="Permalink to this heading">¶</a></h3>
+<h3>Policy and Critic Properties<a class="headerlink" href="#policy-and-critic-properties" title="Permalink to this headline">¶</a></h3>
 <p>The block in the configuration file defining model properties for actor/policy and critic/value are similar to the supervised learning case (see <a class="reference internal" href="#model-properties-ref"><span class="std std-ref">Model Properties</span></a>). In this case, TorchFort supports different model properties for policy and critic. The block configuration looks as follows:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">critic_model</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;critic_model_type&gt;</span>
-<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">critic_model</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;critic_model_type&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 
-<span class="nt">policy_model</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;policy_model_type&gt;</span>
-<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<span class="nt">policy_model</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;policy_model_type&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 </pre></div>
 </div>
 <p>Refer to the <a class="reference internal" href="#model-properties-ref"><span class="std std-ref">Model Properties</span></a> for available model types and options.</p>
@@ -814,17 +812,17 @@ However, some parameters require a more detailed explanation: in general, the su
 </div>
 </section>
 <section id="id1">
-<h3>Learning Rate Schedule Properties<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
+<h3>Learning Rate Schedule Properties<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>For reinforcement learning, TorchFort supports different learning rate schedules for policy and critic. The block configuration looks as follows:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">critic_lr_scheduler</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;schedule_type&gt;</span>
-<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">critic_lr_scheduler</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;schedule_type&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 
-<span class="nt">policy_lr_scheduler</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;schedule_type&gt;</span>
-<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span>
+<span class="nt">policy_lr_scheduler</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;schedule_type&gt;</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parameters</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">&lt;option&gt; = &lt;value&gt;</span><span class="w"></span>
 </pre></div>
 </div>
 <p>Refer to the <a class="reference internal" href="#lr-schedule-properties-ref"><span class="std std-ref">Learning Rate Schedule Properties</span></a> for available scheduler types and options.</p>

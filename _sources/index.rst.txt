@@ -3,8 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+############################################################################
 TorchFort: An Online Deep Learning Interface for HPC programs on NVIDIA GPUs
-=============================================================================
+############################################################################
 These pages contain the documentation for TorchFort, an online deep learning interface for HPC programs.
 
 TorchFort is a DL training and inference interface for HPC programs implemented using LibTorch, the C++ backend used by the `PyTorch <https://pytorch.org>`_ framework.

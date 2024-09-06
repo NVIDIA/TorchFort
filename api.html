@@ -16,9 +16,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -96,8 +94,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
-      <li class="breadcrumb-item active">TorchFort API</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>TorchFort API</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -108,7 +106,7 @@
            <div itemprop="articleBody">
              
   <section id="torchfort-api">
-<span id="api-label"></span><h1>TorchFort API<a class="headerlink" href="#torchfort-api" title="Permalink to this heading">¶</a></h1>
+<span id="api-label"></span><h1>TorchFort API<a class="headerlink" href="#torchfort-api" title="Permalink to this headline">¶</a></h1>
 <p>The following sections describe the types and functions available in the TorchFort library for C/C++ and Fortran programs and
 the also the configuration file structure and available options.</p>
 <div class="toctree-wrapper compound">
@@ -175,29 +173,60 @@ the also the configuration file structure and available options.</p>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="api/c_api.html#reinforcement-learning">Reinforcement Learning</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#system-creation">System Creation</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-create-system">torchfort_rl_off_policy_create_system</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-create-distributed-system">torchfort_rl_off_policy_create_distributed_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#off-policy-algorithms">Off-Policy Algorithms</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#system-creation">System Creation</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-create-system">torchfort_rl_off_policy_create_system</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-create-distributed-system">torchfort_rl_off_policy_create_distributed_system</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#training-evaluation">Training/Evaluation</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-train-step">torchfort_rl_off_policy_train_step</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-predict-explore">torchfort_rl_off_policy_predict_explore</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-predict">torchfort_rl_off_policy_predict</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-evaluate">torchfort_rl_off_policy_evaluate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#training-evaluation">Training/Evaluation</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-train-step">torchfort_rl_off_policy_train_step</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-predict-explore">torchfort_rl_off_policy_predict_explore</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-predict">torchfort_rl_off_policy_predict</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-evaluate">torchfort_rl_off_policy_evaluate</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#system-management">System Management</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-update-replay-buffer">torchfort_rl_off_policy_update_replay_buffer</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-is-ready">torchfort_rl_off_policy_is_ready</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-save-checkpoint">torchfort_rl_off_policy_save_checkpoint</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-load-checkpoint">torchfort_rl_off_policy_load_checkpoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#system-management">System Management</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-update-replay-buffer">torchfort_rl_off_policy_update_replay_buffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-is-ready">torchfort_rl_off_policy_is_ready</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-save-checkpoint">torchfort_rl_off_policy_save_checkpoint</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-load-checkpoint">torchfort_rl_off_policy_load_checkpoint</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#id1">Weights and Biases Logging</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-wandb-log-int">torchfort_rl_off_policy_wandb_log_int</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-wandb-log-float">torchfort_rl_off_policy_wandb_log_float</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-wandb-log-double">torchfort_rl_off_policy_wandb_log_double</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#id1">Weights and Biases Logging</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-wandb-log-int">torchfort_rl_off_policy_wandb_log_int</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-wandb-log-float">torchfort_rl_off_policy_wandb_log_float</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-off-policy-wandb-log-double">torchfort_rl_off_policy_wandb_log_double</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/c_api.html#on-policy-algorithms">On-Policy Algorithms</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#id2">System Creation</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-create-system">torchfort_rl_on_policy_create_system</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-create-distributed-system">torchfort_rl_on_policy_create_distributed_system</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#id3">Training/Evaluation</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-train-step">torchfort_rl_on_policy_train_step</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-predict-explore">torchfort_rl_on_policy_predict_explore</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-predict">torchfort_rl_on_policy_predict</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-evaluate">torchfort_rl_on_policy_evaluate</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#id4">System Management</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-update-rollout-buffer">torchfort_rl_on_policy_update_rollout_buffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-is-ready">torchfort_rl_on_policy_is_ready</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-save-checkpoint">torchfort_rl_on_policy_save_checkpoint</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-load-checkpoint">torchfort_rl_on_policy_load_checkpoint</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="api/c_api.html#id5">Weights and Biases Logging</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-wandb-log-int">torchfort_rl_on_policy_wandb_log_int</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-wandb-log-float">torchfort_rl_on_policy_wandb_log_float</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/c_api.html#torchfort-rl-on-policy-wandb-log-double">torchfort_rl_on_policy_wandb_log_double</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -244,29 +273,61 @@ the also the configuration file structure and available options.</p>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="api/f_api.html#reinforcement-learning">Reinforcement Learning</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#system-creation">System Creation</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-create-system">torchfort_rl_off_policy_create_system</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-create-distributed-system">torchfort_rl_off_policy_create_distributed_system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#off-policy-algorithms">Off-Policy Algorithms</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#system-creation">System Creation</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-create-system">torchfort_rl_off_policy_create_system</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-create-distributed-system">torchfort_rl_off_policy_create_distributed_system</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#training-evaluation">Training/Evaluation</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-train-step">torchfort_rl_off_policy_train_step</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-predict-explore">torchfort_rl_off_policy_predict_explore</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-predict">torchfort_rl_off_policy_predict</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-evaluate">torchfort_rl_off_policy_evaluate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#training-evaluation">Training/Evaluation</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-train-step">torchfort_rl_off_policy_train_step</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-predict-explore">torchfort_rl_off_policy_predict_explore</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-predict">torchfort_rl_off_policy_predict</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-evaluate">torchfort_rl_off_policy_evaluate</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#system-management">System Management</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-update-replay-buffer">torchfort_rl_off_policy_update_replay_buffer</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-is-ready">torchfort_rl_off_policy_is_ready</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-save-checkpoint">torchfort_rl_off_policy_save_checkpoint</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-load-checkpoint">torchfort_rl_off_policy_load_checkpoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#system-management">System Management</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-update-replay-buffer">torchfort_rl_off_policy_update_replay_buffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-is-ready">torchfort_rl_off_policy_is_ready</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-save-checkpoint">torchfort_rl_off_policy_save_checkpoint</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-load-checkpoint">torchfort_rl_off_policy_load_checkpoint</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#id1">Weights and Biases Logging</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-wandb-log-int">torchfort_rl_off_policy_wandb_log_int</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-wandb-log-float">torchfort_rl_off_policy_wandb_log_float</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-wandb-log-double">torchfort_rl_off_policy_wandb_log_double</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#id1">Weights and Biases Logging</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-wandb-log-int">torchfort_rl_off_policy_wandb_log_int</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-wandb-log-float">torchfort_rl_off_policy_wandb_log_float</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-off-policy-wandb-log-double">torchfort_rl_off_policy_wandb_log_double</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/f_api.html#on-policy-algorithms">On-Policy Algorithms</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#id2">System Creation</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-create-system">torchfort_rl_on_policy_create_system</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-create-distributed-system">torchfort_rl_on_policy_create_distributed_system</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#id3">Training/Evaluation</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-train-step">torchfort_rl_on_policy_train_step</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-predict-explore">torchfort_rl_on_policy_predict_explore</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-predict">torchfort_rl_on_policy_predict</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-evaluate">torchfort_rl_on_policy_evaluate</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#id4">System Management</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-update-rollout-buffer">torchfort_rl_on_policy_update_rollout_buffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-reset-rollout-buffer">torchfort_rl_on_policy_reset_rollout_buffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-is-ready">torchfort_rl_on_policy_is_ready</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-save-checkpoint">torchfort_rl_on_policy_save_checkpoint</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-load-checkpoint">torchfort_rl_on_policy_load_checkpoint</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="api/f_api.html#id5">Weights and Biases Logging</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-wandb-log-int">torchfort_rl_on_policy_wandb_log_int</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-wandb-log-float">torchfort_rl_on_policy_wandb_log_float</a></li>
+<li class="toctree-l5"><a class="reference internal" href="api/f_api.html#torchfort-rl-on-policy-wandb-log-double">torchfort_rl_on_policy_wandb_log_double</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

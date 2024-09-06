@@ -16,9 +16,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -80,22 +78,101 @@
 <li class="toctree-l2"><a class="reference internal" href="c_api.html">TorchFort C API</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">TorchFort Fortran API</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#general">General</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#types">Types</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#global-context-settings">Global Context Settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#types">Types</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-datatype">torchfort_datatype</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-result">torchfort_result</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#global-context-settings">Global Context Settings</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-set-cudnn-benchmark">torchfort_set_cudnn_benchmark</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#supervised-learning">Supervised Learning</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#model-creation">Model Creation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#model-training-inference">Model Training/Inference</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#model-management">Model Management</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#weights-and-biases-logging">Weights and Biases Logging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-creation">Model Creation</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-create-model">torchfort_create_model</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-create-distributed-model">torchfort_create_distributed_model</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#model-training-inference">Model Training/Inference</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-train">torchfort_train</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-inference">torchfort_inference</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#model-management">Model Management</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-save-model">torchfort_save_model</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-load-model">torchfort_load_model</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-save-checkpoint">torchfort_save_checkpoint</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-load-checkpoint">torchfort_load_checkpoint</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#weights-and-biases-logging">Weights and Biases Logging</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-wandb-log-int">torchfort_wandb_log_int</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-wandb-log-float">torchfort_wandb_log_float</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#torchfort-wandb-log-double">torchfort_wandb_log_double</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#reinforcement-learning">Reinforcement Learning</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#system-creation">System Creation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#training-evaluation">Training/Evaluation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#system-management">System Management</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id1">Weights and Biases Logging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#off-policy-algorithms">Off-Policy Algorithms</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#system-creation">System Creation</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-create-system">torchfort_rl_off_policy_create_system</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-create-distributed-system">torchfort_rl_off_policy_create_distributed_system</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#training-evaluation">Training/Evaluation</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-train-step">torchfort_rl_off_policy_train_step</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-predict-explore">torchfort_rl_off_policy_predict_explore</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-predict">torchfort_rl_off_policy_predict</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-evaluate">torchfort_rl_off_policy_evaluate</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#system-management">System Management</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-update-replay-buffer">torchfort_rl_off_policy_update_replay_buffer</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-is-ready">torchfort_rl_off_policy_is_ready</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-save-checkpoint">torchfort_rl_off_policy_save_checkpoint</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-load-checkpoint">torchfort_rl_off_policy_load_checkpoint</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#id1">Weights and Biases Logging</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-wandb-log-int">torchfort_rl_off_policy_wandb_log_int</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-wandb-log-float">torchfort_rl_off_policy_wandb_log_float</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-off-policy-wandb-log-double">torchfort_rl_off_policy_wandb_log_double</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#on-policy-algorithms">On-Policy Algorithms</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#id2">System Creation</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-create-system">torchfort_rl_on_policy_create_system</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-create-distributed-system">torchfort_rl_on_policy_create_distributed_system</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#id3">Training/Evaluation</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-train-step">torchfort_rl_on_policy_train_step</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-predict-explore">torchfort_rl_on_policy_predict_explore</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-predict">torchfort_rl_on_policy_predict</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-evaluate">torchfort_rl_on_policy_evaluate</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#id4">System Management</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-update-rollout-buffer">torchfort_rl_on_policy_update_rollout_buffer</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-reset-rollout-buffer">torchfort_rl_on_policy_reset_rollout_buffer</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-is-ready">torchfort_rl_on_policy_is_ready</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-save-checkpoint">torchfort_rl_on_policy_save_checkpoint</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-load-checkpoint">torchfort_rl_on_policy_load_checkpoint</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#id5">Weights and Biases Logging</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-wandb-log-int">torchfort_rl_on_policy_wandb_log_int</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-wandb-log-float">torchfort_rl_on_policy_wandb_log_float</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#torchfort-rl-on-policy-wandb-log-double">torchfort_rl_on_policy_wandb_log_double</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -118,9 +195,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a></li>
-          <li class="breadcrumb-item"><a href="../api.html">TorchFort API</a></li>
-      <li class="breadcrumb-item active">TorchFort Fortran API</li>
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../api.html">TorchFort API</a> &raquo;</li>
+      <li>TorchFort Fortran API</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/api/f_api.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -131,28 +208,28 @@
            <div itemprop="articleBody">
              
   <section id="torchfort-fortran-api">
-<span id="torchfort-api-f-ref"></span><h1>TorchFort Fortran API<a class="headerlink" href="#torchfort-fortran-api" title="Permalink to this heading">¶</a></h1>
+<span id="torchfort-api-f-ref"></span><h1>TorchFort Fortran API<a class="headerlink" href="#torchfort-fortran-api" title="Permalink to this headline">¶</a></h1>
 <p>These are all the types and functions available in the TorchFort Fortran API.</p>
 <section id="general">
-<h2>General<a class="headerlink" href="#general" title="Permalink to this heading">¶</a></h2>
+<h2>General<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h2>
 <section id="types">
-<h3>Types<a class="headerlink" href="#types" title="Permalink to this heading">¶</a></h3>
+<h3>Types<a class="headerlink" href="#types" title="Permalink to this headline">¶</a></h3>
 <section id="torchfort-datatype">
-<span id="torchfort-datatype-t-f-ref"></span><h4>torchfort_datatype<a class="headerlink" href="#torchfort-datatype" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-datatype-t-f-ref"></span><h4>torchfort_datatype<a class="headerlink" href="#torchfort-datatype" title="Permalink to this headline">¶</a></h4>
 <p>See documentation for equivalent C enumerator, <a class="reference internal" href="c_api.html#torchfort-datatype-t-ref"><span class="std std-ref">torchfort_datatype_t</span></a>.</p>
 <hr class="docutils" />
 </section>
 <section id="torchfort-result">
-<span id="torchfort-result-t-f-ref"></span><h4>torchfort_result<a class="headerlink" href="#torchfort-result" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-result-t-f-ref"></span><h4>torchfort_result<a class="headerlink" href="#torchfort-result" title="Permalink to this headline">¶</a></h4>
 <p>See documentation for equivalent C enumerator, <a class="reference internal" href="c_api.html#torchfort-result-t-ref"><span class="std std-ref">torchfort_result_t</span></a>.</p>
 </section>
 </section>
 <hr class="docutils" />
 <section id="global-context-settings">
-<h3>Global Context Settings<a class="headerlink" href="#global-context-settings" title="Permalink to this heading">¶</a></h3>
+<h3>Global Context Settings<a class="headerlink" href="#global-context-settings" title="Permalink to this headline">¶</a></h3>
 <p>These are global routines which affect the behavior of the libtorch backend. It is therefore recommended to call these functions before any other TorchFort calls are made.</p>
 <section id="torchfort-set-cudnn-benchmark">
-<span id="torchfort-set-cudnn-benchmark-f-ref"></span><h4>torchfort_set_cudnn_benchmark<a class="headerlink" href="#torchfort-set-cudnn-benchmark" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-set-cudnn-benchmark-f-ref"></span><h4>torchfort_set_cudnn_benchmark<a class="headerlink" href="#torchfort-set-cudnn-benchmark" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_set_cudnn_benchmark">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_set_cudnn_benchmark</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">flag</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_set_cudnn_benchmark" title="Permalink to this definition">¶</a></dt>
@@ -172,20 +249,21 @@
 </section>
 </section>
 <section id="supervised-learning">
-<span id="torchfort-general-f-ref"></span><h2>Supervised Learning<a class="headerlink" href="#supervised-learning" title="Permalink to this heading">¶</a></h2>
+<span id="torchfort-general-f-ref"></span><h2>Supervised Learning<a class="headerlink" href="#supervised-learning" title="Permalink to this headline">¶</a></h2>
 <section id="model-creation">
-<h3>Model Creation<a class="headerlink" href="#model-creation" title="Permalink to this heading">¶</a></h3>
+<h3>Model Creation<a class="headerlink" href="#model-creation" title="Permalink to this headline">¶</a></h3>
 <section id="torchfort-create-model">
-<span id="torchfort-create-model-f-ref"></span><h4>torchfort_create_model<a class="headerlink" href="#torchfort-create-model" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-create-model-f-ref"></span><h4>torchfort_create_model<a class="headerlink" href="#torchfort-create-model" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_create_model">
-<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_create_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">config_fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_create_model" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_create_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">config_fname</span></em>, <em class="sig-param"><span class="pre">device</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_create_model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a model from a provided configuration file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>handle</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: A name to assign to the created model instance to use as a key for other TorchFort routines.</p></li>
 <li><p><strong>config_fname</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The filesystem path to the user-defined model configuration file to use.</p></li>
+<li><p><strong>device</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Which device to place and run the model on. For <code class="docutils literal notranslate"><span class="pre">TORCHFORT_DEVICE_CPU</span></code> (-1), model will be placed on CPU. For values &gt;= 0, model will be placed on GPU with index corresponding to value.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return</dt>
@@ -197,19 +275,18 @@
 <hr class="docutils" />
 </section>
 <section id="torchfort-create-distributed-model">
-<span id="torchfort-create-distributed-model-f-ref"></span><h4>torchfort_create_distributed_model<a class="headerlink" href="#torchfort-create-distributed-model" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-create-distributed-model-f-ref"></span><h4>torchfort_create_distributed_model<a class="headerlink" href="#torchfort-create-distributed-model" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_create_distributed_model">
-<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_create_distributed_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">config_fname</span></em>, <em class="sig-param"><span class="pre">mpi_comm</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_create_distributed_model" title="Permalink to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Creates a distributed data-parallel model from a provided configuration file.</p>
-</div></blockquote>
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_create_distributed_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">config_fname</span></em>, <em class="sig-param"><span class="pre">mpi_comm</span></em>, <em class="sig-param"><span class="pre">device</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_create_distributed_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a distributed data-parallel model from a provided configuration file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>handle</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: A name to assign to the created model instance to use as a key for other TorchFort routines.</p></li>
 <li><p><strong>config_fname</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The filesystem path to the user-defined configuration file to use.</p></li>
 <li><p><strong>mpi_comm</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: MPI communicator to use to initialize NCCL communication library for data-parallel communication.</p></li>
+<li><p><strong>device</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Which device to place and run the model on. For <code class="docutils literal notranslate"><span class="pre">TORCHFORT_DEVICE_CPU</span></code> (-1), model will be placed on CPU. For values &gt;= 0, model will be placed on GPU with index corresponding to value.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return</dt>
@@ -222,9 +299,9 @@
 </section>
 <hr class="docutils" />
 <section id="model-training-inference">
-<h3>Model Training/Inference<a class="headerlink" href="#model-training-inference" title="Permalink to this heading">¶</a></h3>
+<h3>Model Training/Inference<a class="headerlink" href="#model-training-inference" title="Permalink to this headline">¶</a></h3>
 <section id="torchfort-train">
-<span id="torchfort-train-f-ref"></span><h4>torchfort_train<a class="headerlink" href="#torchfort-train" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-train-f-ref"></span><h4>torchfort_train<a class="headerlink" href="#torchfort-train" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_train">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">input</span></em>, <em class="sig-param"><span class="pre">label</span></em>, <em class="sig-param"><span class="pre">loss_val</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_train" title="Permalink to this definition">¶</a></dt>
@@ -237,7 +314,7 @@
 <li><p><strong>input</strong><em> [</em><em>T(*)</em><em>,</em><em>in</em><em>]</em> :: An array containing the input data. The last array dimension should be the batch dimension, the other dimensions are the feature dimensions.</p></li>
 <li><p><strong>label</strong><em> [</em><em>T(*)</em><em>,</em><em>in</em><em>]</em> :: An array containing the label data. The last array dimension should be the batch dimension. <code class="code docutils literal notranslate"><span class="pre">label</span></code> does not need to be of the same shape as <code class="code docutils literal notranslate"><span class="pre">input</span></code> but the batch dimension should match. Additionally, <code class="code docutils literal notranslate"><span class="pre">label</span></code> should be of the same rank as <cite>input</cite>.</p></li>
 <li><p><strong>loss_val</strong><em> [</em><em>T</em><em>,</em><em>out</em><em>]</em> :: A variable that will hold the loss value computed during the training iteration.</p></li>
-<li><p><strong>stream</strong><em> [</em><em>integer(cuda_stream_kind)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the training operations.</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return</dt>
@@ -249,7 +326,7 @@
 <hr class="docutils" />
 </section>
 <section id="torchfort-inference">
-<span id="torchfort-inference-f-ref"></span><h4>torchfort_inference<a class="headerlink" href="#torchfort-inference" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-inference-f-ref"></span><h4>torchfort_inference<a class="headerlink" href="#torchfort-inference" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_inference">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">input</span></em>, <em class="sig-param"><span class="pre">output</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_inference" title="Permalink to this definition">¶</a></dt>
@@ -261,7 +338,7 @@
 <li><p><strong>mname</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The key of the model instance.</p></li>
 <li><p><strong>input</strong><em> [</em><em>T(*)</em><em>,</em><em>in</em><em>]</em> :: An array containing the input data. The last array dimension should be the batch dimension, the other dimensions are the feature dimensions.</p></li>
 <li><p><strong>output</strong><em> [</em><em>T(*)</em><em>,</em><em>out</em><em>]</em> :: An array which will hold the output of the model. The last array dimension should be the batch dimension. <code class="code docutils literal notranslate"><span class="pre">output</span></code> does not need to be of the same shape as <code class="code docutils literal notranslate"><span class="pre">input</span></code> but the batch dimension should match. Additionally, <code class="code docutils literal notranslate"><span class="pre">output</span></code> should be of the same rank as <cite>input</cite>.</p></li>
-<li><p><strong>stream</strong><em> [</em><em>integer(cuda_stream_kind)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the training operations.</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return</dt>
@@ -274,9 +351,9 @@
 </section>
 <hr class="docutils" />
 <section id="model-management">
-<h3>Model Management<a class="headerlink" href="#model-management" title="Permalink to this heading">¶</a></h3>
+<h3>Model Management<a class="headerlink" href="#model-management" title="Permalink to this headline">¶</a></h3>
 <section id="torchfort-save-model">
-<span id="torchfort-save-model-f-ref"></span><h4>torchfort_save_model<a class="headerlink" href="#torchfort-save-model" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-save-model-f-ref"></span><h4>torchfort_save_model<a class="headerlink" href="#torchfort-save-model" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_save_model">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_save_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_save_model" title="Permalink to this definition">¶</a></dt>
@@ -297,7 +374,7 @@
 <hr class="docutils" />
 </section>
 <section id="torchfort-load-model">
-<span id="torchfort-load-model-f-ref"></span><h4>torchfort_load_model<a class="headerlink" href="#torchfort-load-model" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-load-model-f-ref"></span><h4>torchfort_load_model<a class="headerlink" href="#torchfort-load-model" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_load_model">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_load_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_load_model" title="Permalink to this definition">¶</a></dt>
@@ -318,7 +395,7 @@
 <hr class="docutils" />
 </section>
 <section id="torchfort-save-checkpoint">
-<span id="torchfort-save-checkpoint-f-ref"></span><h4>torchfort_save_checkpoint<a class="headerlink" href="#torchfort-save-checkpoint" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-save-checkpoint-f-ref"></span><h4>torchfort_save_checkpoint<a class="headerlink" href="#torchfort-save-checkpoint" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_save_checkpoint">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_save_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">checkpoint_dir</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_save_checkpoint" title="Permalink to this definition">¶</a></dt>
@@ -339,7 +416,7 @@
 <hr class="docutils" />
 </section>
 <section id="torchfort-load-checkpoint">
-<span id="torchfort-load-checkpoint-f-ref"></span><h4>torchfort_load_checkpoint<a class="headerlink" href="#torchfort-load-checkpoint" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-load-checkpoint-f-ref"></span><h4>torchfort_load_checkpoint<a class="headerlink" href="#torchfort-load-checkpoint" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_load_checkpoint">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_load_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">checkpoint_dir</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_load_checkpoint" title="Permalink to this definition">¶</a></dt>
@@ -361,9 +438,9 @@
 </section>
 <hr class="docutils" />
 <section id="weights-and-biases-logging">
-<h3>Weights and Biases Logging<a class="headerlink" href="#weights-and-biases-logging" title="Permalink to this heading">¶</a></h3>
+<h3>Weights and Biases Logging<a class="headerlink" href="#weights-and-biases-logging" title="Permalink to this headline">¶</a></h3>
 <section id="torchfort-wandb-log-int">
-<span id="torchfort-wandb-log-int-f-ref"></span><h4>torchfort_wandb_log_int<a class="headerlink" href="#torchfort-wandb-log-int" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-wandb-log-int-f-ref"></span><h4>torchfort_wandb_log_int<a class="headerlink" href="#torchfort-wandb-log-int" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_wandb_log_int">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_wandb_log_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">metric_name</span></em>, <em class="sig-param"><span class="pre">step</span></em>, <em class="sig-param"><span class="pre">val</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_wandb_log_int" title="Permalink to this definition">¶</a></dt>
@@ -386,7 +463,7 @@
 <hr class="docutils" />
 </section>
 <section id="torchfort-wandb-log-float">
-<span id="torchfort-wandb-log-float-f-ref"></span><h4>torchfort_wandb_log_float<a class="headerlink" href="#torchfort-wandb-log-float" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-wandb-log-float-f-ref"></span><h4>torchfort_wandb_log_float<a class="headerlink" href="#torchfort-wandb-log-float" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_wandb_log_float">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_wandb_log_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">metric_name</span></em>, <em class="sig-param"><span class="pre">step</span></em>, <em class="sig-param"><span class="pre">val</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_wandb_log_float" title="Permalink to this definition">¶</a></dt>
@@ -395,7 +472,7 @@
 <hr class="docutils" />
 </section>
 <section id="torchfort-wandb-log-double">
-<span id="torchfort-wandb-log-double-f-ref"></span><h4>torchfort_wandb_log_double<a class="headerlink" href="#torchfort-wandb-log-double" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-wandb-log-double-f-ref"></span><h4>torchfort_wandb_log_double<a class="headerlink" href="#torchfort-wandb-log-double" title="Permalink to this headline">¶</a></h4>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_wandb_log_double">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_wandb_log_double</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">metric_name</span></em>, <em class="sig-param"><span class="pre">step</span></em>, <em class="sig-param"><span class="pre">val</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_wandb_log_double" title="Permalink to this definition">¶</a></dt>
@@ -406,21 +483,29 @@
 </section>
 </section>
 <section id="reinforcement-learning">
-<span id="torchfort-rl-f-ref"></span><h2>Reinforcement Learning<a class="headerlink" href="#reinforcement-learning" title="Permalink to this heading">¶</a></h2>
+<span id="torchfort-rl-f-ref"></span><h2>Reinforcement Learning<a class="headerlink" href="#reinforcement-learning" title="Permalink to this headline">¶</a></h2>
+<p>Similar to other reinforcement learning frameworks such as <a class="reference external" href="https://spinningup.openai.com/en/latest/">Spinning Up</a>
+from OpenAI or <a class="reference external" href="https://stable-baselines3.readthedocs.io/en/master/">Stable Baselines</a>,
+we distinguish between on-policy and off-policy algorithms since those two types require different APIs.</p>
+<hr class="docutils" />
+<section id="off-policy-algorithms">
+<span id="torchfort-rl-off-policy-f-ref"></span><h3>Off-Policy Algorithms<a class="headerlink" href="#off-policy-algorithms" title="Permalink to this headline">¶</a></h3>
 <section id="system-creation">
-<h3>System Creation<a class="headerlink" href="#system-creation" title="Permalink to this heading">¶</a></h3>
+<h4>System Creation<a class="headerlink" href="#system-creation" title="Permalink to this headline">¶</a></h4>
 <p>Basic routines to create and register a reinforcement learning system in the internal registry. A (synchronous) data parallel distributed option is available.</p>
 <section id="torchfort-rl-off-policy-create-system">
-<span id="torchfort-rl-off-policy-create-system-f-ref"></span><h4>torchfort_rl_off_policy_create_system<a class="headerlink" href="#torchfort-rl-off-policy-create-system" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-create-system-f-ref"></span><h5>torchfort_rl_off_policy_create_system<a class="headerlink" href="#torchfort-rl-off-policy-create-system" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_create_system">
-<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_create_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">config_fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_create_system" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_create_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">config_fname</span></em>, <em class="sig-param"><span class="pre">model_device</span></em>, <em class="sig-param"><span class="pre">rb_device</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_create_system" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an off-policy reinforcement learning training system instance from a provided configuration file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: A name to assign to the created training system instance to use as a key for other TorchFort routines.</p></li>
 <li><p><strong>config_fname</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The filesystem path to the user-defined configuration file to use.</p></li>
+<li><p><strong>model_device</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Which device to place and run the model on. For <code class="docutils literal notranslate"><span class="pre">TORCHFORT_DEVICE_CPU</span></code> (-1), model will be placed on CPU. For values &gt;= 0, model will be placed on GPU with index corresponding to value.</p></li>
+<li><p><strong>rb_device</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Which device to place and run the replay buffer on. For <code class="docutils literal notranslate"><span class="pre">TORCHFORT_DEVICE_CPU</span></code> (-1), replay buffer will be placed on CPU. For values &gt;= 0, it will be placed on GPU with index corresponding to value.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return</dt>
@@ -432,10 +517,10 @@
 <hr class="docutils" />
 </section>
 <section id="torchfort-rl-off-policy-create-distributed-system">
-<span id="torchfort-rl-off-policy-create-distributed-system-f-ref"></span><h4>torchfort_rl_off_policy_create_distributed_system<a class="headerlink" href="#torchfort-rl-off-policy-create-distributed-system" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-create-distributed-system-f-ref"></span><h5>torchfort_rl_off_policy_create_distributed_system<a class="headerlink" href="#torchfort-rl-off-policy-create-distributed-system" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_create_distributed_system">
-<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_create_distributed_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">config_fname</span></em>, <em class="sig-param"><span class="pre">mpi_comm</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_create_distributed_system" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_create_distributed_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">config_fname</span></em>, <em class="sig-param"><span class="pre">mpi_comm</span></em>, <em class="sig-param"><span class="pre">model_device</span></em>, <em class="sig-param"><span class="pre">rb_device</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_create_distributed_system" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a (synchronous) data-parallel off-policy reinforcement learning system instance from a provided configuration file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -443,6 +528,8 @@
 <li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: A name to assign to the created training system instance to use as a key for other TorchFort routines.</p></li>
 <li><p><strong>config_fname</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The filesystem path to the user-defined configuration file to use.</p></li>
 <li><p><strong>mpi_comm</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: MPI communicator to use to initialize NCCL communication library for data-parallel communication.</p></li>
+<li><p><strong>model_device</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Which device to place and run the model on. For <code class="docutils literal notranslate"><span class="pre">TORCHFORT_DEVICE_CPU</span></code> (-1), model will be placed on CPU. For values &gt;= 0, model will be placed on GPU with index corresponding to value.</p></li>
+<li><p><strong>rb_device</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Which device to place the replay buffer on. For <code class="docutils literal notranslate"><span class="pre">TORCHFORT_DEVICE_CPU</span></code> (-1), replay buffer will be placed on CPU. For values &gt;= 0, it will be placed on GPU with index corresponding to value.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return</dt>
@@ -455,10 +542,10 @@
 </section>
 <hr class="docutils" />
 <section id="training-evaluation">
-<h3>Training/Evaluation<a class="headerlink" href="#training-evaluation" title="Permalink to this heading">¶</a></h3>
+<h4>Training/Evaluation<a class="headerlink" href="#training-evaluation" title="Permalink to this headline">¶</a></h4>
 <p>These routines are be used for training the reinforcement learning system or for steering the environment.</p>
 <section id="torchfort-rl-off-policy-train-step">
-<span id="torchfort-rl-off-policy-train-step-f-ref"></span><h4>torchfort_rl_off_policy_train_step<a class="headerlink" href="#torchfort-rl-off-policy-train-step" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-train-step-f-ref"></span><h5>torchfort_rl_off_policy_train_step<a class="headerlink" href="#torchfort-rl-off-policy-train-step" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_train_step">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_train_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">p_loss_val</span></em>, <em class="sig-param"><span class="pre">q_loss_val</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_train_step" title="Permalink to this definition">¶</a></dt>
@@ -473,7 +560,7 @@ For this operation, <code class="code docutils literal notranslate"><span class=
 <li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p></li>
 <li><p><strong>p_loss_val</strong><em> [</em><em>T</em><em>,</em><em>out</em><em>]</em> :: A single or double precision variable which will hold the policy loss value computed during the training iteration.</p></li>
 <li><p><strong>q_loss_val</strong><em> [</em><em>T</em><em>,</em><em>out</em><em>]</em> :: A single or double precision variable which will hold the critic loss value computed during the training iteration, averaged over all available critics (depends on the chosen algorithm).</p></li>
-<li><p><strong>stream</strong><em> [</em><em>integer(cuda_stream_kind)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the training operations.</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return</dt>
@@ -485,7 +572,7 @@ For this operation, <code class="code docutils literal notranslate"><span class=
 <hr class="docutils" />
 </section>
 <section id="torchfort-rl-off-policy-predict-explore">
-<span id="torchfort-rl-off-policy-predict-explore-f-ref"></span><h4>torchfort_rl_off_policy_predict_explore<a class="headerlink" href="#torchfort-rl-off-policy-predict-explore" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-predict-explore-f-ref"></span><h5>torchfort_rl_off_policy_predict_explore<a class="headerlink" href="#torchfort-rl-off-policy-predict-explore" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_predict_explore">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_predict_explore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">state</span></em>, <em class="sig-param"><span class="pre">act</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_predict_explore" title="Permalink to this definition">¶</a></dt>
@@ -498,7 +585,7 @@ Depending on the reinforcement learning algorithm used, the prediction is perfor
 <li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p></li>
 <li><p><strong>state</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the state space.</p></li>
 <li><p><strong>act</strong><em> [</em><em>T</em><em>,</em><em>out</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the action space.</p></li>
-<li><p><strong>stream</strong><em> [</em><em>integer(cuda_stream_kind)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation.</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return</dt>
@@ -510,7 +597,7 @@ Depending on the reinforcement learning algorithm used, the prediction is perfor
 <hr class="docutils" />
 </section>
 <section id="torchfort-rl-off-policy-predict">
-<span id="torchfort-rl-off-policy-predict-f-ref"></span><h4>torchfort_rl_off_policy_predict<a class="headerlink" href="#torchfort-rl-off-policy-predict" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-predict-f-ref"></span><h5>torchfort_rl_off_policy_predict<a class="headerlink" href="#torchfort-rl-off-policy-predict" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_predict">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">state</span></em>, <em class="sig-param"><span class="pre">act</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_predict" title="Permalink to this definition">¶</a></dt>
@@ -524,7 +611,7 @@ In contrast to <code class="code docutils literal notranslate"><span class="pre"
 <li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p></li>
 <li><p><strong>state</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the state space.</p></li>
 <li><p><strong>act</strong><em> [</em><em>T</em><em>,</em><em>out</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the action space.</p></li>
-<li><p><strong>stream</strong><em> [</em><em>integer(cuda_stream_kind)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation.</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return</dt>
@@ -536,7 +623,7 @@ In contrast to <code class="code docutils literal notranslate"><span class="pre"
 <hr class="docutils" />
 </section>
 <section id="torchfort-rl-off-policy-evaluate">
-<span id="torchfort-rl-off-policy-evaluate-f-ref"></span><h4>torchfort_rl_off_policy_evaluate<a class="headerlink" href="#torchfort-rl-off-policy-evaluate" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-evaluate-f-ref"></span><h5>torchfort_rl_off_policy_evaluate<a class="headerlink" href="#torchfort-rl-off-policy-evaluate" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_evaluate">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">state</span></em>, <em class="sig-param"><span class="pre">act</span></em>, <em class="sig-param"><span class="pre">reward</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_evaluate" title="Permalink to this definition">¶</a></dt>
@@ -551,7 +638,7 @@ The routine averages the predictions over all critics.</p>
 <li><p><strong>state</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the state space.</p></li>
 <li><p><strong>act</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the action space.</p></li>
 <li><p><strong>reward</strong><em> [</em><em>T</em><em>,</em><em>out</em><em>]</em> :: Two-dimensional array of size (1, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>) which will hold the predicted reward values.</p></li>
-<li><p><strong>stream</strong><em> [</em><em>integer(cuda_stream_kind)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation.</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return</dt>
@@ -564,9 +651,9 @@ The routine averages the predictions over all critics.</p>
 </section>
 <hr class="docutils" />
 <section id="system-management">
-<h3>System Management<a class="headerlink" href="#system-management" title="Permalink to this heading">¶</a></h3>
+<h4>System Management<a class="headerlink" href="#system-management" title="Permalink to this headline">¶</a></h4>
 <section id="torchfort-rl-off-policy-update-replay-buffer">
-<span id="torchfort-rl-off-policy-update-replay-buffer-f-ref"></span><h4>torchfort_rl_off_policy_update_replay_buffer<a class="headerlink" href="#torchfort-rl-off-policy-update-replay-buffer" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-update-replay-buffer-f-ref"></span><h5>torchfort_rl_off_policy_update_replay_buffer<a class="headerlink" href="#torchfort-rl-off-policy-update-replay-buffer" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_update_replay_buffer">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_update_replay_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">state_old</span></em>, <em class="sig-param"><span class="pre">act_old</span></em>, <em class="sig-param"><span class="pre">state_new</span></em>, <em class="sig-param"><span class="pre">reward</span></em>, <em class="sig-param"><span class="pre">terminal</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_update_replay_buffer" title="Permalink to this definition">¶</a></dt>
@@ -581,7 +668,7 @@ The routine averages the predictions over all critics.</p>
 <li><p><strong>state_new</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Multi-dimensional array of size of the state space.</p></li>
 <li><p><strong>reward</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Reward value.</p></li>
 <li><p><strong>final_state</strong><em> [</em><em>logical</em><em>,</em><em>in</em><em>]</em> :: Terminal flag.</p></li>
-<li><p><strong>stream</strong><em> [</em><em>integer(cuda_stream_kind)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation.</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return</dt>
@@ -593,7 +680,7 @@ The routine averages the predictions over all critics.</p>
 <hr class="docutils" />
 </section>
 <section id="torchfort-rl-off-policy-is-ready">
-<span id="torchfort-rl-off-policy-is-ready-f-ref"></span><h4>torchfort_rl_off_policy_is_ready<a class="headerlink" href="#torchfort-rl-off-policy-is-ready" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-is-ready-f-ref"></span><h5>torchfort_rl_off_policy_is_ready<a class="headerlink" href="#torchfort-rl-off-policy-is-ready" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_is_ready">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_is_ready</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">ready</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_is_ready" title="Permalink to this definition">¶</a></dt>
@@ -616,7 +703,7 @@ This ensures that the replay buffer is filled sufficiently with exploration data
 <hr class="docutils" />
 </section>
 <section id="torchfort-rl-off-policy-save-checkpoint">
-<span id="torchfort-rl-off-policy-save-checkpoint-f-ref"></span><h4>torchfort_rl_off_policy_save_checkpoint<a class="headerlink" href="#torchfort-rl-off-policy-save-checkpoint" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-save-checkpoint-f-ref"></span><h5>torchfort_rl_off_policy_save_checkpoint<a class="headerlink" href="#torchfort-rl-off-policy-save-checkpoint" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_save_checkpoint">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_save_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">checkpoint_dir</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_save_checkpoint" title="Permalink to this definition">¶</a></dt>
@@ -640,7 +727,7 @@ This function should be used in conjunction with <code class="code docutils lite
 <hr class="docutils" />
 </section>
 <section id="torchfort-rl-off-policy-load-checkpoint">
-<span id="torchfort-rl-off-policy-load-checkpoint-f-ref"></span><h4>torchfort_rl_off_policy_load_checkpoint<a class="headerlink" href="#torchfort-rl-off-policy-load-checkpoint" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-load-checkpoint-f-ref"></span><h5>torchfort_rl_off_policy_load_checkpoint<a class="headerlink" href="#torchfort-rl-off-policy-load-checkpoint" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_load_checkpoint">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_load_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">checkpoint_dir</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_load_checkpoint" title="Permalink to this definition">¶</a></dt>
@@ -663,10 +750,11 @@ This function should be used in conjunction with <code class="code docutils lite
 
 </section>
 </section>
+<hr class="docutils" />
 <section id="id1">
-<h3>Weights and Biases Logging<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
+<h4>Weights and Biases Logging<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
 <section id="torchfort-rl-off-policy-wandb-log-int">
-<span id="torchfort-rl-off-policy-wandb-log-int-f-ref"></span><h4>torchfort_rl_off_policy_wandb_log_int<a class="headerlink" href="#torchfort-rl-off-policy-wandb-log-int" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-wandb-log-int-f-ref"></span><h5>torchfort_rl_off_policy_wandb_log_int<a class="headerlink" href="#torchfort-rl-off-policy-wandb-log-int" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_wandb_log_int">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_wandb_log_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">metric_name</span></em>, <em class="sig-param"><span class="pre">step</span></em>, <em class="sig-param"><span class="pre">val</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_wandb_log_int" title="Permalink to this definition">¶</a></dt>
@@ -689,7 +777,7 @@ This function should be used in conjunction with <code class="code docutils lite
 <hr class="docutils" />
 </section>
 <section id="torchfort-rl-off-policy-wandb-log-float">
-<span id="torchfort-rl-off-policy-wandb-log-float-f-ref"></span><h4>torchfort_rl_off_policy_wandb_log_float<a class="headerlink" href="#torchfort-rl-off-policy-wandb-log-float" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-wandb-log-float-f-ref"></span><h5>torchfort_rl_off_policy_wandb_log_float<a class="headerlink" href="#torchfort-rl-off-policy-wandb-log-float" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_wandb_log_float">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_wandb_log_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">metric_name</span></em>, <em class="sig-param"><span class="pre">step</span></em>, <em class="sig-param"><span class="pre">val</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_wandb_log_float" title="Permalink to this definition">¶</a></dt>
@@ -698,12 +786,341 @@ This function should be used in conjunction with <code class="code docutils lite
 <hr class="docutils" />
 </section>
 <section id="torchfort-rl-off-policy-wandb-log-double">
-<span id="torchfort-rl-off-policy-wandb-log-double-f-ref"></span><h4>torchfort_rl_off_policy_wandb_log_double<a class="headerlink" href="#torchfort-rl-off-policy-wandb-log-double" title="Permalink to this heading">¶</a></h4>
+<span id="torchfort-rl-off-policy-wandb-log-double-f-ref"></span><h5>torchfort_rl_off_policy_wandb_log_double<a class="headerlink" href="#torchfort-rl-off-policy-wandb-log-double" title="Permalink to this headline">¶</a></h5>
 <dl>
 <dt class="sig sig-object f" id="f/_/torchfort_rl_off_policy_wandb_log_double">
 <em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_off_policy_wandb_log_double</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">metric_name</span></em>, <em class="sig-param"><span class="pre">step</span></em>, <em class="sig-param"><span class="pre">val</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_off_policy_wandb_log_double" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<hr class="docutils" />
+</section>
+</section>
+</section>
+<section id="on-policy-algorithms">
+<span id="torchfort-rl-on-policy-f-ref"></span><h3>On-Policy Algorithms<a class="headerlink" href="#on-policy-algorithms" title="Permalink to this headline">¶</a></h3>
+<section id="id2">
+<h4>System Creation<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<p>Basic routines to create and register a reinforcement learning system in the internal registry.
+A (synchronous) data parallel distributed option is available.</p>
+<section id="torchfort-rl-on-policy-create-system">
+<span id="torchfort-rl-on-policy-create-system-f-ref"></span><h5>torchfort_rl_on_policy_create_system<a class="headerlink" href="#torchfort-rl-on-policy-create-system" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_create_system">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_create_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">config_fname</span></em>, <em class="sig-param"><span class="pre">model_device</span></em>, <em class="sig-param"><span class="pre">rb_device</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_create_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an on-policy reinforcement learning training system instance from a provided configuration file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: A name to assign to the created training system instance to use as a key for other TorchFort routines.</p></li>
+<li><p><strong>config_fname</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The filesystem path to the user-defined configuration file to use.</p></li>
+<li><p><strong>model_device</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Which device to place and run the model on. For <code class="docutils literal notranslate"><span class="pre">TORCHFORT_DEVICE_CPU</span></code> (-1), model will be placed on CPU. For values &gt;= 0, model will be placed on GPU with index corresponding to value.</p></li>
+<li><p><strong>rb_device</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Which device to place the rollout buffer on. For <code class="docutils literal notranslate"><span class="pre">TORCHFORT_DEVICE_CPU</span></code> (-1), rollout buffer will be placed on CPU. For values &gt;= 0, it will be placed on GPU with index corresponding to value.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+</section>
+<section id="torchfort-rl-on-policy-create-distributed-system">
+<span id="torchfort-rl-on-policy-create-distributed-system-f-ref"></span><h5>torchfort_rl_on_policy_create_distributed_system<a class="headerlink" href="#torchfort-rl-on-policy-create-distributed-system" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_create_distributed_system">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_create_distributed_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">config_fname</span></em>, <em class="sig-param"><span class="pre">mpi_comm</span></em>, <em class="sig-param"><span class="pre">model_device</span></em>, <em class="sig-param"><span class="pre">rb_device</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_create_distributed_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a (synchronous) data-parallel on-policy reinforcement learning system instance from a provided configuration file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: A name to assign to the created training system instance to use as a key for other TorchFort routines.</p></li>
+<li><p><strong>config_fname</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The filesystem path to the user-defined configuration file to use.</p></li>
+<li><p><strong>mpi_comm</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: MPI communicator to use to initialize NCCL communication library for data-parallel communication.</p></li>
+<li><p><strong>model_device</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Which device to place and run the model on. For <code class="docutils literal notranslate"><span class="pre">TORCHFORT_DEVICE_CPU</span></code> (-1), model will be placed on CPU. For values &gt;= 0, model will be placed on GPU with index corresponding to value.</p></li>
+<li><p><strong>rb_device</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Which device to place the rollout buffer on. For <code class="docutils literal notranslate"><span class="pre">TORCHFORT_DEVICE_CPU</span></code> (-1), rollout buffer will be placed on CPU. For values &gt;= 0, it will be placed on GPU with index corresponding to value.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+<hr class="docutils" />
+<section id="id3">
+<h4>Training/Evaluation<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<p>These routines are be used for training the reinforcement learning system or for steering the environment.</p>
+<section id="torchfort-rl-on-policy-train-step">
+<span id="torchfort-rl-on-policy-train-step-f-ref"></span><h5>torchfort_rl_on_policy_train_step<a class="headerlink" href="#torchfort-rl-on-policy-train-step" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_train_step">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_train_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">p_loss_val</span></em>, <em class="sig-param"><span class="pre">q_loss_val</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_train_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs a training iteration of an on-policy refinforcement learning instance and returns loss values for policy and value functions.
+This routine samples a batch of specified size from the rollout buffer according to the buffers sampling procedure
+and performs a train step using this sample. The details of the training procedure are abstracted away from the user and depend on the
+chosen system algorithm. Note that the rollout buffer needs to be finalized or otherwise the train step will be skipped.
+For this operation, <code class="code docutils literal notranslate"><span class="pre">T</span></code> can be one of <code class="code docutils literal notranslate"><span class="pre">real(real32)</span></code>, <code class="code docutils literal notranslate"><span class="pre">real(real64)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p></li>
+<li><p><strong>p_loss_val</strong><em> [</em><em>T</em><em>,</em><em>out</em><em>]</em> :: A single or double precision variable which will hold the policy loss value computed during the training iteration.</p></li>
+<li><p><strong>q_loss_val</strong><em> [</em><em>T</em><em>,</em><em>out</em><em>]</em> :: A single or double precision variable which will hold the critic loss value computed during the training iteration, averaged over all available critics (depends on the chosen algorithm).</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+</section>
+<section id="torchfort-rl-on-policy-predict-explore">
+<span id="torchfort-rl-on-policy-predict-explore-f-ref"></span><h5>torchfort_rl_on_policy_predict_explore<a class="headerlink" href="#torchfort-rl-on-policy-predict-explore" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_predict_explore">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_predict_explore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">state</span></em>, <em class="sig-param"><span class="pre">act</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_predict_explore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suggests an action based on the current state of the system and adds noise as specified by the coprresponding reinforcement learning system.
+Depending on the reinforcement learning algorithm used, the prediction is performed by the main network (not the target network). In contrast to <code class="code docutils literal notranslate"><span class="pre">torchfort_rl_off_policy_predict</span></code>, this routine adds noise and thus is called explorative. The kind of noise is specified during system creation.</p>
+<p>For this operation, <code class="code docutils literal notranslate"><span class="pre">T</span></code> can be one of <code class="code docutils literal notranslate"><span class="pre">real(real32)</span></code>, <code class="code docutils literal notranslate"><span class="pre">real(real64)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p></li>
+<li><p><strong>state</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the state space.</p></li>
+<li><p><strong>act</strong><em> [</em><em>T</em><em>,</em><em>out</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the action space.</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+</section>
+<section id="torchfort-rl-on-policy-predict">
+<span id="torchfort-rl-on-policy-predict-f-ref"></span><h5>torchfort_rl_on_policy_predict<a class="headerlink" href="#torchfort-rl-on-policy-predict" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_predict">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">state</span></em>, <em class="sig-param"><span class="pre">act</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suggests an action based on the current state of the system.
+Depending on the algorithm used, the prediction is performed by the target network.
+In contrast to <code class="code docutils literal notranslate"><span class="pre">torchfort_rl_on_policy_predict_explore</span></code>, this routine does not add noise, which means it is exploitative.</p>
+<p>For this operation, <code class="code docutils literal notranslate"><span class="pre">T</span></code> can be one of <code class="code docutils literal notranslate"><span class="pre">real(real32)</span></code>, <code class="code docutils literal notranslate"><span class="pre">real(real64)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p></li>
+<li><p><strong>state</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the state space.</p></li>
+<li><p><strong>act</strong><em> [</em><em>T</em><em>,</em><em>out</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the action space.</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+</section>
+<section id="torchfort-rl-on-policy-evaluate">
+<span id="torchfort-rl-on-policy-evaluate-f-ref"></span><h5>torchfort_rl_on_policy_evaluate<a class="headerlink" href="#torchfort-rl-on-policy-evaluate" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_evaluate">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">state</span></em>, <em class="sig-param"><span class="pre">act</span></em>, <em class="sig-param"><span class="pre">reward</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predicts the future reward based on the current state and selected action.
+Depending on the learning algorithm, the routine queries the target critic networks for this.
+The routine averages the predictions over all critics.</p>
+<p>For this operation, <code class="code docutils literal notranslate"><span class="pre">T</span></code> can be one of <code class="code docutils literal notranslate"><span class="pre">real(real32)</span></code>, <code class="code docutils literal notranslate"><span class="pre">real(real64)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p></li>
+<li><p><strong>state</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the state space.</p></li>
+<li><p><strong>act</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Multi-dimensional array of size (…, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>), depending on the dimensionality of the action space.</p></li>
+<li><p><strong>reward</strong><em> [</em><em>T</em><em>,</em><em>out</em><em>]</em> :: Two-dimensional array of size (1, <code class="code docutils literal notranslate"><span class="pre">batch_size</span></code>) which will hold the predicted reward values.</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+<hr class="docutils" />
+<section id="id4">
+<h4>System Management<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<section id="torchfort-rl-on-policy-update-rollout-buffer">
+<span id="torchfort-rl-on-policy-update-rollout-buffer-f-ref"></span><h5>torchfort_rl_on_policy_update_rollout_buffer<a class="headerlink" href="#torchfort-rl-on-policy-update-rollout-buffer" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_update_rollout_buffer">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_update_rollout_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">state_old</span></em>, <em class="sig-param"><span class="pre">act_old</span></em>, <em class="sig-param"><span class="pre">state_new</span></em>, <em class="sig-param"><span class="pre">reward</span></em>, <em class="sig-param"><span class="pre">terminal</span></em>, <em class="sig-param"><span class="pre">stream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_update_rollout_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new <span class="math notranslate nohighlight">\((s, a, r, d)\)</span> tuple to the rollout buffer. Here <span class="math notranslate nohighlight">\(s\)</span> (<code class="code docutils literal notranslate"><span class="pre">state</span></code>) is the state for which action <span class="math notranslate nohighlight">\(a\)</span> (<code class="code docutils literal notranslate"><span class="pre">action</span></code>) was taken, leading to reward <span class="math notranslate nohighlight">\(r\)</span> (<code class="code docutils literal notranslate"><span class="pre">reward</span></code>). The terminal state flag <span class="math notranslate nohighlight">\(d\)</span> (<code class="code docutils literal notranslate"><span class="pre">terminal</span></code>) specifies whether the state is the final state in the episode.
+Note that value estimates <span class="math notranslate nohighlight">\(q\)</span> as well was log-probabilities are also stored but the user does not need to pass those manually, , those values are computed internally from the current policy and stored with the other values.</p>
+<p>For this operation, <code class="code docutils literal notranslate"><span class="pre">T</span></code> can be one of <code class="code docutils literal notranslate"><span class="pre">real(real32)</span></code>, <code class="code docutils literal notranslate"><span class="pre">real(real64)</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p></li>
+<li><p><strong>state</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Multi-dimensional array of size of the state space.</p></li>
+<li><p><strong>act</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Multi-dimensional array of size of the action space.</p></li>
+<li><p><strong>reward</strong><em> [</em><em>T</em><em>,</em><em>in</em><em>]</em> :: Reward value.</p></li>
+<li><p><strong>terminal</strong><em> [</em><em>logical</em><em>,</em><em>in</em><em>]</em> :: Terminal flag.</p></li>
+<li><p><strong>stream</strong><em> [</em><em>integer(int64)</em><em>,</em><em>in,optional</em><em>]</em> :: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+</section>
+<section id="torchfort-rl-on-policy-reset-rollout-buffer">
+<span id="torchfort-rl-on-policy-reset-rollout-buffer-f-ref"></span><h5>torchfort_rl_on_policy_reset_rollout_buffer<a class="headerlink" href="#torchfort-rl-on-policy-reset-rollout-buffer" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_reset_rollout_buffer">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_reset_rollout_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_reset_rollout_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function call clears the rollout buffer and resets all variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+</section>
+<section id="torchfort-rl-on-policy-is-ready">
+<span id="torchfort-rl-on-policy-is-ready-f-ref"></span><h5>torchfort_rl_on_policy_is_ready<a class="headerlink" href="#torchfort-rl-on-policy-is-ready" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_is_ready">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_is_ready</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">ready</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_is_ready" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries a reinforcement learning system for rediness to start training.
+A user should call this method before starting training to make sure the reinforcement learning system is ready.
+This ensures that the rollout buffer is filled sufficiently with exploration data as specified during system creation.
+It also checks if the rollout buffer was properly finalized, e.g. all advantages were computed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p></li>
+<li><p><strong>ready</strong><em> [</em><em>logical</em><em>,</em><em>out</em><em>]</em> :: Logical indicating if the system is ready for training.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+</section>
+<section id="torchfort-rl-on-policy-save-checkpoint">
+<span id="torchfort-rl-on-policy-save-checkpoint-f-ref"></span><h5>torchfort_rl_on_policy_save_checkpoint<a class="headerlink" href="#torchfort-rl-on-policy-save-checkpoint" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_save_checkpoint">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_save_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">checkpoint_dir</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_save_checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves a reinforcement learning training checkpoint to a directory.
+This method saves all models (policies, critics, target models if available) together with their corresponding optimizer and LR scheduler.
+states. It also saves the state of the rollout buffer, to allow for smooth restarts of reinforcement learning training processes.
+This function should be used in conjunction with <code class="code docutils literal notranslate"><span class="pre">torchfort_rl_on_policy_load_checkpoint</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p></li>
+<li><p><strong>checkpoint_dir</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: A filesystem path to a directory to save the checkpoint data to.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+</section>
+<section id="torchfort-rl-on-policy-load-checkpoint">
+<span id="torchfort-rl-on-policy-load-checkpoint-f-ref"></span><h5>torchfort_rl_on_policy_load_checkpoint<a class="headerlink" href="#torchfort-rl-on-policy-load-checkpoint" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_load_checkpoint">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_load_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">checkpoint_dir</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_load_checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores a reinforcement learning system from a checkpoint.
+This method restores all models (policies, critics, target models if available) together with their corresponding optimizer and LR scheduler
+states. It also fully restores the state of the rollout buffer, but not the current RNG seed.
+This function should be used in conjunction with <code class="code docutils literal notranslate"><span class="pre">torchfort_rl_on_policy_save_checkpoint</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of system instance to use, as defined during system creation.</p></li>
+<li><p><strong>checkpoint_dir</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: A filesystem path to a directory which contains the checkpoint data to load.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+<hr class="docutils" />
+<section id="id5">
+<h4>Weights and Biases Logging<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
+<section id="torchfort-rl-on-policy-wandb-log-int">
+<span id="torchfort-rl-on-policy-wandb-log-int-f-ref"></span><h5>torchfort_rl_on_policy_wandb_log_int<a class="headerlink" href="#torchfort-rl-on-policy-wandb-log-int" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_wandb_log_int">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_wandb_log_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">metric_name</span></em>, <em class="sig-param"><span class="pre">step</span></em>, <em class="sig-param"><span class="pre">val</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_wandb_log_int" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write an integer value to a Weights and Bias log. Use the <code class="code docutils literal notranslate"><span class="pre">_float</span></code> and <code class="code docutils literal notranslate"><span class="pre">_double</span></code> variants to write <code class="code docutils literal notranslate"><span class="pre">real32</span></code> and <code class="code docutils literal notranslate"><span class="pre">real64</span></code> values respectively.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mname</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: The name of model instance to associate this metric value with, as defined during model creation.</p></li>
+<li><p><strong>metric_name</strong><em> [</em><em>character(:)</em><em>,</em><em>in</em><em>]</em> :: Metric label.</p></li>
+<li><p><strong>step</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Training/inference step to associate with metric value.</p></li>
+<li><p><strong>val</strong><em> [</em><em>integer</em><em>,</em><em>in</em><em>]</em> :: Metric value to log.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p><strong>res</strong><em> [</em><em>torchfort_result</em><em>]</em> :: <code class="code docutils literal notranslate"><span class="pre">TORCHFORT_RESULT_SUCCESS</span></code> on success or error code on failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+</section>
+<section id="torchfort-rl-on-policy-wandb-log-float">
+<span id="torchfort-rl-on-policy-wandb-log-float-f-ref"></span><h5>torchfort_rl_on_policy_wandb_log_float<a class="headerlink" href="#torchfort-rl-on-policy-wandb-log-float" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_wandb_log_float">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_wandb_log_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">metric_name</span></em>, <em class="sig-param"><span class="pre">step</span></em>, <em class="sig-param"><span class="pre">val</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_wandb_log_float" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<hr class="docutils" />
+</section>
+<section id="torchfort-rl-on-policy-wandb-log-double">
+<span id="torchfort-rl-on-policy-wandb-log-double-f-ref"></span><h5>torchfort_rl_on_policy_wandb_log_double<a class="headerlink" href="#torchfort-rl-on-policy-wandb-log-double" title="Permalink to this headline">¶</a></h5>
+<dl>
+<dt class="sig sig-object f" id="f/_/torchfort_rl_on_policy_wandb_log_double">
+<em class="property"><span class="pre">function</span>&#160; </em><span class="sig-name descname"><span class="pre">torchfort_rl_on_policy_wandb_log_double</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mname</span></em>, <em class="sig-param"><span class="pre">metric_name</span></em>, <em class="sig-param"><span class="pre">step</span></em>, <em class="sig-param"><span class="pre">val</span></em><span class="sig-paren">)</span><a class="headerlink" href="#f/_/torchfort_rl_on_policy_wandb_log_double" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
 </section>
 </section>
 </section>

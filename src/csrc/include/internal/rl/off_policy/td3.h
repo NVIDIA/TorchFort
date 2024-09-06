@@ -43,8 +43,8 @@
 
 // rl stuff
 #include "internal/rl/noise_actor.h"
-#include "internal/rl/replay_buffer.h"
 #include "internal/rl/off_policy.h"
+#include "internal/rl/replay_buffer.h"
 #include "internal/rl/utils.h"
 
 namespace torchfort {
@@ -52,7 +52,7 @@ namespace torchfort {
 namespace rl {
 
 namespace off_policy {
-  
+
 // implementing https://spinningup.openai.com/en/latest/algorithms/td3.html#pseudocode
 // we implement the update on a single batch with (s, a, r, s', d):
 // gamma is a tensor here to support multi-step delayed learning. Here, gamma^n
@@ -64,8 +64,8 @@ template <typename T>
 void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const std::vector<ModelPack>& q_models,
                const std::vector<ModelPack>& q_models_target, torch::Tensor state_old_tensor,
                torch::Tensor state_new_tensor, torch::Tensor action_old_tensor, torch::Tensor action_new_tensor,
-               torch::Tensor reward_tensor, torch::Tensor d_tensor, const T& gamma, const T& rho,
-	       T& p_loss_val, T& q_loss_val, bool update_policy) {
+               torch::Tensor reward_tensor, torch::Tensor d_tensor, const T& gamma, const T& rho, T& p_loss_val,
+               T& q_loss_val, bool update_policy) {
 
   // nvtx marker
   torchfort::nvtx::rangePush("torchfort_train_td3");
@@ -109,7 +109,8 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
 
   // backward and update step
   // compute loss for critics and zero grads while we are at it
-  torch::Tensor q_old_tensor = q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+  torch::Tensor q_old_tensor =
+      q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
   q_models[0].optimizer->zero_grad();
   for (int i = 1; i < q_models.size(); ++i) {
@@ -217,8 +218,8 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
     if (!q_model.comm || (q_model.comm && q_model.comm->rank == 0)) {
       torchfort::logging::print(os.str(), torchfort::logging::info);
       if (state->enable_wandb_hook) {
-	torchfort::wandb_log(state, q_model.comm, "critic_0", "train_loss", state->step_train, q_loss_val);
-	torchfort::wandb_log(state, q_model.comm, "critic_0", "train_lr", state->step_train, lrs[0]);
+        torchfort::wandb_log(state, q_model.comm, "critic_0", "train_loss", state->step_train, q_loss_val);
+        torchfort::wandb_log(state, q_model.comm, "critic_0", "train_lr", state->step_train, lrs[0]);
       }
     }
   }
@@ -319,7 +320,7 @@ private:
 };
 
 } // namespace off_policy
-  
+
 } // namespace rl
 
 } // namespace torchfort

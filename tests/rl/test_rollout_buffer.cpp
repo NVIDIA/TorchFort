@@ -28,16 +28,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "internal/rl/rollout_buffer.h"
 #include <gtest/gtest.h>
 #include <torch/torch.h>
-#include "internal/rl/rollout_buffer.h"
 
 using namespace torchfort;
 using namespace torch::indexing;
 
 // helper functions
 std::tuple<std::shared_ptr<rl::GAELambdaRolloutBuffer>, float, bool>
-getTestRolloutBuffer(int buffer_size, float gamma=0.95, float lambda=0.99) {
+getTestRolloutBuffer(int buffer_size, float gamma = 0.95, float lambda = 0.99) {
 
   torch::NoGradGuard no_grad;
 
@@ -46,14 +46,14 @@ getTestRolloutBuffer(int buffer_size, float gamma=0.95, float lambda=0.99) {
   // initialize rng
   std::random_device dev;
   std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(1,5);
+  std::uniform_int_distribution<std::mt19937::result_type> dist(1, 5);
   std::normal_distribution<float> normal(1.0, 1.0);
 
   // fill the buffer
-  float	reward, log_p, q;
+  float reward, log_p, q;
   bool done;
   torch::Tensor state = torch::zeros({1}, torch::kFloat32), action;
-  for (unsigned int i=0; i<buffer_size+1; ++i) {
+  for (unsigned int i = 0; i < buffer_size + 1; ++i) {
     action = torch::ones({1}, torch::kFloat32) * static_cast<float>(dist(rng));
     reward = action.item<float>();
     q = reward;
@@ -70,11 +70,12 @@ getTestRolloutBuffer(int buffer_size, float gamma=0.95, float lambda=0.99) {
   return std::make_tuple(rbuff, q, done);
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
+           torch::Tensor>
 extract_entries(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
   std::vector<float> svec, avec, rvec, qvec, log_p_vec, advvec, retvec;
   std::vector<float> dvec;
-  for (unsigned int i=0; i<buffp->getSize(); ++i) {
+  for (unsigned int i = 0; i < buffp->getSize(); ++i) {
     torch::Tensor s, a;
     float r, q, log_p, adv, ret;
     bool d;
@@ -105,10 +106,10 @@ void print_buffer(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
   torch::Tensor stens, atens;
   float reward, q, log_p;
   bool done;
-  for(unsigned int i=0; i<buffp->getSize(); ++i) {
+  for (unsigned int i = 0; i < buffp->getSize(); ++i) {
     std::tie(stens, atens, reward, q, log_p, done) = buffp->get(i);
-    std::cout << "entry " << i << ": s = " << stens.item<float>() << " a = " << atens.item<float>()
-	      << " r = " << reward << " q = " << q << " log_p = " << log_p << " d = " << done << std::endl;
+    std::cout << "entry " << i << ": s = " << stens.item<float>() << " a = " << atens.item<float>() << " r = " << reward
+              << " q = " << q << " log_p = " << log_p << " d = " << done << std::endl;
   }
 }
 
@@ -133,7 +134,7 @@ TEST(RolloutBuffer, EntryConsistency) {
   // sample
   torch::Tensor stens, atens, qtens, log_p_tens, advtens, rettens;
   float q_diff = 0.;
-  for (unsigned int i=0; i<n_iters; ++i) {
+  for (unsigned int i = 0; i < n_iters; ++i) {
     std::tie(stens, atens, qtens, log_p_tens, advtens, rettens) = rbuff->sample(batch_size);
 
     // compute differences:
@@ -169,10 +170,10 @@ TEST(RolloutBuffer, AdvantageComputation) {
   torch::Tensor advtens = torch::empty({buffer_size}, torch::kFloat32);
   torch::Tensor advtens_compare = torch::empty({buffer_size}, torch::kFloat32);
   // this tensor needs to be a bit bigger because it needs to hold the final q
-  torch::Tensor qtens =	torch::empty({buffer_size+1}, torch::kFloat32);
-  torch::Tensor dftens = torch::empty({buffer_size+1}, torch::kFloat32);
+  torch::Tensor qtens = torch::empty({buffer_size + 1}, torch::kFloat32);
+  torch::Tensor dftens = torch::empty({buffer_size + 1}, torch::kFloat32);
   // first, extract all V and r elements of the tensor and move them into a big tensor:
-  for (int i=0; i<buffer_size; ++i) {
+  for (int i = 0; i < buffer_size; ++i) {
     std::tie(stens, atens, r, q, log_p, adv, ret, d) = rbuff->getFull(i);
     rtens.index_put_({i}, r);
     qtens.index_put_({i}, q);
@@ -184,15 +185,17 @@ TEST(RolloutBuffer, AdvantageComputation) {
   dftens.index_put_({static_cast<int>(buffer_size)}, (last_done ? 0. : 1.));
 
   // compute delta
-  torch::Tensor deltatens = rtens + dftens.index({Slice(1, buffer_size+1, 1)}) * gamma * qtens.index({Slice(1, buffer_size+1, 1)}) - qtens.index({Slice(0, buffer_size, 1)});
+  torch::Tensor deltatens =
+      rtens + dftens.index({Slice(1, buffer_size + 1, 1)}) * gamma * qtens.index({Slice(1, buffer_size + 1, 1)}) -
+      qtens.index({Slice(0, buffer_size, 1)});
 
   // compute discounted cumulative sum:
-  float delta = deltatens.index({static_cast<int>(buffer_size)-1}).item<float>();
-  advtens.index_put_({static_cast<int>(buffer_size)-1}, delta);
-  for (int i=(buffer_size-2); i>=0; --i) {
+  float delta = deltatens.index({static_cast<int>(buffer_size) - 1}).item<float>();
+  advtens.index_put_({static_cast<int>(buffer_size) - 1}, delta);
+  for (int i = (buffer_size - 2); i >= 0; --i) {
     delta = deltatens.index({i}).item<float>();
     // do not incorporate next entry if new episode starts
-    advtens.index_put_({i}, delta +  gamma * lambda * dftens.index({i+1}) * advtens.index({i+1}));
+    advtens.index_put_({i}, delta + gamma * lambda * dftens.index({i + 1}) * advtens.index({i + 1}));
   }
 
   float adv_diff = torch::sum(advtens_compare - advtens).item<float>();
@@ -233,14 +236,14 @@ TEST(RolloutBuffer, SaveRestore) {
   std::tie(stens_a, atens_a, rtens_a, qtens_a, log_p_tens_a, advtens_a, rettens_a, dtens_a) = extract_entries(rbuff);
 
   // compute differences:
-  float stens_diff = torch::sum(torch::abs(stens_b-stens_a)).item<float>();
-  float atens_diff = torch::sum(torch::abs(atens_b-atens_a)).item<float>();
-  float rtens_diff = torch::sum(torch::abs(rtens_b-rtens_a)).item<float>();
-  float qtens_diff = torch::sum(torch::abs(qtens_b-qtens_a)).item<float>();
-  float log_p_tens_diff = torch::sum(torch::abs(log_p_tens_b-log_p_tens_a)).item<float>();
-  float advtens_diff = torch::sum(torch::abs(advtens_b-advtens_a)).item<float>();
-  float rettens_diff = torch::sum(torch::abs(rettens_b-rettens_a)).item<float>();
-  float dtens_diff = torch::sum(torch::abs(dtens_b-dtens_a)).item<float>();
+  float stens_diff = torch::sum(torch::abs(stens_b - stens_a)).item<float>();
+  float atens_diff = torch::sum(torch::abs(atens_b - atens_a)).item<float>();
+  float rtens_diff = torch::sum(torch::abs(rtens_b - rtens_a)).item<float>();
+  float qtens_diff = torch::sum(torch::abs(qtens_b - qtens_a)).item<float>();
+  float log_p_tens_diff = torch::sum(torch::abs(log_p_tens_b - log_p_tens_a)).item<float>();
+  float advtens_diff = torch::sum(torch::abs(advtens_b - advtens_a)).item<float>();
+  float rettens_diff = torch::sum(torch::abs(rettens_b - rettens_a)).item<float>();
+  float dtens_diff = torch::sum(torch::abs(dtens_b - dtens_a)).item<float>();
 
   // success criteria
   EXPECT_FLOAT_EQ(stens_diff, 0.);
@@ -253,7 +256,7 @@ TEST(RolloutBuffer, SaveRestore) {
   EXPECT_FLOAT_EQ(dtens_diff, 0.);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
 
   return RUN_ALL_TESTS();

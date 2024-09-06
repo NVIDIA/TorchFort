@@ -41,18 +41,23 @@ namespace rl {
 
 namespace on_policy {
 
-PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
-		     int model_device, int rb_device)
-  : RLOnPolicySystem(model_device, rb_device) {
+PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node, int model_device, int rb_device)
+    : RLOnPolicySystem(model_device, rb_device) {
 
   // get basic parameters first
   auto algo_node = system_node["algorithm"];
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
-    std::set<std::string> supported_params{"batch_size", "gamma", "gae_lambda",
-					   "epsilon", "clip_q", "target_kl_divergence",
-					   "entropy_loss_coefficient", "value_loss_coefficient",
-					   "max_grad_norm", "normalize_advantage"};
+    std::set<std::string> supported_params{"batch_size",
+                                           "gamma",
+                                           "gae_lambda",
+                                           "epsilon",
+                                           "clip_q",
+                                           "target_kl_divergence",
+                                           "entropy_loss_coefficient",
+                                           "value_loss_coefficient",
+                                           "max_grad_norm",
+                                           "normalize_advantage"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     gamma_ = params.get_param<float>("gamma")[0];
@@ -63,7 +68,7 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
     max_grad_norm_ = params.get_param<float>("max_grad_norm", 0.5)[0];
     entropy_loss_coeff_ = params.get_param<float>("entropy_loss_coefficient", 0.0)[0];
     value_loss_coeff_ = params.get_param<float>("value_loss_coefficient", 0.5)[0];
-    normalize_advantage_ = params.get_param<bool>("normalize_advantage", true)[0];    
+    normalize_advantage_ = params.get_param<bool>("normalize_advantage", true)[0];
   } else {
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
   }
@@ -124,9 +129,10 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node,
     actor_normalization_mode_ = ActorNormalizationMode::Clip;
   } else if (noise_actor_type == "squashed_gaussian_ac") {
     pq_model_.model = std::make_shared<GaussianACPolicy>(std::move(pq_model), /* squashed = */ true);
-    actor_normalization_mode_ =	ActorNormalizationMode::Scale;
+    actor_normalization_mode_ = ActorNormalizationMode::Scale;
   } else {
-    THROW_INVALID_USAGE("Invalid actor type specified, supported actor types for PPO are [gaussian_ac, squashed_gaussian_ac]");
+    THROW_INVALID_USAGE(
+        "Invalid actor type specified, supported actor types for PPO are [gaussian_ac, squashed_gaussian_ac]");
   }
   pq_model_.state = get_state("actor_critic", system_node);
   pq_model_.model->to(model_device_);
@@ -172,14 +178,10 @@ void PPOSystem::printInfo() const {
   return;
 }
 
-torch::Device PPOSystem::modelDevice() const {
-  return model_device_;
-}
+torch::Device PPOSystem::modelDevice() const { return model_device_; }
 
-torch::Device PPOSystem::rbDevice() const {
-  return rb_device_;
-}
-  
+torch::Device PPOSystem::rbDevice() const { return rb_device_; }
+
 void PPOSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // system
@@ -218,9 +220,9 @@ void PPOSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
     if (!std::filesystem::exists(model_root_dir)) {
       bool rv = std::filesystem::create_directory(model_root_dir);
       if (!rv) {
-	THROW_INVALID_USAGE("Could not create model checkpoint directory" + model_root_dir.native() + ".");
+        THROW_INVALID_USAGE("Could not create model checkpoint directory" + model_root_dir.native() + ".");
       }
-    } 
+    }
     auto model_path = model_root_dir / "model.pt";
     pq_model_.model->save(model_path.native());
 
@@ -325,14 +327,12 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, b
   std::tie(log_p_tensor, entropy_tensor, value) = (pq_model_.model)->evaluateAction(sd, ad);
   float q = value.item<float>();
   float log_p = log_p_tensor.item<float>();
-  
+
   // the replay buffer only stores scaled actions!
   rollout_buffer_->update(s, as, r, q, log_p, d);
 }
 
-void PPOSystem::resetRolloutBuffer() {
-  rollout_buffer_->reset();
-}
+void PPOSystem::resetRolloutBuffer() { rollout_buffer_->reset(); }
 
 bool PPOSystem::isReady() { return (rollout_buffer_->isReady()); }
 
@@ -442,32 +442,31 @@ void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   }
 
   // train step
-  train_ppo(pq_model_, s, a, q, logp, adv, ret,
-	    epsilon_, clip_q_, entropy_loss_coeff_, value_loss_coeff_,
-	    max_grad_norm_, target_kl_divergence_, normalize_advantage_,
-	    p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_, explained_variance_);
-  
+  train_ppo(pq_model_, s, a, q, logp, adv, ret, epsilon_, clip_q_, entropy_loss_coeff_, value_loss_coeff_,
+            max_grad_norm_, target_kl_divergence_, normalize_advantage_, p_loss_val, q_loss_val, current_kl_divergence_,
+            clip_fraction_, explained_variance_);
+
   // system logging
-  if ((system_state_->report_frequency > 0) && (train_step_count_ % system_state_->report_frequency == 0))
-  {
-    if (!system_comm_ || (system_comm_ && system_comm_->rank == 0))
-    {
+  if ((system_state_->report_frequency > 0) && (train_step_count_ % system_state_->report_frequency == 0)) {
+    if (!system_comm_ || (system_comm_ && system_comm_->rank == 0)) {
       std::stringstream os;
-      os << "PPO system: " << "clip_fraction: " << clip_fraction_ << ", kl_divergence: " << current_kl_divergence_
-	 <<  ", explained_variance: " << explained_variance_ << std::endl;
+      os << "PPO system: "
+         << "clip_fraction: " << clip_fraction_ << ", kl_divergence: " << current_kl_divergence_
+         << ", explained_variance: " << explained_variance_ << std::endl;
       torchfort::logging::print(os.str(), torchfort::logging::info);
-      if (system_state_->enable_wandb_hook)
-      {
-	torchfort::wandb_log(system_state_, system_comm_, "PPO", "clip_fraction", train_step_count_, clip_fraction_);
-	torchfort::wandb_log(system_state_, system_comm_, "PPO", "kl_divergence", train_step_count_, current_kl_divergence_);
-	torchfort::wandb_log(system_state_, system_comm_, "PPO", "explained_variance", train_step_count_, explained_variance_);
+      if (system_state_->enable_wandb_hook) {
+        torchfort::wandb_log(system_state_, system_comm_, "PPO", "clip_fraction", train_step_count_, clip_fraction_);
+        torchfort::wandb_log(system_state_, system_comm_, "PPO", "kl_divergence", train_step_count_,
+                             current_kl_divergence_);
+        torchfort::wandb_log(system_state_, system_comm_, "PPO", "explained_variance", train_step_count_,
+                             explained_variance_);
       }
     }
   }
 }
 
 } // namespace on_policy
-  
+
 } // namespace rl
 
 } // namespace torchfort

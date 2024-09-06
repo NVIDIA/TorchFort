@@ -47,13 +47,14 @@ void AlphaModel::setup(const float& alpha_value) {
   if (alpha_val < 0.) {
     THROW_INVALID_USAGE("Invalid entropy coefficient alpha: has to be >= 0.");
   }
-  
+
   if (alpha_val == 0.) {
     alpha_coeff_ = false;
-    // make sure the log does not blow up, we check for alpha_coeff later                                                                                                
+    // make sure the log does not blow up, we check for alpha_coeff later
     alpha_val = 0.01;
   }
-  log_alpha_ = register_parameter("log_alpha", torch::tensor({std::log(alpha_val)}, torch::TensorOptions().dtype(torch::kFloat32)));
+  log_alpha_ = register_parameter("log_alpha",
+                                  torch::tensor({std::log(alpha_val)}, torch::TensorOptions().dtype(torch::kFloat32)));
 }
 
 // Implement the forward function.
@@ -67,11 +68,9 @@ torch::Tensor AlphaModel::forward(torch::Tensor input) {
   return output;
 }
 
+SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_device, int rb_device)
+    : RLOffPolicySystem(model_device, rb_device) {
 
-SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
-		     int model_device, int rb_device)
-  : RLOffPolicySystem(model_device, rb_device) {
-  
   // get basic parameters first
   auto algo_node = system_node["algorithm"];
   if (algo_node["parameters"]) {
@@ -131,7 +130,8 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
 
       // distinction between buffer types
       if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, gamma_, nstep_, nstep_reward_reduction_, rb_device);
+        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, gamma_, nstep_,
+                                                               nstep_reward_reduction_, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
       }
@@ -172,7 +172,7 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node,
   std::shared_ptr<ModelWrapper> p_model;
   if (system_node["policy_model"]) {
     auto policy_node = system_node["policy_model"];
-    
+
     // get basic policy parameters:
     p_model = get_model(policy_node);
   } else {
@@ -260,14 +260,10 @@ void SACSystem::printInfo() const {
   return;
 }
 
-torch::Device SACSystem::modelDevice() const {
-  return model_device_;
-}
+torch::Device SACSystem::modelDevice() const { return model_device_; }
 
-torch::Device SACSystem::rbDevice() const {
-  return rb_device_;
-}
-  
+torch::Device SACSystem::rbDevice() const { return rb_device_; }
+
 void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // system
@@ -335,8 +331,8 @@ void SACSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
     if (!std::filesystem::exists(policy_root_dir)) {
       bool rv = std::filesystem::create_directory(policy_root_dir);
       if (!rv) {
-	THROW_INVALID_USAGE("Could not create policy checkpoint directory " + policy_root_dir.native() + ".");
-      } 
+        THROW_INVALID_USAGE("Could not create policy checkpoint directory " + policy_root_dir.native() + ".");
+      }
     }
     auto model_path = policy_root_dir / "model.pt";
     p_model_.model->save(model_path.native());
@@ -375,7 +371,7 @@ void SACSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
         THROW_INVALID_USAGE("Could not create alpha checkpoint directory " + alpha_root_dir.native() + ".");
       }
     }
-    
+
     auto model_path = alpha_root_dir / "model.pt";
     alpha_model_->to(torch::Device(torch::kCPU));
     torch::save(alpha_model_, model_path.native());
@@ -473,7 +469,7 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     if (alpha_lr_scheduler_) {
       auto lr_path = root_dir / "alpha" / "lr.pt";
       if (!std::filesystem::exists(lr_path)) {
-	THROW_INVALID_USAGE("Could not find " + lr_path.native() + ".");
+        THROW_INVALID_USAGE("Could not find " + lr_path.native() + ".");
       }
       alpha_lr_scheduler_->load(lr_path.native(), *(alpha_optimizer_));
     }
@@ -595,17 +591,14 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     r = r.to(model_device_);
     d = d.to(model_device_);
   }
-  
+
   // train step
-  train_sac(p_model_, q_models_, q_models_target_,
-	    s, sp, a, r, d,
-	    alpha_model_, alpha_optimizer_, alpha_lr_scheduler_,
-	    target_entropy_, static_cast<float>(std::pow(gamma_, nstep_)), rho_,
-            p_loss_val, q_loss_val);
+  train_sac(p_model_, q_models_, q_models_target_, s, sp, a, r, d, alpha_model_, alpha_optimizer_, alpha_lr_scheduler_,
+            target_entropy_, static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_val);
 }
 
 } // namespace off_policy
-  
+
 } // namespace rl
 
 } // namespace torchfort

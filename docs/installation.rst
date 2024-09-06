@@ -7,7 +7,7 @@ TorchFort can be installed in multiple ways but we highly recommend building and
 Docker Installation
 -------------------
 
-We provide a ``Dockerfile`` which contains all relevant dependencies and builds using the `NVIDIA HPC SDK <https://developer.nvidia.com/hpc-sdk>`_ software libraries and compilers, which is our recommended way to build TorchFort. In order to build TorchFort using Docker, simply clone the repo and call:
+We provide a `Dockerfile <https://github.com/NVIDIA/TorchFort/blob/master/docker/Dockerfile>`_ which contains all relevant dependencies and builds using the `NVIDIA HPC SDK <https://developer.nvidia.com/hpc-sdk>`_ software libraries and compilers, which is our recommended way to build TorchFort. In order to build TorchFort using Docker, simply clone the repo and call:
 
 .. code-block:: bash
 
@@ -15,12 +15,12 @@ We provide a ``Dockerfile`` which contains all relevant dependencies and builds 
 
 from the top level directory of the repo. Inside the container, TorchFort will be installed in ``/opt/torchfort``.
 
-We provide an alternative docker file ``Dockerfile_gnu`` which can be used to build TorchFort using GNU compilers.
+We provide an alternative docker file `Dockerfile_gnu <https://github.com/NVIDIA/TorchFort/blob/master/docker/Dockerfile_gnu>`_ which can be used to build TorchFort using GNU compilers. Additionally, we provide a docker file `Dockerfile_gnu_cpuonly <https://github.com/NVIDIA/TorchFort/blob/master/docker/Dockerfile_gnu_cpuonly>`_ which can be used to build TorchFort using GNU compilers without GPU support enabled.
 
 CMake Installation
 ------------------
 
-For a native installation TorchFort provides a ``CMakeList.txt`` file. Please make sure that the following required packages are installed on your system before installing TorchFort:
+For a native installation TorchFort provides a `CMakeList.txt <https://github.com/NVIDIA/TorchFort/blob/master/CMakeLists.txt>`_ file. Please make sure that the following required packages are installed on your system before installing TorchFort:
 
 * Requirements for core functionality and examples:
 
@@ -31,14 +31,16 @@ For a native installation TorchFort provides a ``CMakeList.txt`` file. Please ma
   - MPI
   - NVIDIA Collective Communication Library (``NCCL``)
   - ``HDF5``
-  - the Python modules specified in ``requirements.txt``
+  - the Python modules specified in `requirements.txt <https://github.com/NVIDIA/TorchFort/blob/master/requirements.txt>`_
   - GNU or `NVHPC <https://developer.nvidia.com/hpc-sdk>`_ compilers. NVHPC compilers are **required** if CUDA Fortran device array support is desired.
-
 
 * Additional requirements for building this documentation:
 
   - Doxygen
-  - the Python modules specified in ``docs/requirements.txt``
+  - the Python modules specified in `docs/requirements.txt <https://github.com/NVIDIA/TorchFort/blob/master/docs/requirements.txt>`_
+
+For CPU-only builds, CUDA and NCCL are not required.
+
 
 To build TorchFort, clone the repo then call the following from the root directory:
 
@@ -52,7 +54,7 @@ To build TorchFort, clone the repo then call the following from the root directo
         ..
     make -j install
 
-See the top level ``CMakeLists.txt`` file for additional CMake configuration options.
+See the top level `CMakeList.txt <https://github.com/NVIDIA/TorchFort/blob/master/CMakeLists.txt>`_ file for additional CMake configuration options.
     
 Build Documentation
 -------------------

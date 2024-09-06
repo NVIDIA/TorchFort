@@ -48,15 +48,15 @@
 #include "internal/setup.h"
 
 // rl stuff
-#include "internal/rl/rl.h"
 #include "internal/rl/distributions.h"
+#include "internal/rl/rl.h"
 
 namespace torchfort {
 
 namespace rl {
 
 enum ActorNormalizationMode { Clip = 1, Scale = 2 };
-  
+
 // helper for noisy policies
 class Policy {
 public:
@@ -91,8 +91,8 @@ struct PolicyPack {
 class GaussianPolicy : public Policy, public std::enable_shared_from_this<Policy> {
 
 public:
-  GaussianPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma, bool squashed=false);
-  
+  GaussianPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma, bool squashed = false);
+
   // we expose those for convenience
   std::vector<torch::Tensor> parameters() const;
   void train();
@@ -109,7 +109,7 @@ public:
 
 protected:
   std::shared_ptr<NormalDistribution> getDistribution_(torch::Tensor state);
-  
+
   bool squashed_;
   float log_sigma_min_;
   float log_sigma_max_;
@@ -119,9 +119,9 @@ protected:
 // helper for actor-critic policies
 class ACPolicy {
 public:
-  // default constructor               
+  // default constructor
   ACPolicy() {}
-  // disable copy constructor 
+  // disable copy constructor
   ACPolicy(const ACPolicy&) = delete;
 
   // we expose those for convenience
@@ -134,7 +134,8 @@ public:
   virtual torch::Device device() const = 0;
 
   // forward routines
-  virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> evaluateAction(torch::Tensor state, torch::Tensor action) = 0;
+  virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> evaluateAction(torch::Tensor state,
+                                                                                 torch::Tensor action) = 0;
   virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> forwardNoise(torch::Tensor state) = 0;
   virtual std::tuple<torch::Tensor, torch::Tensor> forwardDeterministic(torch::Tensor state) = 0;
 };
@@ -147,11 +148,10 @@ struct ACPolicyPack {
   std::shared_ptr<ModelState> state;
 };
 
-  
 class GaussianACPolicy : public ACPolicy, public std::enable_shared_from_this<ACPolicy> {
 
 public:
-  GaussianACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma_value, bool squashed=false);
+  GaussianACPolicy(std::shared_ptr<ModelWrapper> p_mu_log_sigma_value, bool squashed = false);
 
   // we expose those for convenience
   std::vector<torch::Tensor> parameters() const;
@@ -162,7 +162,7 @@ public:
   void load(const std::string& fname);
   torch::Device device() const;
 
-  // forward routines         
+  // forward routines
   std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> evaluateAction(torch::Tensor state, torch::Tensor action);
   std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> forwardNoise(torch::Tensor state);
   std::tuple<torch::Tensor, torch::Tensor> forwardDeterministic(torch::Tensor state);
@@ -176,7 +176,6 @@ protected:
   std::shared_ptr<ModelWrapper> p_mu_log_sigma_value_;
 };
 
-  
 } // namespace rl
 
 } // namespace torchfort

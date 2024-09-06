@@ -131,7 +131,7 @@ torch::Tensor explained_variance(torch::Tensor q_pred, torch::Tensor q_true, std
     comm->allreduce(mean_vec, true);
     var_q_true = mean_vec[0];
     // compute variane of difference:
-    mean_vec = {torch::mean(q_true-q_pred)};
+    mean_vec = {torch::mean(q_true - q_pred)};
     comm->allreduce(mean_vec, true);
     torch::Tensor var_q_diff = torch::mean(torch::square(q_true - q_pred - mean_vec[0]));
     mean_vec = {var_q_diff};

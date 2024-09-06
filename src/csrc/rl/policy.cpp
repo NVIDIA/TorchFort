@@ -56,7 +56,7 @@ void GaussianPolicy::save(const std::string& fname) const { p_mu_log_sigma_->sav
 
 void GaussianPolicy::load(const std::string& fname) { p_mu_log_sigma_->load(fname); }
 
-torch::Device GaussianPolicy::device() const{ return p_mu_log_sigma_->device(); }
+torch::Device GaussianPolicy::device() const { return p_mu_log_sigma_->device(); }
 
 std::shared_ptr<NormalDistribution> GaussianPolicy::getDistribution_(torch::Tensor state) {
   // forward step
@@ -66,15 +66,15 @@ std::shared_ptr<NormalDistribution> GaussianPolicy::getDistribution_(torch::Tens
   // extract sigma
   auto& action_log_sigma = fwd[1];
   auto action_sigma = torch::exp(torch::clamp(action_log_sigma, log_sigma_min_, log_sigma_max_));
-  
+
   // create distribution
   return std::make_shared<NormalDistribution>(action_mu, action_sigma);
 }
-  
+
 std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::evaluateAction(torch::Tensor state, torch::Tensor action) {
   // get distribution
   auto pi_dist = getDistribution_(state);
-  
+
   // we need to undo squashing in some cases
   torch::Tensor gaussian_action;
   if (squashed_) {
@@ -82,15 +82,14 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::evaluateAction(torch::T
   } else {
     gaussian_action = action;
   }
-  
+
   // compute log prop
   torch::Tensor log_prob = torch::sum(torch::flatten(pi_dist->log_prob(gaussian_action), 1), 1, true);
 
   // account for squashing
   torch::Tensor entropy;
   if (squashed_) {
-    log_prob =
-      log_prob - torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, true);
+    log_prob = log_prob - torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, true);
     // in this case no analytical form for the entropy exists and we need to estimate it from the log probs directly:
     entropy = -log_prob;
   } else {
@@ -99,7 +98,7 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::evaluateAction(torch::T
   }
   return std::make_tuple(log_prob, entropy);
 }
-  
+
 std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::forwardNoise(torch::Tensor state) {
   // get distribution
   auto pi_dist = getDistribution_(state);
@@ -112,8 +111,7 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::forwardNoise(torch::Ten
   // account for squashing
   if (squashed_) {
     log_prob =
-      log_prob -
-      torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
+        log_prob - torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
     action = torch::tanh(action);
   }
 
@@ -150,9 +148,10 @@ void GaussianACPolicy::save(const std::string& fname) const { p_mu_log_sigma_val
 
 void GaussianACPolicy::load(const std::string& fname) { p_mu_log_sigma_value_->load(fname); }
 
-torch::Device GaussianACPolicy::device() const{ return p_mu_log_sigma_value_->device(); }
+torch::Device GaussianACPolicy::device() const { return p_mu_log_sigma_value_->device(); }
 
-std::tuple<std::shared_ptr<NormalDistribution>, torch::Tensor> GaussianACPolicy::getDistributionValue_(torch::Tensor state) {
+std::tuple<std::shared_ptr<NormalDistribution>, torch::Tensor>
+GaussianACPolicy::getDistributionValue_(torch::Tensor state) {
   // run fwd pass
   auto fwd = p_mu_log_sigma_value_->forward(std::vector<torch::Tensor>{state});
   // extract mu
@@ -167,7 +166,8 @@ std::tuple<std::shared_ptr<NormalDistribution>, torch::Tensor> GaussianACPolicy:
   return std::make_tuple(std::make_shared<NormalDistribution>(action_mu, action_sigma), value);
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::evaluateAction(torch::Tensor state, torch::Tensor action) {
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::evaluateAction(torch::Tensor state,
+                                                                                         torch::Tensor action) {
   // get distribution and value prediction
   std::shared_ptr<NormalDistribution> pi_dist;
   torch::Tensor value;
@@ -187,8 +187,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::evalua
   // account for squashing
   torch::Tensor entropy;
   if (squashed_) {
-    log_prob =
-      log_prob - torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, true);
+    log_prob = log_prob - torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, true);
     // in this case no analytical form for the entropy exists and we need to estimate it from the log probs directly:
     entropy = -log_prob;
   } else {
@@ -212,8 +211,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::forwar
   // account for squashing
   if (squashed_) {
     log_prob =
-      log_prob -
-      torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
+        log_prob - torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
     action = torch::tanh(action);
   }
 
@@ -232,7 +230,7 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianACPolicy::forwardDeterministic(
 
   return std::make_tuple(action, value);
 }
-  
+
 } // namespace rl
 
 } // namespace torchfort

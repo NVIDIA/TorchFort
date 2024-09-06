@@ -53,7 +53,6 @@ struct MLPModel : BaseModel, public std::enable_shared_from_this<BaseModel> {
   std::vector<torch::Tensor> biases;
 };
 
-
 struct SACMLPModel : BaseModel, public std::enable_shared_from_this<BaseModel> {
   void setup(const ParamMap& params) override;
   std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs) override;
@@ -67,9 +66,7 @@ struct SACMLPModel : BaseModel, public std::enable_shared_from_this<BaseModel> {
   std::vector<torch::nn::Linear> out_layers;
   std::vector<torch::Tensor> biases;
   std::vector<torch::Tensor> out_biases;
-
 };
-
 
 struct ActorCriticMLPModel : BaseModel, public std::enable_shared_from_this<BaseModel> {
   void setup(const ParamMap& params) override;

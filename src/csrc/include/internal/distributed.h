@@ -59,7 +59,7 @@ struct Comm {
 #endif
   bool initialized = false;
 
-  Comm(MPI_Comm mpi_comm) : mpi_comm(mpi_comm) {};
+  Comm(MPI_Comm mpi_comm) : mpi_comm(mpi_comm){};
 };
 
 } // namespace torchfort

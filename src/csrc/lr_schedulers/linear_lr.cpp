@@ -36,8 +36,9 @@
 
 namespace torchfort {
 
-LinearLR::LinearLR(torch::optim::Optimizer& optimizer, const unsigned total_iters, const double start_factor, const double end_factor)
-  : BaseLRScheduler(optimizer), total_iters_(total_iters), start_factor_(start_factor), end_factor_(end_factor) {}
+LinearLR::LinearLR(torch::optim::Optimizer& optimizer, const unsigned total_iters, const double start_factor,
+                   const double end_factor)
+    : BaseLRScheduler(optimizer), total_iters_(total_iters), start_factor_(start_factor), end_factor_(end_factor) {}
 
 std::vector<double> LinearLR::get_lrs() {
 
@@ -47,7 +48,8 @@ std::vector<double> LinearLR::get_lrs() {
   } else if (step_count_ > total_iters_) {
     factor = 1.;
   } else {
-    factor = (1. + (end_factor_ - start_factor_) / double(total_iters_ * start_factor_ + (step_count_ - 1) * (end_factor_ - start_factor_)));
+    factor = (1. + (end_factor_ - start_factor_) /
+                       double(total_iters_ * start_factor_ + (step_count_ - 1) * (end_factor_ - start_factor_)));
   }
 
   // get current lrs and modify

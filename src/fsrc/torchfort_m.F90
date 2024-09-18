@@ -798,23 +798,23 @@ module torchfort
   ! Generic interface for tensor list management
   interface torchfort_tensor_list_add_tensor
     module procedure torchfort_tensor_list_add_tensor_float_2d
-    !module procedure torchfort_tensor_list_add_tensor_double_2d
-    !module procedure torchfort_tensor_list_add_tensor_float_3d
-    !module procedure torchfort_tensor_list_add_tensor_double_3d
-    !module procedure torchfort_tensor_list_add_tensor_float_4d
-    !module procedure torchfort_tensor_list_add_tensor_double_4d
-    !module procedure torchfort_tensor_list_add_tensor_float_5d
-    !module procedure torchfort_tensor_list_add_tensor_double_5d
-!#ifdef _CUDA
-!    module procedure torchfort_tensor_list_add_tensor_float_2d_dev
-!    module procedure torchfort_tensor_list_add_tensor_double_2d_dev
-!    module procedure torchfort_tensor_list_add_tensor_float_3d_dev
-!    module procedure torchfort_tensor_list_add_tensor_double_3d_dev
-!    module procedure torchfort_tensor_list_add_tensor_float_4d_dev
-!    module procedure torchfort_tensor_list_add_tensor_double_4d_dev
-!    module procedure torchfort_tensor_list_add_tensor_float_5d_dev
-!    module procedure torchfort_tensor_list_add_tensor_double_5d_dev
-!#endif
+    module procedure torchfort_tensor_list_add_tensor_double_2d
+    module procedure torchfort_tensor_list_add_tensor_float_3d
+    module procedure torchfort_tensor_list_add_tensor_double_3d
+    module procedure torchfort_tensor_list_add_tensor_float_4d
+    module procedure torchfort_tensor_list_add_tensor_double_4d
+    module procedure torchfort_tensor_list_add_tensor_float_5d
+    module procedure torchfort_tensor_list_add_tensor_double_5d
+#ifdef _CUDA
+    module procedure torchfort_tensor_list_add_tensor_float_2d_dev
+    module procedure torchfort_tensor_list_add_tensor_double_2d_dev
+    module procedure torchfort_tensor_list_add_tensor_float_3d_dev
+    module procedure torchfort_tensor_list_add_tensor_double_3d_dev
+    module procedure torchfort_tensor_list_add_tensor_float_4d_dev
+    module procedure torchfort_tensor_list_add_tensor_double_4d_dev
+    module procedure torchfort_tensor_list_add_tensor_float_5d_dev
+    module procedure torchfort_tensor_list_add_tensor_double_5d_dev
+#endif
   end interface torchfort_tensor_list_add_tensor
 
 contains

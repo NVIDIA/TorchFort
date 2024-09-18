@@ -50,10 +50,12 @@ namespace torchfort {
 // Declaration of external global variables
 extern std::unordered_map<std::string, ModelPack> models;
 
-template <MemoryLayout L, typename T>
-void inference(const char* name, T* input, size_t input_dim, int64_t* input_shape, T* output, size_t output_dim,
-               int64_t* output_shape, cudaStream_t ext_stream = 0) {
+void inference_v2(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t outputs_in,
+                  cudaStream_t ext_stream = 0) {
   torchfort::nvtx::rangePush("torchfort_inference");
+
+  auto inputs = static_cast<TensorList*>(inputs_in);
+  auto outputs = static_cast<TensorList*>(outputs_in);
 
   torch::NoGradGuard no_grad;
 
@@ -67,22 +69,47 @@ void inference(const char* name, T* input, size_t input_dim, int64_t* input_shap
   }
 #endif
 
-  auto input_tensor_in = get_tensor<L>(input, input_dim, input_shape);
-  auto output_tensor_in = get_tensor<L>(output, output_dim, output_shape);
-  auto input_tensor = input_tensor_in.to(model->device());
+  inputs->to(model->device());
 
   model->eval();
-  auto results = model->forward(std::vector<torch::Tensor>{input_tensor});
+  auto results = model->forward(inputs->tensors);
 
-  output_tensor_in.copy_(results[0].reshape(output_tensor_in.sizes()));
+  for (int i = 0; i < results.size(); ++i) {
+    outputs->tensors[i].copy_(results[i].reshape(outputs->tensors[i].sizes()));
+  }
   models[name].state->step_inference++;
   torchfort::nvtx::rangePop();
 }
 
 template <MemoryLayout L, typename T>
+void inference(const char* name, T* input, size_t input_dim, int64_t* input_shape, T* output, size_t output_dim,
+               int64_t* output_shape, cudaStream_t ext_stream = 0) {
+  TensorList inputs, outputs;
+
+  inputs.add_tensor<L>(input, input_dim, input_shape);
+  outputs.add_tensor<L>(output, output_dim, output_shape);
+
+  inference_v2(name, &inputs, &outputs, ext_stream);
+}
+
+template <MemoryLayout L, typename T>
 void train(const char* name, T* input, size_t input_dim, int64_t* input_shape, T* label, size_t label_dim,
            int64_t* label_shape, T* loss_val, cudaStream_t ext_stream = 0) {
+  TensorList inputs, labels;
+
+  inputs.add_tensor<L>(input, input_dim, input_shape);
+  labels.add_tensor<L>(label, label_dim, label_shape);
+
+  train_v2(name, &inputs, &labels, loss_val, ext_stream);
+}
+
+template <typename T>
+void train_v2(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t labels_in,
+              T* loss_val, cudaStream_t ext_stream = 0) {
   torchfort::nvtx::rangePush("torchfort_train");
+
+  auto inputs = static_cast<TensorList*>(inputs_in);
+  auto labels = static_cast<TensorList*>(labels_in);
 
   if (!models[name].optimizer) {
     THROW_INVALID_USAGE("Training requires an optimizer, but optimizer block was missing in configuration file.");
@@ -102,18 +129,16 @@ void train(const char* name, T* input, size_t input_dim, int64_t* input_shape, T
   }
 #endif
 
-  auto input_tensor_in = get_tensor<L>(input, input_dim, input_shape);
-  auto label_tensor_in = get_tensor<L>(label, label_dim, label_shape);
-  auto input_tensor = input_tensor_in.to(model->device());
-  auto label_tensor = label_tensor_in.to(model->device());
+  inputs->to(model->device());
+  labels->to(model->device());
 
   model->train();
   auto opt = models[name].optimizer.get();
 
   // fwd pass
-  auto results = model->forward(std::vector<torch::Tensor>{input_tensor});
+  auto results = model->forward(inputs->tensors);
   auto losses =
-      models[name].loss->forward(std::vector<torch::Tensor>{results[0]}, std::vector<torch::Tensor>{label_tensor});
+      models[name].loss->forward(std::vector<torch::Tensor>{results[0]}, labels->tensors);
 
   // extract loss
   *loss_val = losses[0].template item<T>();

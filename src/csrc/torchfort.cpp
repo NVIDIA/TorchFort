@@ -48,6 +48,7 @@
 #include "internal/model_wrapper.h"
 #include "internal/models.h"
 #include "internal/setup.h"
+#include "internal/tensor_list.h"
 #include "internal/training.h"
 #include "internal/utils.h"
 #include "torchfort.h"
@@ -207,6 +208,28 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
   return TORCHFORT_RESULT_SUCCESS;
 }
 
+torchfort_result_t torchfort_train_v2(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
+                                      void* loss_val, torchfort_datatype_t dtype, cudaStream_t stream) {
+  using namespace torchfort;
+  try {
+    switch (dtype) {
+    case TORCHFORT_FLOAT:
+      torchfort::train_v2(name, inputs, labels, reinterpret_cast<float*>(loss_val), stream);
+      break;
+    case TORCHFORT_DOUBLE:
+      torchfort::train_v2(name, inputs, labels, reinterpret_cast<double*>(loss_val), stream);
+      break;
+    default:
+      THROW_INVALID_USAGE("Unknown datatype provided.");
+      break;
+    }
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
 torchfort_result_t torchfort_inference(const char* name, void* input, size_t input_dim, int64_t* input_shape,
                                        void* output, size_t output_dim, int64_t* output_shape,
                                        torchfort_datatype_t dtype, cudaStream_t stream) {
@@ -250,6 +273,18 @@ torchfort_result_t torchfort_inference_F(const char* name, void* input, size_t i
       THROW_INVALID_USAGE("Unknown datatype provided.");
       break;
     }
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_inference_v2(const char* name, torchfort_tensor_list_t inputs,
+                                          torchfort_tensor_list_t outputs, cudaStream_t stream) {
+  using namespace torchfort;
+  try {
+    torchfort::inference_v2(name, inputs, outputs, stream);
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();
@@ -316,6 +351,64 @@ torchfort_result_t torchfort_load_checkpoint(const char* name, const char* check
 
     if (step_inference) {
       *step_inference = models[name].state->step_inference;
+    }
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_tensor_list_create(torchfort_tensor_list_t* tensor_list) {
+  *tensor_list = new torchfort::TensorList;
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_tensor_list_destroy(torchfort_tensor_list_t tensor_list_in) {
+  auto tensor_list = static_cast<torchfort::TensorList*>(tensor_list_in);
+  delete tensor_list;
+  tensor_list = nullptr;
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_tensor_list_add_tensor(torchfort_tensor_list_t tensor_list_in, void* data_ptr, size_t dim,
+                                                    int64_t* shape, torchfort_datatype_t dtype) {
+  using namespace torchfort;
+  try {
+    auto tensor_list = static_cast<torchfort::TensorList*>(tensor_list_in);
+    switch (dtype) {
+    case TORCHFORT_FLOAT:
+      tensor_list->add_tensor<torchfort::RowMajor>(reinterpret_cast<float*>(data_ptr), dim, shape);
+      break;
+    case TORCHFORT_DOUBLE:
+      tensor_list->add_tensor<torchfort::RowMajor>(reinterpret_cast<double*>(data_ptr), dim, shape);
+      break;
+    default:
+      THROW_INVALID_USAGE("Unknown datatype provided.");
+      break;
+    }
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_tensor_list_add_tensor_F(torchfort_tensor_list_t tensor_list_in, void* data_ptr, size_t dim,
+                                                      int64_t* shape, torchfort_datatype_t dtype) {
+  using namespace torchfort;
+  try {
+    auto tensor_list = static_cast<torchfort::TensorList*>(tensor_list_in);
+    switch (dtype) {
+    case TORCHFORT_FLOAT:
+      tensor_list->add_tensor<torchfort::ColMajor>(reinterpret_cast<float*>(data_ptr), dim, shape);
+      break;
+    case TORCHFORT_DOUBLE:
+      tensor_list->add_tensor<torchfort::ColMajor>(reinterpret_cast<double*>(data_ptr), dim, shape);
+      break;
+    default:
+      THROW_INVALID_USAGE("Unknown datatype provided.");
+      break;
     }
   } catch (const BaseException& e) {
     std::cerr << e.what();

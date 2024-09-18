@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
@@ -226,6 +226,19 @@ torchfort_result_t torchfort_set_cuda_manual_seed(const int seed);
 WANDB_LOG_PROTO(int)
 WANDB_LOG_PROTO(float)
 WANDB_LOG_PROTO(double)
+
+/**
+ * @brief Torchfort tensor list ...
+ */
+typedef void* torchfort_tensor_list_t;
+
+torchfort_result_t torchfort_tensor_list_create(torchfort_tensor_list_t* tensor_list);
+torchfort_result_t torchfort_tensor_list_destroy(torchfort_tensor_list_t tensor_list);
+torchfort_result_t torchfort_tensor_list_add_tensor(torchfort_tensor_list_t tensor_list, void* data_ptr, size_t dim,
+                                                    int64_t* shape, torchfort_datatype_t dtype);
+torchfort_result_t torchfort_tensor_list_add_tensor_F(torchfort_tensor_list_t tensor_list, void* data_ptr, size_t dim,
+                                                      int64_t* shape, torchfort_datatype_t dtype);
+
 
 #ifdef __cplusplus
 }

@@ -54,6 +54,12 @@ typedef void* cudaStream_t;
 #define WANDB_LOG_PROTO(dtype)                                                                                         \
   torchfort_result_t torchfort_wandb_log_##dtype(const char* name, const char* metric_name, int64_t step, dtype value);
 
+/**
+ * @brief Torchfort tensor list ...
+ */
+typedef void* torchfort_tensor_list_t;
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -112,6 +118,21 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
                                      cudaStream_t stream);
 
 /**
+ * @brief Runs a training iteration of a model instance using provided input and label data.
+ *
+ * @param[in] name The name of model instance to use, as defined during model creation.
+ * @param[in] inputs A tensor list of input tensors.
+ * @param[in] labels A tensor list of label tensors.
+ * @param[out] loss_val A pointer to a memory location to write the loss value computed during the training iteration.
+ * @param[out] dtype The TorchFort datatype to use for this operation.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+ *
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_train_v2(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
+                                      void* loss_val, torchfort_datatype_t dtype, cudaStream_t stream);
+
+/**
  * @brief Runs inference on a model using provided input data.
  *
  * @param[in] name The name of model instance to use, as defined during model creation.
@@ -135,6 +156,19 @@ torchfort_result_t torchfort_inference(const char* name, void* input, size_t inp
 torchfort_result_t torchfort_inference_F(const char* name, void* input, size_t input_dim, int64_t* input_shape,
                                          void* output, size_t output_dim, int64_t* output_shape,
                                          torchfort_datatype_t dtype, cudaStream_t stream);
+
+/**
+ * @brief Runs inference on a model using provided input data.
+ *
+ * @param[in] name The name of model instance to use, as defined during model creation.
+ * @param[in] inputs A tensor list of input tensors.
+ * @param[in,out] outputs A tensor list of output tensors.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+ *
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_inference_v2(const char* name, torchfort_tensor_list_t inputs,
+                                          torchfort_tensor_list_t outputs, cudaStream_t stream);
 
 // Model/Checkpoint save and loading functions
 /**
@@ -226,11 +260,6 @@ torchfort_result_t torchfort_set_cuda_manual_seed(const int seed);
 WANDB_LOG_PROTO(int)
 WANDB_LOG_PROTO(float)
 WANDB_LOG_PROTO(double)
-
-/**
- * @brief Torchfort tensor list ...
- */
-typedef void* torchfort_tensor_list_t;
 
 torchfort_result_t torchfort_tensor_list_create(torchfort_tensor_list_t* tensor_list);
 torchfort_result_t torchfort_tensor_list_destroy(torchfort_tensor_list_t tensor_list);

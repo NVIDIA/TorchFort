@@ -105,6 +105,7 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
     // Setting up optimizer
     if (config["optimizer"]) {
       models[name].optimizer = get_optimizer(config["optimizer"], models[name].model);
+      models[name].optimizer_type = sanitize(config["optimizer"]["type"].as<std::string>());
     }
 
     // Setting up lr_scheduler

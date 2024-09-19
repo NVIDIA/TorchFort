@@ -37,6 +37,34 @@
 
 namespace torchfort {
 
+static void move_optimizer_state(const ModelPack& model_pack, torch::Device device) {
+  auto &state = model_pack.optimizer->state();
+  const auto &parameters = model_pack.model->parameters();
+
+  if (model_pack.optimizer_type == "adam") {
+    auto &options = static_cast<torch::optim::AdamOptions&>(model_pack.optimizer->defaults());
+    for (const auto &p : parameters) {
+      auto &s = static_cast<torch::optim::AdamParamState&>(*state[p.unsafeGetTensorImpl()]);
+      s.exp_avg() = s.exp_avg().to(device);
+      s.exp_avg_sq() = s.exp_avg_sq().to(device);
+
+      if (options.amsgrad()) {
+        s.max_exp_avg_sq() = s.max_exp_avg_sq().to(device);
+      }
+    }
+  } else if (model_pack.optimizer_type == "sgd") {
+    auto &options = static_cast<torch::optim::SGDOptions&>(model_pack.optimizer->defaults());
+    if (options.momentum()) {
+      for (const auto &p : parameters) {
+        auto &s = static_cast<torch::optim::SGDParamState&>(*state[p.unsafeGetTensorImpl()]);
+        s.momentum_buffer() = s.momentum_buffer().to(device);
+      }
+    }
+  } else {
+    THROW_INVALID_USAGE("Unknown optimizer type provided.");
+  }
+}
+
 void save_model_pack(const ModelPack& model_pack, const std::string& dir, bool save_optimizer) {
   std::filesystem::path root_dir(dir);
 
@@ -57,7 +85,11 @@ void save_model_pack(const ModelPack& model_pack, const std::string& dir, bool s
     if (!model_pack.optimizer) {
       THROW_INVALID_USAGE("Cannot save checkpoint. Missing optimizer.");
     }
+
+    // Temporarily optimizer state tensors to CPU before saving
+    move_optimizer_state(model_pack, torch::kCPU);
     torch::save(*(model_pack.optimizer), optimizer_path.native());
+    move_optimizer_state(model_pack, model_pack.model->device());
 
     auto lr_path = root_dir / "lr.pt";
     if (model_pack.lr_scheduler) {
@@ -92,21 +124,14 @@ void load_model_pack(ModelPack& model_pack, const std::string& dir, bool load_op
   }
 
   if (load_optimizer) {
-    if (model_pack.state->device != model_pack.model->device()) {
-      std::string checkpoint_device = model_pack.state->device.type() == torch::kCPU
-                                          ? "CPU"
-                                          : "GPU " + std::to_string(model_pack.state->device.index());
-      std::string model_device = model_pack.model->device().type() == torch::kCPU
-                                     ? "CPU"
-                                     : "GPU " + std::to_string(model_pack.model->device().index());
-      THROW_INVALID_USAGE("Checkpoint was saved on " + checkpoint_device + " but is being loaded on " + model_device +
-                          ". This is unsupported.");
-    }
     auto optimizer_path = root_dir / "optimizer.pt";
     if (!std::filesystem::exists(optimizer_path)) {
       THROW_INVALID_USAGE("Could not find " + optimizer_path.native() + ".");
     }
+
     torch::load(*(model_pack.optimizer), optimizer_path.native());
+    // Move optimizer state tensors to target device after loading
+    move_optimizer_state(model_pack, model_pack.model->device());
 
     auto lr_path = root_dir / "lr.pt";
     if (std::filesystem::exists(lr_path)) {

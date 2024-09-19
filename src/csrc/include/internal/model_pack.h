@@ -45,6 +45,7 @@ namespace torchfort {
 struct ModelPack {
   std::shared_ptr<ModelWrapper> model;
   std::shared_ptr<torch::optim::Optimizer> optimizer;
+  std::string optimizer_type;
   std::shared_ptr<BaseLRScheduler> lr_scheduler;
   std::shared_ptr<BaseLoss> loss;
   std::shared_ptr<Comm> comm;

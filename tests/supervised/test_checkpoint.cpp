@@ -34,7 +34,6 @@
 #include <gtest/gtest.h>
 #include <torch/torch.h>
 
-
 void checkpoint_save_restore(int first_device, int second_device) {
 
   // rng
@@ -78,6 +77,7 @@ void checkpoint_save_restore(int first_device, int second_device) {
 		      TORCHFORT_FLOAT, 0);
   
   torch::Tensor output_before = output.clone().to(cpu_dev);
+  auto lrs_before = torchfort::get_current_lrs("mlp");
 
   // save model checkpoint
   torchfort_save_checkpoint("mlp", "/tmp/checkpoint.pt"); 
@@ -92,6 +92,9 @@ void checkpoint_save_restore(int first_device, int second_device) {
   // ensure that the steps are correct
   EXPECT_EQ(step_train, 5);
   EXPECT_EQ(step_inference, 1);
+
+  // ensure that the LR is correct
+  EXPECT_EQ(lrs_before, torchfort::get_current_lrs("mlp_restore"));
 
   // do a forward pass and compare against the other one:
   {

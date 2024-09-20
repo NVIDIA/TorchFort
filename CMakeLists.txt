@@ -251,5 +251,6 @@ endif()
 
 # build tests
 if (TORCHFORT_BUILD_TESTS)
+  add_subdirectory(tests)
   add_subdirectory(tests/rl)
 endif()

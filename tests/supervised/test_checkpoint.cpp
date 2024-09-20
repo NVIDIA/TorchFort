@@ -27,6 +27,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <cuda_runtime.h>
 
 #include "torchfort.h"
 #include "internal/utils.h"
@@ -175,6 +176,15 @@ TEST(TorchFort, CheckpointSaveRestoreCPUtoGPU) {
 
 TEST(TorchFort, CheckpointSaveRestoreGPUtoCPU) {
   checkpoint_save_restore(0, TORCHFORT_DEVICE_CPU);
+}
+
+TEST(TorchFort, CheckpointSaveRestoreGPU0toGPU1) {
+  int ngpu;
+  cudaGetDeviceCount(&ngpu);
+  if (ngpu < 2) {
+    GTEST_SKIP() << "This test requires at least 2 GPUs. Skipping.";
+  }
+  checkpoint_save_restore(0, 1);
 }
 #endif
 

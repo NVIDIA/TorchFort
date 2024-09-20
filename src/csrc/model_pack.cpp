@@ -92,21 +92,11 @@ void load_model_pack(ModelPack& model_pack, const std::string& dir, bool load_op
   }
 
   if (load_optimizer) {
-    if (model_pack.state->device != model_pack.model->device()) {
-      std::string checkpoint_device = model_pack.state->device.type() == torch::kCPU
-                                          ? "CPU"
-                                          : "GPU " + std::to_string(model_pack.state->device.index());
-      std::string model_device = model_pack.model->device().type() == torch::kCPU
-                                     ? "CPU"
-                                     : "GPU " + std::to_string(model_pack.model->device().index());
-      THROW_INVALID_USAGE("Checkpoint was saved on " + checkpoint_device + " but is being loaded on " + model_device +
-                          ". This is unsupported.");
-    }
     auto optimizer_path = root_dir / "optimizer.pt";
     if (!std::filesystem::exists(optimizer_path)) {
       THROW_INVALID_USAGE("Could not find " + optimizer_path.native() + ".");
     }
-    torch::load(*(model_pack.optimizer), optimizer_path.native());
+    torch::load(*(model_pack.optimizer), optimizer_path.native(), model_pack.model->device());
 
     auto lr_path = root_dir / "lr.pt";
     if (std::filesystem::exists(lr_path)) {

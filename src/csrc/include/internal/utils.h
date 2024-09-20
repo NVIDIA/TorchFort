@@ -119,7 +119,10 @@ template <typename T> T get_torch_reduction(const std::string& s) {
   }
 }
 
-// helper function for printing tensor shapes:
+// Helper function for printing tensor shapes
 std::string print_tensor_shape(torch::Tensor tensor);
+
+// Helper function to get the lrs
+std::vector<double> get_current_lrs(const char* name);
 
 } // namespace torchfort

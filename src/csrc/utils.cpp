@@ -31,13 +31,18 @@
 #include <algorithm>
 #include <regex>
 #include <string>
+#include <vector>
 
 #include <torch/torch.h>
 
 #include "internal/defines.h"
+#include "internal/model_pack.h"
 #include "internal/utils.h"
 
 namespace torchfort {
+
+// Declaration of external global variables
+extern std::unordered_map<std::string, ModelPack> models;
 
 std::string sanitize(std::string s) {
   s.erase(std::remove(s.begin(), s.end(), ' '), s.end());
@@ -98,5 +103,17 @@ std::string print_tensor_shape(torch::Tensor tensor) {
   shapestr += ")";
   return shapestr;
 }
+
+std::vector<double> get_current_lrs(const char* name) {
+  auto optimizer = models[name].optimizer;
+  std::vector<double> learnings_rates(optimizer->param_groups().size());
+  if (learnings_rates.size() > 0) {
+    for (const auto i : c10::irange(optimizer->param_groups().size())) {
+      learnings_rates[i] = optimizer->param_groups()[i].options().get_lr();
+    }
+  }
+  return learnings_rates;
+}
+
 
 } // namespace torchfort

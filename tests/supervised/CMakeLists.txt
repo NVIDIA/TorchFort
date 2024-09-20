@@ -1,43 +1,14 @@
 cmake_minimum_required(VERSION 3.14)
 
 set(test_targets
-  test_replay_buffer
-  test_rollout_buffer
-  test_distributions
-  test_off_policy
-  test_on_policy
+  test_checkpoint
   )
 
-add_executable(test_replay_buffer)
-target_sources(test_replay_buffer
+add_executable(test_checkpoint)
+target_sources(test_checkpoint
   PRIVATE
-  test_replay_buffer.cpp
+  test_checkpoint.cpp
   )
-
-add_executable(test_rollout_buffer)
-target_sources(test_rollout_buffer
-  PRIVATE
-  test_rollout_buffer.cpp
-  )
-
-add_executable(test_distributions)
-target_sources(test_distributions
-  PRIVATE
-  test_distributions.cpp
-  )
-
-add_executable(test_off_policy)
-target_sources(test_off_policy
-  PRIVATE
-  test_off_policy.cpp
-  )
-
-add_executable(test_on_policy)
-target_sources(test_on_policy
-  PRIVATE
-  test_on_policy.cpp
-  )
-
 
 find_package(Python 3.6 COMPONENTS Interpreter Development REQUIRED)
 
@@ -73,11 +44,8 @@ endforeach()
 # executable
 install(
   TARGETS ${test_targets}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl
+  RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/supervised
 )
 
 # copy files
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/td3.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/ddpg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/sac.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/ppo.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/rl/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/mlp.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/supervised/configs)

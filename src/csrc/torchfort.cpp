@@ -148,19 +148,6 @@ torchfort_result_t torchfort_create_distributed_model(const char* name, const ch
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-// convenience routine to get the lrs:
-std::vector<double> torchfort_model_get_current_lrs(const char* name) {
-  using namespace torchfort;
-  auto optimizer = models[name].optimizer;
-  std::vector<double> learnings_rates(optimizer->param_groups().size());
-  if (learnings_rates.size() > 0) {
-    for (const auto i : c10::irange(optimizer->param_groups().size())) {
-      learnings_rates[i] = optimizer->param_groups()[i].options().get_lr();
-    }
-  }
-  return learnings_rates;
-}
-
 // W&B log function implementations by type
 WANDB_LOG_FUNC(int)
 WANDB_LOG_FUNC(float)

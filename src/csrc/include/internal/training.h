@@ -45,9 +45,6 @@
 #include <internal/nvtx.h>
 #include <internal/utils.h>
 
-// Forward declaration
-std::vector<double> torchfort_model_get_current_lrs(const char* name);
-
 namespace torchfort {
 
 // Declaration of external global variables
@@ -152,7 +149,7 @@ void train(const char* name, T* input, size_t input_dim, int64_t* input_shape, T
     os << "model: " << name << ", ";
     os << "step_train: " << state->step_train << ", ";
     os << "loss: " << *loss_val << ", ";
-    auto lrs = torchfort_model_get_current_lrs(name);
+    auto lrs = get_current_lrs(name);
     os << "lr: " << lrs[0];
     if (!models[name].comm || (models[name].comm && models[name].comm->rank == 0)) {
       torchfort::logging::print(os.str(), torchfort::logging::info);

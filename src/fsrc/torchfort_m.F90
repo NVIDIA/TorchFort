@@ -159,15 +159,12 @@ module torchfort
     end function torchfort_train_c
 
     function torchfort_train_v2_c(mname, inputs, labels, &
-                                  loss_val, dtype, stream) result(res) &
+                                  loss_val, stream) result(res) &
       bind(C, name="torchfort_train_v2")
       import
       character(kind=c_char) :: mname(*)
       type(torchfort_tensor_list), value :: inputs, labels
-      !dir$ ignore_tkr (k)loss_val
-      !GCC$ attributes no_arg_check :: loss_val
       real(c_float) :: loss_val
-      integer(c_int), value :: dtype
       integer(int64), value :: stream
       integer(c_int) :: res
     end function torchfort_train_v2_c
@@ -646,11 +643,6 @@ module torchfort
     module procedure torchfort_train_double_5d_dev
 #endif
   end interface torchfort_train
-
-  interface torchfort_train_v2
-    module procedure torchfort_train_v2_float
-    module procedure torchfort_train_v2_double
-  end interface torchfort_train_v2
 
   ! Generic interface for distributed setup
   interface torchfort_create_distributed_model
@@ -1941,7 +1933,7 @@ contains
   end function torchfort_train_double_5d_dev
 #endif
 
-  function torchfort_train_v2_float(mname, inputs, labels, loss_val, stream) result(res)
+  function torchfort_train_v2(mname, inputs, labels, loss_val, stream) result(res)
     character(len=*) :: mname
     type(torchfort_tensor_list):: inputs, labels
     real(real32) :: loss_val
@@ -1955,25 +1947,8 @@ contains
 
     res =  torchfort_train_v2_c([trim(mname), C_NULL_CHAR], &
                                 inputs, labels, loss_val, &
-                                TORCHFORT_FLOAT, stream_)
-  end function torchfort_train_v2_float
-
-  function torchfort_train_v2_double(mname, inputs, labels, loss_val, stream) result(res)
-    character(len=*) :: mname
-    type(torchfort_tensor_list):: inputs, labels
-    real(real64) :: loss_val
-    integer(int64), optional :: stream
-    integer(c_int) :: res
-
-    integer(int64) :: stream_
-
-    stream_ = 0
-    if (present(stream)) stream_ = stream
-
-    res =  torchfort_train_v2_c([trim(mname), C_NULL_CHAR], &
-                                inputs, labels, loss_val, &
-                                TORCHFORT_DOUBLE, stream_)
-  end function torchfort_train_v2_double
+                                stream_)
+  end function torchfort_train_v2
 
   function torchfort_save_model(mname, fname) result(res)
     character(len=*) :: mname

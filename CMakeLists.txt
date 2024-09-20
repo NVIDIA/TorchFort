@@ -130,6 +130,7 @@ target_sources(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/param_map.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/setup.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/torchfort.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/training.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/losses/l1_loss.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/losses/mse_loss.cpp

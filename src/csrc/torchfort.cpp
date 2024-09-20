@@ -45,6 +45,8 @@
 
 #include "internal/base_model.h"
 #include "internal/exceptions.h"
+#include "internal/logging.h"
+#include "internal/model_pack.h"
 #include "internal/model_wrapper.h"
 #include "internal/models.h"
 #include "internal/setup.h"
@@ -209,20 +211,10 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
 }
 
 torchfort_result_t torchfort_train_v2(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
-                                      void* loss_val, torchfort_datatype_t dtype, cudaStream_t stream) {
+                                      float* loss_val, cudaStream_t stream) {
   using namespace torchfort;
   try {
-    switch (dtype) {
-    case TORCHFORT_FLOAT:
-      torchfort::train_v2(name, inputs, labels, reinterpret_cast<float*>(loss_val), stream);
-      break;
-    case TORCHFORT_DOUBLE:
-      torchfort::train_v2(name, inputs, labels, reinterpret_cast<double*>(loss_val), stream);
-      break;
-    default:
-      THROW_INVALID_USAGE("Unknown datatype provided.");
-      break;
-    }
+    torchfort::train_v2(name, inputs, labels, loss_val, stream);
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();

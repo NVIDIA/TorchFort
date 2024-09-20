@@ -123,14 +123,13 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
  * @param[in] name The name of model instance to use, as defined during model creation.
  * @param[in] inputs A tensor list of input tensors.
  * @param[in] labels A tensor list of label tensors.
- * @param[out] loss_val A pointer to a memory location to write the loss value computed during the training iteration.
- * @param[out] dtype The TorchFort datatype to use for this operation.
+ * @param[out] loss_val A pointer to a single precision scalar to write the loss value computed during the training iteration.
  * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_train_v2(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
-                                      void* loss_val, torchfort_datatype_t dtype, cudaStream_t stream);
+                                      float* loss_val, cudaStream_t stream);
 
 /**
  * @brief Runs inference on a model using provided input data.

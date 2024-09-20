@@ -29,24 +29,30 @@
  */
 
 #include "torchfort.h"
+#include "internal/utils.h"
 #include <gtest/gtest.h>
 #include <torch/torch.h>
 
 
-TEST(TorchFort, CheckpointSaveRestore) {
+void checkpoint_save_restore(int first_device, int second_device) {
 
   // rng
   torch::manual_seed(666);
 
+  // create devices:
+  torch::Device cpu_dev = torchfort::get_device(TORCHFORT_DEVICE_CPU);
+  torch::Device first_dev = torchfort::get_device(first_device);
+  torch::Device second_dev = torchfort::get_device(second_device);
+
   // create model on CPU
-  torchfort_create_model("mlp", "configs/mlp.yaml", TORCHFORT_DEVICE_CPU);
+  torchfort_create_model("mlp", "configs/mlp.yaml", first_device);
 
   // run a few training steps on random data:
   std::vector<int64_t> data_shape = {8, 32};
   std::vector<int64_t> label_shape = {8, 1};
-  torch::Tensor data = torch::empty(data_shape, torch::TensorOptions().device(torch::kCPU).dtype(torch::kFloat32));
-  torch::Tensor label = torch::empty(label_shape, torch::TensorOptions().device(torch::kCPU).dtype(torch::kFloat32));
-  torch::Tensor output = torch::empty(label_shape, torch::TensorOptions().device(torch::kCPU).dtype(torch::kFloat32));
+  torch::Tensor data = torch::empty(data_shape, torch::TensorOptions().device(first_dev).dtype(torch::kFloat32));
+  torch::Tensor label = torch::empty(label_shape, torch::TensorOptions().device(first_dev).dtype(torch::kFloat32));
+  torch::Tensor output = torch::empty(label_shape, torch::TensorOptions().device(first_dev).dtype(torch::kFloat32));
   float loss;
 
   for(int i=0; i<5; ++i) {
@@ -70,13 +76,13 @@ TEST(TorchFort, CheckpointSaveRestore) {
 		      output.data_ptr<float>(), label_shape.size(), label_shape.data(),
 		      TORCHFORT_FLOAT, 0);
   
-  torch::Tensor output_before = output.clone();
+  torch::Tensor output_before = output.clone().to(cpu_dev);
 
   // save model checkpoint
   torchfort_save_checkpoint("mlp", "/tmp/checkpoint.pt"); 
 
   // initialize a new model
-  torchfort_create_model("mlp_restore", "configs/mlp.yaml", TORCHFORT_DEVICE_CPU);
+  torchfort_create_model("mlp_restore", "configs/mlp.yaml", second_device);
 
   // restore old model from checkpoint
   int64_t step_train, step_inference;
@@ -91,18 +97,23 @@ TEST(TorchFort, CheckpointSaveRestore) {
     torch::NoGradGuard no_grad;
     output.zero_();
   }
+  data = data.to(second_dev);
+  output = output.to(second_dev);
   torchfort_inference("mlp_restore",
                       data.data_ptr<float>(), data_shape.size(), data_shape.data(),
                       output.data_ptr<float>(), label_shape.size(), label_shape.data(),
                       TORCHFORT_FLOAT, 0);
   
-  torch::Tensor output_after = output.clone();
+  torch::Tensor output_after = output.clone().to(cpu_dev);
 
   // compute deviation
   float mean_diff = torch::mean(torch::abs(output_after - output_before)).item<float>();
-  EXPECT_FLOAT_EQ(mean_diff, 0.);
+  EXPECT_NEAR(mean_diff, 0., 1e-6);
 
   // lastly, perform one more optimizer step
+  data = data.to(first_dev);
+  label = label.to(first_dev);
+  output = output.to(first_dev);
   {
     torch::NoGradGuard no_grad;
     data.uniform_(0., 1.);
@@ -120,9 +131,12 @@ TEST(TorchFort, CheckpointSaveRestore) {
                       output.data_ptr<float>(), label_shape.size(), label_shape.data(),
                       TORCHFORT_FLOAT, 0);
   
-  output_before = output.clone();
+  output_before = output.clone().to(cpu_dev);
 
   // new model
+  data = data.to(second_dev);
+  label	= label.to(second_dev);
+  output = output.to(second_dev);
   torchfort_train("mlp_restore",
                     data.data_ptr<float>(), data_shape.size(), data_shape.data(),
                     label.data_ptr<float>(), label_shape.size(), label_shape.data(),
@@ -137,13 +151,32 @@ TEST(TorchFort, CheckpointSaveRestore) {
                       output.data_ptr<float>(), label_shape.size(), label_shape.data(),
                       TORCHFORT_FLOAT, 0);
   
-  output_after = output.clone();
+  output_after = output.clone().to(cpu_dev);
 
   // compute deviation
   mean_diff = torch::mean(torch::abs(output_after - output_before)).item<float>();
-  EXPECT_FLOAT_EQ(mean_diff, 0.);
+  EXPECT_NEAR(mean_diff, 0., 1e-6);
   
 }
+
+
+TEST(TorchFort, CheckpointSaveRestoreCPUtoCPU) {
+  checkpoint_save_restore(TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU);
+}
+
+#ifdef ENABLE_GPU
+TEST(TorchFort, CheckpointSaveRestoreGPUtoGPU) {
+  checkpoint_save_restore(0, 0);
+}
+
+TEST(TorchFort, CheckpointSaveRestoreCPUtoGPU) {
+  checkpoint_save_restore(TORCHFORT_DEVICE_CPU, 0);
+}
+
+TEST(TorchFort, CheckpointSaveRestoreGPUtoCPU) {
+  checkpoint_save_restore(0, TORCHFORT_DEVICE_CPU);
+}
+#endif
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

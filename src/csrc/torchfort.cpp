@@ -210,11 +210,11 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_train_v2(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
-                                      float* loss_val, cudaStream_t stream) {
+torchfort_result_t torchfort_train_multiarg(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
+                                            float* loss_val, cudaStream_t stream) {
   using namespace torchfort;
   try {
-    torchfort::train_v2(name, inputs, labels, loss_val, stream);
+    torchfort::train_multiarg(name, inputs, labels, loss_val, stream);
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();
@@ -272,11 +272,11 @@ torchfort_result_t torchfort_inference_F(const char* name, void* input, size_t i
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_inference_v2(const char* name, torchfort_tensor_list_t inputs,
-                                          torchfort_tensor_list_t outputs, cudaStream_t stream) {
+torchfort_result_t torchfort_inference_multiarg(const char* name, torchfort_tensor_list_t inputs,
+                                                torchfort_tensor_list_t outputs, cudaStream_t stream) {
   using namespace torchfort;
   try {
-    torchfort::inference_v2(name, inputs, outputs, stream);
+    torchfort::inference_multiarg(name, inputs, outputs, stream);
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();

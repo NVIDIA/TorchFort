@@ -49,8 +49,8 @@ namespace torchfort {
 // Declaration of external global variables
 extern std::unordered_map<std::string, ModelPack> models;
 
-void inference_v2(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t outputs_in,
-                  cudaStream_t ext_stream = 0) {
+void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t outputs_in,
+                        cudaStream_t ext_stream = 0) {
   torchfort::nvtx::rangePush("torchfort_inference");
 
   auto inputs = static_cast<TensorList*>(inputs_in);
@@ -80,8 +80,8 @@ void inference_v2(const char* name, torchfort_tensor_list_t inputs_in, torchfort
   torchfort::nvtx::rangePop();
 }
 
-void train_v2(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t labels_in,
-              float* loss_val, cudaStream_t ext_stream = 0) {
+void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t labels_in,
+                    float* loss_val, cudaStream_t ext_stream = 0) {
   torchfort::nvtx::rangePush("torchfort_train");
 
   auto inputs = static_cast<TensorList*>(inputs_in);

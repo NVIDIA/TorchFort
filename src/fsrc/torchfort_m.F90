@@ -132,14 +132,14 @@ module torchfort
       integer(c_int) :: res
     end function torchfort_inference_c
 
-    function torchfort_inference_v2_c(mname, inputs, outputs, stream) result(res) &
-      bind(C, name="torchfort_inference_v2")
+    function torchfort_inference_multiarg_c(mname, inputs, outputs, stream) result(res) &
+      bind(C, name="torchfort_inference_multiarg")
       import
       character(kind=c_char) :: mname(*)
       type(torchfort_tensor_list), value :: inputs, outputs
       integer(int64), value :: stream
       integer(c_int) :: res
-    end function torchfort_inference_v2_c
+    end function torchfort_inference_multiarg_c
 
     function torchfort_train_c(mname, input, input_dim, input_shape, &
                                label, label_dim, label_shape, &
@@ -158,16 +158,16 @@ module torchfort
       integer(c_int) :: res
     end function torchfort_train_c
 
-    function torchfort_train_v2_c(mname, inputs, labels, &
-                                  loss_val, stream) result(res) &
-      bind(C, name="torchfort_train_v2")
+    function torchfort_train_multiarg_c(mname, inputs, labels, &
+                                        loss_val, stream) result(res) &
+      bind(C, name="torchfort_train_multiarg")
       import
       character(kind=c_char) :: mname(*)
       type(torchfort_tensor_list), value :: inputs, labels
       real(c_float) :: loss_val
       integer(int64), value :: stream
       integer(c_int) :: res
-    end function torchfort_train_v2_c
+    end function torchfort_train_multiarg_c
 
     function torchfort_set_cudnn_benchmark_c(flag) result(res) &
       bind(C, name="torchfort_set_cudnn_benchmark")
@@ -1419,7 +1419,7 @@ contains
   end function torchfort_inference_double_5d_dev
 #endif
 
-  function torchfort_inference_v2(mname, inputs, outputs, stream) result(res)
+  function torchfort_inference_multiarg(mname, inputs, outputs, stream) result(res)
     character(len=*) :: mname
     type(torchfort_tensor_list) :: inputs, outputs
     integer(int64), optional :: stream
@@ -1430,9 +1430,9 @@ contains
     stream_ = 0
     if (present(stream)) stream_ = stream
 
-    res = torchfort_inference_v2_c([trim(mname), C_NULL_CHAR], &
-                                   inputs, outputs, stream_)
-  end function torchfort_inference_v2
+    res = torchfort_inference_multiarg_c([trim(mname), C_NULL_CHAR], &
+                                         inputs, outputs, stream_)
+  end function torchfort_inference_multiarg
 
   ! Training routines
   function torchfort_train_float_2d(mname, input, label, loss_val, stream) result(res)
@@ -1933,7 +1933,7 @@ contains
   end function torchfort_train_double_5d_dev
 #endif
 
-  function torchfort_train_v2(mname, inputs, labels, loss_val, stream) result(res)
+  function torchfort_train_multiarg(mname, inputs, labels, loss_val, stream) result(res)
     character(len=*) :: mname
     type(torchfort_tensor_list):: inputs, labels
     real(real32) :: loss_val
@@ -1945,10 +1945,10 @@ contains
     stream_ = 0
     if (present(stream)) stream_ = stream
 
-    res =  torchfort_train_v2_c([trim(mname), C_NULL_CHAR], &
-                                inputs, labels, loss_val, &
-                                stream_)
-  end function torchfort_train_v2
+    res =  torchfort_train_multiarg_c([trim(mname), C_NULL_CHAR], &
+                                      inputs, labels, loss_val, &
+                                      stream_)
+  end function torchfort_train_multiarg
 
   function torchfort_save_model(mname, fname) result(res)
     character(len=*) :: mname

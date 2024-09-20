@@ -248,7 +248,7 @@ program train
     istat = torchfort_tensor_list_add_tensor(labels, label)
     !$acc end host_data
 
-    istat = torchfort_train_v2("mymodel", inputs, labels, loss_val)
+    istat = torchfort_train_multiarg("mymodel", inputs, labels, loss_val)
 
     istat = torchfort_tensor_list_destroy(inputs)
     istat = torchfort_tensor_list_destroy(labels)
@@ -279,7 +279,7 @@ program train
     istat = torchfort_tensor_list_add_tensor(outputs, output(:,:,1:1,1:1))
     !$acc end host_data
 
-    istat = torchfort_inference_v2("mymodel", inputs, outputs)
+    istat = torchfort_inference_multiarg("mymodel", inputs, outputs)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     !$acc wait
 

@@ -128,8 +128,8 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_train_v2(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
-                                      float* loss_val, cudaStream_t stream);
+torchfort_result_t torchfort_train_multiarg(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
+                                            float* loss_val, cudaStream_t stream);
 
 /**
  * @brief Runs inference on a model using provided input data.
@@ -166,8 +166,8 @@ torchfort_result_t torchfort_inference_F(const char* name, void* input, size_t i
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_inference_v2(const char* name, torchfort_tensor_list_t inputs,
-                                          torchfort_tensor_list_t outputs, cudaStream_t stream);
+torchfort_result_t torchfort_inference_multiarg(const char* name, torchfort_tensor_list_t inputs,
+                                                torchfort_tensor_list_t outputs, cudaStream_t stream);
 
 // Model/Checkpoint save and loading functions
 /**

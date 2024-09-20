@@ -375,6 +375,12 @@ torchfort_result_t torchfort_tensor_list_add_tensor(torchfort_tensor_list_t tens
     case TORCHFORT_DOUBLE:
       tensor_list->add_tensor<torchfort::RowMajor>(reinterpret_cast<double*>(data_ptr), dim, shape);
       break;
+    case TORCHFORT_INT32:
+      tensor_list->add_tensor<torchfort::RowMajor>(reinterpret_cast<int32_t*>(data_ptr), dim, shape);
+      break;
+    case TORCHFORT_INT64:
+      tensor_list->add_tensor<torchfort::RowMajor>(reinterpret_cast<int64_t*>(data_ptr), dim, shape);
+      break;
     default:
       THROW_INVALID_USAGE("Unknown datatype provided.");
       break;
@@ -397,6 +403,12 @@ torchfort_result_t torchfort_tensor_list_add_tensor_F(torchfort_tensor_list_t te
       break;
     case TORCHFORT_DOUBLE:
       tensor_list->add_tensor<torchfort::ColMajor>(reinterpret_cast<double*>(data_ptr), dim, shape);
+      break;
+    case TORCHFORT_INT32:
+      tensor_list->add_tensor<torchfort::ColMajor>(reinterpret_cast<int32_t*>(data_ptr), dim, shape);
+      break;
+    case TORCHFORT_INT64:
+      tensor_list->add_tensor<torchfort::ColMajor>(reinterpret_cast<int64_t*>(data_ptr), dim, shape);
       break;
     default:
       THROW_INVALID_USAGE("Unknown datatype provided.");

@@ -247,6 +247,7 @@ if (TORCHFORT_BUILD_EXAMPLES)
   add_subdirectory(examples/cpp/cart_pole)
   if (TORCHFORT_BUILD_FORTRAN)
     add_subdirectory(examples/fortran/simulation)
+    add_subdirectory(examples/fortran/graph)
   endif()
 endif()
 

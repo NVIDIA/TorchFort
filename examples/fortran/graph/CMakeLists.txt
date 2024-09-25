@@ -36,4 +36,7 @@ install(
 install(
   FILES ${CMAKE_CURRENT_SOURCE_DIR}/config_graph.yaml
         ${CMAKE_CURRENT_SOURCE_DIR}/generate_graph_model.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/nodes.txt
+        ${CMAKE_CURRENT_SOURCE_DIR}/connectivity.txt
+        ${CMAKE_CURRENT_SOURCE_DIR}/visualize.py
   DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/examples/fortran/graph)

@@ -94,7 +94,7 @@ class Net(torch.nn.Module):
 
 def main():
   # Create model
-  model = Net(2, 3, 32)
+  model = Net(1, 3, 32)
   print("graph model:", model)
 
   try:

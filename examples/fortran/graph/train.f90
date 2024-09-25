@@ -26,65 +26,131 @@
 ! OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ! OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+module utils
+  use, intrinsic :: iso_fortran_env, only: real32
+  implicit none
+
+  contains
+    ! Advecting gaussian bump
+    subroutine f_xyt(node_data, nodes, num_nodes, t)
+      implicit none
+      integer :: num_nodes
+      real(real32) :: node_data(1, num_nodes)
+      real(real32) :: nodes(2, num_nodes)
+      real(real32) :: t
+
+      integer :: i
+      real(real32) :: a_x, a_y, x, y
+      a_x = 1.0
+      a_y = 0.0
+
+      do i = 1, num_nodes
+        x = nodes(1, i)
+        y = nodes(2, i)
+        node_data(1, i) = exp(-20.0 * (x - a_x * t)**2) * exp(-20.0 * (y - a_y * t)**2)
+      enddo
+
+    end subroutine f_xyt
+
+    subroutine write_node_data(node_data, num_nodes, fname)
+      use, intrinsic :: iso_fortran_env, only: real32
+      implicit none
+      integer :: num_nodes
+      real(real32) :: node_data(1, num_nodes)
+      character(len=*) :: fname
+
+      integer :: i
+
+      open(42, file=fname)
+      do i = 1, num_nodes
+        write(42, "(e12.4)") node_data(1, i)
+      enddo
+      close(42)
+
+    end subroutine write_node_data
+end module utils
+
 program train
   use, intrinsic :: iso_fortran_env, only: real32, real64, int32, int64
   use torchfort
+  use utils
   implicit none
 
-  integer :: i, istat
+  integer :: i, j, k, idx, istat
+  integer :: n1, n2
   integer :: num_edges, num_nodes
   integer(int64), allocatable :: edge_idx(:,:)
-  real(real32), allocatable :: node_feats(:,:)
+  real(real32), allocatable :: node_feats(:,:), node_feats_rollout(:,:)
   real(real32), allocatable :: edge_feats(:,:)
   real(real32), allocatable :: node_labels(:,:)
   real(real32) :: loss_val
+  real(real32) :: t, dt, max_t
+  character(len=7) :: fidx
+  character(len=256) :: filename
 
-  type(torchfort_tensor_list) :: inputs, labels
+  integer :: num_triangles
+  real(real32), allocatable:: nodes(:,:)
+  integer, allocatable:: triangles(:,:)
+
+  type(torchfort_tensor_list) :: inputs, outputs, labels
 
   character(len=256) :: configfile = "config_graph.yaml"
-  integer :: model_device = TORCHFORT_DEVICE_CPU
+  integer :: model_device = 0
+  character(len=256) :: node_file = "nodes.txt"
+  character(len=256) :: connectivity_file = "connectivity.txt"
 
-  ! Simple graph of a square
-  ! y ^
-  !   |
-  !   3 ---- 2
-  !   |      |
-  !   |      |
-  !   0 ---- 1 --> x
+  ! Read mesh data
+  open(42, file=node_file, action='read')
+  read(42, *) num_nodes
+  allocate(nodes(2, num_nodes))
+  do i = 1, num_nodes
+    read(42, *) nodes(1, i), nodes(2,i)
+  end do
+  close(42)
 
-  num_edges = 4
-  num_nodes = 4
+  open(42, file=connectivity_file, action='read')
+  read(42, *) num_triangles
+  allocate(triangles(3, num_triangles))
+  do i = 1, num_triangles
+    read(42, *) triangles(1, i), triangles(2, i), triangles(3, i)
+  end do
+  close(42)
 
+
+  ! Generate edge_idx and edge_feats
+
+  ! Collect all edges from connectivity data (bi-directional)
+  num_edges = 6 * num_triangles
   allocate(edge_idx(2, num_edges))
-  allocate(node_feats(2, num_nodes))
-  allocate(node_labels(2, num_nodes))
-  allocate(edge_feats(3, num_nodes))
+  idx = 1
+  do i = 1, num_triangles
+    do k = 1, 3
+      edge_idx(1, idx) = triangles(k, i)
+      edge_idx(2, idx) = triangles(mod(k, 3) + 1, i)
+      edge_idx(1, idx + 1) = edge_idx(2, idx)
+      edge_idx(2, idx + 1) = edge_idx(1, idx)
+      idx = idx + 2
+    enddo
+  enddo
 
+  ! Set up edge features (dx, dy, magnitude)
+  allocate(edge_feats(3, num_edges))
   do i = 1, num_edges
-    edge_idx(1, i) = i-1
-    edge_idx(2, i) = mod(i, num_edges)
+    n1 = edge_idx(1, i) + 1 ! connectivity data is zero-indexed, need to increment
+    n2 = edge_idx(2, i) + 1
+    edge_feats(1, i) = nodes(1, n2) - nodes(1, n1)
+    edge_feats(2, i) = nodes(2, n2) - nodes(2, n1)
+    edge_feats(3, i) = sqrt(edge_feats(1, i) * edge_feats(1, i) + edge_feats(2, i) * edge_feats(2, i))
   end do
 
-  node_feats(1, :) = 1.0
-  node_feats(2, :) = -1.0
+  allocate(node_feats(1, num_nodes))
+  allocate(node_labels(1, num_nodes))
+  allocate(node_feats_rollout(1, num_nodes))
 
-  edge_feats(1, 1) = 1.0
-  edge_feats(2, 1) = 0.0
-  edge_feats(1, 2) = 0.0
-  edge_feats(2, 2) = 1.0
-  edge_feats(1, 3) = -1.0
-  edge_feats(2, 3) = 0.0
-  edge_feats(1, 4) = 0.0
-  edge_feats(2, 4) = -1.0
-  edge_feats(3, :) = 1.0
-
-  node_labels(:,:) = 0.0
-
-  ! setup tensor lists
+  ! Set up tensor lists
   istat = torchfort_tensor_list_create(inputs)
-  if (istat /= TORCHFORT_RESULT_SUCCESS) stop
   istat = torchfort_tensor_list_create(labels)
-  if (istat /= TORCHFORT_RESULT_SUCCESS) stop
+  istat = torchfort_tensor_list_create(outputs)
 
   istat = torchfort_tensor_list_add_tensor(inputs, edge_idx)
   istat = torchfort_tensor_list_add_tensor(inputs, node_feats)
@@ -92,18 +158,48 @@ program train
 
   istat = torchfort_tensor_list_add_tensor(labels, node_labels)
 
-  ! setup the model
+  istat = torchfort_tensor_list_add_tensor(outputs, node_feats_rollout)
+
+  ! Set up the model
   istat = torchfort_create_model("mymodel", configfile, model_device)
   if (istat /= TORCHFORT_RESULT_SUCCESS) stop
 
-  do i = 1, 1000
+  ! Training
+  t = 0.0
+  dt = 0.1
+  max_t = 5.0
+  print*, "begin training..."
+  do i = 1, 100000
+    call f_xyt(node_feats, nodes, num_nodes, t)
+    call f_xyt(node_labels, nodes, num_nodes, t + dt)
     istat = torchfort_train_multiarg("mymodel", inputs, labels, loss_val)
+    t = t + dt
+    if (t >= max_t) t = 0.0
   end do
 
-  ! destroy tensor lists
+  ! Rollout validation
+  print*, "begin rollout validation..."
+  call f_xyt(node_feats, nodes, num_nodes, 0.0)
+  t = 0.0
+  do i = 1, int(max_t / dt)
+    istat = torchfort_inference_multiarg("mymodel", inputs, outputs)
+    call f_xyt(node_feats, nodes, num_nodes, t + dt)
+    write(6, '(a3,1x,f5.2,1x,a4,2x,e12.4)'), "t:", t + dt, "mse:", sum((node_feats - node_feats_rollout)**2) / num_nodes
+
+    write(fidx,'(i7.7)') i
+    filename = 'reference_'//fidx//'.txt'
+    call write_node_data(node_feats, num_nodes, filename)
+    filename = 'prediction_'//fidx//'.txt'
+    call write_node_data(node_feats_rollout, num_nodes, filename)
+
+    ! TODO: rollout not great at the moment. need to fix model/training process.
+    !node_feats = node_feats_rollout
+    t = t + dt
+  enddo
+
+  ! Destroy tensor lists
   istat = torchfort_tensor_list_destroy(inputs)
-  if (istat /= TORCHFORT_RESULT_SUCCESS) stop
   istat = torchfort_tensor_list_destroy(labels)
-  if (istat /= TORCHFORT_RESULT_SUCCESS) stop
+  istat = torchfort_tensor_list_destroy(outputs)
 
 end program

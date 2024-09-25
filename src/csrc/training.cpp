@@ -77,6 +77,9 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
     outputs->tensors[i].copy_(results[i].reshape(outputs->tensors[i].sizes()));
   }
   models[name].state->step_inference++;
+
+  inputs->reset();
+
   torchfort::nvtx::rangePop();
 }
 
@@ -114,7 +117,7 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   // fwd pass
   auto results = model->forward(inputs->tensors);
   auto losses =
-      models[name].loss->forward(std::vector<torch::Tensor>{results[0]}, labels->tensors);
+      models[name].loss->forward(results, labels->tensors);
 
   // extract loss
   *loss_val = losses[0].item<float>();
@@ -159,6 +162,9 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
       torchfort::wandb_log(name, "train_lr", state->step_train, lrs[0]);
     }
   }
+
+  inputs->reset();
+  labels->reset();
 
   torchfort::nvtx::rangePop();
 }

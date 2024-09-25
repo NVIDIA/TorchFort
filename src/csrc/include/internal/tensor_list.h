@@ -42,6 +42,7 @@ struct TensorList {
   void add_tensor(T* data, size_t dim, int64_t* shape) {
     auto tensor = get_tensor<L>(data, dim, shape);
     tensors.push_back(tensor);
+    tensors_original_.push_back(tensor);
   };
 
   void to(torch::Device device, bool non_blocking = false) {
@@ -50,6 +51,12 @@ struct TensorList {
     }
   };
 
+  void reset() {
+    tensors = tensors_original_;
+  }
+
   std::vector<torch::Tensor> tensors;
+  // To preserve references to external data, we store the original tensor objects
+  std::vector<torch::Tensor> tensors_original_;
 };
 } // namespace torchfort

@@ -7,10 +7,12 @@ we train a [MeshGraphNet](https://arxiv.org/abs/2010.03409)-like model to predic
 For our simulation, we consider the linear advection equation in 2D in a rectangular box,
 
 $$
-\frac{du(x,y,t)}{dt} + \nabla \cdot (\mathbf{a} u(x,y,t)) = 0
-u(x,y,0) = \exp(-20x^2) \exp(-20y^2)
-\mathbf{a} = \lbrace a_x, a_y \rbrace = \lbrace 1, 0 \rbrace
+\begin{matrix}
+\frac{du(x,y,t)}{dt} + \nabla \cdot (\mathbf{a} u(x,y,t)) = 0 \\
+u(x,y,0) = \exp(-20x^2) \exp(-20y^2) \\
+\mathbf{a} = \lbrace a_x, a_y \rbrace = \lbrace 1, 0 \rbrace \\
 x \in [-1, 5], \\; y \in [-1, 1], \\; t \in [0, 5]
+\end{matrix}
 $$
 
 which has an analytical solution of the form,
@@ -53,7 +55,7 @@ loss:
     filename: "loss_torchscript.pt"
 ```
 
-Refer to [config.yaml`](config.yaml) for additional details of the TorchFort configuration for this problem.
+Refer to [`config.yaml`](config.yaml) for additional details of the TorchFort configuration for this problem.
 
 ## Training and rollout validation
 To run this case, use the following commands:

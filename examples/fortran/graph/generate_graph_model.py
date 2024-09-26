@@ -49,7 +49,7 @@ class MessagePassing(torch.nn.Module):
     edge_update = self.mlp_edge(edge_update)
 
     accumulate_edges = torch.zeros([node_feats.shape[0], edge_feats.shape[1]], dtype=edge_feats.dtype, device=edge_feats.device)
-    receivers = receivers.unsqueeze(-1).repeat(1, edge_feats.shape[1])
+    receivers = receivers.unsqueeze(-1).expand(-1, edge_feats.shape[1])
     accumulate_edges = torch.scatter_add(accumulate_edges, src=edge_feats, index=receivers, dim=0)
     node_update = torch.cat([node_feats, accumulate_edges], dim=-1)
     node_update = self.mlp_node(node_update)
@@ -61,7 +61,7 @@ class MessagePassing(torch.nn.Module):
 
 
 class Net(torch.nn.Module):
-  def __init__(self, in_node_features, in_edge_features, hidden_dim):
+  def __init__(self, in_node_features, in_edge_features, hidden_dim, n_message_passing_steps):
     super(Net, self).__init__()
     self.encoder_node = torch.nn.Sequential(torch.nn.Linear(in_node_features, hidden_dim),
                                             torch.nn.ReLU(),
@@ -72,7 +72,9 @@ class Net(torch.nn.Module):
                                             torch.nn.Linear(hidden_dim, hidden_dim),
                                             torch.nn.LayerNorm(hidden_dim))
 
-    self.mp = MessagePassing(hidden_dim)
+    self.mp_layers = torch.nn.ModuleList()
+    for _ in range(n_message_passing_steps):
+      self.mp_layers.append(MessagePassing(hidden_dim))
 
     self.decoder = torch.nn.Sequential(torch.nn.Linear(hidden_dim, hidden_dim),
                                        torch.nn.ReLU(),
@@ -84,7 +86,8 @@ class Net(torch.nn.Module):
     edge_feats = self.encoder_edge(edge_feats)
 
     # Message passing
-    node_feats, edge_feats = self.mp(edge_idx, node_feats, edge_feats)
+    for mp in self.mp_layers:
+      node_feats, edge_feats = mp(edge_idx, node_feats, edge_feats)
 
     # Decode node featues
     node_feats = self.decoder(node_feats)
@@ -94,7 +97,7 @@ class Net(torch.nn.Module):
 
 def main():
   # Create model
-  model = Net(1, 3, 32)
+  model = Net(1, 3, 128, 8)
   print("graph model:", model)
 
   try:

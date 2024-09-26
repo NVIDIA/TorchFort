@@ -60,11 +60,11 @@ def main(args):
 
     c = ax1.tricontourf(triangulation, np.loadtxt(reffiles[0]), levels=np.linspace(0.0, 1.0, 15))
     artists += c.collections
-    c = ax1.triplot(triangulation, linewidth=0.2, color='black')
+    c = ax1.triplot(triangulation, linewidth=0.3, color='black')
     artists.append(c)
     c = ax2.tricontourf(triangulation, np.loadtxt(predfiles[0]), levels=np.linspace(0.0, 1.0, 15))
     artists += c.collections
-    c = ax2.triplot(triangulation, linewidth=0.2, color='black')
+    c = ax2.triplot(triangulation, linewidth=0.3, color='black')
     artists.append(c)
 
     fig.tight_layout()
@@ -80,11 +80,11 @@ def main(args):
 
         c = ax1.tricontourf(triangulation, np.loadtxt(reffiles[i]), levels=np.linspace(0.0, 1.0, 15))
         artists += c.collections
-        c = ax1.triplot(triangulation, linewidth=0.1, color='black')
+        c = ax1.triplot(triangulation, linewidth=0.3, color='black')
         artists.append(c)
         c = ax2.tricontourf(triangulation, np.loadtxt(predfiles[i]), levels=np.linspace(0.0, 1.0, 15))
         artists += c.collections
-        c = ax2.triplot(triangulation, linewidth=0.2, color='black')
+        c = ax2.triplot(triangulation, linewidth=0.3, color='black')
         artists.append(c)
 
 

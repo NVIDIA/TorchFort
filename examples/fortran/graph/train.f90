@@ -44,11 +44,14 @@ module utils
       a_x = 1.0
       a_y = 0.0
 
+      !$acc data copyin(nodes) copyout(node_data)
+      !$acc parallel loop default(present)
       do i = 1, num_nodes
         x = nodes(1, i)
         y = nodes(2, i)
         node_data(1, i) = exp(-20.0 * (x - a_x * t)**2) * exp(-20.0 * (y - a_y * t)**2)
       enddo
+      !$acc end data
 
     end subroutine f_xyt
 
@@ -61,6 +64,7 @@ module utils
 
       integer :: i
 
+      !$acc update host (node_data)
       open(42, file=fname)
       do i = 1, num_nodes
         write(42, "(e12.4)") node_data(1, i)
@@ -147,11 +151,14 @@ program train
   allocate(node_labels(1, num_nodes))
   allocate(node_feats_rollout(1, num_nodes))
 
+  !$acc data copyin(edge_idx, edge_feats, node_feats, node_labels, node_feats_rollout)
+
   ! Set up tensor lists
   istat = torchfort_tensor_list_create(inputs)
   istat = torchfort_tensor_list_create(labels)
   istat = torchfort_tensor_list_create(outputs)
 
+  !$acc host_data use_device(edge_idx, node_feats, edge_feats, node_labels, node_feats_rollout)
   istat = torchfort_tensor_list_add_tensor(inputs, edge_idx)
   istat = torchfort_tensor_list_add_tensor(inputs, node_feats)
   istat = torchfort_tensor_list_add_tensor(inputs, edge_feats)
@@ -159,6 +166,7 @@ program train
   istat = torchfort_tensor_list_add_tensor(labels, node_labels)
 
   istat = torchfort_tensor_list_add_tensor(outputs, node_feats_rollout)
+  !$acc end host_data
 
   ! Set up the model
   istat = torchfort_create_model("mymodel", configfile, model_device)
@@ -192,10 +200,12 @@ program train
     filename = 'prediction_'//fidx//'.txt'
     call write_node_data(node_feats_rollout, num_nodes, filename)
 
-    ! TODO: rollout not great at the moment. need to fix model/training process.
-    !node_feats = node_feats_rollout
+    !$acc kernels
+    node_feats = node_feats_rollout
+    !$acc end kernels
     t = t + dt
   enddo
+  !$acc end data
 
   ! Destroy tensor lists
   istat = torchfort_tensor_list_destroy(inputs)

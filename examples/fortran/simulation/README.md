@@ -7,14 +7,18 @@ numerical simulation.
 
 For our simulation, we consider the linear advection equation in 2D in a periodic box,
 
-$$\frac{du(x,y,t)}{dt} + \nabla \cdot (\mathbf{a} u(x,y,t)) = 0$$
-$$u(x,y,0) = \sin(\pi x) \sin(\pi y)$$
-$$\mathbf{a} = \lbrace a_x, a_y \rbrace $$
-$$x \in [-1, 1], \\; y \in [-1, 1], \\; t \in [0, T]$$
+$$
+\begin{matrix}
+\frac{du(x,y,t)}{dt} + \nabla \cdot (\mathbf{a} u(x,y,t)) = 0 \\
+u(x,y,0) = \sin(\pi x) \\; \sin(\pi y) \\
+\mathbf{a} = \lbrace a_x, a_y \rbrace \\
+x \in [-1, 1], \\; y \in [-1, 1], \\; t \in [0, T]
+\end{matrix}
+$$
 
 which has an analytical solution of the form,
 
-$$u(x,y,t) = \sin(\pi (x - a_x t)) \sin(\pi (y-a_y t))$$
+$$u(x,y,t) = \sin(\pi (x - a_x t)) \\; \sin(\pi (y-a_y t))$$
 
 We aim to train a model to learn the mapping from the solution field, $u(x,y,t)$, to the divergence, $\nabla \cdot (\mathbf{a} u(x,y,t))$:
 

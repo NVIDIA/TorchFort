@@ -9,7 +9,7 @@ For our simulation, we consider the linear advection equation in 2D in a rectang
 $$
 \begin{matrix}
 \frac{du(x,y,t)}{dt} + \nabla \cdot (\mathbf{a} u(x,y,t)) = 0 \\
-u(x,y,0) = \exp(-20x^2) \exp(-20y^2) \\
+u(x,y,0) = \exp(-20x^2) \\; \exp(-20y^2) \\
 \mathbf{a} = \lbrace a_x, a_y \rbrace = \lbrace 1, 0 \rbrace \\
 x \in [-1, 5], \\; y \in [-1, 1], \\; t \in [0, 5]
 \end{matrix}
@@ -17,9 +17,9 @@ $$
 
 which has an analytical solution of the form,
 
-$$u(x,y,t) = \exp(-20 (x - a_x t)^2) \exp(-20 (y-a_y t)^2)$$
+$$u(x,y,t) = \exp(-20 (x - a_x t)^2) \\; \exp(-20 (y-a_y t)^2)$$
 
-We aim to train a model to learn the mapping from the solution field at time $t$, $u(x,y,t)$, to the solution field at future time $t + \Delta t$:
+We aim to train a model to learn the mapping from the solution field at time $t$, $u(x,y,t)$, to the solution field at future time, $t + \Delta t$:
 
 $$\sigma(u(x,y,t)) = u(x,y,t + \Delta t))$$
 

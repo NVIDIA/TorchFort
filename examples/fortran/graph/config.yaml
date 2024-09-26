@@ -4,10 +4,12 @@ general:
 model:
   type: torchscript
   parameters:
-    filename: "graph_torchscript.pt"
+    filename: "model_torchscript.pt"
 
 loss:
-  type: MSE
+  type: torchscript
+  parameters:
+    filename: "loss_torchscript.pt"
 
 optimizer:
   type: adam

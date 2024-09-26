@@ -134,6 +134,7 @@ target_sources(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/losses/l1_loss.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/losses/mse_loss.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/losses/torchscript_loss.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/cosine_annealing_lr.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/multistep_lr.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/polynomial_lr.cpp

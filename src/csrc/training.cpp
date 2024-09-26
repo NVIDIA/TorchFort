@@ -84,11 +84,12 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
 }
 
 void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t labels_in,
-                    float* loss_val, cudaStream_t ext_stream = 0) {
+                    float* loss_val, torchfort_tensor_list_t aux_loss_data_in, cudaStream_t ext_stream = 0) {
   torchfort::nvtx::rangePush("torchfort_train");
 
   auto inputs = static_cast<TensorList*>(inputs_in);
   auto labels = static_cast<TensorList*>(labels_in);
+  auto aux_loss_data = static_cast<TensorList*>(aux_loss_data_in);
 
   if (!models[name].optimizer) {
     THROW_INVALID_USAGE("Training requires an optimizer, but optimizer block was missing in configuration file.");
@@ -117,7 +118,7 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   // fwd pass
   auto results = model->forward(inputs->tensors);
   auto losses =
-      models[name].loss->forward(results, labels->tensors);
+      models[name].loss->forward(results, labels->tensors, (aux_loss_data) ? aux_loss_data->tensors : std::vector<torch::Tensor>());
 
   // extract loss
   *loss_val = losses[0].item<float>();

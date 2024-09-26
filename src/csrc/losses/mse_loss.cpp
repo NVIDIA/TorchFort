@@ -59,7 +59,8 @@ void MSELoss::setup(const ParamMap& params) {
 }
 
 std::vector<torch::Tensor> MSELoss::forward(const std::vector<torch::Tensor>& inputs,
-                                            const std::vector<torch::Tensor>& labels) {
+                                            const std::vector<torch::Tensor>& labels,
+                                            const std::vector<torch::Tensor>& aux_data) {
   auto x = inputs[0];
   auto y = labels[0];
   return std::vector<torch::Tensor>{module(x.flatten(), y.flatten())};

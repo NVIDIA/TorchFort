@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,60 +28,61 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-
+#include <filesystem>
 #include <memory>
+#include <set>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 #include <torch/enum.h>
 #include <torch/script.h>
 #include <torch/torch.h>
 
-#include "internal/base_loss.h"
-#include "internal/defines.h"
+#include "internal/losses.h"
 #include "internal/param_map.h"
+#include "internal/setup.h"
+#include "internal/utils.h"
 
 namespace torchfort {
 
-struct L1Loss : BaseLoss {
-  void setup(const ParamMap& params) override;
+void TorchscriptLoss::setup(const ParamMap& params) {
+  std::string jit_loss_fname;
+  try {
+    jit_loss_fname = params.get_param<std::string>("filename")[0];
+  } catch (std::out_of_range) {
+    THROW_INVALID_USAGE("filename parameter is required for torchscript loss type.");
+  }
 
-  std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs,
-                                     const std::vector<torch::Tensor>& labels,
-                                     const std::vector<torch::Tensor>& aux_data) override;
+  if (!std::filesystem::exists(jit_loss_fname)) {
+    THROW_INVALID_USAGE(jit_loss_fname + " does not exist.");
+  }
 
-  torch::nn::L1Loss module;
-};
+  module_jit = std::shared_ptr<torch::jit::Module>(new torch::jit::Module);
+  *module_jit = torch::jit::load(jit_loss_fname);
+}
 
-struct MSELoss : BaseLoss {
-  void setup(const ParamMap& params) override;
+std::vector<torch::Tensor> TorchscriptLoss::forward(const std::vector<torch::Tensor>& inputs,
+                                                    const std::vector<torch::Tensor>& labels,
+                                                    const std::vector<torch::Tensor>& aux_data) {
+  std::vector<torch::jit::IValue> inputs_jit;
+  inputs_jit.insert(inputs_jit.end(), inputs.begin(), inputs.end());
+  inputs_jit.insert(inputs_jit.end(), labels.begin(), labels.end());
+  inputs_jit.insert(inputs_jit.end(), aux_data.begin(), aux_data.end());
 
-  std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs,
-                                     const std::vector<torch::Tensor>& labels,
-                                     const std::vector<torch::Tensor>& aux_data) override;
-
-  torch::nn::MSELoss module;
-};
-
-struct TorchscriptLoss : BaseLoss {
-  void setup(const ParamMap& params) override;
-
-  std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs,
-                                     const std::vector<torch::Tensor>& labels,
-                                     const std::vector<torch::Tensor>& aux_data) override;
-
-  std::shared_ptr<torch::jit::Module> module_jit;
-};
-
-// Creating loss_registry.
-BEGIN_LOSS_REGISTRY
-
-// Add entries for new losses in this section. First argument to REGISTER_LOSS is
-// a string key and the second argument is the class name.
-REGISTER_LOSS(L1, L1Loss)
-REGISTER_LOSS(MSE, MSELoss)
-REGISTER_LOSS(torchscript, TorchscriptLoss)
-
-END_LOSS_REGISTRY
+  auto result = module_jit->forward(inputs_jit);
+  if (result.isTensor()) {
+    return std::vector<torch::Tensor>{result.toTensor()};
+  } else if (result.isTuple()) {
+    std::vector<torch::Tensor> tensors;
+    for (const auto& x : result.toTuple()->elements()) {
+      tensors.push_back(x.toTensor());
+    }
+    return tensors;
+  } else {
+    assert(true);
+  }
+  return std::vector<torch::Tensor>();
+}
 
 } // namespace torchfort

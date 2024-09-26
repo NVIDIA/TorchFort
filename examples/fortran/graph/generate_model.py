@@ -106,7 +106,7 @@ def main():
   except:
     print("PyTorch does not have CUDA support. Saving model on CPU.")
   model_jit = torch.jit.script(model)
-  model_jit.save("graph_torchscript.pt")
+  model_jit.save("model_torchscript.pt")
 
 if __name__ == "__main__":
   main()

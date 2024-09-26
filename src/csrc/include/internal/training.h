@@ -44,7 +44,7 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
                         cudaStream_t ext_stream = 0);
 
 void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t labels_in,
-                    float* loss_val, cudaStream_t ext_stream = 0);
+                    float* loss_val, torchfort_tensor_list_t loss_aux_data_in, cudaStream_t ext_stream = 0);
 
 template <MemoryLayout L, typename T>
 void inference(const char* name, T* input, size_t input_dim, int64_t* input_shape, T* output, size_t output_dim,
@@ -67,7 +67,7 @@ void train(const char* name, T* input, size_t input_dim, int64_t* input_shape, T
 
   // multiarg API expects float loss value, so use temporary here
   float loss_val_tmp;
-  train_multiarg(name, &inputs, &labels, &loss_val_tmp, ext_stream);
+  train_multiarg(name, &inputs, &labels, &loss_val_tmp, nullptr, ext_stream);
   *loss_val = loss_val_tmp;
 }
 

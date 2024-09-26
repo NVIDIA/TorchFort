@@ -26,7 +26,7 @@ $$\sigma(u(x,y,t)) = u(x,y,t + \Delta t))$$
 where $\sigma$ is the function that represents the model.
 
 For this example, we use the analytical solution as a stand-in for a real numerical solver, sequentially generating $u(x,y,t)$ samples
-at $\Delta t = 0.1$ intervals in time over the course of training, restarting the sequence when $t=5.0$. We compute corresponding analytical future solution fields, $u(x,y,t + \Delta t))$,
+at $\Delta t = 0.1$ intervals in time over the course of training, restarting the sequence when $t=5.0$. We compute corresponding analytical future solution fields, $u(x,y,t + \Delta t)$,
 to use as training labels.
 
 This example demostrates the usage of the multi-argument training and inference routines available in TorchFort and how to implement and use a custom loss function.

@@ -29,6 +29,14 @@ torchfort_result_t
 
 ------
 
+.. _torchfort_tensor_list_t-ref:
+
+torchfort_tensor_list_t
+-----------------------
+.. doxygentypedef :: torchfort_tensor_list_t
+
+------
+
 Global Context Settings
 =======================
 
@@ -40,6 +48,33 @@ torchfort_set_cudnn_benchmark
 -----------------------------
 .. doxygenfunction:: torchfort_set_cudnn_benchmark
 
+
+Tensor List Management
+======================
+
+.. _torchfort_tensor_list_create-ref:
+
+torchfort_tensor_list_create
+----------------------------
+.. doxygenfunction:: torchfort_tensor_list_create
+
+------
+
+.. _torchfort_tensor_list_destroy-ref:
+
+torchfort_tensor_list_destroy
+-----------------------------
+.. doxygenfunction:: torchfort_tensor_list_destroy
+
+------
+
+.. _torchfort_tensor_list_add_tensor-ref:
+
+torchfort_tensor_list_add_tensor
+--------------------------------
+.. doxygenfunction:: torchfort_tensor_list_add_tensor
+
+------
 
 .. _torchfort_general_c-ref:
 

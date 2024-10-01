@@ -39,6 +39,7 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 
+#include "internal/exceptions.h"
 #include "internal/losses.h"
 #include "internal/param_map.h"
 #include "internal/setup.h"
@@ -62,27 +63,19 @@ void TorchscriptLoss::setup(const ParamMap& params) {
   *module_jit = torch::jit::load(jit_loss_fname);
 }
 
-std::vector<torch::Tensor> TorchscriptLoss::forward(const std::vector<torch::Tensor>& inputs,
-                                                    const std::vector<torch::Tensor>& labels,
-                                                    const std::vector<torch::Tensor>& aux_data) {
+torch::Tensor TorchscriptLoss::forward(const std::vector<torch::Tensor>& inputs,
+                                       const std::vector<torch::Tensor>& labels,
+                                       const std::vector<torch::Tensor>& aux_data) {
   std::vector<torch::jit::IValue> inputs_jit;
   inputs_jit.insert(inputs_jit.end(), inputs.begin(), inputs.end());
   inputs_jit.insert(inputs_jit.end(), labels.begin(), labels.end());
   inputs_jit.insert(inputs_jit.end(), aux_data.begin(), aux_data.end());
 
   auto result = module_jit->forward(inputs_jit);
-  if (result.isTensor()) {
-    return std::vector<torch::Tensor>{result.toTensor()};
-  } else if (result.isTuple()) {
-    std::vector<torch::Tensor> tensors;
-    for (const auto& x : result.toTuple()->elements()) {
-      tensors.push_back(x.toTensor());
-    }
-    return tensors;
-  } else {
-    assert(true);
+  if (!result.isTensor()) {
+    THROW_INVALID_USAGE("TorchscriptLoss only supports returning a single loss tensor.");
   }
-  return std::vector<torch::Tensor>();
+  return result.toTensor();
 }
 
 } // namespace torchfort

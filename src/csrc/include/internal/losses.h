@@ -46,9 +46,9 @@ namespace torchfort {
 struct L1Loss : BaseLoss {
   void setup(const ParamMap& params) override;
 
-  std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs,
-                                     const std::vector<torch::Tensor>& labels,
-                                     const std::vector<torch::Tensor>& aux_data) override;
+  torch::Tensor forward(const std::vector<torch::Tensor>& inputs,
+                        const std::vector<torch::Tensor>& labels,
+                        const std::vector<torch::Tensor>& aux_data) override;
 
   torch::nn::L1Loss module;
 };
@@ -56,9 +56,9 @@ struct L1Loss : BaseLoss {
 struct MSELoss : BaseLoss {
   void setup(const ParamMap& params) override;
 
-  std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs,
-                                     const std::vector<torch::Tensor>& labels,
-                                     const std::vector<torch::Tensor>& aux_data) override;
+  torch::Tensor forward(const std::vector<torch::Tensor>& inputs,
+                        const std::vector<torch::Tensor>& labels,
+                        const std::vector<torch::Tensor>& aux_data) override;
 
   torch::nn::MSELoss module;
 };
@@ -66,9 +66,9 @@ struct MSELoss : BaseLoss {
 struct TorchscriptLoss : BaseLoss {
   void setup(const ParamMap& params) override;
 
-  std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs,
-                                     const std::vector<torch::Tensor>& labels,
-                                     const std::vector<torch::Tensor>& aux_data) override;
+  torch::Tensor forward(const std::vector<torch::Tensor>& inputs,
+                        const std::vector<torch::Tensor>& labels,
+                        const std::vector<torch::Tensor>& aux_data) override;
 
   std::shared_ptr<torch::jit::Module> module_jit;
 };

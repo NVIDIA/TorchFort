@@ -117,17 +117,15 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
 
   // fwd pass
   auto results = model->forward(inputs->tensors);
-  auto losses =
+  auto loss =
       models[name].loss->forward(results, labels->tensors, (aux_loss_data) ? aux_loss_data->tensors : std::vector<torch::Tensor>());
 
   // extract loss
-  *loss_val = losses[0].item<float>();
+  *loss_val = loss.item<float>();
 
   // bwd pass
   opt->zero_grad();
-  for (const auto& l : losses) {
-    l.backward();
-  }
+  loss.backward();
 
   // allreduce (average) gradients (if running distributed)
   if (models[name].comm) {

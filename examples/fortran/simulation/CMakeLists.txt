@@ -2,7 +2,6 @@ find_package(HDF5 COMPONENTS Fortran REQUIRED)
 
 set(fortran_example_targets
   train
-  train_multiarg
   train_distributed
 )
 
@@ -10,13 +9,6 @@ add_executable(train)
 target_sources(train
   PRIVATE
   train.f90
-  simulation.f90
-)
-
-add_executable(train_multiarg)
-target_sources(train_multiarg
-  PRIVATE
-  train_multiarg.f90
   simulation.f90
 )
 

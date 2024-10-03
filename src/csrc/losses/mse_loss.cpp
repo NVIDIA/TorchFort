@@ -61,8 +61,8 @@ void MSELoss::setup(const ParamMap& params) {
 
 torch::Tensor MSELoss::forward(const std::vector<torch::Tensor>& inputs,
                                const std::vector<torch::Tensor>& labels,
-                               const std::vector<torch::Tensor>& aux_data) {
-  if (inputs.size() != 1 || labels.size() != 1 || aux_data.size() != 0) {
+                               const std::vector<torch::Tensor>& extra_args) {
+  if (inputs.size() != 1 || labels.size() != 1 || extra_args.size() != 0) {
     THROW_INVALID_USAGE("MSELoss only supports one input tensor, one label tensor, and no extra arguments.");
   }
   auto x = inputs[0];

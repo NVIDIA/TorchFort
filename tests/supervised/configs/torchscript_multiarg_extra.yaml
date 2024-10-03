@@ -1,12 +1,12 @@
 model:
   type: torchscript
   parameters:
-    filename: model_multiarg.pt
+    filename: "model_multiarg.pt"
 
 loss:
   type: torchscript
   parameters:
-    filename: loss_multiarg_aux.pt
+    filename: "loss_multiarg_extra.pt"
 
 optimizer:
   type: adam

@@ -102,7 +102,7 @@ program train
   integer, allocatable:: triangles(:,:)
 
   type(torchfort_tensor_list) :: inputs, outputs, labels
-  type(torchfort_tensor_list) :: loss_aux_data
+  type(torchfort_tensor_list) :: extra_loss_args
 
   character(len=256) :: configfile = "config.yaml"
   integer :: model_device = 0
@@ -164,7 +164,7 @@ program train
   istat = torchfort_tensor_list_create(inputs)
   istat = torchfort_tensor_list_create(labels)
   istat = torchfort_tensor_list_create(outputs)
-  istat = torchfort_tensor_list_create(loss_aux_data)
+  istat = torchfort_tensor_list_create(extra_loss_args)
 
   !$acc host_data use_device(edge_idx, node_feats, edge_feats, node_labels, node_types, node_feats_rollout)
   istat = torchfort_tensor_list_add_tensor(inputs, edge_idx)
@@ -175,7 +175,7 @@ program train
 
   istat = torchfort_tensor_list_add_tensor(outputs, node_feats_rollout)
 
-  istat = torchfort_tensor_list_add_tensor(loss_aux_data, node_types)
+  istat = torchfort_tensor_list_add_tensor(extra_loss_args, node_types)
   !$acc end host_data
 
   ! Set up the model
@@ -190,7 +190,7 @@ program train
   do i = 1, 100000
     call f_xyt(node_feats, nodes, node_types, num_nodes, t)
     call f_xyt(node_labels, nodes, node_types, num_nodes, t + dt)
-    istat = torchfort_train_multiarg("mymodel", inputs, labels, loss_val, loss_aux_data)
+    istat = torchfort_train_multiarg("mymodel", inputs, labels, loss_val, extra_loss_args)
     t = t + dt
     if (t >= max_t) t = 0.0
   end do
@@ -240,6 +240,6 @@ program train
   istat = torchfort_tensor_list_destroy(inputs)
   istat = torchfort_tensor_list_destroy(labels)
   istat = torchfort_tensor_list_destroy(outputs)
-  istat = torchfort_tensor_list_destroy(loss_aux_data)
+  istat = torchfort_tensor_list_destroy(extra_loss_args)
 
 end program

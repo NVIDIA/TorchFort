@@ -65,11 +65,11 @@ void TorchscriptLoss::setup(const ParamMap& params) {
 
 torch::Tensor TorchscriptLoss::forward(const std::vector<torch::Tensor>& inputs,
                                        const std::vector<torch::Tensor>& labels,
-                                       const std::vector<torch::Tensor>& aux_data) {
+                                       const std::vector<torch::Tensor>& extra_args) {
   std::vector<torch::jit::IValue> inputs_jit;
   inputs_jit.insert(inputs_jit.end(), inputs.begin(), inputs.end());
   inputs_jit.insert(inputs_jit.end(), labels.begin(), labels.end());
-  inputs_jit.insert(inputs_jit.end(), aux_data.begin(), aux_data.end());
+  inputs_jit.insert(inputs_jit.end(), extra_args.begin(), extra_args.end());
 
   auto result = module_jit->forward(inputs_jit);
   if (!result.isTensor()) {

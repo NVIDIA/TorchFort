@@ -47,7 +47,7 @@
 
 template <typename T>
 T mse_loss(const std::vector<std::vector<T>>& inputs, const std::vector<std::vector<T>>& labels,
-           const std::vector<std::vector<T>>& aux_data) {
+           const std::vector<std::vector<T>>& extra_args) {
 
   T loss = 0.0;
   for (int i = 0; i < inputs[0].size(); ++i) {
@@ -59,7 +59,7 @@ T mse_loss(const std::vector<std::vector<T>>& inputs, const std::vector<std::vec
 
 template <typename T>
 T l1_loss(const std::vector<std::vector<T>>& inputs, const std::vector<std::vector<T>>& labels,
-          const std::vector<std::vector<T>>& aux_data) {
+          const std::vector<std::vector<T>>& extra_args) {
 
   T loss = 0.0;
   for (int i = 0; i < inputs[0].size(); ++i) {
@@ -71,10 +71,10 @@ T l1_loss(const std::vector<std::vector<T>>& inputs, const std::vector<std::vect
 
 template <typename T>
 T torchscript_loss(const std::vector<std::vector<T>>& inputs, const std::vector<std::vector<T>>& labels,
-                   const std::vector<std::vector<T>>& aux_data) {
+                   const std::vector<std::vector<T>>& extra_args) {
 
   T loss = 0.0;
-  if (aux_data.size() == 0) {
+  if (extra_args.size() == 0) {
     for (int j = 0; j < inputs.size(); ++j) {
       for (int i = 0; i < inputs[j].size(); ++i) {
         loss += inputs[j][i] + labels[j][i];
@@ -84,7 +84,7 @@ T torchscript_loss(const std::vector<std::vector<T>>& inputs, const std::vector<
   } else {
     for (int j = 0; j < inputs.size(); ++j) {
       for (int i = 0; i < inputs[j].size(); ++i) {
-        loss += inputs[j][i] + labels[j][i] + aux_data[j][i];
+        loss += inputs[j][i] + labels[j][i] + extra_args[j][i];
       }
     }
     loss /= (3.0 * inputs.size() * inputs[0].size());
@@ -137,7 +137,7 @@ void loss_test(const std::string& model_config, int dev_model, int dev_input, bo
 
 template<typename F>
 void loss_test_multiarg(const std::string& model_config, int dev_model, int dev_input, bool should_fail_train,
-                        bool use_aux_data, F func) {
+                        bool use_extra_args, F func) {
 
   std::string model_name = generate_random_name(10);
   CHECK_TORCHFORT(torchfort_create_model(model_name.c_str(), model_config.c_str(), dev_model));
@@ -157,10 +157,10 @@ void loss_test_multiarg(const std::string& model_config, int dev_model, int dev_
 
   float loss_val;
 
-  std::vector<std::vector<float>> aux_data;
-  if (use_aux_data) {
+  std::vector<std::vector<float>> extra_args;
+  if (use_extra_args) {
     for (int i = 0; i < 2; ++i) {
-      aux_data.push_back(generate_random<float>(shape));
+      extra_args.push_back(generate_random<float>(shape));
     }
   }
 
@@ -177,18 +177,18 @@ void loss_test_multiarg(const std::string& model_config, int dev_model, int dev_
     CHECK_TORCHFORT(torchfort_tensor_list_add_tensor(labels_tl, label_ptrs[i], shape.size(), shape.data(), TORCHFORT_FLOAT));
   }
 
-  torchfort_tensor_list_t aux_data_tl;
-  std::vector<float*> aux_data_ptrs(2);
-  if (use_aux_data) {
-    torchfort_tensor_list_create(&aux_data_tl);
+  torchfort_tensor_list_t extra_args_tl;
+  std::vector<float*> extra_args_ptrs(2);
+  if (use_extra_args) {
+    torchfort_tensor_list_create(&extra_args_tl);
     for (int i = 0; i < 2; ++i) {
-      aux_data_ptrs[i] = get_data_ptr(aux_data[i], dev_input);
-      CHECK_TORCHFORT(torchfort_tensor_list_add_tensor(aux_data_tl, aux_data_ptrs[i], shape.size(), shape.data(), TORCHFORT_FLOAT));
+      extra_args_ptrs[i] = get_data_ptr(extra_args[i], dev_input);
+      CHECK_TORCHFORT(torchfort_tensor_list_add_tensor(extra_args_tl, extra_args_ptrs[i], shape.size(), shape.data(), TORCHFORT_FLOAT));
     }
   }
 
   try {
-    CHECK_TORCHFORT(torchfort_train_multiarg(model_name.c_str(), inputs_tl, labels_tl, &loss_val, (use_aux_data) ? aux_data_tl : nullptr, 0));
+    CHECK_TORCHFORT(torchfort_train_multiarg(model_name.c_str(), inputs_tl, labels_tl, &loss_val, (use_extra_args) ? extra_args_tl : nullptr, 0));
   } catch (const torchfort::BaseException& e) {
     if (should_fail_train) {
       return;
@@ -197,20 +197,20 @@ void loss_test_multiarg(const std::string& model_config, int dev_model, int dev_
     }
   }
 
-  EXPECT_NEAR(loss_val, func(inputs, labels, aux_data), 1e-6);
+  EXPECT_NEAR(loss_val, func(inputs, labels, extra_args), 1e-6);
 
   for (int i = 0; i < 2; ++i) {
     free_data_ptr(input_ptrs[i], dev_input);
     free_data_ptr(label_ptrs[i], dev_input);
-    if (use_aux_data) {
-      free_data_ptr(aux_data_ptrs[i], dev_input);
+    if (use_extra_args) {
+      free_data_ptr(extra_args_ptrs[i], dev_input);
     }
   }
 
   CHECK_TORCHFORT(torchfort_tensor_list_destroy(inputs_tl));
   CHECK_TORCHFORT(torchfort_tensor_list_destroy(labels_tl));
-  if (use_aux_data) {
-    CHECK_TORCHFORT(torchfort_tensor_list_destroy(aux_data_tl));
+  if (use_extra_args) {
+    CHECK_TORCHFORT(torchfort_tensor_list_destroy(extra_args_tl));
   }
 
 }
@@ -227,8 +227,8 @@ TEST(TorchFort, TorchScriptLossCPUCPU) {
 TEST(TorchFort, TorchScriptLossMultiArgCPUCPU) {
   loss_test_multiarg("configs/torchscript_multiarg.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, false, torchscript_loss<float>);
 }
-TEST(TorchFort, TorchScriptLossMultiArgAuxDataCPUCPU) {
-  loss_test_multiarg("configs/torchscript_multiarg_aux.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, true, torchscript_loss<float>);
+TEST(TorchFort, TorchScriptLossMultiArgExtraCPUCPU) {
+  loss_test_multiarg("configs/torchscript_multiarg_extra.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, true, torchscript_loss<float>);
 }
 
 #ifdef ENABLE_GPU
@@ -270,14 +270,14 @@ TEST(TorchFort, TorchScriptLossMultiArgGPUGPU) {
   loss_test_multiarg("configs/torchscript_multiarg.yaml", 0, 0, false, false, torchscript_loss<float>);
 }
 
-TEST(TorchFort, TorchScriptLossMultiArgAuxDataCPUGPU) {
-  loss_test_multiarg("configs/torchscript_multiarg_aux.yaml", TORCHFORT_DEVICE_CPU, 0, false, true, torchscript_loss<float>);
+TEST(TorchFort, TorchScriptLossMultiArgExtraCPUGPU) {
+  loss_test_multiarg("configs/torchscript_multiarg_extra.yaml", TORCHFORT_DEVICE_CPU, 0, false, true, torchscript_loss<float>);
 }
-TEST(TorchFort, TorchScriptLossMultiArgAuxDataGPUCPU) {
-  loss_test_multiarg("configs/torchscript_multiarg_aux.yaml", 0, TORCHFORT_DEVICE_CPU, false, true, torchscript_loss<float>);
+TEST(TorchFort, TorchScriptLossMultiArgExtraGPUCPU) {
+  loss_test_multiarg("configs/torchscript_multiarg_extra.yaml", 0, TORCHFORT_DEVICE_CPU, false, true, torchscript_loss<float>);
 }
-TEST(TorchFort, TorchScriptLossMultiArgAuxDataGPUGPU) {
-  loss_test_multiarg("configs/torchscript_multiarg_aux.yaml", 0, 0, false, true, torchscript_loss<float>);
+TEST(TorchFort, TorchScriptLossMultiArgExtraGPUGPU) {
+  loss_test_multiarg("configs/torchscript_multiarg_extra.yaml", 0, 0, false, true, torchscript_loss<float>);
 }
 #endif
 

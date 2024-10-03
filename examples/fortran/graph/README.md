@@ -47,7 +47,7 @@ which in this case are the values of $u(x,y,t)$ at the mesh nodes.
 [`generate_loss.py`](generate_loss.py) contains a PyTorch script to define a custom loss function typical of a MeshGraphNet training. In particular, this loss function computes an MSE loss over the mesh nodes, excluding nodes along the
 mesh boundaries, which are often fixed user-prescribed values (e.g., a constant inflow boundary condition). The built-in loss functions within TorchFort do not provide the flexibility to accomplish this, so instead, we use a custom
 loss function defined in PyTorch and exported with TorchScript. Similar to the model, this loss function takes multiple input arguments (`prediction`, `label` and `node_types`) which reqiures the use of the `torchfort_train_multiarg` function.
-While the `prediction` and `label` arguements are already provided automatically in the training backend, the additional `node_types` tensor must be provided using the `loss_aux_data` argument of `torchfort_train_multiarg`. We select this custom loss function by defining the following block in the configuration file [`config.yaml`](config.yaml):
+While the `prediction` and `label` arguments are already provided automatically in the training backend, the additional `node_types` tensor must be provided using the `extra_loss_args` argument of `torchfort_train_multiarg`. We select this custom loss function by defining the following block in the configuration file [`config.yaml`](config.yaml):
 ```
 loss:
   type: torchscript

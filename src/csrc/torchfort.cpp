@@ -211,10 +211,10 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
 }
 
 torchfort_result_t torchfort_train_multiarg(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
-                                            float* loss_val, torchfort_tensor_list_t loss_aux_data, cudaStream_t stream) {
+                                            float* loss_val, torchfort_tensor_list_t extra_loss_args, cudaStream_t stream) {
   using namespace torchfort;
   try {
-    torchfort::train_multiarg(name, inputs, labels, loss_val, loss_aux_data, stream);
+    torchfort::train_multiarg(name, inputs, labels, loss_val, extra_loss_args, stream);
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();

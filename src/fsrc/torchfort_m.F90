@@ -161,13 +161,13 @@ module torchfort
     end function torchfort_train_c
 
     function torchfort_train_multiarg_c(mname, inputs, labels, &
-                                        loss_val, loss_aux_data, stream) result(res) &
+                                        loss_val, extra_loss_args, stream) result(res) &
       bind(C, name="torchfort_train_multiarg")
       import
       character(kind=c_char) :: mname(*)
       type(torchfort_tensor_list), value :: inputs, labels
       real(c_float) :: loss_val
-      type(torchfort_tensor_list), value :: loss_aux_data
+      type(torchfort_tensor_list), value :: extra_loss_args
       integer(int64), value :: stream
       integer(c_int) :: res
     end function torchfort_train_multiarg_c
@@ -1960,25 +1960,25 @@ contains
   end function torchfort_train_double_5d_dev
 #endif
 
-  function torchfort_train_multiarg(mname, inputs, labels, loss_val, loss_aux_data, stream) result(res)
+  function torchfort_train_multiarg(mname, inputs, labels, loss_val, extra_loss_args, stream) result(res)
     character(len=*) :: mname
     type(torchfort_tensor_list):: inputs, labels
     real(real32) :: loss_val
-    type(torchfort_tensor_list), optional :: loss_aux_data
+    type(torchfort_tensor_list), optional :: extra_loss_args
     integer(int64), optional :: stream
     integer(c_int) :: res
 
-    type(torchfort_tensor_list) :: loss_aux_data_
+    type(torchfort_tensor_list) :: extra_loss_args_
     integer(int64) :: stream_
 
-    loss_aux_data_%member = C_NULL_PTR
-    if (present(loss_aux_data)) loss_aux_data_ = loss_aux_data
+    extra_loss_args_%member = C_NULL_PTR
+    if (present(extra_loss_args)) extra_loss_args_ = extra_loss_args
     stream_ = 0
     if (present(stream)) stream_ = stream
 
     res =  torchfort_train_multiarg_c([trim(mname), C_NULL_CHAR], &
                                       inputs, labels, loss_val, &
-                                      loss_aux_data_, stream_)
+                                      extra_loss_args_, stream_)
   end function torchfort_train_multiarg
 
   function torchfort_save_model(mname, fname) result(res)

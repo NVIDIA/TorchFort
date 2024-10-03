@@ -55,6 +55,6 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/l1.yaml DESTINATION ${CMAKE_IN
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/l1_multiarg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiarg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiarg_aux.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiarg_extra.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiout.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/scripts/setup_tests.py DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/scripts)

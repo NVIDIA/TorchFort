@@ -127,7 +127,7 @@ can be one generated using the ``torchfort_save_model`` function or one found wi
 Multi-argument API
 ------------------
 While the functions described in the previous sections cover the most models which work on single input/label/output tensors, TorchFort supports more complex models that require multiple input/label/output tensors
-as well as custom loss functions with auxiliary data tensors (e.g., an indexing tensor for masking). To accomplish this, we have alternative training and inference functions that accept TorchFort tensor lists as arguments, which contain
+as well as custom loss functions with additional tensor arguments (e.g., an indexing tensor for masking). To accomplish this, we have alternative training and inference functions that accept TorchFort tensor lists as arguments, which contain
 one or more tensors.
 
 To run a training step using the multi-argument training function, run the following:
@@ -136,13 +136,13 @@ To run a training step using the multi-argument training function, run the follo
 
   .. code-tab:: fortran
 
-    istat = torchfort_train_multiarg(inputs, labels, loss_val, loss_aux_data, stream)
+    istat = torchfort_train_multiarg(inputs, labels, loss_val, extra_loss_args, stream)
 
   .. code-tab:: c++
 
-    istat = torchfort_train_multiarg(inputs, labels, loss_val, loss_aux_data, stream);
+    istat = torchfort_train_multiarg(inputs, labels, loss_val, extra_loss_args, stream);
 
-where ``inputs``, ``labels``, and ``loss_aux_data`` are Torchfort tensor lists.
+where ``inputs``, ``labels``, and ``extra_loss_args`` are Torchfort tensor lists.
 
 You must create and populate tensor lists to use with this function. For example, to create an ``inputs`` tensor list containing two tensors, run the following:
 
@@ -170,7 +170,7 @@ Internally, the training backend unpacks the tensor lists and provides them to t
   predictions = model.forward(inputs[0], inputs[1], ..., inputs[n]);
   loss_val = loss.forward(predictions[0], predictions[1], ..., predictions[n],
                           labels[0], labels[1], ..., labels[n],
-                          loss_aux_data[0], loss_aux_data[1], ..., loss_aux_data[n]);
+                          extra_loss_args[0], extra_loss_args[1], ..., extra_loss_args[n]);
 
 As you can see, this multi-argument training function enables more complexity in model and loss function definitions.
 

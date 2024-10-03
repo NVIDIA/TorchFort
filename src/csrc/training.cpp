@@ -92,7 +92,7 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
 }
 
 void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t labels_in,
-                    float* loss_val, torchfort_tensor_list_t aux_loss_data_in, cudaStream_t ext_stream = 0) {
+                    float* loss_val, torchfort_tensor_list_t extra_loss_args_in, cudaStream_t ext_stream = 0) {
   torchfort::nvtx::rangePush("torchfort_train");
 
   if (!inputs_in || !labels_in) {
@@ -100,7 +100,7 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   }
   auto inputs = static_cast<TensorList*>(inputs_in);
   auto labels = static_cast<TensorList*>(labels_in);
-  auto aux_loss_data = static_cast<TensorList*>(aux_loss_data_in);
+  auto extra_loss_args = static_cast<TensorList*>(extra_loss_args_in);
 
   if (models.count(name) == 0) {
     THROW_INVALID_USAGE("Invalid model name provided.");
@@ -133,7 +133,7 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   // fwd pass
   auto results = model->forward(inputs->tensors);
   auto loss =
-      models[name].loss->forward(results, labels->tensors, (aux_loss_data) ? aux_loss_data->tensors : std::vector<torch::Tensor>());
+      models[name].loss->forward(results, labels->tensors, (extra_loss_args) ? extra_loss_args->tensors : std::vector<torch::Tensor>());
 
   // extract loss
   *loss_val = loss.item<float>();

@@ -27,11 +27,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <chrono>
 #include <cmath>
-#include <functional>
-#include <numeric>
-#include <random>
 #include <string>
 #include <vector>
 
@@ -47,52 +43,7 @@
 #include "internal/exceptions.h"
 #include "internal/utils.h"
 
-template <typename T>
-std::vector<T> generate_random(const std::vector<int64_t>& shape) {
-
-  int64_t num_values = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
-  std::vector<T> data(num_values);
-
-  std::mt19937 generator;
-  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-  generator.seed(seed);
-  std::uniform_real_distribution<T> dist((T)0, (T)1);
-
-  auto r = [&]() {
-    return dist(generator);
-  };
-
-  std::generate(data.begin(), data.end(), r);
-
-  return data;
-
-}
-
-template <typename T>
-T* get_data_ptr(std::vector<T>& data, int dev) {
-  T* data_ptr;
-#ifdef ENABLE_GPU
-  if (dev == TORCHFORT_DEVICE_CPU) {
-    data_ptr = data.data();
-  } else {
-    CHECK_CUDA(cudaMalloc(&data_ptr, data.size() * sizeof(T(0))));
-    CHECK_CUDA(cudaMemcpy(data_ptr, data.data(), data.size() * sizeof(T(0)), cudaMemcpyHostToDevice));
-  }
-#else
-  data_ptr = data.data();
-#endif
-
-  return data_ptr;
-}
-
-template <typename T>
-void free_data_ptr(T* data_ptr, int dev) {
-#ifdef ENABLE_GPU
-  if (dev != TORCHFORT_DEVICE_CPU) {
-    CHECK_CUDA(cudaFree(data_ptr));
-  }
-#endif
-}
+#include "test_utils.h"
 
 template <typename T>
 T mse_loss(const std::vector<std::vector<T>>& inputs, const std::vector<std::vector<T>>& labels,
@@ -145,7 +96,8 @@ T torchscript_loss(const std::vector<std::vector<T>>& inputs, const std::vector<
 template<typename F>
 void loss_test(const std::string& model_config, int dev_model, int dev_input, bool should_fail_train, F func) {
 
-  CHECK_TORCHFORT(torchfort_create_model("mymodel", model_config.c_str(), dev_model));
+  std::string model_name = generate_random_name(10);
+  CHECK_TORCHFORT(torchfort_create_model(model_name.c_str(), model_config.c_str(), dev_model));
 
 #ifdef ENABLE_GPU
   if (dev_input != TORCHFORT_DEVICE_CPU) {
@@ -162,9 +114,12 @@ void loss_test(const std::string& model_config, int dev_model, int dev_input, bo
   float *label_ptr = get_data_ptr(label, dev_input);
 
   try {
-    CHECK_TORCHFORT(torchfort_train("mymodel", input_ptr, shape.size(), shape.data(),
+    CHECK_TORCHFORT(torchfort_train(model_name.c_str(), input_ptr, shape.size(), shape.data(),
                                     label_ptr, shape.size(), shape.data(), &loss_val,
                                     TORCHFORT_FLOAT, 0));
+    if (should_fail_train) {
+      FAIL() << "This test should fail train call, but did not.";
+    }
   } catch (const torchfort::BaseException& e) {
     if (should_fail_train) {
       return;
@@ -184,7 +139,8 @@ template<typename F>
 void loss_test_multiarg(const std::string& model_config, int dev_model, int dev_input, bool should_fail_train,
                         bool use_aux_data, F func) {
 
-  CHECK_TORCHFORT(torchfort_create_model("mymodel", model_config.c_str(), dev_model));
+  std::string model_name = generate_random_name(10);
+  CHECK_TORCHFORT(torchfort_create_model(model_name.c_str(), model_config.c_str(), dev_model));
 
 #ifdef ENABLE_GPU
   if (dev_input != TORCHFORT_DEVICE_CPU) {
@@ -232,7 +188,7 @@ void loss_test_multiarg(const std::string& model_config, int dev_model, int dev_
   }
 
   try {
-    CHECK_TORCHFORT(torchfort_train_multiarg("mymodel", inputs_tl, labels_tl, &loss_val, (use_aux_data) ? aux_data_tl : nullptr, 0));
+    CHECK_TORCHFORT(torchfort_train_multiarg(model_name.c_str(), inputs_tl, labels_tl, &loss_val, (use_aux_data) ? aux_data_tl : nullptr, 0));
   } catch (const torchfort::BaseException& e) {
     if (should_fail_train) {
       return;

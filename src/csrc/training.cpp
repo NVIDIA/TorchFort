@@ -53,6 +53,14 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
                         cudaStream_t ext_stream = 0) {
   torchfort::nvtx::rangePush("torchfort_inference");
 
+  if (models.count(name) == 0) {
+    THROW_INVALID_USAGE("Invalid model name provided.");
+  }
+
+  if (!inputs_in || !outputs_in) {
+    THROW_INVALID_USAGE("Input and output tensor lists are required.");
+  }
+
   auto inputs = static_cast<TensorList*>(inputs_in);
   auto outputs = static_cast<TensorList*>(outputs_in);
 
@@ -87,9 +95,16 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
                     float* loss_val, torchfort_tensor_list_t aux_loss_data_in, cudaStream_t ext_stream = 0) {
   torchfort::nvtx::rangePush("torchfort_train");
 
+  if (!inputs_in || !labels_in) {
+    THROW_INVALID_USAGE("Input and label tensor lists are required.");
+  }
   auto inputs = static_cast<TensorList*>(inputs_in);
   auto labels = static_cast<TensorList*>(labels_in);
   auto aux_loss_data = static_cast<TensorList*>(aux_loss_data_in);
+
+  if (models.count(name) == 0) {
+    THROW_INVALID_USAGE("Invalid model name provided.");
+  }
 
   if (!models[name].optimizer) {
     THROW_INVALID_USAGE("Training requires an optimizer, but optimizer block was missing in configuration file.");

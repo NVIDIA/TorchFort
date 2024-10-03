@@ -287,6 +287,9 @@ torchfort_result_t torchfort_inference_multiarg(const char* name, torchfort_tens
 torchfort_result_t torchfort_save_model(const char* name, const char* fname) {
   using namespace torchfort;
   try {
+    if (models.count(name) == 0) {
+      THROW_INVALID_USAGE("Invalid model name provided.");
+    }
     models[name].model->save(fname);
   } catch (const BaseException& e) {
     std::cerr << e.what();
@@ -298,6 +301,9 @@ torchfort_result_t torchfort_save_model(const char* name, const char* fname) {
 torchfort_result_t torchfort_load_model(const char* name, const char* fname) {
   using namespace torchfort;
   try {
+    if (models.count(name) == 0) {
+      THROW_INVALID_USAGE("Invalid model name provided.");
+    }
     models[name].model->load(fname);
     if (models[name].optimizer) {
       models[name].optimizer->parameters() = models[name].model->parameters();
@@ -321,6 +327,9 @@ torchfort_result_t torchfort_save_checkpoint(const char* name, const char* check
       }
     }
 
+    if (models.count(name) == 0) {
+      THROW_INVALID_USAGE("Invalid model name provided.");
+    }
     save_model_pack(models[name], root_dir, true);
   } catch (const BaseException& e) {
     std::cerr << e.what();
@@ -335,6 +344,9 @@ torchfort_result_t torchfort_load_checkpoint(const char* name, const char* check
   try {
     std::filesystem::path root_dir{checkpoint_dir};
 
+    if (models.count(name) == 0) {
+      THROW_INVALID_USAGE("Invalid model name provided.");
+    }
     load_model_pack(models[name], root_dir, true);
 
     if (step_train) {

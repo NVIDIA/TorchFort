@@ -18,6 +18,7 @@ foreach(tgt ${test_targets})
     ${YAML_CPP_INCLUDE_DIR}
     ${MPI_CXX_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../
   )
   target_link_libraries(${tgt} PRIVATE ${PROJECT_NAME})
   target_link_libraries(${tgt} PRIVATE ${TORCH_LIBRARIES})

@@ -35,7 +35,7 @@
 /**
  * @brief This enum defines the data types supported.
  */
-enum torchfort_datatype_t { TORCHFORT_FLOAT = -1, TORCHFORT_DOUBLE = -2 };
+enum torchfort_datatype_t { TORCHFORT_FLOAT = -1, TORCHFORT_DOUBLE = -2, TORCHFORT_INT32 = -3, TORCHFORT_INT64 = -4 };
 
 /**
  * @brief This enum defines the possible values return values from TorchFort. Most functions in the TorchFort library

@@ -1,0 +1,12 @@
+model:
+  type: torchscript
+  parameters:
+    filename: model.pt
+
+loss:
+  type: torchscript
+  parameters:
+    filename: loss_multiout.pt
+
+optimizer:
+  type: adam

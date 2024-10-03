@@ -38,6 +38,8 @@ module torchfort
   enum, bind(c) ! torchfort_data_type
     enumerator :: TORCHFORT_FLOAT = -1
     enumerator :: TORCHFORT_DOUBLE = -2
+    enumerator :: TORCHFORT_INT32 = -3
+    enumerator :: TORCHFORT_INT64 = -4
   end enum
 
   ! enum for torchfort supported device types
@@ -83,6 +85,11 @@ module torchfort
   end interface
 #endif
 
+  ! Opaque handle to torchfort_tensor_list
+  type, bind(c) :: torchfort_tensor_list
+    type(c_ptr) :: member
+  end type torchfort_tensor_list
+
   ! Interfaces to C functions
   interface
     function torchfort_wandb_log_int_c(mname, metric_name, step, val) result(res) &
@@ -93,7 +100,7 @@ module torchfort
       integer(c_int32_t), value :: val
       integer(c_int) :: res
     end function torchfort_wandb_log_int_c
-     
+
     function torchfort_wandb_log_float_c(mname, metric_name, step, val) result(res) &
       bind(C, name="torchfort_wandb_log_float")
       import
@@ -127,6 +134,15 @@ module torchfort
       integer(c_int) :: res
     end function torchfort_inference_c
 
+    function torchfort_inference_multiarg_c(mname, inputs, outputs, stream) result(res) &
+      bind(C, name="torchfort_inference_multiarg")
+      import
+      character(kind=c_char) :: mname(*)
+      type(torchfort_tensor_list), value :: inputs, outputs
+      integer(int64), value :: stream
+      integer(c_int) :: res
+    end function torchfort_inference_multiarg_c
+
     function torchfort_train_c(mname, input, input_dim, input_shape, &
                                label, label_dim, label_shape, &
                                loss_val, dtype, stream) result(res) &
@@ -143,6 +159,18 @@ module torchfort
       integer(int64), value :: stream
       integer(c_int) :: res
     end function torchfort_train_c
+
+    function torchfort_train_multiarg_c(mname, inputs, labels, &
+                                        loss_val, extra_loss_args, stream) result(res) &
+      bind(C, name="torchfort_train_multiarg")
+      import
+      character(kind=c_char) :: mname(*)
+      type(torchfort_tensor_list), value :: inputs, labels
+      real(c_float) :: loss_val
+      type(torchfort_tensor_list), value :: extra_loss_args
+      integer(int64), value :: stream
+      integer(c_int) :: res
+    end function torchfort_train_multiarg_c
 
     function torchfort_set_cudnn_benchmark_c(flag) result(res) &
       bind(C, name="torchfort_set_cudnn_benchmark")
@@ -164,14 +192,14 @@ module torchfort
       integer(c_int) :: seed
       integer(c_int) :: res
     end function torchfort_set_manual_seed_c
-    
+
     function torchfort_set_cuda_manual_seed_c(seed) result(res) &
       bind(C, name="torchfort_set_cuda_manual_seed")
       import
       integer(c_int) :: seed
       integer(c_int) :: res
     end function torchfort_set_cuda_manual_seed_c
-    
+
     function torchfort_create_model_c(mname, fname, dev) result(res) &
       bind(C, name="torchfort_create_model")
       import
@@ -254,7 +282,7 @@ module torchfort
       real(c_double), value :: val
       integer(c_int) :: res
     end function torchfort_rl_off_policy_wandb_log_double_c
-    
+
     ! creation
     function torchfort_rl_off_policy_create_system_c(mname, fname, model_dev, rb_dev) result(res) &
       bind(C, name="torchfort_rl_off_policy_create_system")
@@ -351,7 +379,7 @@ module torchfort
       import
       character(kind=c_char) :: mname(*)
       !dir$ ignore_tkr (dk)state, (dk)act
-      !GCC$ attributes no_arg_check :: state, act  
+      !GCC$ attributes no_arg_check :: state, act
       real(c_float) :: state(*), act(*)
       integer(c_size_t), value :: state_dim, act_dim
       integer(c_int64_t) :: state_shape(*), act_shape(*)
@@ -535,6 +563,35 @@ module torchfort
       integer(c_int) :: res
     end function torchfort_rl_on_policy_evaluate_c
 
+    ! Tensor list management
+    function torchfort_tensor_list_create(tensor_list) result(res) &
+      bind(C, name="torchfort_tensor_list_create")
+      import
+      type(torchfort_tensor_list) :: tensor_list
+      integer(c_int) :: res
+    end function torchfort_tensor_list_create
+
+    function torchfort_tensor_list_destroy(tensor_list) result(res) &
+      bind(C, name="torchfort_tensor_list_destroy")
+      import
+      type(torchfort_tensor_list), value :: tensor_list
+      integer(c_int) :: res
+    end function torchfort_tensor_list_destroy
+
+    function torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                                                dtype) result(res) &
+      bind(C, name="torchfort_tensor_list_add_tensor_F")
+      import
+      type(torchfort_tensor_list), value :: tensor_list
+      !dir$ ignore_tkr (tkd)data_arr
+      !GCC$ attributes no_arg_check :: data_arr
+      real(c_float) :: data_arr(*)
+      integer(c_size_t), value :: data_dim
+      integer(c_int64_t) :: data_shape(*)
+      integer(c_int), value :: dtype
+      integer(c_int) :: res
+    end function torchfort_tensor_list_add_tensor_c
+
   end interface
 
   ! Generic interface for W&B logging
@@ -545,7 +602,7 @@ module torchfort
     module procedure torchfort_wandb_log_float_int32step
     module procedure torchfort_wandb_log_double_int32step
   end interface
-  
+
   ! Generic interface for inference
   interface torchfort_inference
     module procedure torchfort_inference_float_2d
@@ -611,7 +668,7 @@ module torchfort
     module procedure torchfort_rl_off_policy_create_distributed_system_MPI_F08
     module procedure torchfort_rl_off_policy_create_distributed_system_type
   end interface torchfort_rl_off_policy_create_distributed_system
- 
+
   interface torchfort_rl_off_policy_wandb_log
     module procedure torchfort_rl_off_policy_wandb_log_int
     module procedure torchfort_rl_off_policy_wandb_log_float
@@ -619,7 +676,7 @@ module torchfort
     module procedure torchfort_rl_off_policy_wandb_log_float_int32step
     module procedure torchfort_rl_off_policy_wandb_log_double_int32step
   end interface torchfort_rl_off_policy_wandb_log
- 
+
   ! Generic interface for training
   interface torchfort_rl_off_policy_update_replay_buffer
      module procedure torchfort_rl_off_policy_update_replay_buffer_float_1d_1d
@@ -635,7 +692,7 @@ module torchfort
   interface torchfort_rl_off_policy_train_step
      module procedure torchfort_rl_off_policy_train_step_float
   end interface torchfort_rl_off_policy_train_step
-  
+
   interface torchfort_rl_off_policy_predict_explore
      module procedure torchfort_rl_off_policy_predict_explore_float_2d_2d
      module procedure torchfort_rl_off_policy_predict_explore_float_4d_4d
@@ -733,6 +790,52 @@ module torchfort
 #endif
   end interface torchfort_rl_on_policy_evaluate
 
+  ! Generic interface for tensor list management
+  interface torchfort_tensor_list_add_tensor
+    module procedure torchfort_tensor_list_add_tensor_float_1d
+    module procedure torchfort_tensor_list_add_tensor_double_1d
+    module procedure torchfort_tensor_list_add_tensor_int32_1d
+    module procedure torchfort_tensor_list_add_tensor_int64_1d
+    module procedure torchfort_tensor_list_add_tensor_float_2d
+    module procedure torchfort_tensor_list_add_tensor_double_2d
+    module procedure torchfort_tensor_list_add_tensor_int32_2d
+    module procedure torchfort_tensor_list_add_tensor_int64_2d
+    module procedure torchfort_tensor_list_add_tensor_float_3d
+    module procedure torchfort_tensor_list_add_tensor_double_3d
+    module procedure torchfort_tensor_list_add_tensor_int32_3d
+    module procedure torchfort_tensor_list_add_tensor_int64_3d
+    module procedure torchfort_tensor_list_add_tensor_float_4d
+    module procedure torchfort_tensor_list_add_tensor_double_4d
+    module procedure torchfort_tensor_list_add_tensor_int32_4d
+    module procedure torchfort_tensor_list_add_tensor_int64_4d
+    module procedure torchfort_tensor_list_add_tensor_float_5d
+    module procedure torchfort_tensor_list_add_tensor_double_5d
+    module procedure torchfort_tensor_list_add_tensor_int32_5d
+    module procedure torchfort_tensor_list_add_tensor_int64_5d
+#ifdef _CUDA
+    module procedure torchfort_tensor_list_add_tensor_float_1d_dev
+    module procedure torchfort_tensor_list_add_tensor_double_1d_dev
+    module procedure torchfort_tensor_list_add_tensor_int32_1d_dev
+    module procedure torchfort_tensor_list_add_tensor_int64_1d_dev
+    module procedure torchfort_tensor_list_add_tensor_float_2d_dev
+    module procedure torchfort_tensor_list_add_tensor_double_2d_dev
+    module procedure torchfort_tensor_list_add_tensor_int32_2d_dev
+    module procedure torchfort_tensor_list_add_tensor_int64_2d_dev
+    module procedure torchfort_tensor_list_add_tensor_float_3d_dev
+    module procedure torchfort_tensor_list_add_tensor_double_3d_dev
+    module procedure torchfort_tensor_list_add_tensor_int32_3d_dev
+    module procedure torchfort_tensor_list_add_tensor_int64_3d_dev
+    module procedure torchfort_tensor_list_add_tensor_float_4d_dev
+    module procedure torchfort_tensor_list_add_tensor_double_4d_dev
+    module procedure torchfort_tensor_list_add_tensor_int32_4d_dev
+    module procedure torchfort_tensor_list_add_tensor_int64_4d_dev
+    module procedure torchfort_tensor_list_add_tensor_float_5d_dev
+    module procedure torchfort_tensor_list_add_tensor_double_5d_dev
+    module procedure torchfort_tensor_list_add_tensor_int32_5d_dev
+    module procedure torchfort_tensor_list_add_tensor_int64_5d_dev
+#endif
+  end interface torchfort_tensor_list_add_tensor
+
 contains
 
   ! global routines
@@ -753,13 +856,13 @@ contains
     integer(c_int) :: res
     res = torchfort_set_manual_seed_c(seed)
   end function torchfort_set_manual_seed
-  
+
   function torchfort_set_cuda_manual_seed(seed) result(res)
     integer(c_int) :: seed
     integer(c_int) :: res
     res = torchfort_set_cuda_manual_seed_c(seed)
   end function torchfort_set_cuda_manual_seed
-  
+
   ! Setup routines
   function torchfort_create_model(mname, fname, dev) result(res)
     character(len=*) :: mname, fname
@@ -821,7 +924,7 @@ contains
     res = torchfort_wandb_log_int_c([trim(mname), C_NULL_CHAR], [trim(metric_name), C_NULL_CHAR], &
                                     step, val)
   end function torchfort_wandb_log_int
-  
+
   function torchfort_wandb_log_float(mname, metric_name, step, val) result(res)
     character(len=*) :: mname, metric_name
     integer(int64) :: step
@@ -1343,6 +1446,21 @@ contains
   end function torchfort_inference_double_5d_dev
 #endif
 
+  function torchfort_inference_multiarg(mname, inputs, outputs, stream) result(res)
+    character(len=*) :: mname
+    type(torchfort_tensor_list) :: inputs, outputs
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    res = torchfort_inference_multiarg_c([trim(mname), C_NULL_CHAR], &
+                                         inputs, outputs, stream_)
+  end function torchfort_inference_multiarg
+
   ! Training routines
   function torchfort_train_float_2d(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
@@ -1842,6 +1960,27 @@ contains
   end function torchfort_train_double_5d_dev
 #endif
 
+  function torchfort_train_multiarg(mname, inputs, labels, loss_val, extra_loss_args, stream) result(res)
+    character(len=*) :: mname
+    type(torchfort_tensor_list):: inputs, labels
+    real(real32) :: loss_val
+    type(torchfort_tensor_list), optional :: extra_loss_args
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    type(torchfort_tensor_list) :: extra_loss_args_
+    integer(int64) :: stream_
+
+    extra_loss_args_%member = C_NULL_PTR
+    if (present(extra_loss_args)) extra_loss_args_ = extra_loss_args
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    res =  torchfort_train_multiarg_c([trim(mname), C_NULL_CHAR], &
+                                      inputs, labels, loss_val, &
+                                      extra_loss_args_, stream_)
+  end function torchfort_train_multiarg
+
   function torchfort_save_model(mname, fname) result(res)
     character(len=*) :: mname
     character(len=*) :: fname
@@ -1942,7 +2081,7 @@ contains
     res = torchfort_rl_off_policy_wandb_log_double_c([trim(mname), C_NULL_CHAR], [trim(metric_name), C_NULL_CHAR], &
                                                      step64, val)
   end function torchfort_rl_off_policy_wandb_log_double_int32step
-  
+
   ! System creation routines
   function torchfort_rl_off_policy_create_system(name, fname, model_dev, rb_dev) result(res)
     character(len=*) :: name, fname
@@ -1956,9 +2095,9 @@ contains
     integer :: comm
     integer(c_int) :: model_dev, rb_dev
     integer(c_int) :: res
-    
+
     type(MPI_F_Comm) :: mpi_comm_f
-    
+
     mpi_comm_f%comm = comm
     res = torchfort_rl_off_policy_create_distributed_system_type(mname, fname, mpi_comm_f, model_dev, rb_dev)
   end function torchfort_rl_off_policy_create_distributed_system_MPI_F
@@ -1971,9 +2110,9 @@ contains
     type(MPI_Comm) :: comm
     integer(c_int) :: model_dev, rb_dev
     integer(c_int) :: res
-    
+
     type(MPI_F_Comm) :: mpi_comm_f
-    
+
     mpi_comm_f%comm = comm%MPI_VAL
     res = torchfort_rl_off_policy_create_distributed_system_type(mname, fname, mpi_comm_f, model_dev, rb_dev)
   end function torchfort_rl_off_policy_create_distributed_system_MPI_F08
@@ -2046,7 +2185,7 @@ contains
                                                             reward, cterminal, TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_1d_1d
-  
+
   function torchfort_rl_off_policy_update_replay_buffer_float_3d_3d(mname, state_old, act_old, state_new, &
                                                                     reward, terminal, stream) result(res)
     character(len=*) :: mname
@@ -2057,7 +2196,7 @@ contains
     integer(c_int) :: res
 
     integer(int64) :: stream_
-    
+
     integer(c_size_t) :: state_dim, act_dim
     state_dim = size(shape(state_old))
     act_dim = size(shape(act_old))
@@ -2115,7 +2254,7 @@ contains
                                                             reward, cterminal, TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_1d_1d_dev
-  
+
   function torchfort_rl_off_policy_update_replay_buffer_float_3d_3d_dev(mname, state_old, act_old, state_new, &
                                                                         reward, terminal, stream) result(res)
     character(len=*) :: mname
@@ -2126,7 +2265,7 @@ contains
     integer(c_int) :: res
 
     integer(int64) :: stream_
-    
+
     integer(c_size_t) :: state_dim, act_dim
     state_dim = size(shape(state_old))
     act_dim = size(shape(act_old))
@@ -2219,7 +2358,7 @@ contains
                                                             reward, cterminal, TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_3d_1d_dev
-#endif  
+#endif
 
   function torchfort_rl_off_policy_is_ready(mname, ready) result(res)
     character(len=*) :: mname
@@ -2227,7 +2366,7 @@ contains
     integer(c_int) :: res
     res = torchfort_rl_off_policy_is_ready_c([trim(mname), C_NULL_CHAR], ready)
   end function torchfort_rl_off_policy_is_ready
-  
+
   function torchfort_rl_off_policy_train_step_float(mname, p_loss_val, q_loss_val, stream) result(res)
     character(len=*) :: mname
     real(real32) :: p_loss_val, q_loss_val
@@ -2272,7 +2411,7 @@ contains
                                                       TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_predict_explore_float_2d_2d
-  
+
   function torchfort_rl_off_policy_predict_explore_float_4d_4d(mname, state, act, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state(:, :, :, :), act(:, :, :, :)
@@ -2333,7 +2472,7 @@ contains
                                                       TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_predict_explore_float_2d_2d_dev
-  
+
   function torchfort_rl_off_policy_predict_explore_float_4d_4d_dev(mname, state, act, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state(:, :, :, :), act(:, :, :, :)
@@ -2456,7 +2595,7 @@ contains
                                               TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_predict_float_4d_4d
-  
+
 #ifdef _CUDA
   function torchfort_rl_off_policy_predict_float_4d_4d_dev(mname, state, act, stream) result(res)
     character(len=*) :: mname
@@ -2653,7 +2792,7 @@ contains
                                                TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_evaluate_float_2d_2d_dev
-  
+
   function torchfort_rl_off_policy_evaluate_float_4d_4d_dev(mname, state, act, reward, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state(:, :, :, :), act(:, :, :, :), reward(:, :)
@@ -2758,7 +2897,7 @@ contains
     end block
   end function torchfort_rl_off_policy_evaluate_float_4d_2d_dev
 #endif
-  
+
   ! RL on-policy related routines
   ! logging
   function torchfort_rl_on_policy_wandb_log_int(mname, metric_name, step, val) result(res)
@@ -2823,9 +2962,9 @@ contains
     integer :: comm
     integer(c_int) :: model_dev, rb_dev
     integer(c_int) :: res
-    
+
     type(MPI_F_Comm) :: mpi_comm_f
-    
+
     mpi_comm_f%comm = comm
     res = torchfort_rl_on_policy_create_distributed_system_type(mname, fname, mpi_comm_f, model_dev, rb_dev)
   end function torchfort_rl_on_policy_create_distributed_system_MPI_F
@@ -2838,9 +2977,9 @@ contains
     type(MPI_Comm) :: comm
     integer(c_int) :: model_dev, rb_dev
     integer(c_int) :: res
-    
+
     type(MPI_F_Comm) :: mpi_comm_f
-    
+
     mpi_comm_f%comm = comm%MPI_VAL
     res = torchfort_rl_on_policy_create_distributed_system_type(mname, fname, mpi_comm_f, model_dev, rb_dev)
   end function torchfort_rl_on_policy_create_distributed_system_MPI_F08
@@ -2914,7 +3053,7 @@ contains
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_1d_1d
-  
+
   function torchfort_rl_on_policy_update_rollout_buffer_float_3d_3d(mname, state, act, &
                                                                     reward, terminal, stream) result(res)
     character(len=*) :: mname
@@ -2925,7 +3064,7 @@ contains
     integer(c_int) :: res
 
     integer(int64) :: stream_
-    
+
     integer(c_size_t) :: state_dim, act_dim
     state_dim = size(shape(state))
     act_dim = size(shape(act))
@@ -2985,7 +3124,7 @@ contains
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_1d_1d_dev
-  
+
   function torchfort_rl_on_policy_update_rollout_buffer_float_3d_3d_dev(mname, state, act, &
                                                                         reward, terminal, stream) result(res)
     character(len=*) :: mname
@@ -3056,7 +3195,7 @@ contains
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_3d_1d
-  
+
 #ifdef _CUDA
   function torchfort_rl_on_policy_update_rollout_buffer_float_3d_1d_dev(mname, state, act, &
                                                                         reward, terminal, stream) result(res)
@@ -3099,15 +3238,15 @@ contains
     integer(c_int) :: res
     res = torchfort_rl_on_policy_reset_rollout_buffer_c([trim(mname), C_NULL_CHAR])
   end function torchfort_rl_on_policy_reset_rollout_buffer
-  
+
   function torchfort_rl_on_policy_is_ready(mname, ready) result(res)
     character(len=*) :: mname
     logical :: ready
     integer(c_int) :: res
-    
+
     res = torchfort_rl_on_policy_is_ready_c([trim(mname), C_NULL_CHAR], ready)
   end function torchfort_rl_on_policy_is_ready
-  
+
   function torchfort_rl_on_policy_train_step_float(mname, p_loss_val, q_loss_val, stream) result(res)
     character(len=*) :: mname
     real(real32) :: p_loss_val, q_loss_val
@@ -3152,7 +3291,7 @@ contains
                                                      TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_predict_explore_float_2d_2d
-  
+
   function torchfort_rl_on_policy_predict_explore_float_4d_4d(mname, state, act, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state(:, :, :, :), act(:, :, :, :)
@@ -3213,7 +3352,7 @@ contains
                                                      TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_predict_explore_float_2d_2d_dev
-  
+
   function torchfort_rl_on_policy_predict_explore_float_4d_4d_dev(mname, state, act, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state(:, :, :, :), act(:, :, :, :)
@@ -3336,7 +3475,7 @@ contains
                                              TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_predict_float_2d_2d
-  
+
   function torchfort_rl_on_policy_predict_float_4d_4d(mname, state, act, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state(:, :, :, :), act(:, :, :, :)
@@ -3397,7 +3536,7 @@ contains
                                              TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_predict_float_2d_2d_dev
-  
+
   function torchfort_rl_on_policy_predict_float_4d_4d_dev(mname, state, act, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state(:, :, :, :), act(:, :, :, :)
@@ -3524,7 +3663,7 @@ contains
                                               TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_evaluate_float_2d_2d
-  
+
   function torchfort_rl_on_policy_evaluate_float_4d_4d(mname, state, act, reward, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state(:, :, :, :), act(:, :, :, :), reward(:, :)
@@ -3627,7 +3766,7 @@ contains
                                               TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_evaluate_float_2d_2d_dev
-  
+
   function torchfort_rl_on_policy_evaluate_float_4d_4d_dev(mname, state, act, reward, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state(:, :, :, :), act(:, :, :, :), reward(:, :)
@@ -3696,5 +3835,729 @@ contains
     end block
   end function torchfort_rl_on_policy_evaluate_float_4d_2d_dev
 #endif
-  
+
+  ! Tensor list management
+  function torchfort_tensor_list_add_tensor_float_1d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real32) :: data_arr(:)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_FLOAT)
+    end block
+  end function torchfort_tensor_list_add_tensor_float_1d
+
+  function torchfort_tensor_list_add_tensor_double_1d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real64) :: data_arr(:)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_DOUBLE)
+    end block
+  end function torchfort_tensor_list_add_tensor_double_1d
+
+  function torchfort_tensor_list_add_tensor_int32_1d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int32) :: data_arr(:)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT32)
+    end block
+  end function torchfort_tensor_list_add_tensor_int32_1d
+
+  function torchfort_tensor_list_add_tensor_int64_1d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int64) :: data_arr(:)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT64)
+    end block
+  end function torchfort_tensor_list_add_tensor_int64_1d
+
+  function torchfort_tensor_list_add_tensor_float_2d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real32) :: data_arr(:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_FLOAT)
+    end block
+  end function torchfort_tensor_list_add_tensor_float_2d
+
+  function torchfort_tensor_list_add_tensor_double_2d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real64) :: data_arr(:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_DOUBLE)
+    end block
+  end function torchfort_tensor_list_add_tensor_double_2d
+
+  function torchfort_tensor_list_add_tensor_int32_2d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int32) :: data_arr(:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT32)
+    end block
+  end function torchfort_tensor_list_add_tensor_int32_2d
+
+  function torchfort_tensor_list_add_tensor_int64_2d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int64) :: data_arr(:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT64)
+    end block
+  end function torchfort_tensor_list_add_tensor_int64_2d
+
+  function torchfort_tensor_list_add_tensor_float_3d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real32) :: data_arr(:, : ,:)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_FLOAT)
+    end block
+  end function torchfort_tensor_list_add_tensor_float_3d
+
+  function torchfort_tensor_list_add_tensor_double_3d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real64) :: data_arr(:, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_DOUBLE)
+    end block
+  end function torchfort_tensor_list_add_tensor_double_3d
+
+  function torchfort_tensor_list_add_tensor_int32_3d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int32) :: data_arr(:, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT32)
+    end block
+  end function torchfort_tensor_list_add_tensor_int32_3d
+
+  function torchfort_tensor_list_add_tensor_int64_3d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int64) :: data_arr(:, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT64)
+    end block
+  end function torchfort_tensor_list_add_tensor_int64_3d
+
+
+  function torchfort_tensor_list_add_tensor_float_4d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real32) :: data_arr(:, :, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_FLOAT)
+    end block
+  end function torchfort_tensor_list_add_tensor_float_4d
+
+  function torchfort_tensor_list_add_tensor_double_4d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real64) :: data_arr(:, : ,:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_DOUBLE)
+    end block
+  end function torchfort_tensor_list_add_tensor_double_4d
+
+  function torchfort_tensor_list_add_tensor_int32_4d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int32) :: data_arr(:, : ,:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT32)
+    end block
+  end function torchfort_tensor_list_add_tensor_int32_4d
+
+  function torchfort_tensor_list_add_tensor_int64_4d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int64) :: data_arr(:, : ,:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT64)
+    end block
+  end function torchfort_tensor_list_add_tensor_int64_4d
+
+  function torchfort_tensor_list_add_tensor_float_5d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real32) :: data_arr(:, :, :, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_FLOAT)
+    end block
+  end function torchfort_tensor_list_add_tensor_float_5d
+
+  function torchfort_tensor_list_add_tensor_double_5d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real64) :: data_arr(:, :, :, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_DOUBLE)
+    end block
+  end function torchfort_tensor_list_add_tensor_double_5d
+
+  function torchfort_tensor_list_add_tensor_int32_5d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int32) :: data_arr(:, :, :, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT32)
+    end block
+  end function torchfort_tensor_list_add_tensor_int32_5d
+
+  function torchfort_tensor_list_add_tensor_int64_5d(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int64) :: data_arr(:, :, :, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT64)
+    end block
+  end function torchfort_tensor_list_add_tensor_int64_5d
+
+#ifdef _CUDA
+  function torchfort_tensor_list_add_tensor_float_1d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real32), device :: data_arr(:)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_FLOAT)
+    end block
+  end function torchfort_tensor_list_add_tensor_float_1d_dev
+
+  function torchfort_tensor_list_add_tensor_double_1d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real64), device :: data_arr(:)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_DOUBLE)
+    end block
+  end function torchfort_tensor_list_add_tensor_double_1d_dev
+
+  function torchfort_tensor_list_add_tensor_int32_1d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int32), device :: data_arr(:)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT32)
+    end block
+  end function torchfort_tensor_list_add_tensor_int32_1d_dev
+
+  function torchfort_tensor_list_add_tensor_int64_1d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int64), device :: data_arr(:)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT64)
+    end block
+  end function torchfort_tensor_list_add_tensor_int64_1d_dev
+
+  function torchfort_tensor_list_add_tensor_float_2d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real32), device :: data_arr(:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_FLOAT)
+    end block
+  end function torchfort_tensor_list_add_tensor_float_2d_dev
+
+  function torchfort_tensor_list_add_tensor_double_2d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real64), device :: data_arr(:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_DOUBLE)
+    end block
+  end function torchfort_tensor_list_add_tensor_double_2d_dev
+
+  function torchfort_tensor_list_add_tensor_int32_2d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int32), device :: data_arr(:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT32)
+    end block
+  end function torchfort_tensor_list_add_tensor_int32_2d_dev
+
+  function torchfort_tensor_list_add_tensor_int64_2d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int64), device :: data_arr(:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT64)
+    end block
+  end function torchfort_tensor_list_add_tensor_int64_2d_dev
+
+  function torchfort_tensor_list_add_tensor_float_3d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real32), device :: data_arr(:, : ,:)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_FLOAT)
+    end block
+  end function torchfort_tensor_list_add_tensor_float_3d_dev
+
+  function torchfort_tensor_list_add_tensor_double_3d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real64), device :: data_arr(:, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_DOUBLE)
+    end block
+  end function torchfort_tensor_list_add_tensor_double_3d_dev
+
+  function torchfort_tensor_list_add_tensor_int32_3d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int32), device :: data_arr(:, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT32)
+    end block
+  end function torchfort_tensor_list_add_tensor_int32_3d_dev
+
+  function torchfort_tensor_list_add_tensor_int64_3d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int64), device :: data_arr(:, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT64)
+    end block
+  end function torchfort_tensor_list_add_tensor_int64_3d_dev
+
+  function torchfort_tensor_list_add_tensor_float_4d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real32), device :: data_arr(:, :, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_FLOAT)
+    end block
+  end function torchfort_tensor_list_add_tensor_float_4d_dev
+
+  function torchfort_tensor_list_add_tensor_double_4d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real64), device :: data_arr(:, : ,:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_DOUBLE)
+    end block
+  end function torchfort_tensor_list_add_tensor_double_4d_dev
+
+  function torchfort_tensor_list_add_tensor_int32_4d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int32), device :: data_arr(:, : ,:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT32)
+    end block
+  end function torchfort_tensor_list_add_tensor_int32_4d_dev
+
+  function torchfort_tensor_list_add_tensor_int64_4d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int64), device :: data_arr(:, : ,:, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT64)
+    end block
+  end function torchfort_tensor_list_add_tensor_int64_4d_dev
+
+  function torchfort_tensor_list_add_tensor_float_5d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real32), device :: data_arr(:, :, :, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_FLOAT)
+    end block
+  end function torchfort_tensor_list_add_tensor_float_5d_dev
+
+  function torchfort_tensor_list_add_tensor_double_5d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    real(real64), device :: data_arr(:, :, :, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_DOUBLE)
+    end block
+  end function torchfort_tensor_list_add_tensor_double_5d_dev
+
+  function torchfort_tensor_list_add_tensor_int32_5d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int32), device :: data_arr(:, :, :, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT32)
+    end block
+  end function torchfort_tensor_list_add_tensor_int32_5d_dev
+
+  function torchfort_tensor_list_add_tensor_int64_5d_dev(tensor_list, data_arr) result(res)
+    type(torchfort_tensor_list), value :: tensor_list
+    integer(int64), device :: data_arr(:, :, :, :, :)
+    integer(c_size_t) :: data_dim
+    integer(c_int) :: res
+
+    data_dim = size(shape(data_arr))
+
+    block
+      integer(c_int64_t) :: data_shape(data_dim)
+
+      data_shape(:) = shape(data_arr)
+
+      res =  torchfort_tensor_list_add_tensor_c(tensor_list, data_arr, data_dim, data_shape, &
+                               TORCHFORT_INT64)
+    end block
+  end function torchfort_tensor_list_add_tensor_int64_5d_dev
+#endif
+
 end module torchfort

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,16 +34,29 @@
 
 #include <torch/torch.h>
 
-#include "internal/base_loss.h"
-#include "internal/param_map.h"
+#include "internal/utils.h"
 
 namespace torchfort {
+struct TensorList {
+  template <MemoryLayout L, typename T>
+  void add_tensor(T* data, size_t dim, int64_t* shape) {
+    auto tensor = get_tensor<L>(data, dim, shape);
+    tensors.push_back(tensor);
+    tensors_original_.push_back(tensor);
+  };
 
-struct BaseLoss : torch::nn::Module {
-  virtual torch::Tensor forward(const std::vector<torch::Tensor>& inputs,
-                                const std::vector<torch::Tensor>& labels,
-                                const std::vector<torch::Tensor>& extra_args) = 0;
-  virtual void setup(const ParamMap& params) = 0;
+  void to(torch::Device device, bool non_blocking = false) {
+    for (auto &t : tensors) {
+      t = t.to(device, non_blocking);
+    }
+  };
+
+  void reset() {
+    tensors = tensors_original_;
+  }
+
+  std::vector<torch::Tensor> tensors;
+  // To preserve references to external data, we store the original tensor objects
+  std::vector<torch::Tensor> tensors_original_;
 };
-
 } // namespace torchfort

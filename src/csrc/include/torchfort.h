@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,12 @@ typedef void* cudaStream_t;
 #define WANDB_LOG_PROTO(dtype)                                                                                         \
   torchfort_result_t torchfort_wandb_log_##dtype(const char* name, const char* metric_name, int64_t step, dtype value);
 
+/**
+ * @brief A pointer to a TorchFort tensor list object
+ */
+typedef void* torchfort_tensor_list_t;
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -98,8 +104,8 @@ torchfort_result_t torchfort_create_distributed_model(const char* name, const ch
  * @param[in] label_shape A pointer to an array specifying the shape of the label data. Length should be equal to the
  * rank of the label data.
  * @param[out] loss_val A pointer to a memory location to write the loss value computed during the training iteration.
- * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+ * @param[in] dtype The TorchFort datatype to use for this operation.
+ * @param[in] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -110,6 +116,21 @@ torchfort_result_t torchfort_train(const char* name, void* input, size_t input_d
 torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input_dim, int64_t* input_shape, void* label,
                                      size_t label_dim, int64_t* label_shape, void* loss_val, torchfort_datatype_t dtype,
                                      cudaStream_t stream);
+
+/**
+ * @brief Runs a training iteration of a model instance using provided input and label tensor lists.
+ *
+ * @param[in] name The name of model instance to use, as defined during model creation.
+ * @param[in] inputs A tensor list of input tensors.
+ * @param[in] labels A tensor list of label tensors.
+ * @param[out] loss_val A pointer to a single precision scalar to write the loss value computed during the training iteration.
+ * @param[in] extra_loss_args A tensor list of additional tensors to pass into loss computation. Set to nullptr if unused.
+ * @param[in] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+ *
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_train_multiarg(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
+                                            float* loss_val, torchfort_tensor_list_t extra_loss_args, cudaStream_t stream);
 
 /**
  * @brief Runs inference on a model using provided input data.
@@ -123,8 +144,8 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
  * @param[in] output_dim Rank of the output data.
  * @param[in] output_shape  A pointer to an array specifying the shape of the output data. Length should be equal to the
  * rank of the output data.
- * @param[out] dtype The TorchFort datatype to use for this operation.
- * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+ * @param[in] dtype The TorchFort datatype to use for this operation.
+ * @param[in] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
@@ -135,6 +156,19 @@ torchfort_result_t torchfort_inference(const char* name, void* input, size_t inp
 torchfort_result_t torchfort_inference_F(const char* name, void* input, size_t input_dim, int64_t* input_shape,
                                          void* output, size_t output_dim, int64_t* output_shape,
                                          torchfort_datatype_t dtype, cudaStream_t stream);
+
+/**
+ * @brief Runs inference on a model using provided input tensor list.
+ *
+ * @param[in] name The name of model instance to use, as defined during model creation.
+ * @param[in] inputs A tensor list of input tensors.
+ * @param[in,out] outputs A tensor list of output tensors.
+ * @param[in] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+ *
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_inference_multiarg(const char* name, torchfort_tensor_list_t inputs,
+                                                torchfort_tensor_list_t outputs, cudaStream_t stream);
 
 // Model/Checkpoint save and loading functions
 /**
@@ -226,6 +260,45 @@ torchfort_result_t torchfort_set_cuda_manual_seed(const int seed);
 WANDB_LOG_PROTO(int)
 WANDB_LOG_PROTO(float)
 WANDB_LOG_PROTO(double)
+
+
+// Tensor List Management functions
+/**
+ * @brief Creates a TorchFort tensor list.
+ *
+ * @param[out] tensor_list A pointer to an uninitialized torchfort_tensor_list_t
+ *
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_tensor_list_create(torchfort_tensor_list_t* tensor_list);
+
+/**
+ * @brief Destroys a TorchFort tensor list.
+ *
+ * @param[in] tensor_list A TorchFort tensor list
+ *
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_tensor_list_destroy(torchfort_tensor_list_t tensor_list);
+
+/**
+ * @brief Adds a tensor to a TorchFort tensor list. Tensor data is added by reference, so changes to externally
+ * provided memory will modify tensors contained in the list.
+ *
+ * @param[in] tensor_list A TorchFort tensor list
+ * @param[in] data_ptr A pointer to a memory buffer containing tensor data.
+ * @param[in] dim Rank of the tensor data.
+ * @param[in] shape A pointer to an array specifying the shape of the tensor data. Length should be equal to the
+ * rank of the tensor data.
+ * @param[in] dtype The TorchFort datatype of the tensor data.
+ *
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_tensor_list_add_tensor(torchfort_tensor_list_t tensor_list, void* data_ptr, size_t dim,
+                                                    int64_t* shape, torchfort_datatype_t dtype);
+torchfort_result_t torchfort_tensor_list_add_tensor_F(torchfort_tensor_list_t tensor_list, void* data_ptr, size_t dim,
+                                                      int64_t* shape, torchfort_datatype_t dtype);
+
 
 #ifdef __cplusplus
 }

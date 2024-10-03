@@ -165,6 +165,25 @@ torchfort_train
   
 ------
 
+.. _torchfort_train_multiarg-f-ref:
+
+torchfort_train_multiarg
+------------------------
+
+.. f:function:: torchfort_train(mname, inputs, labels, loss_val, extra_loss_args, stream)
+
+  Runs a training iteration of a model instance using provided input and label tensor lists.
+
+  :p character(:) mname [in]: The key of the model instance.
+  :p torchfort_tensor_list inputs [in]: A tensor list of input tensors.
+  :p torchfort_tensor_list labels [in]: A tensor list of label tensors.
+  :p real(real32) loss_val [out]: A single precision scalar that will hold the loss value computed during the training iteration.
+  :p torchfort_tensor_list extra_loss_args [in,optional]: A tensor list of additional tensors to pass into loss computation. 
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
+------
+
 .. _torchfort_inference-f-ref:
 
 torchfort_inference
@@ -182,6 +201,23 @@ torchfort_inference
    :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
    :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
    
+------
+
+.. _torchfort_inference_multiarg-f-ref:
+
+torchfort_inference_multiarg
+----------------------------
+
+.. f:function:: torchfort_inference_multiarg(mname, inputs, outputs, stream)
+
+   Runs inference on a model using provided input data tensor list.
+
+   :p character(:) mname [in]: The key of the model instance.
+   :p torchfort_tensor_list inputs [in]: A tensor list of input tensors.
+   :p torchfort_tensor_list outputs [inout]: A tensor list of output tensors.
+   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
 ------
 
 Model Management

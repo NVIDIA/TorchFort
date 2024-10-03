@@ -118,7 +118,7 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
                                      cudaStream_t stream);
 
 /**
- * @brief Runs a training iteration of a model instance using provided input and label data.
+ * @brief Runs a training iteration of a model instance using provided input and label tensor lists.
  *
  * @param[in] name The name of model instance to use, as defined during model creation.
  * @param[in] inputs A tensor list of input tensors.
@@ -158,7 +158,7 @@ torchfort_result_t torchfort_inference_F(const char* name, void* input, size_t i
                                          torchfort_datatype_t dtype, cudaStream_t stream);
 
 /**
- * @brief Runs inference on a model using provided input data.
+ * @brief Runs inference on a model using provided input tensor list.
  *
  * @param[in] name The name of model instance to use, as defined during model creation.
  * @param[in] inputs A tensor list of input tensors.

@@ -112,11 +112,27 @@ torchfort_train
 
 ------
 
+.. _torchfort_train_multiarg-ref:
+
+torchfort_train_multiarg
+------------------------
+.. doxygenfunction:: torchfort_train_multiarg
+
+------
+
 .. _torchfort_inference-ref:
 
 torchfort_inference
 -------------------
 .. doxygenfunction:: torchfort_inference
+
+------
+
+.. _torchfort_inference_multiarg-ref:
+
+torchfort_inference_multiarg
+----------------------------
+.. doxygenfunction:: torchfort_inference_multiarg
 
 ------
 

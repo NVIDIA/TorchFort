@@ -45,16 +45,16 @@ endforeach()
 # executable
 install(
   TARGETS ${test_targets}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses
+  RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/general
 )
 
 # copy files
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/mse.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/mse_multiarg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/l1.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/l1_multiarg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiarg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiarg_extra.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiout.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/configs)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/scripts/setup_tests.py DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/losses/scripts)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/mse.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/general/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/mse_multiarg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/general/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/l1.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/general/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/l1_multiarg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/general/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/general/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiarg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/general/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiarg_extra.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/general/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiout.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/general/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/scripts/setup_tests.py DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/general/scripts)

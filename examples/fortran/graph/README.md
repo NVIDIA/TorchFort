@@ -37,10 +37,10 @@ The example code is split one Fortran source file and two PyTorch scripts to gen
 
 [`train.f90`](train.f90) contains the main program and training/inference loops. The simulation is run on an unstructured mesh, defined by the [`nodes.txt`](nodes.txt) and [`connectivity.txt`](connectivity.txt) files.
 The first two columns of the `nodes.txt` file contain the $x$ and $y$ coordinates of the mesh nodes respectively, and the last column contains a node type value, indicating whether the node is on a boundary (`0`) 
-or in the interior (`1`). The `connectivity.txt` file contains a list of triplets, defining the triangles within the unstructured mesh.
+or in the interior (`1`). The `connectivity.txt` file contains a list of triplets which are indices corresponding to nodes from `nodes.txt`. Those triplets define the triangles within the unstructured mesh.
 
 [`generate_model.py`](generate_model.py) contains a PyTorch script to define a MeshGraphNet-like model. Unlike the `simulation` example, this model take multiple input arguments (`edge_idx`, `edge_feats`, and `node_feats`)
-which requires the use of the `torchfort_train_multiarg` and `torchfort_inference_multiarg` functions to operate. The `edge_idx` input is a list of node index pairs defining the bidirectional edges of the mesh. The `edge_feats` input
+which requires the use of the `torchfort_train_multiarg` and `torchfort_inference_multiarg` functions to operate. The `edge_idx` input is a list of of node index pairs, where the first column corresponds to the sending and the second column to the receiving nodes in the message passing process. Since the mesh in our problem is bi-directional, we make sure that the reverse connections are added to the supplied list. The `edge_feats` input
 contains the edge features of the model, which are the difference in the x-coordinates of the edge nodes, difference in the y-coordinates of the edge nodes, and the edge length. The `node_feats` input is a list of the node features of the model,
 which in this case are the values of $u(x,y,t)$ at the mesh nodes.
 

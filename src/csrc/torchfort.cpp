@@ -371,7 +371,6 @@ torchfort_result_t torchfort_tensor_list_create(torchfort_tensor_list_t* tensor_
 torchfort_result_t torchfort_tensor_list_destroy(torchfort_tensor_list_t tensor_list_in) {
   auto tensor_list = static_cast<torchfort::TensorList*>(tensor_list_in);
   delete tensor_list;
-  tensor_list = nullptr;
   return TORCHFORT_RESULT_SUCCESS;
 }
 

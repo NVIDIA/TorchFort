@@ -254,7 +254,7 @@ endif()
 
 # build tests
 if (TORCHFORT_BUILD_TESTS)
+  add_subdirectory(tests/general)
   add_subdirectory(tests/supervised)
   add_subdirectory(tests/rl)
-  add_subdirectory(tests/losses)
 endif()

@@ -1,0 +1,10 @@
+model:
+  type: torchscript
+  parameters:
+    filename: "model.pt"
+
+loss:
+  type: MSE
+
+optimizer:
+  type: adam

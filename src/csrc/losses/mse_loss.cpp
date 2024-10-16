@@ -36,6 +36,7 @@
 #include <torch/enum.h>
 #include <torch/torch.h>
 
+#include "internal/exceptions.h"
 #include "internal/losses.h"
 #include "internal/param_map.h"
 #include "internal/setup.h"
@@ -58,11 +59,15 @@ void MSELoss::setup(const ParamMap& params) {
   module = torch::nn::MSELoss(options);
 }
 
-std::vector<torch::Tensor> MSELoss::forward(const std::vector<torch::Tensor>& inputs,
-                                            const std::vector<torch::Tensor>& labels) {
+torch::Tensor MSELoss::forward(const std::vector<torch::Tensor>& inputs,
+                               const std::vector<torch::Tensor>& labels,
+                               const std::vector<torch::Tensor>& extra_args) {
+  if (inputs.size() != 1 || labels.size() != 1 || extra_args.size() != 0) {
+    THROW_INVALID_USAGE("MSELoss only supports one input tensor, one label tensor, and no extra arguments.");
+  }
   auto x = inputs[0];
   auto y = labels[0];
-  return std::vector<torch::Tensor>{module(x.flatten(), y.flatten())};
+  return module(x.flatten(), y.flatten());
 }
 
 } // namespace torchfort

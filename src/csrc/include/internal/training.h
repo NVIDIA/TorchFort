@@ -29,137 +29,46 @@
  */
 
 #pragma once
-#include <unordered_map>
-#include <vector>
 
 #ifdef ENABLE_GPU
 #include <cuda_runtime.h>
-
-#include <c10/cuda/CUDAGuard.h>
-#include <c10/cuda/CUDAStream.h>
 #endif
+
 #include <torch/torch.h>
 
-#include <internal/defines.h>
-#include <internal/logging.h>
-#include <internal/nvtx.h>
-#include <internal/utils.h>
+#include <internal/tensor_list.h>
 
 namespace torchfort {
 
-// Declaration of external global variables
-extern std::unordered_map<std::string, ModelPack> models;
+void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t outputs_in,
+                        cudaStream_t ext_stream = 0);
+
+void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t labels_in,
+                    float* loss_val, torchfort_tensor_list_t extra_loss_args_in, cudaStream_t ext_stream = 0);
 
 template <MemoryLayout L, typename T>
 void inference(const char* name, T* input, size_t input_dim, int64_t* input_shape, T* output, size_t output_dim,
                int64_t* output_shape, cudaStream_t ext_stream = 0) {
-  torchfort::nvtx::rangePush("torchfort_inference");
+  TensorList inputs, outputs;
 
-  torch::NoGradGuard no_grad;
+  inputs.add_tensor<L>(input, input_dim, input_shape);
+  outputs.add_tensor<L>(output, output_dim, output_shape);
 
-  auto model = models[name].model.get();
-
-#if ENABLE_GPU
-  c10::cuda::OptionalCUDAStreamGuard guard;
-  if (model->device().is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model->device().index());
-    guard.reset_stream(stream);
-  }
-#endif
-
-  auto input_tensor_in = get_tensor<L>(input, input_dim, input_shape);
-  auto output_tensor_in = get_tensor<L>(output, output_dim, output_shape);
-  auto input_tensor = input_tensor_in.to(model->device());
-
-  model->eval();
-  auto results = model->forward(std::vector<torch::Tensor>{input_tensor});
-
-  output_tensor_in.copy_(results[0].reshape(output_tensor_in.sizes()));
-  models[name].state->step_inference++;
-  torchfort::nvtx::rangePop();
+  inference_multiarg(name, &inputs, &outputs, ext_stream);
 }
 
 template <MemoryLayout L, typename T>
 void train(const char* name, T* input, size_t input_dim, int64_t* input_shape, T* label, size_t label_dim,
            int64_t* label_shape, T* loss_val, cudaStream_t ext_stream = 0) {
-  torchfort::nvtx::rangePush("torchfort_train");
+  TensorList inputs, labels;
 
-  if (!models[name].optimizer) {
-    THROW_INVALID_USAGE("Training requires an optimizer, but optimizer block was missing in configuration file.");
-  }
+  inputs.add_tensor<L>(input, input_dim, input_shape);
+  labels.add_tensor<L>(label, label_dim, label_shape);
 
-  if (!models[name].loss) {
-    THROW_INVALID_USAGE("Training requires a loss function, but loss block was missing in configuration file.");
-  }
-
-  auto model = models[name].model.get();
-
-#ifdef ENABLE_GPU
-  c10::cuda::OptionalCUDAStreamGuard guard;
-  if (model->device().is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model->device().index());
-    guard.reset_stream(stream);
-  }
-#endif
-
-  auto input_tensor_in = get_tensor<L>(input, input_dim, input_shape);
-  auto label_tensor_in = get_tensor<L>(label, label_dim, label_shape);
-  auto input_tensor = input_tensor_in.to(model->device());
-  auto label_tensor = label_tensor_in.to(model->device());
-
-  model->train();
-  auto opt = models[name].optimizer.get();
-
-  // fwd pass
-  auto results = model->forward(std::vector<torch::Tensor>{input_tensor});
-  auto losses =
-      models[name].loss->forward(std::vector<torch::Tensor>{results[0]}, std::vector<torch::Tensor>{label_tensor});
-
-  // extract loss
-  *loss_val = losses[0].template item<T>();
-
-  // bwd pass
-  opt->zero_grad();
-  for (const auto& l : losses) {
-    l.backward();
-  }
-
-  // allreduce (average) gradients (if running distributed)
-  if (models[name].comm) {
-    std::vector<torch::Tensor> grads;
-    grads.reserve(model->parameters().size());
-    for (const auto& p : model->parameters()) {
-      grads.push_back(p.grad());
-    }
-    models[name].comm->allreduce(grads, true);
-
-    // average returned loss value
-    models[name].comm->allreduce(*loss_val, true);
-  }
-
-  opt->step();
-  if (models[name].lr_scheduler) {
-    models[name].lr_scheduler->step();
-  }
-
-  auto state = models[name].state.get();
-  state->step_train++;
-  if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
-    std::stringstream os;
-    os << "model: " << name << ", ";
-    os << "step_train: " << state->step_train << ", ";
-    os << "loss: " << *loss_val << ", ";
-    auto lrs = get_current_lrs(name);
-    os << "lr: " << lrs[0];
-    if (!models[name].comm || (models[name].comm && models[name].comm->rank == 0)) {
-      torchfort::logging::print(os.str(), torchfort::logging::info);
-      if (state->enable_wandb_hook)
-        torchfort::wandb_log(name, "train_loss", state->step_train, *loss_val);
-      torchfort::wandb_log(name, "train_lr", state->step_train, lrs[0]);
-    }
-  }
-
-  torchfort::nvtx::rangePop();
+  // multiarg API expects float loss value, so use temporary here
+  float loss_val_tmp;
+  train_multiarg(name, &inputs, &labels, &loss_val_tmp, nullptr, ext_stream);
+  *loss_val = loss_val_tmp;
 }
 
 } // namespace torchfort

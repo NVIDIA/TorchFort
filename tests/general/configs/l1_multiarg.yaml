@@ -1,0 +1,10 @@
+model:
+  type: torchscript
+  parameters:
+    filename: model_multiarg.pt
+
+loss:
+  type: L1
+
+optimizer:
+  type: adam

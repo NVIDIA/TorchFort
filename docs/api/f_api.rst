@@ -29,6 +29,14 @@ See documentation for equivalent C enumerator, :ref:`torchfort_result_t-ref`.
 
 ------
 
+.. _torchfort_tensor_list_t-f-ref:
+
+torchfort_tensor_list
+---------------------
+See documentation for equivalent C typedef, :ref:`torchfort_tensor_list_t-ref`.
+
+------
+
 Global Context Settings
 ========================
 
@@ -43,6 +51,51 @@ torchfort_set_cudnn_benchmark
   Enables or disables cuDNN benchmark mode. See the `PyTorch documentation <https://pytorch.org/docs/stable/backends.html#torch.backends.cudnn.torch.backends.cudnn.benchmark>`_ for more details.
   
   :p logical flag[in]: A flag to enable (:code:`.true.`) or disable (:code:`.false.`) cuDNN kernel benchmarking.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
+------
+
+Tensor List Management
+======================
+
+.. _torchfort_tensor_list_create-f-ref:
+
+torchfort_tensor_list_create
+----------------------------
+.. f:function :: torchfort_tensor_list_create(tensor_list)
+
+   Creates a TorchFort tensor list.
+
+  :p torchfort_tensor_list tensor_list[out]: An unintialized TorchFort tensor list.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
+------
+
+.. _torchfort_tensor_list_destroy-f-ref:
+
+torchfort_tensor_list_destroy
+-----------------------------
+.. f:function :: torchfort_tensor_list_destroy(tensor_list)
+
+   Destroys a TorchFort tensor list.
+
+  :p torchfort_tensor_list tensor_list[in]: A TorchFort tensor list.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
+------
+
+.. _torchfort_tensor_list_add_tensor-f-ref:
+
+torchfort_tensor_list_add_tensor
+--------------------------------
+.. f:function :: torchfort_tensor_list_add_tensor(tensor_list, data_arr)
+
+  Adds a tensor to a TorchFort tensor list. Tensor data is added by reference, so changes to externally provided memory will modify tensors contained in the list.
+
+  For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`, :code:`integer(int32)`, :code:`integer(int64)`
+
+  :p torchfort_tensor_list tensor_list[in]: A TorchFort tensor list.
+  :p T(*) data_arr [in]: An array containing the tensor data.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
 
 ------
@@ -112,6 +165,25 @@ torchfort_train
   
 ------
 
+.. _torchfort_train_multiarg-f-ref:
+
+torchfort_train_multiarg
+------------------------
+
+.. f:function:: torchfort_train(mname, inputs, labels, loss_val, extra_loss_args, stream)
+
+  Runs a training iteration of a model instance using provided input and label tensor lists.
+
+  :p character(:) mname [in]: The key of the model instance.
+  :p torchfort_tensor_list inputs [in]: A tensor list of input tensors.
+  :p torchfort_tensor_list labels [in]: A tensor list of label tensors.
+  :p real(real32) loss_val [out]: A single precision scalar that will hold the loss value computed during the training iteration.
+  :p torchfort_tensor_list extra_loss_args [in,optional]: A tensor list of additional tensors to pass into loss computation. 
+  :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+  :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
+------
+
 .. _torchfort_inference-f-ref:
 
 torchfort_inference
@@ -129,6 +201,23 @@ torchfort_inference
    :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
    :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
    
+------
+
+.. _torchfort_inference_multiarg-f-ref:
+
+torchfort_inference_multiarg
+----------------------------
+
+.. f:function:: torchfort_inference_multiarg(mname, inputs, outputs, stream)
+
+   Runs inference on a model using provided input data tensor list.
+
+   :p character(:) mname [in]: The key of the model instance.
+   :p torchfort_tensor_list inputs [in]: A tensor list of input tensors.
+   :p torchfort_tensor_list outputs [inout]: A tensor list of output tensors.
+   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
+
 ------
 
 Model Management

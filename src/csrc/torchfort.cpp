@@ -45,9 +45,12 @@
 
 #include "internal/base_model.h"
 #include "internal/exceptions.h"
+#include "internal/logging.h"
+#include "internal/model_pack.h"
 #include "internal/model_wrapper.h"
 #include "internal/models.h"
 #include "internal/setup.h"
+#include "internal/tensor_list.h"
 #include "internal/training.h"
 #include "internal/utils.h"
 #include "torchfort.h"
@@ -207,6 +210,18 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
   return TORCHFORT_RESULT_SUCCESS;
 }
 
+torchfort_result_t torchfort_train_multiarg(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
+                                            float* loss_val, torchfort_tensor_list_t extra_loss_args, cudaStream_t stream) {
+  using namespace torchfort;
+  try {
+    torchfort::train_multiarg(name, inputs, labels, loss_val, extra_loss_args, stream);
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
 torchfort_result_t torchfort_inference(const char* name, void* input, size_t input_dim, int64_t* input_shape,
                                        void* output, size_t output_dim, int64_t* output_shape,
                                        torchfort_datatype_t dtype, cudaStream_t stream) {
@@ -257,9 +272,24 @@ torchfort_result_t torchfort_inference_F(const char* name, void* input, size_t i
   return TORCHFORT_RESULT_SUCCESS;
 }
 
+torchfort_result_t torchfort_inference_multiarg(const char* name, torchfort_tensor_list_t inputs,
+                                                torchfort_tensor_list_t outputs, cudaStream_t stream) {
+  using namespace torchfort;
+  try {
+    torchfort::inference_multiarg(name, inputs, outputs, stream);
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
 torchfort_result_t torchfort_save_model(const char* name, const char* fname) {
   using namespace torchfort;
   try {
+    if (models.count(name) == 0) {
+      THROW_INVALID_USAGE("Invalid model name provided.");
+    }
     models[name].model->save(fname);
   } catch (const BaseException& e) {
     std::cerr << e.what();
@@ -271,6 +301,9 @@ torchfort_result_t torchfort_save_model(const char* name, const char* fname) {
 torchfort_result_t torchfort_load_model(const char* name, const char* fname) {
   using namespace torchfort;
   try {
+    if (models.count(name) == 0) {
+      THROW_INVALID_USAGE("Invalid model name provided.");
+    }
     models[name].model->load(fname);
     if (models[name].optimizer) {
       models[name].optimizer->parameters() = models[name].model->parameters();
@@ -294,6 +327,9 @@ torchfort_result_t torchfort_save_checkpoint(const char* name, const char* check
       }
     }
 
+    if (models.count(name) == 0) {
+      THROW_INVALID_USAGE("Invalid model name provided.");
+    }
     save_model_pack(models[name], root_dir, true);
   } catch (const BaseException& e) {
     std::cerr << e.what();
@@ -308,6 +344,9 @@ torchfort_result_t torchfort_load_checkpoint(const char* name, const char* check
   try {
     std::filesystem::path root_dir{checkpoint_dir};
 
+    if (models.count(name) == 0) {
+      THROW_INVALID_USAGE("Invalid model name provided.");
+    }
     load_model_pack(models[name], root_dir, true);
 
     if (step_train) {
@@ -316,6 +355,75 @@ torchfort_result_t torchfort_load_checkpoint(const char* name, const char* check
 
     if (step_inference) {
       *step_inference = models[name].state->step_inference;
+    }
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_tensor_list_create(torchfort_tensor_list_t* tensor_list) {
+  *tensor_list = new torchfort::TensorList;
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_tensor_list_destroy(torchfort_tensor_list_t tensor_list_in) {
+  auto tensor_list = static_cast<torchfort::TensorList*>(tensor_list_in);
+  delete tensor_list;
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_tensor_list_add_tensor(torchfort_tensor_list_t tensor_list_in, void* data_ptr, size_t dim,
+                                                    int64_t* shape, torchfort_datatype_t dtype) {
+  using namespace torchfort;
+  try {
+    auto tensor_list = static_cast<torchfort::TensorList*>(tensor_list_in);
+    switch (dtype) {
+    case TORCHFORT_FLOAT:
+      tensor_list->add_tensor<torchfort::RowMajor>(reinterpret_cast<float*>(data_ptr), dim, shape);
+      break;
+    case TORCHFORT_DOUBLE:
+      tensor_list->add_tensor<torchfort::RowMajor>(reinterpret_cast<double*>(data_ptr), dim, shape);
+      break;
+    case TORCHFORT_INT32:
+      tensor_list->add_tensor<torchfort::RowMajor>(reinterpret_cast<int32_t*>(data_ptr), dim, shape);
+      break;
+    case TORCHFORT_INT64:
+      tensor_list->add_tensor<torchfort::RowMajor>(reinterpret_cast<int64_t*>(data_ptr), dim, shape);
+      break;
+    default:
+      THROW_INVALID_USAGE("Unknown datatype provided.");
+      break;
+    }
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_tensor_list_add_tensor_F(torchfort_tensor_list_t tensor_list_in, void* data_ptr, size_t dim,
+                                                      int64_t* shape, torchfort_datatype_t dtype) {
+  using namespace torchfort;
+  try {
+    auto tensor_list = static_cast<torchfort::TensorList*>(tensor_list_in);
+    switch (dtype) {
+    case TORCHFORT_FLOAT:
+      tensor_list->add_tensor<torchfort::ColMajor>(reinterpret_cast<float*>(data_ptr), dim, shape);
+      break;
+    case TORCHFORT_DOUBLE:
+      tensor_list->add_tensor<torchfort::ColMajor>(reinterpret_cast<double*>(data_ptr), dim, shape);
+      break;
+    case TORCHFORT_INT32:
+      tensor_list->add_tensor<torchfort::ColMajor>(reinterpret_cast<int32_t*>(data_ptr), dim, shape);
+      break;
+    case TORCHFORT_INT64:
+      tensor_list->add_tensor<torchfort::ColMajor>(reinterpret_cast<int64_t*>(data_ptr), dim, shape);
+      break;
+    default:
+      THROW_INVALID_USAGE("Unknown datatype provided.");
+      break;
     }
   } catch (const BaseException& e) {
     std::cerr << e.what();

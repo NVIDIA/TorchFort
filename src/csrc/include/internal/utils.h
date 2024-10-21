@@ -61,6 +61,8 @@ torch::Device get_device(const void* ptr);
 template <typename T> torch::Dtype make_type() {
   if (std::is_same<T, float>::value) {
     return torch::kFloat32;
+  } else if (std::is_same<T, int32_t>::value) {
+    return torch::kInt32;
   } else if (std::is_same<T, int64_t>::value) {
     return torch::kInt64;
   } else if (std::is_same<T, double>::value) {

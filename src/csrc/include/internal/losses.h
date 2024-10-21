@@ -30,9 +30,11 @@
 
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include <torch/enum.h>
+#include <torch/script.h>
 #include <torch/torch.h>
 
 #include "internal/base_loss.h"
@@ -44,8 +46,9 @@ namespace torchfort {
 struct L1Loss : BaseLoss {
   void setup(const ParamMap& params) override;
 
-  std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs,
-                                     const std::vector<torch::Tensor>& labels) override;
+  torch::Tensor forward(const std::vector<torch::Tensor>& inputs,
+                        const std::vector<torch::Tensor>& labels,
+                        const std::vector<torch::Tensor>& extra_args) override;
 
   torch::nn::L1Loss module;
 };
@@ -53,10 +56,21 @@ struct L1Loss : BaseLoss {
 struct MSELoss : BaseLoss {
   void setup(const ParamMap& params) override;
 
-  std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs,
-                                     const std::vector<torch::Tensor>& labels) override;
+  torch::Tensor forward(const std::vector<torch::Tensor>& inputs,
+                        const std::vector<torch::Tensor>& labels,
+                        const std::vector<torch::Tensor>& extra_args) override;
 
   torch::nn::MSELoss module;
+};
+
+struct TorchscriptLoss : BaseLoss {
+  void setup(const ParamMap& params) override;
+
+  torch::Tensor forward(const std::vector<torch::Tensor>& inputs,
+                        const std::vector<torch::Tensor>& labels,
+                        const std::vector<torch::Tensor>& extra_args) override;
+
+  std::shared_ptr<torch::jit::Module> module_jit;
 };
 
 // Creating loss_registry.
@@ -66,6 +80,7 @@ BEGIN_LOSS_REGISTRY
 // a string key and the second argument is the class name.
 REGISTER_LOSS(L1, L1Loss)
 REGISTER_LOSS(MSE, MSELoss)
+REGISTER_LOSS(torchscript, TorchscriptLoss)
 
 END_LOSS_REGISTRY
 

@@ -1,0 +1,27 @@
+general:
+  report_frequency: 100
+
+model:
+  type: torchscript
+  parameters:
+    filename: "model_torchscript.pt"
+
+loss:
+  type: torchscript
+  parameters:
+    filename: "loss_torchscript.pt"
+
+optimizer:
+  type: adam
+  parameters:
+    learning_rate: 1e-3
+    beta1: 0.9
+    beta2: 0.999
+    weight_decay: 0
+    eps: 1e-8
+    amsgrad: 0
+
+lr_scheduler:
+  type: cosine_annealing
+  parameters:
+    T_max: 100000

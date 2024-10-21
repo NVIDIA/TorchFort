@@ -124,6 +124,73 @@ For inference, only the model and not a full checkpoint needs to be loaded. For 
 This function will load the model data from the file ``model_file`` into the model instance associated with ``model_name``. The model file
 can be one generated using the ``torchfort_save_model`` function or one found within a saved checkpoint directory, found at ``<checkpoint directory name>/model.pt``.
 
+Multi-argument API
+------------------
+While the functions described in the previous sections cover the most models which work on single input/label/output tensors, TorchFort supports more complex models that require multiple input/label/output tensors
+as well as custom loss functions with additional tensor arguments (e.g., an indexing tensor for masking). To accomplish this, we have alternative training and inference functions that accept TorchFort tensor lists as arguments, which contain
+one or more tensors.
+
+To run a training step using the multi-argument training function, run the following:
+
+.. tabs::
+
+  .. code-tab:: fortran
+
+    istat = torchfort_train_multiarg(inputs, labels, loss_val, extra_loss_args, stream)
+
+  .. code-tab:: c++
+
+    istat = torchfort_train_multiarg(inputs, labels, loss_val, extra_loss_args, stream);
+
+where ``inputs``, ``labels``, and ``extra_loss_args`` are Torchfort tensor lists.
+
+You must create and populate tensor lists to use with this function. For example, to create an ``inputs`` tensor list containing two tensors, run the following:
+
+.. tabs::
+
+  .. code-tab:: fortran
+
+    istat = torchfort_tensor_list_create(inputs)
+    istat = torchfort_tensor_list_add_tensor(inputs, input1)
+    istat = torchfort_tensor_list_add_tensor(inputs, input2)
+
+  .. code-tab:: c++
+
+    istat = torchfort_tensor_list_create(inputs);
+    istat = torchfort_tensor_list_add_tensor(inputs, input1, input1_dim, input1_shape, dtype)
+    istat = torchfort_tensor_list_add_tensor(inputs, input2, input2_dim, input2_shape, dtype)
+
+In the Fortran API, ``input1`` and ``input2`` are multi-dimensional Fortran arrays, with dimension/shape/datatype information automatically inferred in the interface. The ``torchfort_tensor_list_add_tensor`` function adds tensor data by reference
+so changes to the externally provided memory buffer will modify the tensors stored in the list. This is convenient as it enables creating these tensor lists once and reusing them as your program updates the underlying values. 
+
+Internally, the training backend unpacks the tensor lists and provides them to the model and loss functions as follows:
+
+.. code-block:: c++
+
+  predictions = model.forward(inputs[0], inputs[1], ..., inputs[n]);
+  loss_val = loss.forward(predictions[0], predictions[1], ..., predictions[n],
+                          labels[0], labels[1], ..., labels[n],
+                          extra_loss_args[0], extra_loss_args[1], ..., extra_loss_args[n]);
+
+As you can see, this multi-argument training function enables more complexity in model and loss function definitions.
+
+Similarly to training, to run an inference using the multi-argument inference function, run the following:
+
+.. tabs::
+
+  .. code-tab:: fortran
+
+    istat = torchfort_inference_multiarg(inputs, outputs, stream)
+
+  .. code-tab:: c++
+
+    istat = torchfort_inference_multiarg(inputs, outputs, stream)
+
+where ``inputs`` and ``outputs`` are Torchfort tensor lists. The tensor lists are unpacked and provided to the model similarly to training, with the ``outputs`` tensor list containing the predicted output from the model, in order.
+
+
+For a more detailed usage example of the multi-argument API, we refer to the ``graph`` example provided in this repository in the ``examples/fortran`` directory.
+
 .. _reinforcement_learning-ref:
 
 Reinforcement Learning

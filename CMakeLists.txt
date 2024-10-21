@@ -130,9 +130,11 @@ target_sources(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/param_map.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/setup.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/torchfort.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/training.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/losses/l1_loss.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/losses/mse_loss.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/losses/torchscript_loss.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/cosine_annealing_lr.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/multistep_lr.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/lr_schedulers/polynomial_lr.cpp
@@ -246,11 +248,13 @@ if (TORCHFORT_BUILD_EXAMPLES)
   add_subdirectory(examples/cpp/cart_pole)
   if (TORCHFORT_BUILD_FORTRAN)
     add_subdirectory(examples/fortran/simulation)
+    add_subdirectory(examples/fortran/graph)
   endif()
 endif()
 
 # build tests
 if (TORCHFORT_BUILD_TESTS)
+  add_subdirectory(tests/general)
   add_subdirectory(tests/supervised)
   add_subdirectory(tests/rl)
 endif()

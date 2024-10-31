@@ -1,4 +1,22 @@
-find_package(HDF5 COMPONENTS Fortran REQUIRED)
+include(CMakeFindDependencyMacro)
+
+find_dependency( MPI )
+find_package(MPI REQUIRED)
+
+if(TARGET MPI::MPI_C)
+message(STATUS "MPI::MPI_C found")
+else()
+message(STATUS "MPI::MPI_C not found")
+endif()
+
+set( CMAKE_PREFIX_PATH "/home/tartarughina/hdf5/build/HDF5-1.17.0-Linux/HDF_Group/HDF5/1.17.0/cmake"; ${CMAKE_PREFIX_PATH})
+find_package(HDF5 REQUIRED COMPONENTS Fortran)
+
+if (TARGET HDF5::HDF5)
+message(STATUS "HDF5::HDF5 found")
+else()
+message(STATUS "HDF5::HDF5 not found")
+endif()
 
 set(fortran_example_targets
   train

@@ -21,6 +21,7 @@ endif()
 set(fortran_example_targets
   train
   train_distributed
+  train_distributed_um
 )
 
 add_executable(train)
@@ -34,6 +35,13 @@ add_executable(train_distributed)
 target_sources(train_distributed
   PRIVATE
   train_distributed.f90
+  simulation.f90
+)
+
+add_executable(train_distributed_um)
+target_sources(train_distributed
+  PRIVATE
+  train_distributed_um.f90
   simulation.f90
 )
 

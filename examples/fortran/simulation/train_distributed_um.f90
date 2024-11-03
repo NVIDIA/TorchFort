@@ -68,9 +68,9 @@ program train_distributed_um
   real(real32) :: a(2), dt
   real(real32) :: loss_val
   real(real64) :: mse
-  real(real32), allocatable, managed :: u(:,:), u_div(:,:)
-  real(real32), allocatable, managed :: input(:,:,:,:), label(:,:,:,:), output(:,:,:,:)
-  real(real32), allocatable, managed :: input_local(:,:,:,:), label_local(:,:,:,:)
+  real(real32), managed, allocatable :: u(:,:), u_div(:,:)
+  real(real32), managed, allocatable :: input(:,:,:,:), label(:,:,:,:), output(:,:,:,:)
+  real(real32), managed, allocatable :: input_local(:,:,:,:), label_local(:,:,:,:)
   character(len=7) :: idx
   character(len=256) :: filename
   logical :: load_ckpt = .false.
@@ -366,4 +366,4 @@ program train_distributed_um
 
   call MPI_Finalize(istat)
 
-end program train_distributed
+end program train_distributed_um

@@ -60,6 +60,7 @@ program train_distributed_um
   use mpi
   use simulation
   use torchfort
+  use cudafor
   implicit none
 
   logical :: tuning = .false.

@@ -9,7 +9,7 @@ else()
 message(STATUS "MPI::MPI_C not found")
 endif()
 
-set( CMAKE_PREFIX_PATH "/home/tartarughina/hdf5/build/HDF5-1.17.0-Linux/HDF_Group/HDF5/1.17.0/cmake"; ${CMAKE_PREFIX_PATH})
+set( CMAKE_PREFIX_PATH "/home/tartarughina/hdf5/build/HDF5-1.17.0-Linux/HDF_Group/HDF5/1.17.0/cmake";${CMAKE_PREFIX_PATH})
 find_package(HDF5 REQUIRED COMPONENTS Fortran)
 
 if (TARGET HDF5::HDF5)

@@ -287,6 +287,7 @@ program train_distributed_um
       !$acc end kernels
     end do
 
+    istat = cudaDeviceSynchronize()
     !$acc wait
 
     ! distribute local batch data across GPUs for data parallel training
@@ -305,7 +306,7 @@ program train_distributed_um
 
     istat = torchfort_train("mymodel", input, label, loss_val)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
-
+    istat = cudaDeviceSynchronize()
     !$acc wait
   end do
 
@@ -321,6 +322,7 @@ program train_distributed_um
     label_local(:,:,1,1) = u_div
     !$acc end kernels
 
+    istat = cudaDeviceSynchronize()
     !$acc wait
 
     ! gather sample on all GPUs
@@ -332,17 +334,18 @@ program train_distributed_um
                        label(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        MPI_COMM_WORLD, istat)
 
-
     !$acc wait
 
     istat = torchfort_inference("mymodel", input(:,:,1:1,1:1), output(:,:,1:1,1:1))
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
 
+    istat = cudaDeviceSynchronize()
     !$acc wait
 
     !$acc kernels if(simulation_device >= 0)
     mse = sum((label(:,:,1,1) - output(:,:,1,1))**2) / (n*n)
     !$acc end kernels
+    istat = cudaDeviceSynchronize()
 
     if (rank == 0 .and. mod(i-1, val_write_freq) == 0) then
       print*, "writing validation sample:", i, "mse:", mse

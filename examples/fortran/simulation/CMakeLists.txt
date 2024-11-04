@@ -44,7 +44,7 @@ target_sources(train_distributed_um
   train_distributed_um.cuf
   simulation.f90
 )
-message(STATUS "CUF_GPU_ARG: ${CUF_GPU_ARG} if managed is not included it must do so for train_distributed_um")
+
 foreach(tgt ${fortran_example_targets})
   target_include_directories(${tgt}
     PRIVATE
@@ -57,8 +57,13 @@ foreach(tgt ${fortran_example_targets})
   target_link_libraries(${tgt} PRIVATE "${PROJECT_NAME}_fort")
   target_link_libraries(${tgt} PRIVATE ${PROJECT_NAME})
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-    target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -acc -gpu=${CUF_GPU_ARG}>)
-    target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>: -acc -gpu=${CUF_GPU_ARG}>)
+    if(${tgt} STREQUAL "train_distributed_um")
+        set(local_CUF_GPU_ARG "${CUF_GPU_ARG},managed")
+    else()
+        set(local_CUF_GPU_ARG "${CUF_GPU_ARG}")
+    endif()
+    target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -acc -gpu=${local_CUF_GPU_ARG}>)
+    target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-acc -gpu=${local_CUF_GPU_ARG}>)
   elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -fbackslash>)
   endif()

@@ -44,7 +44,7 @@ target_sources(train_distributed_um
   train_distributed_um.cuf
   simulation.f90
 )
-
+message(STATUS "CUF_GPU_ARG: ${CUF_GPU_ARG} if managed is not included it must do so for train_distributed_um")
 foreach(tgt ${fortran_example_targets})
   target_include_directories(${tgt}
     PRIVATE

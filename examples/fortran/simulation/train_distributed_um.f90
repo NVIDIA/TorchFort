@@ -69,9 +69,9 @@ program train_distributed_um
   real(real32) :: a(2), dt
   real(real32) :: loss_val
   real(real64) :: mse
-  real(real32), managed, dimension(:,:), allocatable :: u, u_div
-  real(real32), managed, dimension(:,:,:,:), allocatable :: input, label, output
-  real(real32), managed, dimension(:,:,:,:), allocatable :: input_local, label_local
+  real(real32), dimension(:,:), allocatable :: u, u_div
+  real(real32), dimension(:,:,:,:), allocatable :: input, label, output
+  real(real32), dimension(:,:,:,:), allocatable :: input_local, label_local
   character(len=7) :: idx
   character(len=256) :: filename
   logical :: load_ckpt = .false.

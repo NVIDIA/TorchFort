@@ -41,7 +41,7 @@ target_sources(train_distributed
 add_executable(train_distributed_um)
 target_sources(train_distributed_um
   PRIVATE
-  train_distributed_um.cuf
+  train_distributed_um.f90
   simulation.f90
 )
 

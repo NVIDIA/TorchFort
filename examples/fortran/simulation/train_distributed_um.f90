@@ -60,7 +60,7 @@ program train_distributed_um
   use mpi
   use simulation
   use torchfort
-  ! use cudafor
+  use cudafor
   implicit none
 
   logical :: tuning = .false.
@@ -244,9 +244,32 @@ program train_distributed_um
   allocate(label(n, n, nchannels, batch_size))
   allocate(output(n, n, nchannels, batch_size))
 
+  if (tuning) then
+      istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetAccessedBy, model_device)
+      istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+      istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetAccessedBy, model_device)
+      istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+
+      istat = cudaMemAdvise(input_local, sizeof(input_local), cudaMemAdviseSetPreferredLocation, model_device)
+      ! istat = cudaMemAdvise(input_local, sizeof(input_local), cudaMemAdviseSetAccessedBy, model_device)
+
+      istat = cudaMemAdvise(label_local, sizeof(label_local), cudaMemAdviseSetPreferredLocation, model_device)
+      ! istat = cudaMemAdvise(label_local, sizeof(label_local), cudaMemAdviseSetAccessedBy, model_device)
+
+      istat = cudaMemAdvise(input, sizeof(input), cudaMemAdviseSetPreferredLocation, model_device)
+      istat = cudaMemAdvise(input, sizeof(input), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+
+      istat = cudaMemAdvise(label, sizeof(label), cudaMemAdviseSetPreferredLocation, model_device)
+      istat = cudaMemAdvise(label, sizeof(label), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+
+      istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetPreferredLocation, model_device)
+      istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+
+  endif
   ! allocate and set up arrays for MPI Alltoallv (batch redistribution)
   allocate(sendcounts(nranks), recvcounts(nranks))
   allocate(sdispls(nranks), rdispls(nranks))
+
   do i = 1, nranks
     sendcounts(i) = n * n/nranks
     recvcounts(i) = n * n/nranks
@@ -348,6 +371,12 @@ program train_distributed_um
     ! istat = cudaDeviceSynchronize()
 
     if (rank == 0 .and. mod(i-1, val_write_freq) == 0) then
+        if (tuning) then
+            istat = cudaMemPrefetchAsync(input, sizeof(input), cudaCpuDeviceId)
+            istat = cudaMemPrefetchAsync(label, sizeof(label), cudaCpuDeviceId)
+            istat = cudaMemPrefetchAsync(output, sizeof(output), cudaCpuDeviceId)
+        endif
+
       print*, "writing validation sample:", i, "mse:", mse
       write(idx,'(i7.7)') i
       filename = 'input_'//idx//'.h5'
@@ -356,6 +385,12 @@ program train_distributed_um
       call write_sample(label(:,:,1,1), filename)
       filename = 'output_'//idx//'.h5'
       call write_sample(output(:,:,1,1), filename)
+
+      if (tuning) then
+          istat = cudaMemPrefetchAsync(input, sizeof(input), model_device)
+          istat = cudaMemPrefetchAsync(label, sizeof(label), model_device)
+          istat = cudaMemPrefetchAsync(output, sizeof(output), model_device)
+      endif
     endif
   end do
 

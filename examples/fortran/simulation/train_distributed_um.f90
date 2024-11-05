@@ -304,10 +304,20 @@ program train_distributed_um
   do i = 1, ntrain_steps
     do j = 1, batch_size * nranks
       call run_simulation_step(u, u_div)
+
+      if (tuning) then
+        istat = cudaMemPrefetchAsync(u, sizeof(u), model_device)
+        istat = cudaMemPrefetchAsync(u, sizeof(u), model_device)
+      endif
+
       !$acc kernels if(simulation_device >= 0) async
       input_local(:,:,1,j) = u
       label_local(:,:,1,j) = u_div
       !$acc end kernels
+      if (tuning) then
+        istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId)
+        istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId)
+      endif
     end do
 
     ! istat = cudaDeviceSynchronize()
@@ -340,11 +350,18 @@ program train_distributed_um
 
   do i = 1, nval_steps
     call run_simulation_step(u, u_div)
+    if (tuning) then
+      istat = cudaMemPrefetchAsync(u, sizeof(u), model_device)
+      istat = cudaMemPrefetchAsync(u, sizeof(u), model_device)
+    endif
     !$acc kernels async if(simulation_device >= 0)
     input_local(:,:,1,1) = u
     label_local(:,:,1,1) = u_div
     !$acc end kernels
-
+    if (tuning) then
+      istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId)
+      istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId)
+    endif
     ! istat = cudaDeviceSynchronize()
     !$acc wait
 

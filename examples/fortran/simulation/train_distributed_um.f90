@@ -64,6 +64,7 @@ program train_distributed_um
   implicit none
 
   logical :: tuning = .false.
+  integer(kind=cuda_stream_kind) :: mystream
   integer :: i, j, istat
   integer :: n, nchannels, batch_size
   real(real32) :: a(2), dt
@@ -296,6 +297,8 @@ program train_distributed_um
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
   endif
 
+  mystream = cudaforGetDefaultStream()
+
   call init_simulation(n, dt, a, train_step_ckpt*batch_size*dt, rank, nranks, simulation_device)
 
   ! run training
@@ -306,8 +309,8 @@ program train_distributed_um
       call run_simulation_step(u, u_div)
 
       if (tuning) then
-        istat = cudaMemPrefetchAsync(u, sizeof(u), model_device)
-        istat = cudaMemPrefetchAsync(u, sizeof(u), model_device)
+        istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
+        istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
       endif
 
       !$acc kernels if(simulation_device >= 0) async
@@ -315,8 +318,8 @@ program train_distributed_um
       label_local(:,:,1,j) = u_div
       !$acc end kernels
       if (tuning) then
-        istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId)
-        istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId)
+        istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId, mystream)
+        istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId, mystream)
       endif
     end do
 
@@ -351,16 +354,16 @@ program train_distributed_um
   do i = 1, nval_steps
     call run_simulation_step(u, u_div)
     if (tuning) then
-      istat = cudaMemPrefetchAsync(u, sizeof(u), model_device)
-      istat = cudaMemPrefetchAsync(u, sizeof(u), model_device)
+      istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
+      istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
     endif
     !$acc kernels async if(simulation_device >= 0)
     input_local(:,:,1,1) = u
     label_local(:,:,1,1) = u_div
     !$acc end kernels
     if (tuning) then
-      istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId)
-      istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId)
+      istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId, mystream)
+      istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId, mystream)
     endif
     ! istat = cudaDeviceSynchronize()
     !$acc wait
@@ -389,9 +392,9 @@ program train_distributed_um
 
     if (rank == 0 .and. mod(i-1, val_write_freq) == 0) then
         if (tuning) then
-            istat = cudaMemPrefetchAsync(input, sizeof(input), cudaCpuDeviceId)
-            istat = cudaMemPrefetchAsync(label, sizeof(label), cudaCpuDeviceId)
-            istat = cudaMemPrefetchAsync(output, sizeof(output), cudaCpuDeviceId)
+            istat = cudaMemPrefetchAsync(input, sizeof(input), cudaCpuDeviceId, mystream)
+            istat = cudaMemPrefetchAsync(label, sizeof(label), cudaCpuDeviceId, mystream)
+            istat = cudaMemPrefetchAsync(output, sizeof(output), cudaCpuDeviceId, mystream)
         endif
 
       print*, "writing validation sample:", i, "mse:", mse
@@ -404,9 +407,9 @@ program train_distributed_um
       call write_sample(output(:,:,1,1), filename)
 
       if (tuning) then
-          istat = cudaMemPrefetchAsync(input, sizeof(input), model_device)
-          istat = cudaMemPrefetchAsync(label, sizeof(label), model_device)
-          istat = cudaMemPrefetchAsync(output, sizeof(output), model_device)
+          istat = cudaMemPrefetchAsync(input, sizeof(input), model_device, mystream)
+          istat = cudaMemPrefetchAsync(label, sizeof(label), model_device, mystream)
+          istat = cudaMemPrefetchAsync(output, sizeof(output), model_device, mystream)
       endif
     endif
   end do

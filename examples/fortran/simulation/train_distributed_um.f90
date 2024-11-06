@@ -414,6 +414,8 @@ program train_distributed_um
     endif
   end do
 
+  istat = cudaDeviceSynchronize()
+
   if (rank == 0) then
     print*, "saving model and writing checkpoint..."
     istat = torchfort_save_model("mymodel", output_model_name)
@@ -423,7 +425,7 @@ program train_distributed_um
   endif
 
   ! wait for rank 0 to finish saving model and checkpoint
-  call MPI_Barrier(MPI_COMM_WORLD, istat)
+  ! call MPI_Barrier(MPI_COMM_WORLD, istat)
 
   call MPI_Finalize(istat)
 

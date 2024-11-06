@@ -414,6 +414,7 @@ program train_distributed_um
     endif
   end do
 
+  !$acc wait
 
   if (rank == 0) then
     print*, "saving model and writing checkpoint..."

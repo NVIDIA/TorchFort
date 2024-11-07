@@ -307,20 +307,10 @@ program train_distributed_um
   do i = 1, ntrain_steps
     do j = 1, batch_size * nranks
       call run_simulation_step(u, u_div)
-
-      if (tuning) then
-        istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
-        istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
-      endif
-
       !$acc kernels if(simulation_device >= 0) async
       input_local(:,:,1,j) = u
       label_local(:,:,1,j) = u_div
       !$acc end kernels
-      if (tuning) then
-        istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId, mystream)
-        istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId, mystream)
-      endif
     end do
 
     ! istat = cudaDeviceSynchronize()
@@ -352,19 +342,12 @@ program train_distributed_um
   if (rank == 0 .and. nval_steps >= 1) print*, "start validation..."
 
   do i = 1, nval_steps
+    ! simulation is run on the GPU, no need to move data back to the CPU
     call run_simulation_step(u, u_div)
-    if (tuning) then
-      istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
-      istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
-    endif
     !$acc kernels async if(simulation_device >= 0)
     input_local(:,:,1,1) = u
     label_local(:,:,1,1) = u_div
     !$acc end kernels
-    if (tuning) then
-      istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId, mystream)
-      istat = cudaMemPrefetchAsync(u, sizeof(u), cudaCpuDeviceId, mystream)
-    endif
     ! istat = cudaDeviceSynchronize()
     !$acc wait
 
@@ -414,7 +397,12 @@ program train_distributed_um
     endif
   end do
 
+  if (tuning) then
+    istat = cudaMemPrefetchAsync(output, sizeof(output), model_device, mystream)
+  endif
+  !$acc wait
   istat = cudaDeviceSynchronize()
+  call MPI_Barrier(MPI_COMM_WORLD, istat)
   print*, "sync istat is ", istat
 
   if (rank == 0) then
@@ -433,6 +421,7 @@ program train_distributed_um
   ! call MPI_Barrier(MPI_COMM_WORLD, istat)
   print*, "rank ", rank, " finished saving model and checkpoint"
   flush(6)
+  call MPI_Barrier(MPI_COMM_WORLD, istat)
   call MPI_Finalize(istat)
 
 end program train_distributed_um

@@ -415,18 +415,24 @@ program train_distributed_um
   end do
 
   istat = cudaDeviceSynchronize()
+  print*, "sync istat is ", istat
 
   if (rank == 0) then
     print*, "saving model and writing checkpoint..."
     istat = torchfort_save_model("mymodel", output_model_name)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
+    print*, "model saved to: ", output_model_name
+    flush(6)
     istat = torchfort_save_checkpoint("mymodel", output_checkpoint_dir)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
+    print*, "checkpoint saved to: ", output_checkpoint_dir
+    flush(6)
   endif
 
   ! wait for rank 0 to finish saving model and checkpoint
   ! call MPI_Barrier(MPI_COMM_WORLD, istat)
-
+  print*, "rank ", rank, " finished saving model and checkpoint"
+  flush(6)
   call MPI_Finalize(istat)
 
 end program train_distributed_um

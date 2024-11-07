@@ -403,6 +403,20 @@ program train_distributed_um
 
   #ifdef _OPENACC
   call acc_wait_all()
+
+  ! clean up
+  acc_free(input)
+  acc_free(label)
+  acc_free(output)
+  acc_free(input_local)
+  acc_free(label_local)
+  acc_free(u)
+  acc_free(u_div)
+  acc_free(sdispls)
+  acc_free(rdispls)
+  acc_free(sendcounts)
+  acc_free(recvcounts)
+
   call acc_shutdown(dev_type)
   #endif
 

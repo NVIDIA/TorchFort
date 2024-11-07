@@ -401,6 +401,9 @@ program train_distributed_um
 
   call MPI_Finalize(istat)
 
+  #ifdef _OPENACC
   call acc_wait_all()
-  call acc_shutdown(devtype)
+  call acc_shutdown(dev_type)
+  #endif
+
 end program train_distributed_um

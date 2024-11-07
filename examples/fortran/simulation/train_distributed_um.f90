@@ -418,6 +418,9 @@ program train_distributed_um
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
   endif
 
+  ! clean up
+  deallocate(input, label, output, input_local, label_local, u, u_div, sendcounts, recvcounts, sdispls, rdispls)
+
   #ifdef _OPENACC
     call acc_shutdown(dev_type)
   #endif

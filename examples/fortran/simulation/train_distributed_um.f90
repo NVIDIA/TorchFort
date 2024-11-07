@@ -405,5 +405,6 @@ program train_distributed_um
   endif
 
   call MPI_Finalize(istat)
-
+  print*, "done."
+  flush(6)
 end program train_distributed_um

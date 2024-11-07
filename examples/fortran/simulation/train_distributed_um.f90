@@ -405,17 +405,17 @@ program train_distributed_um
   call acc_wait_all()
 
   ! clean up
-  call acc_free(input)
-  call acc_free(label)
-  call acc_free(output)
-  call acc_free(input_local)
-  call acc_free(label_local)
-  call acc_free(u)
-  call acc_free(u_div)
-  call acc_free(sdispls)
-  call acc_free(rdispls)
-  call acc_free(sendcounts)
-  call acc_free(recvcounts)
+  istat = cudaFree(input)
+  istat = cudaFree(label)
+  istat = cudaFree(output)
+  istat = cudaFree(input_local)
+  istat = cudaFree(label_local)
+  istat = cudaFree(u)
+  istat = cudaFree(u_div)
+  istat = cudaFree(sdispls)
+  istat = cudaFree(rdispls)
+  istat = cudaFree(sendcounts)
+  istat = cudaFree(recvcounts)
 
   call acc_shutdown(dev_type)
   #endif

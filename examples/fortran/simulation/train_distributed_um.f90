@@ -373,6 +373,17 @@ program train_distributed_um
     !$acc end kernels
 
     if (rank == 0 .and. mod(i-1, val_write_freq) == 0) then
+
+        if (tuning) then
+            istat = cudaMemPrefetchAsync(input, sizeof(input), cudaCpuDeviceId, mystream)
+            if (istat /= cudaSuccess) stop
+            istat = cudaMemPrefetchAsync(label, sizeof(label), cudaCpuDeviceId, mystream)
+            if (istat /= cudaSuccess) stop
+            istat = cudaMemPrefetchAsync(output, sizeof(output), cudaCpuDeviceId, mystream)
+            if (istat /= cudaSuccess) stop
+            istat = cudaDeviceSynchronize()
+            if (istat /= cudaSuccess) stop
+        endif
       print*, "writing validation sample:", i, "mse:", mse
       write(idx,'(i7.7)') i
       filename = 'input_'//idx//'.h5'
@@ -381,17 +392,27 @@ program train_distributed_um
       call write_sample(label(:,:,1,1), filename)
       filename = 'output_'//idx//'.h5'
       call write_sample(output(:,:,1,1), filename)
+      if (tuning) then
+          istat = cudaMemPrefetchAsync(input, sizeof(input), simulation_device, mystream)
+          if (istat /= cudaSuccess) stop
+          istat = cudaMemPrefetchAsync(label, sizeof(label), simulation_device, mystream)
+          if (istat /= cudaSuccess) stop
+          istat = cudaMemPrefetchAsync(output, sizeof(output), simulation_device, mystream)
+          if (istat /= cudaSuccess) stop
+          istat = cudaDeviceSynchronize()
+          if (istat /= cudaSuccess) stop
+      endif
     endif
   end do
-
-  if (tuning) then
-      istat = cudaMemPrefetchAsync(output, sizeof(output), cudaCpuDeviceId, mystream)
-      if (istat /= cudaSuccess) stop
-      istat = cudaStreamSynchronize(mystream)
-      if (istat /= cudaSuccess) stop
-  endif
+  !$acc wait
 
   if (rank == 0) then
+      if (tuning) then
+          istat = cudaMemPrefetchAsync(output, sizeof(output), cudaCpuDeviceId, mystream)
+          if (istat /= cudaSuccess) stop
+          istat = cudaDeviceSynchronize()
+          if (istat /= cudaSuccess) stop
+      endif
     print*, "saving model and writing checkpoint..."
     istat = torchfort_save_model("mymodel", output_model_name)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
@@ -403,20 +424,6 @@ program train_distributed_um
 
   #ifdef _OPENACC
   call acc_wait_all()
-
-  ! clean up
-  istat = cudaFree(input)
-  istat = cudaFree(label)
-  istat = cudaFree(output)
-  istat = cudaFree(input_local)
-  istat = cudaFree(label_local)
-  istat = cudaFree(u)
-  istat = cudaFree(u_div)
-  istat = cudaFree(sdispls)
-  istat = cudaFree(rdispls)
-  istat = cudaFree(sendcounts)
-  istat = cudaFree(recvcounts)
-
   call acc_shutdown(dev_type)
   #endif
 

@@ -309,7 +309,7 @@ program train_distributed_um
 
   ! run training
   if (rank == 0 .and. ntrain_steps >= 1) print*, "start training..."
-  !$acc data copyin(u, u_div, input, label, input_local, label_local) if(simulation_device >= 0)
+
   do i = 1, ntrain_steps
     do j = 1, batch_size * nranks
       call run_simulation_step(u, u_div)
@@ -323,29 +323,29 @@ program train_distributed_um
 
     ! distribute local batch data across GPUs for data parallel training
     do j = 1, batch_size
-      !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device >= 0)
+
       call MPI_Alltoallv(input_local(:,:,1,j), sendcounts, sdispls, MPI_FLOAT, &
                          input(:,:,1,j), recvcounts, rdispls, MPI_FLOAT, &
                          MPI_COMM_WORLD, istat)
       call MPI_Alltoallv(label_local(:,:,1,j), sendcounts, sdispls, MPI_FLOAT, &
                          label(:,:,1,j), recvcounts, rdispls, MPI_FLOAT, &
                          MPI_COMM_WORLD, istat)
-      !$acc end host_data
+
     end do
 
     !$acc wait
-    !$acc host_data use_device(input, label) if(simulation_device >= 0)
+
     istat = torchfort_train("mymodel", input, label, loss_val)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
-    !$acc end host_data
+
     !$acc wait
   end do
-  !$acc end data
+
   if (rank == 0 .and. ntrain_steps >= 1) print*, "final training loss: ", loss_val
 
   ! run inference
   if (rank == 0 .and. nval_steps >= 1) print*, "start validation..."
-  !$acc data copyin(u, u_div, input, label, input_local, label_local) copyout(output) if(simulation_device >= 0)
+
   do i = 1, nval_steps
     call run_simulation_step(u, u_div)
     !$acc kernels async if(simulation_device >= 0)
@@ -356,20 +356,16 @@ program train_distributed_um
     !$acc wait
 
     ! gather sample on all GPUs
-    !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device >= 0)
     call MPI_Allgather(input_local(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        input(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        MPI_COMM_WORLD, istat)
     call MPI_Allgather(label_local(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        label(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        MPI_COMM_WORLD, istat)
-    !$acc end host_data
 
     !$acc wait
-    !$acc host_data use_device(input, output) if(simulation_device >= 0)
     istat = torchfort_inference("mymodel", input(:,:,1:1,1:1), output(:,:,1:1,1:1))
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
-    !$acc end host_data
     !$acc wait
 
     !$acc kernels if(simulation_device >= 0)
@@ -387,7 +383,6 @@ program train_distributed_um
       call write_sample(output(:,:,1,1), filename)
     endif
   end do
-  !$acc end data
 
   if (tuning) then
       istat = cudaMemPrefetchAsync(output, sizeof(output), cudaCpuDeviceId, mystream)
@@ -405,6 +400,7 @@ program train_distributed_um
   endif
 
   call MPI_Finalize(istat)
-  print*, "done."
-  flush(6)
+
+  call acc_wait_all()
+  call acc_shutdown(devtype)
 end program train_distributed_um

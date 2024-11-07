@@ -202,6 +202,12 @@ program train_distributed_um
 
   if (rank == 0) then
     print*, "Run settings:"
+    print*, "\tUnified Memory enabled"
+    if (tuning) then
+      print*, "\tTuning mode enabled"
+    else
+      print*, "\tTuning mode disabled"
+    endif
     print*, "\tconfigfile: ", trim(configfile)
     if (simulation_device == TORCHFORT_DEVICE_CPU) then
       print*, "\tsimulation_device: cpu"
@@ -246,10 +252,10 @@ program train_distributed_um
   allocate(output(n, n, nchannels, batch_size))
 
   if (tuning) then
-      istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetAccessedBy, model_device)
-      istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
-      istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetAccessedBy, model_device)
-      istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+      istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetPreferredLocation, model_device)
+      ! istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+      istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetPreferredLocation, model_device)
+      ! istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
 
       istat = cudaMemAdvise(input_local, sizeof(input_local), cudaMemAdviseSetPreferredLocation, model_device)
       ! istat = cudaMemAdvise(input_local, sizeof(input_local), cudaMemAdviseSetAccessedBy, model_device)
@@ -312,9 +318,8 @@ program train_distributed_um
       label_local(:,:,1,j) = u_div
       !$acc end kernels
     end do
-
-    ! istat = cudaDeviceSynchronize()
     !$acc wait
+    istat = cudaDeviceSynchronize()
 
     ! distribute local batch data across GPUs for data parallel training
     do j = 1, batch_size
@@ -332,8 +337,9 @@ program train_distributed_um
 
     istat = torchfort_train("mymodel", input, label, loss_val)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
-    ! istat = cudaDeviceSynchronize()
+
     !$acc wait
+    istat = cudaDeviceSynchronize()
   end do
 
   if (rank == 0 .and. ntrain_steps >= 1) print*, "final training loss: ", loss_val
@@ -348,8 +354,9 @@ program train_distributed_um
     input_local(:,:,1,1) = u
     label_local(:,:,1,1) = u_div
     !$acc end kernels
-    ! istat = cudaDeviceSynchronize()
+
     !$acc wait
+    istat = cudaDeviceSynchronize()
 
     ! gather sample on all GPUs
 
@@ -365,13 +372,12 @@ program train_distributed_um
     istat = torchfort_inference("mymodel", input(:,:,1:1,1:1), output(:,:,1:1,1:1))
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
 
-    ! istat = cudaDeviceSynchronize()
     !$acc wait
+    istat = cudaDeviceSynchronize()
 
     !$acc kernels if(simulation_device >= 0)
     mse = sum((label(:,:,1,1) - output(:,:,1,1))**2) / (n*n)
     !$acc end kernels
-    ! istat = cudaDeviceSynchronize()
 
     if (rank == 0 .and. mod(i-1, val_write_freq) == 0) then
         if (tuning) then
@@ -379,6 +385,7 @@ program train_distributed_um
             istat = cudaMemPrefetchAsync(label, sizeof(label), cudaCpuDeviceId, mystream)
             istat = cudaMemPrefetchAsync(output, sizeof(output), cudaCpuDeviceId, mystream)
         endif
+        istat = cudaDeviceSynchronize()
 
       print*, "writing validation sample:", i, "mse:", mse
       write(idx,'(i7.7)') i
@@ -398,30 +405,20 @@ program train_distributed_um
   end do
 
   if (tuning) then
-    istat = cudaMemPrefetchAsync(output, sizeof(output), model_device, mystream)
+    istat = cudaMemPrefetchAsync(output, sizeof(output), cudaCpuDeviceId, mystream)
   endif
-  !$acc wait
   istat = cudaDeviceSynchronize()
-  call MPI_Barrier(MPI_COMM_WORLD, istat)
-  print*, "sync istat is ", istat
+  !$acc wait
 
   if (rank == 0) then
     print*, "saving model and writing checkpoint..."
     istat = torchfort_save_model("mymodel", output_model_name)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
-    print*, "model saved to: ", output_model_name
-    flush(6)
     istat = torchfort_save_checkpoint("mymodel", output_checkpoint_dir)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
-    print*, "checkpoint saved to: ", output_checkpoint_dir
-    flush(6)
   endif
 
-  ! wait for rank 0 to finish saving model and checkpoint
-  ! call MPI_Barrier(MPI_COMM_WORLD, istat)
-  print*, "rank ", rank, " finished saving model and checkpoint"
-  flush(6)
-  call MPI_Barrier(MPI_COMM_WORLD, istat)
+  call acc_shutdown()
   call MPI_Finalize(istat)
 
 end program train_distributed_um

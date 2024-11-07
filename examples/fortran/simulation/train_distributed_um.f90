@@ -405,17 +405,17 @@ program train_distributed_um
   call acc_wait_all()
 
   ! clean up
-  acc_free(input)
-  acc_free(label)
-  acc_free(output)
-  acc_free(input_local)
-  acc_free(label_local)
-  acc_free(u)
-  acc_free(u_div)
-  acc_free(sdispls)
-  acc_free(rdispls)
-  acc_free(sendcounts)
-  acc_free(recvcounts)
+  call acc_free(input)
+  call acc_free(label)
+  call acc_free(output)
+  call acc_free(input_local)
+  call acc_free(label_local)
+  call acc_free(u)
+  call acc_free(u_div)
+  call acc_free(sdispls)
+  call acc_free(rdispls)
+  call acc_free(sendcounts)
+  call acc_free(recvcounts)
 
   call acc_shutdown(dev_type)
   #endif

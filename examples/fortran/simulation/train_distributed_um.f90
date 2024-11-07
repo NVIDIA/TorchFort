@@ -418,7 +418,10 @@ program train_distributed_um
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
   endif
 
-  call acc_shutdown()
+  #ifdef _OPENACC
+    call acc_shutdown(dev_type)
+  #endif
+
   call MPI_Finalize(istat)
 
 end program train_distributed_um

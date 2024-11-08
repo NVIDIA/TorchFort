@@ -70,9 +70,9 @@ program train_distributed_um
   real(real32) :: a(2), dt
   real(real32) :: loss_val
   real(real64) :: mse
-  real(real32), dimension(:,:), allocatable :: u, u_div
-  real(real32), dimension(:,:,:,:), allocatable :: input, label, output
-  real(real32), dimension(:,:,:,:), allocatable :: input_local, label_local
+  real(real32), managed, dimension(:,:), allocatable :: u, u_div
+  real(real32), managed, dimension(:,:,:,:), allocatable :: input, label, output
+  real(real32), managed, dimension(:,:,:,:), allocatable :: input_local, label_local
   character(len=7) :: idx
   character(len=256) :: filename
   logical :: load_ckpt = .false.
@@ -313,6 +313,8 @@ program train_distributed_um
   if (tuning) then
     istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
     istat = cudaMemPrefetchAsync(u_div, sizeof(u_div), model_device, mystream)
+    istat = cudaMemPrefetchAsync(input_local, sizeof(input_local), model_device, mystream)
+    istat = cudaMemPrefetchAsync(label_local, sizeof(label_local), model_device, mystream)
       endif
 
   do i = 1, ntrain_steps

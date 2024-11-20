@@ -276,7 +276,7 @@ program train_distributed_um
 
       istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetPreferredLocation, model_device)
       istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
-      call nvtxEndRTange
+      call nvtxEndRange
   endif
   ! allocate and set up arrays for MPI Alltoallv (batch redistribution)
   allocate(sendcounts(nranks), recvcounts(nranks))

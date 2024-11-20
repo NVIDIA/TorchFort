@@ -57,6 +57,7 @@ program train_distributed_um
 #ifdef _OPENACC
   use openacc
 #endif
+  use nvtx
   use mpi
   use simulation
   use torchfort
@@ -240,6 +241,7 @@ program train_distributed_um
   a = [1.0, 0.789] ! off-angle to generate more varied training data
 
   ! allocate "simulation" data sized for *local* domain
+  call nvtxStartRange("Memory allocation")
   allocate(u(n, n/nranks))
   allocate(u_div(n, n/nranks))
 
@@ -251,7 +253,10 @@ program train_distributed_um
   allocate(label(n, n, nchannels, batch_size))
   allocate(output(n, n, nchannels, batch_size))
 
+  call nvtxEndRange
+
   if (tuning) then
+      call nvtxStartRange("Memory advice")
       istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetPreferredLocation, model_device)
       ! istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
       istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetPreferredLocation, model_device)
@@ -271,7 +276,7 @@ program train_distributed_um
 
       istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetPreferredLocation, model_device)
       istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
-
+      call nvtxEndRTange
   endif
   ! allocate and set up arrays for MPI Alltoallv (batch redistribution)
   allocate(sendcounts(nranks), recvcounts(nranks))
@@ -311,13 +316,17 @@ program train_distributed_um
   if (rank == 0 .and. ntrain_steps >= 1) print*, "start training..."
 
   if (tuning) then
+    call nvtxStartRange("Prefetching")
     istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
     istat = cudaMemPrefetchAsync(u_div, sizeof(u_div), model_device, mystream)
     istat = cudaMemPrefetchAsync(input_local, sizeof(input_local), model_device, mystream)
     istat = cudaMemPrefetchAsync(label_local, sizeof(label_local), model_device, mystream)
-      endif
+    call nvtxEndRange
+    endif
 
   do i = 1, ntrain_steps
+    call nvtxStartRange("Training step "//i)
+    call nvtxStartRange("Simulation step")
     do j = 1, batch_size * nranks
       call run_simulation_step(u, u_div)
       !$acc kernels if(simulation_device >= 0) async
@@ -325,8 +334,10 @@ program train_distributed_um
       label_local(:,:,1,j) = u_div
       !$acc end kernels
     end do
+    call nvtxEndRange
     !$acc wait
 
+    call nvtxStartRange("MPI Alltoallv")
     ! distribute local batch data across GPUs for data parallel training
     do j = 1, batch_size
       !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device >= 0)
@@ -338,12 +349,15 @@ program train_distributed_um
                          MPI_COMM_WORLD, istat)
       !$acc end host_data
     end do
-
+    call nvtxEndRange
     !$acc wait
+    call nvtxStartRange("Training")
     !$acc host_data use_device(input, output) if(simulation_device >= 0)
     istat = torchfort_train("mymodel", input, label, loss_val)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     !$acc end host_data
+    call nvtxEndRange
+    call nvtxEndRange
     !$acc wait
   end do
 
@@ -353,15 +367,18 @@ program train_distributed_um
   if (rank == 0 .and. nval_steps >= 1) print*, "start validation..."
 
   do i = 1, nval_steps
+      call nvtxStartRange("Validation step "//i)
+      call nvtxStartRange("Simulation step")
     call run_simulation_step(u, u_div)
     !$acc kernels async if(simulation_device >= 0)
     input_local(:,:,1,1) = u
     label_local(:,:,1,1) = u_div
     !$acc end kernels
-
+    call nvtxEndRange
     !$acc wait
 
     ! gather sample on all GPUs
+    call nvtxStartRange("MPI Allgather")
     !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device >= 0)
     call MPI_Allgather(input_local(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        input(:,:,1,1), n * n/nranks, MPI_FLOAT, &
@@ -370,12 +387,14 @@ program train_distributed_um
                        label(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        MPI_COMM_WORLD, istat)
     !$acc end host_data
-
+    call nvtxEndRange
     !$acc wait
+    call nvtxStartRange("Inference")
     !$acc host_data use_device(input, output) if(simulation_device >= 0)
     istat = torchfort_inference("mymodel", input(:,:,1:1,1:1), output(:,:,1:1,1:1))
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     !$acc end host_data
+    call nvtxEndRange
     !$acc wait
 
     !$acc kernels if(simulation_device >= 0)
@@ -383,8 +402,9 @@ program train_distributed_um
     !$acc end kernels
 
     if (rank == 0 .and. mod(i-1, val_write_freq) == 0) then
-
+        call nvtxStartRange("Writing validation sample")
         if (tuning) then
+            call nvtxStartRange("Prefetching to CPU")
             istat = cudaMemPrefetchAsync(input(:,:,1,1), n * n * sizeof(real32), cudaCpuDeviceId, mystream)
             if (istat /= cudaSuccess) stop
             istat = cudaMemPrefetchAsync(label(:,:,1,1), n * n * sizeof(real32), cudaCpuDeviceId, mystream)
@@ -393,6 +413,7 @@ program train_distributed_um
             if (istat /= cudaSuccess) stop
             istat = cudaDeviceSynchronize()
             if (istat /= cudaSuccess) stop
+            call nvtxEndRange
         endif
       print*, "writing validation sample:", i, "mse:", mse
       write(idx,'(i7.7)') i
@@ -403,6 +424,7 @@ program train_distributed_um
       filename = 'output_'//idx//'.h5'
       call write_sample(output(:,:,1,1), filename)
       if (tuning) then
+          call nvtxStartRange("Prefetching to GPU")
           istat = cudaMemPrefetchAsync(input(:,:,1,1), n * n * sizeof(real32), simulation_device, mystream)
           if (istat /= cudaSuccess) stop
           istat = cudaMemPrefetchAsync(label(:,:,1,1), n * n * sizeof(real32), simulation_device, mystream)
@@ -411,23 +433,30 @@ program train_distributed_um
           if (istat /= cudaSuccess) stop
           istat = cudaDeviceSynchronize()
           if (istat /= cudaSuccess) stop
+          call nvtxEndRange
       endif
+      call nvtxEndRange
     endif
+    call nvtxEndRange
   end do
   !$acc wait
 
   if (rank == 0) then
+      call nvtxStartRange("Writing final results")
       if (tuning) then
+          call nvtxStartRange("Prefetching to CPU final results")
           istat = cudaMemPrefetchAsync(output, sizeof(output), cudaCpuDeviceId, mystream)
           if (istat /= cudaSuccess) stop
           istat = cudaDeviceSynchronize()
           if (istat /= cudaSuccess) stop
+          call nvtxEndRange
       endif
     print*, "saving model and writing checkpoint..."
     istat = torchfort_save_model("mymodel", output_model_name)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     istat = torchfort_save_checkpoint("mymodel", output_checkpoint_dir)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
+    call nvtxEndRange
   endif
 
   call MPI_Finalize(istat)

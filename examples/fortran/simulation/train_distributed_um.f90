@@ -325,7 +325,7 @@ program train_distributed_um
     endif
 
   do i = 1, ntrain_steps
-    call nvtxStartRange("Training step "//i)
+    call nvtxStartRange("Training step ")
     call nvtxStartRange("Simulation step")
     do j = 1, batch_size * nranks
       call run_simulation_step(u, u_div)
@@ -367,7 +367,7 @@ program train_distributed_um
   if (rank == 0 .and. nval_steps >= 1) print*, "start validation..."
 
   do i = 1, nval_steps
-      call nvtxStartRange("Validation step "//i)
+      call nvtxStartRange("Validation step ")
       call nvtxStartRange("Simulation step")
     call run_simulation_step(u, u_div)
     !$acc kernels async if(simulation_device >= 0)

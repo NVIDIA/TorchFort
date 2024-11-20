@@ -43,6 +43,7 @@ target_sources(train_distributed_um
   PRIVATE
   train_distributed_um.f90
   simulation.f90
+  nvtx.f90
 )
 
 foreach(tgt ${fortran_example_targets})
@@ -59,8 +60,8 @@ foreach(tgt ${fortran_example_targets})
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
     if(${tgt} STREQUAL "train_distributed_um")
         target_link_libraries(${tgt} PRIVATE NVHPC::PROFILER)
-        target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -acc -cuda -gpu=${CUF_GPU_ARG}> -lnvToolsExt)
-        target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-acc -cuda -gpu=${CUF_GPU_ARG}> -lnvToolsExt)
+        target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -acc -cuda -gpu=${CUF_GPU_ARG}>)
+        target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-acc -cuda -gpu=${CUF_GPU_ARG}>)
     else()
         target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -acc -gpu=${CUF_GPU_ARG}>)
         target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-acc -gpu=${CUF_GPU_ARG}>)

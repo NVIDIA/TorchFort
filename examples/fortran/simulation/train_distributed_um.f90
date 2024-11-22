@@ -315,6 +315,13 @@ program train_distributed_um
   ! run training
   if (rank == 0 .and. ntrain_steps >= 1) print*, "start training..."
 
+  ! Profiling showed that this is probably the most neeaded tune to improve performance
+  ! Page faults are present only during initial iterations of training, especially during the MPI_Alltoallv calls
+  ! This can be explained from the nature of the shared work done by the ranks
+  ! The simulation is done on the GPU, initial page faults.
+  ! when receiving the other data that portion of memory is not on the GPU yet, so page faults are triggered
+  ! After some iterations all of the data is brought back to GPU and no more page faults are triggered
+
   if (tuning) then
     call nvtxStartRange("Prefetching")
     istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)

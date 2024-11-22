@@ -318,11 +318,15 @@ program train_distributed_um
   if (tuning) then
     call nvtxStartRange("Prefetching")
     istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
+    if (istat /= cudaSuccess) stop
     istat = cudaMemPrefetchAsync(u_div, sizeof(u_div), model_device, mystream)
+    if (istat /= cudaSuccess) stop
     istat = cudaMemPrefetchAsync(input_local, sizeof(input_local), model_device, mystream)
+    if (istat /= cudaSuccess) stop
     istat = cudaMemPrefetchAsync(label_local, sizeof(label_local), model_device, mystream)
+    if (istat /= cudaSuccess) stop
     call nvtxEndRange
-    endif
+  endif
 
   do i = 1, ntrain_steps
     call nvtxStartRange("Training step ")

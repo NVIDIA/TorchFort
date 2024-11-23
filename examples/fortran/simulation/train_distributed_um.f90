@@ -412,22 +412,18 @@ program train_distributed_um
     ! distribute local batch data across GPUs for data parallel training
     call nvtxStartRange("Alltoallv")
     do j = 1, batch_size
-      !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device >= 0)
       call MPI_Alltoallv(input_local(:,:,1,j), sendcounts, sdispls, MPI_FLOAT, &
                          input(:,:,1,j), recvcounts, rdispls, MPI_FLOAT, &
                          MPI_COMM_WORLD, istat)
       call MPI_Alltoallv(label_local(:,:,1,j), sendcounts, sdispls, MPI_FLOAT, &
                          label(:,:,1,j), recvcounts, rdispls, MPI_FLOAT, &
                          MPI_COMM_WORLD, istat)
-      !$acc end host_data
     end do
     call nvtxEndRange
 
     !$acc wait
-    !$acc host_data use_device(input, output) if(simulation_device >= 0)
     istat = torchfort_train("mymodel", input, label, loss_val)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
-    !$acc end host_data
     !$acc wait
   end do
   call nvtxEndRange
@@ -449,21 +445,17 @@ program train_distributed_um
 
     ! gather sample on all GPUs
     call nvtxStartRange("Allgather")
-    !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device >= 0)
     call MPI_Allgather(input_local(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        input(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        MPI_COMM_WORLD, istat)
     call MPI_Allgather(label_local(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        label(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        MPI_COMM_WORLD, istat)
-    !$acc end host_data
     call nvtxEndRange
     !$acc wait
 
-    !$acc host_data use_device(input, output) if(simulation_device >= 0)
     istat = torchfort_inference("mymodel", input(:,:,1:1,1:1), output(:,:,1:1,1:1))
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
-    !$acc end host_data
     !$acc wait
 
     !$acc kernels if(simulation_device >= 0)

@@ -335,7 +335,6 @@ program train_distributed_um
 
   if (tuning) then
       call nvtxStartRange("Prefetching")
-      !$acc host_data use_device(u, u_div, input_local, label_local, input, label, output)
       ! Prefetch u
       ! istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, 0)
       istat = cudaMemPrefetchAsync(u, n * n/nranks, model_device, 0)
@@ -392,7 +391,6 @@ program train_distributed_um
           print *, "Error in cudaDeviceSynchronize: ", trim(adjustl(cudaGetErrorString(istat)))
           stop
       endif
-      !$acc end host_data
       call nvtxEndRange
   endif
 

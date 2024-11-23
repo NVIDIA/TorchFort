@@ -57,15 +57,15 @@ program train_distributed_um
 #ifdef _OPENACC
   use openacc
 #endif
-  use nvtx
   use mpi
   use simulation
   use torchfort
   use cudafor
+  use nvtx
   implicit none
 
   logical :: tuning = .false.
-  integer(kind=cuda_stream_kind) :: mystream
+
   integer :: i, j, istat
   integer :: n, nchannels, batch_size
   real(real32) :: a(2), dt
@@ -109,10 +109,13 @@ program train_distributed_um
   call MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, local_comm, istat)
   call MPI_Comm_rank(local_comm, local_rank, istat)
 
-  if (nranks /= 2) then
-    print*, "This example requires 2 ranks to run. Exiting."
+  if (nranks < 2) then
+    print*, "This example requires at least 2 ranks to run. Exiting."
     stop
   endif
+
+  n = 32
+  batch_size = 16 / nranks ! splitting global batch across GPUs
 
   ! read command line arguments
   skip_next = .false.
@@ -125,6 +128,15 @@ program train_distributed_um
     select case(arg)
       case('--tuning')
         tuning = .true.
+      case('--size')
+        call get_command_argument(i+1, arg)
+        read(arg, *) n
+        skip_next = .true.
+      case('--batch')
+        call get_command_argument(i+1, arg)
+        read(arg, *) batch_size
+        batch_size = batch_size / nranks
+        skip_next = .true.
       case('--configfile')
         call get_command_argument(i+1, arg)
         read(arg, *) configfile
@@ -227,6 +239,9 @@ program train_distributed_um
     endif
     print*, "\toutput_model_name: ", trim(output_model_name)
     print*, "\toutput_checkpoint_dir: ", trim(output_checkpoint_dir)
+    print*, "\tNumber of ranks: ", nranks
+    print*, "\tProblem size: ", n
+    print*, "\tBatch size: ", batch_size
     print*, "\tntrain_steps: ", ntrain_steps
     print*, "\tnval_steps: ", nval_steps
     print*, "\tval_write_freq: ", val_write_freq
@@ -234,9 +249,7 @@ program train_distributed_um
   endif
 
   ! model/simulation parameters
-  n = 32
   nchannels = 1
-  batch_size = 16 / nranks ! splitting global batch across GPUs
   dt = 0.01
   a = [1.0, 0.789] ! off-angle to generate more varied training data
 
@@ -253,34 +266,32 @@ program train_distributed_um
   allocate(label(n, n, nchannels, batch_size))
   allocate(output(n, n, nchannels, batch_size))
 
-  call nvtxEndRange
+  ! if (tuning) then
+  !     istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetPreferredLocation, model_device)
+  !     ! istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+  !     istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetPreferredLocation, model_device)
+  !     ! istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
 
-  if (tuning) then
-      call nvtxStartRange("Memory advice")
-      istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetPreferredLocation, model_device)
-      ! istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
-      istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetPreferredLocation, model_device)
-      ! istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+  !     istat = cudaMemAdvise(input_local, sizeof(input_local), cudaMemAdviseSetPreferredLocation, model_device)
+  !     ! istat = cudaMemAdvise(input_local, sizeof(input_local), cudaMemAdviseSetAccessedBy, model_device)
 
-      istat = cudaMemAdvise(input_local, sizeof(input_local), cudaMemAdviseSetPreferredLocation, model_device)
-      ! istat = cudaMemAdvise(input_local, sizeof(input_local), cudaMemAdviseSetAccessedBy, model_device)
+  !     istat = cudaMemAdvise(label_local, sizeof(label_local), cudaMemAdviseSetPreferredLocation, model_device)
+  !     ! istat = cudaMemAdvise(label_local, sizeof(label_local), cudaMemAdviseSetAccessedBy, model_device)
 
-      istat = cudaMemAdvise(label_local, sizeof(label_local), cudaMemAdviseSetPreferredLocation, model_device)
-      ! istat = cudaMemAdvise(label_local, sizeof(label_local), cudaMemAdviseSetAccessedBy, model_device)
+  !     istat = cudaMemAdvise(input, sizeof(input), cudaMemAdviseSetPreferredLocation, model_device)
+  !     istat = cudaMemAdvise(input, sizeof(input), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
 
-      istat = cudaMemAdvise(input, sizeof(input), cudaMemAdviseSetPreferredLocation, model_device)
-      istat = cudaMemAdvise(input, sizeof(input), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+  !     istat = cudaMemAdvise(label, sizeof(label), cudaMemAdviseSetPreferredLocation, model_device)
+  !     istat = cudaMemAdvise(label, sizeof(label), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
 
-      istat = cudaMemAdvise(label, sizeof(label), cudaMemAdviseSetPreferredLocation, model_device)
-      istat = cudaMemAdvise(label, sizeof(label), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+  !     istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetPreferredLocation, model_device)
+  !     istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
 
-      istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetPreferredLocation, model_device)
-      istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
-      call nvtxEndRange
-  endif
+  ! endif
   ! allocate and set up arrays for MPI Alltoallv (batch redistribution)
   allocate(sendcounts(nranks), recvcounts(nranks))
   allocate(sdispls(nranks), rdispls(nranks))
+  call nvtxEndRange
 
   do i = 1, nranks
     sendcounts(i) = n * n/nranks
@@ -308,7 +319,7 @@ program train_distributed_um
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
   endif
 
-  mystream = cudaforGetDefaultStream()
+  ! mystream = acc_get_cuda_stream(asyncQueueNumber)
 
   call init_simulation(n, dt, a, train_step_ckpt*batch_size*dt, rank, nranks, simulation_device)
 
@@ -323,21 +334,70 @@ program train_distributed_um
   ! After some iterations all of the data is brought back to GPU and no more page faults are triggered
 
   if (tuning) then
-    call nvtxStartRange("Prefetching")
-    istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, mystream)
-    if (istat /= cudaSuccess) stop
-    istat = cudaMemPrefetchAsync(u_div, sizeof(u_div), model_device, mystream)
-    if (istat /= cudaSuccess) stop
-    istat = cudaMemPrefetchAsync(input_local, sizeof(input_local), model_device, mystream)
-    if (istat /= cudaSuccess) stop
-    istat = cudaMemPrefetchAsync(label_local, sizeof(label_local), model_device, mystream)
-    if (istat /= cudaSuccess) stop
-    call nvtxEndRange
+      call nvtxStartRange("Prefetching")
+      !$acc host_data use_device(u, u_div, input_local, label_local, input, label, output)
+      ! Prefetch u
+      istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, 0)
+      if (istat /= cudaSuccess) then
+          print *, "Error in cudaMemPrefetchAsync(u): ", trim(adjustl(cudaGetErrorString(istat)))
+          stop
+      endif
+
+      ! Prefetch u_div
+      istat = cudaMemPrefetchAsync(u_div, sizeof(u_div), model_device, 0)
+      if (istat /= cudaSuccess) then
+          print *, "Error in cudaMemPrefetchAsync(u_div): ", trim(adjustl(cudaGetErrorString(istat)))
+          stop
+      endif
+
+      ! Prefetch input_local
+      istat = cudaMemPrefetchAsync(input_local, sizeof(input_local), model_device, 0)
+      if (istat /= cudaSuccess) then
+          print *, "Error in cudaMemPrefetchAsync(input_local): ", trim(adjustl(cudaGetErrorString(istat)))
+          stop
+      endif
+
+      ! Prefetch label_local
+      istat = cudaMemPrefetchAsync(label_local, sizeof(label_local), model_device, 0)
+      if (istat /= cudaSuccess) then
+          print *, "Error in cudaMemPrefetchAsync(label_local): ", trim(adjustl(cudaGetErrorString(istat)))
+          stop
+      endif
+
+      ! Prefetch input
+      istat = cudaMemPrefetchAsync(input, sizeof(input), model_device, 0)
+      if (istat /= cudaSuccess) then
+          print *, "Error in cudaMemPrefetchAsync(input): ", trim(adjustl(cudaGetErrorString(istat)))
+          stop
+      endif
+
+      ! Prefetch label
+      istat = cudaMemPrefetchAsync(label, sizeof(label), model_device, 0)
+      if (istat /= cudaSuccess) then
+          print *, "Error in cudaMemPrefetchAsync(label): ", trim(adjustl(cudaGetErrorString(istat)))
+          stop
+      endif
+
+      ! Prefetch output
+      istat = cudaMemPrefetchAsync(output, sizeof(output), model_device, 0)
+      if (istat /= cudaSuccess) then
+          print *, "Error in cudaMemPrefetchAsync(output): ", trim(adjustl(cudaGetErrorString(istat)))
+          stop
+      endif
+
+      ! Synchronize the CUDA stream to ensure prefetching completes
+      istat = cudaDeviceSynchronize()
+      if (istat /= cudaSuccess) then
+          print *, "Error in cudaDeviceSynchronize: ", trim(adjustl(cudaGetErrorString(istat)))
+          stop
+      endif
+      !$acc end host_data
+      call nvtxEndRange
   endif
 
+  call nvtxStartRange("Training")
   do i = 1, ntrain_steps
-    call nvtxStartRange("Training step ")
-    call nvtxStartRange("Simulation step")
+    call nvtxStartRange("TrainStep")
     do j = 1, batch_size * nranks
       call run_simulation_step(u, u_div)
       !$acc kernels if(simulation_device >= 0) async
@@ -348,8 +408,8 @@ program train_distributed_um
     call nvtxEndRange
     !$acc wait
 
-    call nvtxStartRange("MPI Alltoallv")
     ! distribute local batch data across GPUs for data parallel training
+    call nvtxStartRange("Alltoallv")
     do j = 1, batch_size
       !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device >= 0)
       call MPI_Alltoallv(input_local(:,:,1,j), sendcounts, sdispls, MPI_FLOAT, &
@@ -361,35 +421,33 @@ program train_distributed_um
       !$acc end host_data
     end do
     call nvtxEndRange
+
     !$acc wait
-    call nvtxStartRange("Training")
     !$acc host_data use_device(input, output) if(simulation_device >= 0)
     istat = torchfort_train("mymodel", input, label, loss_val)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     !$acc end host_data
-    call nvtxEndRange
-    call nvtxEndRange
     !$acc wait
   end do
+  call nvtxEndRange
 
   if (rank == 0 .and. ntrain_steps >= 1) print*, "final training loss: ", loss_val
 
   ! run inference
   if (rank == 0 .and. nval_steps >= 1) print*, "start validation..."
 
+  call nvtxStartRange("Validation")
   do i = 1, nval_steps
-      call nvtxStartRange("Validation step ")
-      call nvtxStartRange("Simulation step")
     call run_simulation_step(u, u_div)
     !$acc kernels async if(simulation_device >= 0)
     input_local(:,:,1,1) = u
     label_local(:,:,1,1) = u_div
     !$acc end kernels
-    call nvtxEndRange
+
     !$acc wait
 
     ! gather sample on all GPUs
-    call nvtxStartRange("MPI Allgather")
+    call nvtxStartRange("Allgather")
     !$acc host_data use_device(input_local, label_local, input, label) if(simulation_device >= 0)
     call MPI_Allgather(input_local(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        input(:,:,1,1), n * n/nranks, MPI_FLOAT, &
@@ -400,32 +458,19 @@ program train_distributed_um
     !$acc end host_data
     call nvtxEndRange
     !$acc wait
-    call nvtxStartRange("Inference")
+
     !$acc host_data use_device(input, output) if(simulation_device >= 0)
     istat = torchfort_inference("mymodel", input(:,:,1:1,1:1), output(:,:,1:1,1:1))
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     !$acc end host_data
-    call nvtxEndRange
     !$acc wait
 
     !$acc kernels if(simulation_device >= 0)
     mse = sum((label(:,:,1,1) - output(:,:,1,1))**2) / (n*n)
     !$acc end kernels
 
+    call nvtxStartRange("WriteValidationSample")
     if (rank == 0 .and. mod(i-1, val_write_freq) == 0) then
-        call nvtxStartRange("Writing validation sample")
-        if (tuning) then
-            call nvtxStartRange("Prefetching to CPU")
-            istat = cudaMemPrefetchAsync(input(:,:,1,1), n * n * sizeof(real32), cudaCpuDeviceId, mystream)
-            if (istat /= cudaSuccess) stop
-            istat = cudaMemPrefetchAsync(label(:,:,1,1), n * n * sizeof(real32), cudaCpuDeviceId, mystream)
-            if (istat /= cudaSuccess) stop
-            istat = cudaMemPrefetchAsync(output(:,:,1,1), n * n * sizeof(real32), cudaCpuDeviceId, mystream)
-            if (istat /= cudaSuccess) stop
-            istat = cudaDeviceSynchronize()
-            if (istat /= cudaSuccess) stop
-            call nvtxEndRange
-        endif
       print*, "writing validation sample:", i, "mse:", mse
       write(idx,'(i7.7)') i
       filename = 'input_'//idx//'.h5'
@@ -434,47 +479,39 @@ program train_distributed_um
       call write_sample(label(:,:,1,1), filename)
       filename = 'output_'//idx//'.h5'
       call write_sample(output(:,:,1,1), filename)
-      if (tuning) then
-          call nvtxStartRange("Prefetching to GPU")
-          istat = cudaMemPrefetchAsync(input(:,:,1,1), n * n * sizeof(real32), simulation_device, mystream)
-          if (istat /= cudaSuccess) stop
-          istat = cudaMemPrefetchAsync(label(:,:,1,1), n * n * sizeof(real32), simulation_device, mystream)
-          if (istat /= cudaSuccess) stop
-          istat = cudaMemPrefetchAsync(output(:,:,1,1), n * n * sizeof(real32), simulation_device, mystream)
-          if (istat /= cudaSuccess) stop
-          istat = cudaDeviceSynchronize()
-          if (istat /= cudaSuccess) stop
-          call nvtxEndRange
-      endif
-      call nvtxEndRange
     endif
     call nvtxEndRange
   end do
-  !$acc wait
+  call nvtxEndRange
+
+  call nvtxStartRange("Final sync / Prefetch")
+  if (tuning) then
+      ! Prefetch output
+      istat = cudaMemPrefetchAsync(output, sizeof(output), -1, 0)
+      if (istat /= cudaSuccess) then
+          print *, "Error in cudaMemPrefetchAsync(output): ", trim(adjustl(cudaGetErrorString(istat)))
+          stop
+      endif
+  endif
+
+  istat = cudaDeviceSynchronize()
+  if (istat /= cudaSuccess) then
+      print *, "Error in cudaDeviceSynchronize: ", trim(adjustl(cudaGetErrorString(istat)))
+      stop
+  endif
+  call nvtxEndRange
 
   if (rank == 0) then
-      call nvtxStartRange("Writing final results")
-      if (tuning) then
-          call nvtxStartRange("Prefetching to CPU final results")
-          istat = cudaMemPrefetchAsync(output, sizeof(output), cudaCpuDeviceId, mystream)
-          if (istat /= cudaSuccess) stop
-          istat = cudaDeviceSynchronize()
-          if (istat /= cudaSuccess) stop
-          call nvtxEndRange
-      endif
+    call nvtxStartRange("SaveModel")
     print*, "saving model and writing checkpoint..."
     istat = torchfort_save_model("mymodel", output_model_name)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     istat = torchfort_save_checkpoint("mymodel", output_checkpoint_dir)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
+    print*, "saving model and checkpoint done"
     call nvtxEndRange
   endif
 
   call MPI_Finalize(istat)
-
-  #ifdef _OPENACC
-  call acc_wait_all()
-  call acc_shutdown(dev_type)
-  #endif
 
 end program train_distributed_um

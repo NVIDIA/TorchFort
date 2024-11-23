@@ -266,28 +266,27 @@ program train_distributed_um
   allocate(label(n, n, nchannels, batch_size))
   allocate(output(n, n, nchannels, batch_size))
 
-  ! if (tuning) then
-  !     istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetPreferredLocation, model_device)
-  !     ! istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
-  !     istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetPreferredLocation, model_device)
-  !     ! istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+  if (tuning) then
+      istat = cudaMemAdvise(u, n * n/nranks, cudaMemAdviseSetPreferredLocation, model_device)
+      ! istat = cudaMemAdvise(u, sizeof(u), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+      istat = cudaMemAdvise(u_div, n * n/nranks, cudaMemAdviseSetPreferredLocation, model_device)
+      ! istat = cudaMemAdvise(u_div, sizeof(u_div), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
 
-  !     istat = cudaMemAdvise(input_local, sizeof(input_local), cudaMemAdviseSetPreferredLocation, model_device)
-  !     ! istat = cudaMemAdvise(input_local, sizeof(input_local), cudaMemAdviseSetAccessedBy, model_device)
+      istat = cudaMemAdvise(input_local, n * (n/nranks) * nchannels * batch_size*nranks, cudaMemAdviseSetPreferredLocation, model_device)
+      ! istat = cudaMemAdvise(input_local, sizeof(input_local), cudaMemAdviseSetAccessedBy, model_device)
 
-  !     istat = cudaMemAdvise(label_local, sizeof(label_local), cudaMemAdviseSetPreferredLocation, model_device)
-  !     ! istat = cudaMemAdvise(label_local, sizeof(label_local), cudaMemAdviseSetAccessedBy, model_device)
+      istat = cudaMemAdvise(label_local, n * (n/nranks) * nchannels * batch_size*nranks, cudaMemAdviseSetPreferredLocation, model_device)
+      ! istat = cudaMemAdvise(label_local, sizeof(label_local), cudaMemAdviseSetAccessedBy, model_device)
 
-  !     istat = cudaMemAdvise(input, sizeof(input), cudaMemAdviseSetPreferredLocation, model_device)
-  !     istat = cudaMemAdvise(input, sizeof(input), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+      istat = cudaMemAdvise(input, n * n * nchannels * batch_size, cudaMemAdviseSetPreferredLocation, model_device)
+      ! istat = cudaMemAdvise(input, sizeof(input), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
 
-  !     istat = cudaMemAdvise(label, sizeof(label), cudaMemAdviseSetPreferredLocation, model_device)
-  !     istat = cudaMemAdvise(label, sizeof(label), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+      istat = cudaMemAdvise(label, n * n * nchannels * batch_size, cudaMemAdviseSetPreferredLocation, model_device)
+      ! istat = cudaMemAdvise(label, sizeof(label), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
 
-  !     istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetPreferredLocation, model_device)
-  !     istat = cudaMemAdvise(output, sizeof(output), cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
-
-  ! endif
+      istat = cudaMemAdvise(output, n * n * nchannels * batch_size, cudaMemAdviseSetPreferredLocation, model_device)
+      istat = cudaMemAdvise(output, n * n * nchannels * batch_size, cudaMemAdviseSetAccessedBy, cudaCpuDeviceId)
+  endif
   ! allocate and set up arrays for MPI Alltoallv (batch redistribution)
   allocate(sendcounts(nranks), recvcounts(nranks))
   allocate(sdispls(nranks), rdispls(nranks))

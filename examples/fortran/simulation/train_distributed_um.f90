@@ -337,7 +337,8 @@ program train_distributed_um
       call nvtxStartRange("Prefetching")
       !$acc host_data use_device(u, u_div, input_local, label_local, input, label, output)
       ! Prefetch u
-      istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, 0)
+      ! istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, 0)
+      istat = cudaMemPrefetchAsync(u, n * n/nranks, model_device, 0)
       if (istat /= cudaSuccess) then
           print *, "Error in cudaMemPrefetchAsync(u): ", trim(adjustl(cudaGetErrorString(istat)))
           stop

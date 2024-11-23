@@ -336,6 +336,9 @@ program train_distributed_um
   if (tuning) then
       call nvtxStartRange("Prefetching")
       ! Prefetch u
+      ! sizeof, which returns the number of bytes, must be used only if u is of TYPE(C_DEVPTR) or TYPE(C_PTR)
+      ! When the managed tag is used the type is normal fortran array
+      ! Using -gpu=managed the type is either TYPE(C_DEVPTR) or TYPE(C_PTR)
       ! istat = cudaMemPrefetchAsync(u, sizeof(u), model_device, 0)
       istat = cudaMemPrefetchAsync(u, n * n/nranks, model_device, 0)
       if (istat /= cudaSuccess) then
@@ -344,42 +347,42 @@ program train_distributed_um
       endif
 
       ! Prefetch u_div
-      istat = cudaMemPrefetchAsync(u_div, sizeof(u_div), model_device, 0)
+      istat = cudaMemPrefetchAsync(u_div, n * n/nranks, model_device, 0)
       if (istat /= cudaSuccess) then
           print *, "Error in cudaMemPrefetchAsync(u_div): ", trim(adjustl(cudaGetErrorString(istat)))
           stop
       endif
 
       ! Prefetch input_local
-      istat = cudaMemPrefetchAsync(input_local, sizeof(input_local), model_device, 0)
+      istat = cudaMemPrefetchAsync(input_local, n * (n/nranks) * nchannels * batch_size*nranks, model_device, 0)
       if (istat /= cudaSuccess) then
           print *, "Error in cudaMemPrefetchAsync(input_local): ", trim(adjustl(cudaGetErrorString(istat)))
           stop
       endif
 
       ! Prefetch label_local
-      istat = cudaMemPrefetchAsync(label_local, sizeof(label_local), model_device, 0)
+      istat = cudaMemPrefetchAsync(label_local,  n * (n/nranks) * nchannels * batch_size*nranks, model_device, 0)
       if (istat /= cudaSuccess) then
           print *, "Error in cudaMemPrefetchAsync(label_local): ", trim(adjustl(cudaGetErrorString(istat)))
           stop
       endif
 
       ! Prefetch input
-      istat = cudaMemPrefetchAsync(input, sizeof(input), model_device, 0)
+      istat = cudaMemPrefetchAsync(input, n * n * nchannels * batch_size, model_device, 0)
       if (istat /= cudaSuccess) then
           print *, "Error in cudaMemPrefetchAsync(input): ", trim(adjustl(cudaGetErrorString(istat)))
           stop
       endif
 
       ! Prefetch label
-      istat = cudaMemPrefetchAsync(label, sizeof(label), model_device, 0)
+      istat = cudaMemPrefetchAsync(label, n * n * nchannels * batch_size, model_device, 0)
       if (istat /= cudaSuccess) then
           print *, "Error in cudaMemPrefetchAsync(label): ", trim(adjustl(cudaGetErrorString(istat)))
           stop
       endif
 
       ! Prefetch output
-      istat = cudaMemPrefetchAsync(output, sizeof(output), model_device, 0)
+      istat = cudaMemPrefetchAsync(output, n * n * nchannels * batch_size, model_device, 0)
       if (istat /= cudaSuccess) then
           print *, "Error in cudaMemPrefetchAsync(output): ", trim(adjustl(cudaGetErrorString(istat)))
           stop
@@ -486,7 +489,7 @@ program train_distributed_um
   call nvtxStartRange("Final sync / Prefetch")
   if (tuning) then
       ! Prefetch output
-      istat = cudaMemPrefetchAsync(output, sizeof(output), -1, 0)
+      istat = cudaMemPrefetchAsync(output, n * n * nchannels * batch_size, -1, 0)
       if (istat /= cudaSuccess) then
           print *, "Error in cudaMemPrefetchAsync(output): ", trim(adjustl(cudaGetErrorString(istat)))
           stop

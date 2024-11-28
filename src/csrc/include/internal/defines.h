@@ -68,7 +68,7 @@
   } while (false)
 
 #define CHECK_MPI(call)                                                                                                \
-  {                                                                                                                    \
+  do {                                                                                                                 \
     int err = call;                                                                                                    \
     if (0 != err) {                                                                                                    \
       char error_str[MPI_MAX_ERROR_STRING];                                                                            \
@@ -83,8 +83,7 @@
       }                                                                                                                \
       exit(EXIT_FAILURE);                                                                                              \
     }                                                                                                                  \
-  }                                                                                                                    \
-  while (false)
+  } while (false)
 
 #define BEGIN_MODEL_REGISTRY                                                                                           \
   static std::unordered_map<std::string, std::function<std::shared_ptr<BaseModel>()>> model_registry {

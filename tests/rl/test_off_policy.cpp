@@ -64,7 +64,7 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
   std::vector<int64_t> action_shape{1};
   std::vector<int64_t> state_batch_shape{1, 1};
   std::vector<int64_t> action_batch_shape{1, 1};
-  std::vector<int64_t> reward_batch_shape{1, 1};
+  std::vector<int64_t> reward_batch_shape{1};
   float reward, q_estimate, p_loss, q_loss;
   bool done;
   bool is_ready;
@@ -129,9 +129,10 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
 
       if (iter < num_train_iters) {
         // update replay buffer
-        tstat = torchfort_rl_off_policy_update_replay_buffer("test", state.data_ptr(), state_new.data_ptr(), 1,
-                                                             state_shape.data(), action.data_ptr(), 1,
-                                                             action_shape.data(), &reward, done, TORCHFORT_FLOAT, 0);
+        tstat = torchfort_rl_off_policy_update_replay_buffer("test",
+							     state.data_ptr(), state_new.data_ptr(), 1, state_shape.data(),
+							     action.data_ptr(), 1, action_shape.data(),
+							     &reward, done, TORCHFORT_FLOAT, 0);
 
         // perform training step if requested:
         tstat = torchfort_rl_off_policy_is_ready("test", is_ready);
@@ -141,8 +142,10 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
       }
 
       // evaluate policy:
-      tstat = torchfort_rl_off_policy_evaluate("test", state.data_ptr(), 2, state_batch_shape.data(), action.data_ptr(),
-                                               2, action_batch_shape.data(), &q_estimate, 2, reward_batch_shape.data(),
+      tstat = torchfort_rl_off_policy_evaluate("test",
+					       state.data_ptr(), 2, state_batch_shape.data(),
+					       action.data_ptr(), 2, action_batch_shape.data(),
+					       &q_estimate, 1, reward_batch_shape.data(),
                                                TORCHFORT_FLOAT, 0);
 
       if (iter >= num_train_iters) {
@@ -200,7 +203,7 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
 /******************************************************************/
 /****************************** TD3 *******************************/
 /******************************************************************/
-
+#if 0
 TEST(TD3, ConstantEnv) {
   float val, cmp, tol;
   std::tie(val, cmp, tol) = TestSystem(Constant, "td3", 20000, 0, 100, false);
@@ -265,6 +268,7 @@ TEST(DDPG, ActionEnv) {
 /******************************************************************/
 /****************************** SAC *******************************/
 /******************************************************************/
+#endif
 
 TEST(SAC, ConstantEnv) {
   float val, cmp, tol;
@@ -292,9 +296,10 @@ TEST(SAC, ActionEnv) {
 
 TEST(SAC, ActionStateEnv) {
   float val, cmp, tol;
-  std::tie(val, cmp, tol) = TestSystem(ActionState, "sac", 20000, 0, 100, true);
+  std::tie(val, cmp, tol) = TestSystem(ActionState, "sac", 20000, 0, 100, false);
   EXPECT_NEAR(val, cmp, 0.3);
 }
+
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

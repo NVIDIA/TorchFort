@@ -98,7 +98,7 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node, int model_
       std::set<std::string> supported_params{"type", "size", "n_envs"};
       check_params(supported_params, params.keys());
       auto size = static_cast<size_t>(params.get_param<int>("size")[0]);
-      auto size = static_cast<size_t>(params.get_param<int>("n_envs", 1)[0]);
+      auto n_envs = static_cast<size_t>(params.get_param<int>("n_envs", 1)[0]);
 
       // distinction between buffer types
       if (rb_type == "gae_lambda") {
@@ -318,7 +318,7 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor stens, torch::Tensor atens, fl
 // we should pass a tuple (s, a, r, d)
 void PPOSystem::updateRolloutBuffer(torch::Tensor stens, torch::Tensor atens, torch::Tensor rtens, torch::Tensor etens) {
   // note that we have to rescale the action: [a_low, a_high] -> [-1, 1]
-  torch::Tensor atenss;
+  torch::Tensor as;
   switch (actor_normalization_mode_) {
   case ActorNormalizationMode::Scale:
     // clamp to [a_low, a_high]

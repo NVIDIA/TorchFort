@@ -119,10 +119,9 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     torch::Tensor action_tensor, action_log_prob;
     {
       torch::NoGradGuard no_grad;
-      std::tie(action_tensor, action_log_prob) = p_model.model->forwardNoise(state_old_tensor);
-      action_log_prob = action_log_prob + targ_ent;
+      std::tie(action_tensor, action_log_prob) = p_model.model->forwardNoise(state_old_tensor);      
+      action_log_prob = torch::unsqueeze(action_log_prob + targ_ent, 1);
     }
-
     alpha_loss = -torch::mean(alpha_model->log_alpha_ * action_log_prob);
     alpha_loss.backward();
 
@@ -149,6 +148,7 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     torch::NoGradGuard no_grad;
     torch::Tensor action_new_tensor, action_new_log_prob;
     std::tie(action_new_tensor, action_new_log_prob) = p_model.model->forwardNoise(state_new_tensor);
+    action_new_log_prob = torch::unsqueeze(action_new_log_prob, 1);
 
     // compute expected reward
     torch::Tensor q_new_tensor =

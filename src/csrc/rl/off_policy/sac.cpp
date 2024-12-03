@@ -570,7 +570,7 @@ torch::Tensor SACSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   torch::Tensor reward = (q_models_target_[0].model)->forward(std::vector<torch::Tensor>{state, action})[0];
 
   // squeeze
-  reward = torch::squeeze(reward, 1)
+  reward = torch::squeeze(reward, 1);
 
   return reward;
 }

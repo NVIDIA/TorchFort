@@ -52,10 +52,10 @@ public:
   RolloutBuffer(const RolloutBuffer&) = delete;
   // base constructor
   RolloutBuffer(size_t size, size_t n_envs, int device)
-    : size_(size/n_envs), n_envs_(n_envs), device_(get_device(device)), last_episode_starts_(true), indices_((size/n_envs) * n_envs), pos_(0), rng_() {
+    : size_(size/n_envs), n_envs_(n_envs), device_(get_device(device)), indices_((size/n_envs) * n_envs), pos_(0), rng_() {
     // last episode starts == True is the same as setting its float to 1., since we are using next_state_terminal = 1-dones later:
     auto options = torch::TensorOptions().dtype(torch::kFloat32).device(device_);
-    last_episode_starts_ = torch::ones({n_envs_}, options);
+    last_episode_starts_ = torch::ones({static_cast<int64_t>(n_envs_)}, options);
     // fill index vector with indices
     std::generate(indices_.begin(), indices_.end(), [n = 0]() mutable { return n++; });
   }
@@ -109,11 +109,11 @@ public:
   void update(torch::Tensor s, torch::Tensor a, torch::Tensor r, torch::Tensor q, torch::Tensor log_p, torch::Tensor d) {
 
     // some checks
-    if( (s.sizes(0) != n_envs_) || (a.sizes(0) != n _envs_) ) {
-      throw std::runtime_error("GAELambdaRolloutBuffer::update: the size of the leading dimension of tensors s and a has to be equal to the number of environments"):
+    if( (s.sizes()[0] != n_envs_) || (a.sizes()[0] != n_envs_) ) {
+      throw std::runtime_error("GAELambdaRolloutBuffer::update: the size of the leading dimension of tensors s and a has to be equal to the number of environments");
     }
-    if ( (r.sizes(0) != n_envs_) || (q.sizes(0) != n_envs_) || (log_p.sizes(0) != n_envs_) || (d.sizes(0) != n_envs_) ) {
-      throw std::runtime_error("GAELambdaRolloutBuffer::update: tensors r, q, log_p and d have to be one dimensional and the size has to be equal to the number of environments"):
+    if ( (r.sizes()[0] != n_envs_) || (q.sizes()[0] != n_envs_) || (log_p.sizes()[0] != n_envs_) || (d.sizes()[0] != n_envs_) ) {
+      throw std::runtime_error("GAELambdaRolloutBuffer::update: tensors r, q, log_p and d have to be one dimensional and the size has to be equal to the number of environments");
     }
 
     // add no grad guard
@@ -151,7 +151,7 @@ public:
     // we need to keep track of those
     // initialize starting values
     auto options = torch::TensorOptions().dtype(torch::kFloat32).device(device_);
-    torch::Tensor last_gae_lam = torch::zeros({n_envs_}, options);
+    torch::Tensor last_gae_lam = torch::zeros({static_cast<int64_t>(n_envs_)}, options);
     torch::Tensor next_non_terminal = 1. - dones; // (done ? 0. : 1.);
     torch::Tensor next_values = last_values;
 
@@ -196,8 +196,8 @@ public:
       size_t glob_idx = indices_[sample];
 
       // we assume that glob_idx = env_idx + n_envs * step_idx
-      size_t env_idx = glob_idx % n_envs;
-      size_t step_idx = glob_idx / n_envs;
+      int64_t env_idx = glob_idx % n_envs_;
+      int64_t step_idx = glob_idx / n_envs_;
 
       // get buffer entry
       torch::Tensor stens, atens, rtens, qtens, log_ptens, etens;
@@ -282,14 +282,14 @@ public:
 
     // zero out the returns and advantage vectors just to be safe
     auto options = torch::TensorOptions().dtype(torch::kFloat32).device(device_);
-    std::fill(advantages_.begin(), advantages_.end(), torch::zeros({n_envs}, options));
-    std::fill(returns_.begin(), returns_.end(), torch::zeros({n_envs}, options));
+    std::fill(advantages_.begin(), advantages_.end(), torch::zeros({static_cast<int64_t>(n_envs_)}, options));
+    std::fill(returns_.begin(), returns_.end(), torch::zeros({static_cast<int64_t>(n_envs_)}, options));
 
     // finally, set the finalized flag to false
     finalized_ = false;
 
     // mark a new episode:
-    last_episode_starts_ = torch::ones({n_envs_}, options);
+    last_episode_starts_ = torch::ones({static_cast<int64_t>(n_envs_)}, options);
 
     return;
   }
@@ -301,7 +301,7 @@ public:
     std::vector<torch::Tensor> state_data;
 
     auto options = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCPU);
-    //auto options_b = torch::TensorOptions().dtype(torch::kBool).device(torch::kCPU);
+    auto options_b = torch::TensorOptions().dtype(torch::kBool).device(torch::kCPU);
     for (size_t index = 0; index < buffer_.size(); ++index) {
       torch::Tensor s, a, r, q, log_p, e;
       std::tie(s, a, r, q, log_p, e) = buffer_.at(index);
@@ -320,7 +320,7 @@ public:
     // state vector
     state_data.push_back(last_episode_starts_.clone());
     bool tmpbool = finalized_;
-    st = torch::from_blob(&tmpbool, {1}, options_b).clone();
+    torch::Tensor st = torch::from_blob(&tmpbool, {1}, options_b).clone();
     state_data.push_back(st);
 
     // create subdirectory:

@@ -237,12 +237,13 @@ static void policy_evaluate(const char* name, T* state, size_t state_dim, int64_
   // create tensors
   auto state_tensor =
       get_tensor<L>(state, state_dim, state_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto action_tensor = get_tensor<L>(action, action_dim, action_shape)
-                           .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto reward_tensor = get_tensor<L>(reward, reward_dim, reward_shape);
+  auto action_tensor =
+    get_tensor<L>(action, action_dim, action_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  auto reward_tensor =
+    get_tensor<L>(reward, reward_dim, reward_shape);
 
   // fwd pass
-  auto tmpreward = registry[name]->evaluate(state_tensor, action_tensor).to(reward_tensor.dtype());
+  torch::Tensor tmpreward = registry[name]->evaluate(state_tensor, action_tensor).to(reward_tensor.dtype());
   reward_tensor.copy_(tmpreward);
 
   return;

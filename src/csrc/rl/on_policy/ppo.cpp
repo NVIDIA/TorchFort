@@ -333,14 +333,13 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor stens, torch::Tensor atens, to
   }
 
   // compute q:
-  // we need to unsqueeze s and a to make sure that we can pass them to the NN:
-  torch::Tensor ad = torch::unsqueeze(as.to(model_device_), 0);
-  torch::Tensor sd = torch::unsqueeze(stens.to(model_device_), 0);
+  torch::Tensor ad = as.to(model_device_);
+  torch::Tensor sd = stens.to(model_device_);
   torch::Tensor log_p_tensor, entropy_tensor, value;
   std::tie(log_p_tensor, entropy_tensor, value) = (pq_model_.model)->evaluateAction(sd, ad);
 
   // the replay buffer only stores scaled actions!
-  rollout_buffer_->update(s, as, rtens, value, log_p_tensor, etens);
+  rollout_buffer_->update(stens, as, rtens, value, log_p_tensor, etens);
 }
 
 void PPOSystem::resetRolloutBuffer() { rollout_buffer_->reset(); }

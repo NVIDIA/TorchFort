@@ -438,7 +438,10 @@ torch::Tensor DDPGSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   action = action.to(model_device_);
 
   // do fwd pass
-  auto reward = (q_model_target_.model)->forward(std::vector<torch::Tensor>{state, action})[0];
+  torch::Tensor reward = (q_model_target_.model)->forward(std::vector<torch::Tensor>{state, action})[0];
+
+  // squeeze
+  reward = torch::squeeze(reward, 1);
 
   return reward;
 }

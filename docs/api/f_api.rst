@@ -461,7 +461,7 @@ torchfort_rl_off_policy_evaluate
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
   :p T state [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the state space.
   :p T act [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the action space.
-  :p T reward [out]: Two-dimensional array of size (1, :code:`batch_size`) which will hold the predicted reward values.
+  :p T reward [out]: One-dimensional array of size (:code:`batch_size`) which will hold the predicted reward values.
   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
  
@@ -712,7 +712,7 @@ torchfort_rl_on_policy_evaluate
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
   :p T state [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the state space.
   :p T act [in]: Multi-dimensional array of size (..., :code:`batch_size`), depending on the dimensionality of the action space.
-  :p T reward [out]: Two-dimensional array of size (1, :code:`batch_size`) which will hold the predicted reward values.
+  :p T reward [out]: One-dimensional array of size (:code:`batch_size`) which will hold the predicted reward values.
   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
  

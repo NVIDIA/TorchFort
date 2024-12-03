@@ -37,11 +37,11 @@ using namespace torch::indexing;
 
 // helper functions
 std::tuple<std::shared_ptr<rl::GAELambdaRolloutBuffer>, float, bool>
-getTestRolloutBuffer(int buffer_size, float gamma = 0.95, float lambda = 0.99) {
+getTestRolloutBuffer(int buffer_size, int n_env, float gamma = 0.95, float lambda = 0.99) {
 
   torch::NoGradGuard no_grad;
 
-  auto rbuff = std::make_shared<rl::GAELambdaRolloutBuffer>(buffer_size, gamma, lambda, -1);
+  auto rbuff = std::make_shared<rl::GAELambdaRolloutBuffer>(buffer_size, n_env, gamma, lambda, -1);
 
   // initialize rng
   std::random_device dev;
@@ -50,24 +50,23 @@ getTestRolloutBuffer(int buffer_size, float gamma = 0.95, float lambda = 0.99) {
   std::normal_distribution<float> normal(1.0, 1.0);
 
   // fill the buffer
-  float reward, log_p, q;
-  bool done;
-  torch::Tensor state = torch::zeros({1}, torch::kFloat32), action;
+  torch::Tensor state = torch::zeros({1, 1}, torch::kFloat32);
+  torch::Tensor action, reward, log_p, q, done;
   for (unsigned int i = 0; i < buffer_size + 1; ++i) {
-    action = torch::ones({1}, torch::kFloat32) * static_cast<float>(dist(rng));
-    reward = action.item<float>();
-    q = reward;
-    log_p = normal(rng);
+    action = torch::ones({1, 1}, torch::kFloat32) * static_cast<float>(dist(rng));
+    reward = torch::squeeze(action, 1).clone();
+    q = reward.clone();
+    log_p = torch::tensor({normal(rng)}, torch::kFloat32);
     // add one episode break in the middle. Note that this means that
     // at this index, the state will be the last one in the episode
     // internally this will be converted such that the next state will be the
     // first state in a new episode
-    done = (i == (buffer_size / 2) ? true : false);
+    done = torch::tensor({(i == (buffer_size / 2) ? 1. : 0.)}, torch::kFloat32);
     rbuff->update(state, action, reward, q, log_p, done);
     state = state + action;
   }
 
-  return std::make_tuple(rbuff, q, done);
+  return std::make_tuple(rbuff, q.item<float>(), (done.item<float>() > 0.5 ? true : false));
 }
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
@@ -76,22 +75,20 @@ extract_entries(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
   std::vector<float> svec, avec, rvec, qvec, log_p_vec, advvec, retvec;
   std::vector<float> dvec;
   for (unsigned int i = 0; i < buffp->getSize(); ++i) {
-    torch::Tensor s, a;
-    float r, q, log_p, adv, ret;
-    bool d;
+    torch::Tensor s, a, r, q, log_p, adv, ret, d;
     std::tie(s, a, r, q, log_p, adv, ret, d) = buffp->getFull(i);
-    svec.push_back(s.item<float>());
-    avec.push_back(a.item<float>());
-    rvec.push_back(r);
-    qvec.push_back(q);
-    log_p_vec.push_back(log_p);
-    advvec.push_back(adv);
-    retvec.push_back(ret);
-    dvec.push_back((d ? 1. : 0.));
+    svec.push_back(s.index({0,0}).item<float>());
+    avec.push_back(a.index({0,0}).item<float>());
+    rvec.push_back(r.item<float>());
+    qvec.push_back(q.item<float>());
+    log_p_vec.push_back(log_p.item<float>());
+    advvec.push_back(adv.item<float>());
+    retvec.push_back(ret.item<float>());
+    dvec.push_back(d.item<float>());
   }
   auto options = torch::TensorOptions().dtype(torch::kFloat32);
-  torch::Tensor stens = torch::from_blob(svec.data(), {1}, options).clone();
-  torch::Tensor atens = torch::from_blob(avec.data(), {1}, options).clone();
+  torch::Tensor stens = torch::from_blob(svec.data(), {1,1}, options).clone();
+  torch::Tensor atens = torch::from_blob(avec.data(), {1,1}, options).clone();
   torch::Tensor rtens = torch::from_blob(rvec.data(), {1}, options).clone();
   torch::Tensor qtens = torch::from_blob(qvec.data(), {1}, options).clone();
   torch::Tensor log_p_tens = torch::from_blob(log_p_vec.data(), {1}, options).clone();
@@ -103,13 +100,12 @@ extract_entries(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
 }
 
 void print_buffer(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
-  torch::Tensor stens, atens;
-  float reward, q, log_p;
-  bool done;
+  torch::Tensor stens, atens, reward, q, log_p, done;
   for (unsigned int i = 0; i < buffp->getSize(); ++i) {
     std::tie(stens, atens, reward, q, log_p, done) = buffp->get(i);
-    std::cout << "entry " << i << ": s = " << stens.item<float>() << " a = " << atens.item<float>() << " r = " << reward
-              << " q = " << q << " log_p = " << log_p << " d = " << done << std::endl;
+    std::cout << "entry " << i << ": s = " << stens.index({0,0}).item<float>() << " a = " << atens.index({0,0}).item<float>()
+	      << " r = " << reward.item<float>() << " q = " << q.item<float>() << " log_p = " << log_p.item<float>()
+	      << " d = " << (done.item<float>() > 0.5 ? true : false) << std::endl;
   }
 }
 
@@ -129,7 +125,7 @@ TEST(RolloutBuffer, EntryConsistency) {
   std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
   float last_val;
   bool last_done;
-  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, gamma, lambda);
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 1, gamma, lambda);
 
   // sample
   torch::Tensor stens, atens, qtens, log_p_tens, advtens, rettens;
@@ -160,12 +156,10 @@ TEST(RolloutBuffer, AdvantageComputation) {
   std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
   float last_val;
   bool last_done;
-  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, gamma, lambda);
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 1, gamma, lambda);
 
   // get a few items and their successors:
-  torch::Tensor stens, atens;
-  float r, q, log_p, adv, ret, df;
-  bool d;
+  torch::Tensor stens, atens, r, q, log_p, adv, ret, d;
   torch::Tensor rtens = torch::empty({buffer_size}, torch::kFloat32);
   torch::Tensor advtens = torch::empty({buffer_size}, torch::kFloat32);
   torch::Tensor advtens_compare = torch::empty({buffer_size}, torch::kFloat32);
@@ -175,11 +169,10 @@ TEST(RolloutBuffer, AdvantageComputation) {
   // first, extract all V and r elements of the tensor and move them into a big tensor:
   for (int i = 0; i < buffer_size; ++i) {
     std::tie(stens, atens, r, q, log_p, adv, ret, d) = rbuff->getFull(i);
-    rtens.index_put_({i}, r);
-    qtens.index_put_({i}, q);
-    df = (d ? 0. : 1.);
-    dftens.index_put_({i}, df);
-    advtens_compare.index_put_({i}, adv);
+    rtens.index_put_({i}, r.item<float>());
+    qtens.index_put_({i}, q.item<float>());
+    dftens.index_put_({i}, 1. - d.item<float>());
+    advtens_compare.index_put_({i}, adv.item<float>());
   }
   qtens.index_put_({static_cast<int>(buffer_size)}, last_val);
   dftens.index_put_({static_cast<int>(buffer_size)}, (last_done ? 0. : 1.));
@@ -216,7 +209,7 @@ TEST(RolloutBuffer, SaveRestore) {
   std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
   float last_val;
   bool last_done;
-  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, gamma, lambda);
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 1, gamma, lambda);
 
   // extract entries before storing
   torch::Tensor stens_b, atens_b, rtens_b, qtens_b, log_p_tens_b, advtens_b, rettens_b, dtens_b;

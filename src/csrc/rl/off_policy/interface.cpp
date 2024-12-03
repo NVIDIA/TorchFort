@@ -385,6 +385,11 @@ torchfort_result_t torchfort_rl_off_policy_evaluate(const char* name, void* stat
                                                     int64_t* reward_shape, torchfort_datatype_t dtype,
                                                     cudaStream_t stream) {
   using namespace torchfort;
+
+  if (reward_dim != 1) {
+    THROW_INVALID_USAGE("The dimension of the reward array has to be equal to 1.");
+  }
+  
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT:
@@ -414,6 +419,11 @@ torchfort_result_t torchfort_rl_off_policy_evaluate_F(const char* name, void* st
                                                       int64_t* reward_shape, torchfort_datatype_t dtype,
                                                       cudaStream_t stream) {
   using namespace torchfort;
+
+  if (reward_dim != 1) {
+    THROW_INVALID_USAGE("The dimension of the reward array has to be equal to 1.");
+  }
+
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT:

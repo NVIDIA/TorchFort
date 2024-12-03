@@ -55,7 +55,7 @@ public:
     : size_(size/n_envs), n_envs_(n_envs), device_(get_device(device)), indices_((size/n_envs) * n_envs), pos_(0), rng_() {
     // some asserts
     if (size < n_envs) {
-      throw std::runtime_error("GAELambdaRolloutBuffer::GAELambdaRolloutBuffer: Error, make sure the buffer size is bigger than or equal to the number of environments");
+      throw std::runtime_error("RolloutBuffer::RolloutBuffer: Error, make sure the buffer size is bigger than or equal to the number of environments");
     }
     // last episode starts == True is the same as setting its float to 1., since we are using next_state_terminal = 1-dones later:
     auto options = torch::TensorOptions().dtype(torch::kFloat32).device(device_);

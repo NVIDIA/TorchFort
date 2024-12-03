@@ -267,8 +267,10 @@ public:
   // init communicators
   void initSystemComm(MPI_Comm mpi_comm);
 
-  // we should pass a tuple (s, a, r, e)
+  // we should pass a tuple (s, a, r, e), single env convenience function
   void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, bool);
+  // this is for multi env
+  void updateRolloutBuffer(torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor);
   // void finalizeRolloutBuffer(float, bool);
   void resetRolloutBuffer();
   bool isReady();

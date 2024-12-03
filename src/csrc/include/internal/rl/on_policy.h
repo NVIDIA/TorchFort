@@ -62,7 +62,10 @@ public:
   RLOnPolicySystem(int model_device, int rb_device);
 
   // some important functions which have to be implemented by the base class
+  // single env
   virtual void updateRolloutBuffer(torch::Tensor, torch::Tensor, float, bool) = 0;
+  // multi env
+  virtual void updateRolloutBuffer(torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor) = 0;
   // virtual void finalizeRolloutBuffer(float, bool) = 0;
   virtual void resetRolloutBuffer() = 0;
   virtual bool isReady() = 0;
@@ -92,8 +95,10 @@ extern std::unordered_map<std::string, std::shared_ptr<RLOnPolicySystem>> regist
 
 // some convenience wrappers
 template <MemoryLayout L, typename T>
-static void update_rollout_buffer(const char* name, T* state, size_t state_dim, int64_t* state_shape, T* action,
-                                  size_t action_dim, int64_t* action_shape, T reward, bool final_state,
+static void update_rollout_buffer(const char* name,
+				  T* state, size_t state_dim, int64_t* state_shape,
+				  T* action, size_t action_dim, int64_t* action_shape,
+				  T reward, bool final_state,
                                   cudaStream_t ext_stream) {
 
   // no grad
@@ -120,6 +125,45 @@ static void update_rollout_buffer(const char* name, T* state, size_t state_dim, 
                                     .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
 
   registry[name]->updateRolloutBuffer(state_tensor, action_tensor, static_cast<float>(reward), final_state);
+  return;
+}
+
+template <MemoryLayout L, typename T>
+static void update_rollout_buffer(const char* name,
+				  T* state, size_t state_dim, int64_t* state_shape,
+				  T* action, size_t action_dim, int64_t* action_shape,
+				  T* reward, size_t reward_dim, int64_t* reward_shape,
+				  T* final_state, size_t final_state_dim, int64_t* final_state_shape,
+                                  cudaStream_t ext_stream) {
+
+  // no grad
+  torch::NoGradGuard no_grad;
+
+  // we need to sync carefully here
+  auto model_device = registry[name]->modelDevice();
+  auto rb_device = registry[name]->rbDevice();
+#ifdef ENABLE_GPU
+  c10::cuda::OptionalCUDAStreamGuard guard;
+  if (model_device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
+    guard.reset_stream(stream);
+  } else if (rb_device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
+    guard.reset_stream(stream);
+  }
+#endif
+
+  // get tensors and copy:
+  torch::Tensor state_tensor =
+      get_tensor<L>(state, state_dim, state_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  torch::Tensor action_tensor = get_tensor<L>(action, action_dim, action_shape)
+                                    .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  torch::Tensor reward_tensor =
+      get_tensor<L>(reward, reward_dim, reward_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  torch::Tensor final_state_tensor =
+      get_tensor<L>(final_state, final_state_dim, final_state_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+
+  registry[name]->updateRolloutBuffer(state_tensor, action_tensor, reward_tensor, final_state_tensor);
   return;
 }
 

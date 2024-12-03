@@ -307,10 +307,12 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
 // in the replay buffer update function, so no need to check it here
 void PPOSystem::updateRolloutBuffer(torch::Tensor stens, torch::Tensor atens, float r, bool d) {
   auto options = torch::TensorOptions().dtype(torch::kFloat32).device(rb_device_);
+  torch::Tensor stensu = torch::unsqueeze(stens, 0);
+  torch::Tensor	atensu = torch::unsqueeze(atens, 0);
   torch::Tensor rtens = torch::tensor({r}, options);
   torch::Tensor etens = torch::tensor({d ? 1. : 0.}, options);
 
-  updateRolloutBuffer(stens, atens, rtens, etens);
+  updateRolloutBuffer(stensu, atensu, rtens, etens);
 }
   
 // we should pass a tuple (s, a, r, d)

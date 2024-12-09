@@ -61,7 +61,6 @@ program train_distributed_um
   use simulation
   use torchfort
   use cudafor
-  use nvtx
   implicit none
 
   logical :: tuning = .false.
@@ -254,7 +253,6 @@ program train_distributed_um
   a = [1.0, 0.789] ! off-angle to generate more varied training data
 
   ! allocate "simulation" data sized for *local* domain
-  call nvtxStartRange("Memory allocation")
   allocate(u(n, n/nranks))
   allocate(u_div(n, n/nranks))
 
@@ -290,7 +288,7 @@ program train_distributed_um
   ! allocate and set up arrays for MPI Alltoallv (batch redistribution)
   allocate(sendcounts(nranks), recvcounts(nranks))
   allocate(sdispls(nranks), rdispls(nranks))
-  call nvtxEndRange
+
 
   do i = 1, nranks
     sendcounts(i) = n * n/nranks
@@ -333,7 +331,6 @@ program train_distributed_um
   ! After some iterations all of the data is brought back to GPU and no more page faults are triggered
 
   if (tuning) then
-      call nvtxStartRange("Prefetching")
       ! Prefetch u
       ! sizeof, which returns the number of bytes, must be used only if u is of TYPE(C_DEVPTR) or TYPE(C_PTR)
       ! When the managed tag is used the type is normal fortran array
@@ -393,12 +390,12 @@ program train_distributed_um
           print *, "Error in cudaDeviceSynchronize: ", trim(adjustl(cudaGetErrorString(istat)))
           stop
       endif
-      call nvtxEndRange
+
   endif
 
-  call nvtxStartRange("Training")
+
   do i = 1, ntrain_steps
-    call nvtxStartRange("TrainStep")
+
     do j = 1, batch_size * nranks
       call run_simulation_step(u, u_div)
       !$acc kernels if(simulation_device >= 0) async
@@ -406,11 +403,11 @@ program train_distributed_um
       label_local(:,:,1,j) = u_div
       !$acc end kernels
     end do
-    call nvtxEndRange
+
     !$acc wait
 
     ! distribute local batch data across GPUs for data parallel training
-    call nvtxStartRange("Alltoallv")
+
     do j = 1, batch_size
       call MPI_Alltoallv(input_local(:,:,1,j), sendcounts, sdispls, MPI_FLOAT, &
                          input(:,:,1,j), recvcounts, rdispls, MPI_FLOAT, &
@@ -419,21 +416,21 @@ program train_distributed_um
                          label(:,:,1,j), recvcounts, rdispls, MPI_FLOAT, &
                          MPI_COMM_WORLD, istat)
     end do
-    call nvtxEndRange
+
 
     !$acc wait
     istat = torchfort_train("mymodel", input, label, loss_val)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     !$acc wait
   end do
-  call nvtxEndRange
+
 
   if (rank == 0 .and. ntrain_steps >= 1) print*, "final training loss: ", loss_val
 
   ! run inference
   if (rank == 0 .and. nval_steps >= 1) print*, "start validation..."
 
-  call nvtxStartRange("Validation")
+
   do i = 1, nval_steps
     call run_simulation_step(u, u_div)
     !$acc kernels async if(simulation_device >= 0)
@@ -444,14 +441,14 @@ program train_distributed_um
     !$acc wait
 
     ! gather sample on all GPUs
-    call nvtxStartRange("Allgather")
+
     call MPI_Allgather(input_local(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        input(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        MPI_COMM_WORLD, istat)
     call MPI_Allgather(label_local(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        label(:,:,1,1), n * n/nranks, MPI_FLOAT, &
                        MPI_COMM_WORLD, istat)
-    call nvtxEndRange
+
     !$acc wait
 
     istat = torchfort_inference("mymodel", input(:,:,1:1,1:1), output(:,:,1:1,1:1))
@@ -462,7 +459,7 @@ program train_distributed_um
     mse = sum((label(:,:,1,1) - output(:,:,1,1))**2) / (n*n)
     !$acc end kernels
 
-    call nvtxStartRange("WriteValidationSample")
+
     if (rank == 0 .and. mod(i-1, val_write_freq) == 0) then
       print*, "writing validation sample:", i, "mse:", mse
       write(idx,'(i7.7)') i
@@ -473,11 +470,11 @@ program train_distributed_um
       filename = 'output_'//idx//'.h5'
       call write_sample(output(:,:,1,1), filename)
     endif
-    call nvtxEndRange
-  end do
-  call nvtxEndRange
 
-  call nvtxStartRange("Final sync / Prefetch")
+  end do
+
+
+
   if (tuning) then
       ! Prefetch output
       istat = cudaMemPrefetchAsync(output, n * n * nchannels * batch_size, -1, 0)
@@ -492,17 +489,17 @@ program train_distributed_um
       print *, "Error in cudaDeviceSynchronize: ", trim(adjustl(cudaGetErrorString(istat)))
       stop
   endif
-  call nvtxEndRange
+
 
   if (rank == 0) then
-    call nvtxStartRange("SaveModel")
+
     print*, "saving model and writing checkpoint..."
     istat = torchfort_save_model("mymodel", output_model_name)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     istat = torchfort_save_checkpoint("mymodel", output_checkpoint_dir)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     print*, "saving model and checkpoint done"
-    call nvtxEndRange
+
   endif
 
   call MPI_Finalize(istat)

@@ -43,7 +43,6 @@ target_sources(train_distributed_um
   PRIVATE
   train_distributed_um.f90
   simulation.f90
-  nvtx.f90
 )
 
 foreach(tgt ${fortran_example_targets})

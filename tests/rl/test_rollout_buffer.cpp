@@ -121,13 +121,14 @@ TEST(RolloutBuffer, EntryConsistency) {
   unsigned int batch_size = 2;
   unsigned int buffer_size = 4 * batch_size;
   unsigned int n_iters = 4;
+  unsigned int n_env = 2;
   float gamma = 0.95;
   float lambda = 0.99;
 
   // get replay buffer
   std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
   torch::Tensor last_val, last_done;
-  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 2, gamma, lambda);
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, n_env, gamma, lambda);
 
   // sample
   torch::Tensor stens, atens, qtens, log_p_tens, advtens, rettens;
@@ -142,8 +143,6 @@ TEST(RolloutBuffer, EntryConsistency) {
   // success condition
   EXPECT_NEAR(q_diff, 0., 1e-5);
 }
-//INSTANTIATE_TEST_SUITE_P(MyGroup, , testing::Range(0, 10),
-//                         testing::PrintToStringParamName());
 
 #if 0
 TEST(RolloutBuffer, MultiEnvConsistency) {
@@ -284,6 +283,7 @@ TEST(RolloutBuffer, SaveRestore) {
   EXPECT_FLOAT_EQ(rettens_diff, 0.);
   EXPECT_FLOAT_EQ(dtens_diff, 0.);
 }
+
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

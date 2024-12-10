@@ -35,6 +35,8 @@
 using namespace torchfort;
 using namespace torch::indexing;
 
+class RolloutBuffer : public testing::TestWithParam<int> {};
+
 // helper functions
 std::tuple<std::shared_ptr<rl::GAELambdaRolloutBuffer>, torch::Tensor, torch::Tensor>
 getTestRolloutBuffer(int buffer_size, int n_env, float gamma = 0.95, float lambda = 0.99) {
@@ -72,32 +74,31 @@ getTestRolloutBuffer(int buffer_size, int n_env, float gamma = 0.95, float lambd
   return std::make_tuple(rbuff, q, done);
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
-           torch::Tensor>
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
+	   torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 extract_entries(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
-  std::vector<float> svec, avec, rvec, qvec, log_p_vec, advvec, retvec;
-  std::vector<float> dvec;
-  for (unsigned int i = 0; i < buffp->getSize(); ++i) {
+  std::vector<torch::Tensor> svec, avec, rvec, qvec, log_p_vec, advvec, retvec, dvec;
+  unsigned int max_iter = (buffp->getSize()) / (buffp->nEnvs());
+  for (unsigned int i = 0; i < max_iter; ++i) {
     torch::Tensor s, a, r, q, log_p, adv, ret, d;
     std::tie(s, a, r, q, log_p, adv, ret, d) = buffp->getFull(i);
-    svec.push_back(s.index({0,0}).item<float>());
-    avec.push_back(a.index({0,0}).item<float>());
-    rvec.push_back(r.item<float>());
-    qvec.push_back(q.item<float>());
-    log_p_vec.push_back(log_p.item<float>());
-    advvec.push_back(adv.item<float>());
-    retvec.push_back(ret.item<float>());
-    dvec.push_back(d.item<float>());
+    svec.push_back(s);
+    avec.push_back(a);
+    rvec.push_back(r);
+    qvec.push_back(q);
+    log_p_vec.push_back(log_p);
+    advvec.push_back(adv);
+    retvec.push_back(ret);
+    dvec.push_back(d);
   }
-  auto options = torch::TensorOptions().dtype(torch::kFloat32);
-  torch::Tensor stens = torch::from_blob(svec.data(), {1,1}, options).clone();
-  torch::Tensor atens = torch::from_blob(avec.data(), {1,1}, options).clone();
-  torch::Tensor rtens = torch::from_blob(rvec.data(), {1}, options).clone();
-  torch::Tensor qtens = torch::from_blob(qvec.data(), {1}, options).clone();
-  torch::Tensor log_p_tens = torch::from_blob(log_p_vec.data(), {1}, options).clone();
-  torch::Tensor advtens = torch::from_blob(advvec.data(), {1}, options).clone();
-  torch::Tensor rettens = torch::from_blob(retvec.data(), {1}, options).clone();
-  torch::Tensor dtens = torch::from_blob(dvec.data(), {1}, options).clone();
+  torch::Tensor stens = torch::cat(svec, 0);
+  torch::Tensor atens = torch::cat(avec, 0);
+  torch::Tensor rtens = torch::cat(rvec, 0);
+  torch::Tensor qtens = torch::cat(qvec, 0);
+  torch::Tensor log_p_tens = torch::cat(log_p_vec, 0);
+  torch::Tensor advtens = torch::cat(advvec, 0);
+  torch::Tensor rettens = torch::cat(retvec, 0);
+  torch::Tensor dtens = torch::cat(dvec, 0);
 
   return std::make_tuple(stens, atens, rtens, qtens, log_p_tens, advtens, rettens, dtens);
 }
@@ -113,7 +114,7 @@ void print_buffer(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
 }
 
 // check if entries are consistent
-TEST(RolloutBuffer, EntryConsistency) {
+TEST_P(RolloutBuffer, EntryConsistency) {
   // rng
   torch::manual_seed(666);
 
@@ -121,7 +122,7 @@ TEST(RolloutBuffer, EntryConsistency) {
   unsigned int batch_size = 2;
   unsigned int buffer_size = 4 * batch_size;
   unsigned int n_iters = 4;
-  unsigned int n_env = 2;
+  unsigned int n_env = GetParam();
   float gamma = 0.95;
   float lambda = 0.99;
 
@@ -231,20 +232,21 @@ TEST(RolloutBuffer, AdvantageComputation) {
   EXPECT_FLOAT_EQ(adv_diff, 0.);
 }
 
-TEST(RolloutBuffer, SaveRestore) {
+TEST_P(RolloutBuffer, SaveRestore) {
   // rng
   torch::manual_seed(666);
 
   // some parameters
   unsigned int batch_size = 1;
   unsigned int buffer_size = 8 * batch_size;
+  unsigned int n_env = GetParam();
   float gamma = 0.95;
   float lambda = 0.99;
 
   // get rollout buffer
   std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
   torch::Tensor last_val, last_done;
-  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 1, gamma, lambda);
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, n_env, gamma, lambda);
 
   // extract entries before storing
   torch::Tensor stens_b, atens_b, rtens_b, qtens_b, log_p_tens_b, advtens_b, rettens_b, dtens_b;
@@ -284,6 +286,8 @@ TEST(RolloutBuffer, SaveRestore) {
   EXPECT_FLOAT_EQ(dtens_diff, 0.);
 }
 
+INSTANTIATE_TEST_SUITE_P(MultiEnv, RolloutBuffer, testing::Range(1, 3),
+                         testing::PrintToStringParamName());
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

@@ -36,7 +36,7 @@ using namespace torchfort;
 using namespace torch::indexing;
 
 // helper functions
-std::tuple<std::shared_ptr<rl::GAELambdaRolloutBuffer>, float, bool>
+std::tuple<std::shared_ptr<rl::GAELambdaRolloutBuffer>, torch::Tensor, torch::Tensor>
 getTestRolloutBuffer(int buffer_size, int n_env, float gamma = 0.95, float lambda = 0.99) {
 
   torch::NoGradGuard no_grad;
@@ -50,23 +50,26 @@ getTestRolloutBuffer(int buffer_size, int n_env, float gamma = 0.95, float lambd
   std::normal_distribution<float> normal(1.0, 1.0);
 
   // fill the buffer
-  torch::Tensor state = torch::zeros({1, 1}, torch::kFloat32);
+  torch::Tensor state = torch::zeros({n_env, 1}, torch::kFloat32);
   torch::Tensor action, reward, log_p, q, done;
-  for (unsigned int i = 0; i < buffer_size + 1; ++i) {
-    action = torch::ones({1, 1}, torch::kFloat32) * static_cast<float>(dist(rng));
+  for (int i = 0; i < (buffer_size / n_env) + 1; ++i) {
+    action = torch::ones({n_env, 1}, torch::kFloat32);
+    for (int e = 0; e < n_env; ++e) {
+      action.index_put_({e,0}, static_cast<float>(dist(rng)));
+    }
     reward = torch::squeeze(action, 1).clone();
     q = reward.clone();
-    log_p = torch::tensor({normal(rng)}, torch::kFloat32);
+    log_p = torch::ones({n_env}, torch::kFloat32) * normal(rng);
     // add one episode break in the middle. Note that this means that
     // at this index, the state will be the last one in the episode
     // internally this will be converted such that the next state will be the
     // first state in a new episode
-    done = torch::tensor({(i == (buffer_size / 2) ? 1. : 0.)}, torch::kFloat32);
+    done = torch::ones({n_env}, torch::kFloat32) * (i == (buffer_size / 2) ? 1. : 0.);
     rbuff->update(state, action, reward, q, log_p, done);
     state = state + action;
   }
 
-  return std::make_tuple(rbuff, q.item<float>(), (done.item<float>() > 0.5 ? true : false));
+  return std::make_tuple(rbuff, q, done);
 }
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
@@ -123,9 +126,8 @@ TEST(RolloutBuffer, EntryConsistency) {
 
   // get replay buffer
   std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
-  float last_val;
-  bool last_done;
-  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 1, gamma, lambda);
+  torch::Tensor last_val, last_done;
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 2, gamma, lambda);
 
   // sample
   torch::Tensor stens, atens, qtens, log_p_tens, advtens, rettens;
@@ -140,6 +142,42 @@ TEST(RolloutBuffer, EntryConsistency) {
   // success condition
   EXPECT_NEAR(q_diff, 0., 1e-5);
 }
+//INSTANTIATE_TEST_SUITE_P(MyGroup, , testing::Range(0, 10),
+//                         testing::PrintToStringParamName());
+
+#if 0
+TEST(RolloutBuffer, MultiEnvConsistency) {
+  // rng
+  torch::manual_seed(666);
+
+  // some parameters
+  unsigned int batch_size = 4;
+  unsigned int buffer_size = 8 * batch_size;
+  unsigned int n_iters = (buffer_size / batch_size);
+  float gamma = 0.95;
+  float lambda = 0.99;
+
+  // get replay buffer
+  std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
+  torch::Tensor last_val, last_done;
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 1, gamma, lambda);
+
+  // sample
+  torch::Tensor stens, atens, qtens, log_p_tens, advtens, rettens;
+  float state_diff = 0.;
+  for (unsigned int i = 0; i < n_iters; ++i) {
+    std::tie(stens, atens, qtens, log_p_tens, advtens, rettens) = rbuff->sample(batch_size);
+
+    std::cout << stens << " " << atens << std::endl;
+    
+    // compute differences: a-s removes the random element, then sum over remaining
+    // values should be equal to buffer_size * 0.5
+    state_diff += torch::sum(stens-atens).item<float>();
+  }
+
+  EXPECT_FLOAT_EQ(state_diff, 0.5 * buffer_size);
+}
+#endif
 
 // check if ordering between entries are consistent
 TEST(RolloutBuffer, AdvantageComputation) {
@@ -154,8 +192,7 @@ TEST(RolloutBuffer, AdvantageComputation) {
 
   // get replay buffer
   std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
-  float last_val;
-  bool last_done;
+  torch::Tensor last_val, last_done;
   std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 1, gamma, lambda);
 
   // get a few items and their successors:
@@ -174,8 +211,8 @@ TEST(RolloutBuffer, AdvantageComputation) {
     dftens.index_put_({i}, 1. - d.item<float>());
     advtens_compare.index_put_({i}, adv.item<float>());
   }
-  qtens.index_put_({static_cast<int>(buffer_size)}, last_val);
-  dftens.index_put_({static_cast<int>(buffer_size)}, (last_done ? 0. : 1.));
+  qtens.index_put_({static_cast<int>(buffer_size)}, last_val.item<float>());
+  dftens.index_put_({static_cast<int>(buffer_size)}, 1.-last_done.item<float>());
 
   // compute delta
   torch::Tensor deltatens =
@@ -207,8 +244,7 @@ TEST(RolloutBuffer, SaveRestore) {
 
   // get rollout buffer
   std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
-  float last_val;
-  bool last_done;
+  torch::Tensor last_val, last_done;
   std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 1, gamma, lambda);
 
   // extract entries before storing

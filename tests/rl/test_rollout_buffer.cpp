@@ -145,92 +145,63 @@ TEST_P(RolloutBuffer, EntryConsistency) {
   EXPECT_NEAR(q_diff, 0., 1e-5);
 }
 
-#if 0
-TEST(RolloutBuffer, MultiEnvConsistency) {
-  // rng
-  torch::manual_seed(666);
-
-  // some parameters
-  unsigned int batch_size = 4;
-  unsigned int buffer_size = 8 * batch_size;
-  unsigned int n_iters = (buffer_size / batch_size);
-  float gamma = 0.95;
-  float lambda = 0.99;
-
-  // get replay buffer
-  std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
-  torch::Tensor last_val, last_done;
-  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 1, gamma, lambda);
-
-  // sample
-  torch::Tensor stens, atens, qtens, log_p_tens, advtens, rettens;
-  float state_diff = 0.;
-  for (unsigned int i = 0; i < n_iters; ++i) {
-    std::tie(stens, atens, qtens, log_p_tens, advtens, rettens) = rbuff->sample(batch_size);
-
-    std::cout << stens << " " << atens << std::endl;
-    
-    // compute differences: a-s removes the random element, then sum over remaining
-    // values should be equal to buffer_size * 0.5
-    state_diff += torch::sum(stens-atens).item<float>();
-  }
-
-  EXPECT_FLOAT_EQ(state_diff, 0.5 * buffer_size);
-}
-#endif
 
 // check if ordering between entries are consistent
-TEST(RolloutBuffer, AdvantageComputation) {
+TEST_P(RolloutBuffer, AdvantageComputation) {
   // rng
   torch::manual_seed(666);
 
   // some parameters
   unsigned int batch_size = 1;
   unsigned int buffer_size = 8 * batch_size;
+  unsigned int n_env = GetParam();
+  unsigned int eff_buffer_size = (buffer_size / n_env);
   float gamma = 0.95;
   float lambda = 0.99;
 
   // get replay buffer
   std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
   torch::Tensor last_val, last_done;
-  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, 1, gamma, lambda);
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, n_env, gamma, lambda);
 
   // get a few items and their successors:
   torch::Tensor stens, atens, r, q, log_p, adv, ret, d;
-  torch::Tensor rtens = torch::empty({buffer_size}, torch::kFloat32);
-  torch::Tensor advtens = torch::empty({buffer_size}, torch::kFloat32);
-  torch::Tensor advtens_compare = torch::empty({buffer_size}, torch::kFloat32);
-  // this tensor needs to be a bit bigger because it needs to hold the final q
-  torch::Tensor qtens = torch::empty({buffer_size + 1}, torch::kFloat32);
-  torch::Tensor dftens = torch::empty({buffer_size + 1}, torch::kFloat32);
+  std::vector<torch::Tensor> rvec, qvec, dfvec, advvec;
   // first, extract all V and r elements of the tensor and move them into a big tensor:
-  for (int i = 0; i < buffer_size; ++i) {
+  for (int i = 0; i < eff_buffer_size; ++i) {
     std::tie(stens, atens, r, q, log_p, adv, ret, d) = rbuff->getFull(i);
-    rtens.index_put_({i}, r.item<float>());
-    qtens.index_put_({i}, q.item<float>());
-    dftens.index_put_({i}, 1. - d.item<float>());
-    advtens_compare.index_put_({i}, adv.item<float>());
+    rvec.push_back(r);
+    qvec.push_back(q);
+    dfvec.push_back(1. - d);
+    advvec.push_back(adv);
   }
-  qtens.index_put_({static_cast<int>(buffer_size)}, last_val.item<float>());
-  dftens.index_put_({static_cast<int>(buffer_size)}, 1.-last_done.item<float>());
+  qvec.push_back(last_val);
+  dfvec.push_back(1. - last_done);
+  
+  torch::Tensor rtens = torch::stack(rvec, 0);
+  torch::Tensor	qtens =	torch::stack(qvec, 0);
+  torch::Tensor	dftens = torch::stack(dfvec, 0);
+  torch::Tensor	advtens_compare = torch::stack(advvec, 0);
+  torch::Tensor advtens = torch::zeros_like(advtens_compare);
 
   // compute delta
   torch::Tensor deltatens =
-      rtens + dftens.index({Slice(1, buffer_size + 1, 1)}) * gamma * qtens.index({Slice(1, buffer_size + 1, 1)}) -
-      qtens.index({Slice(0, buffer_size, 1)});
+    rtens + dftens.index({Slice(1, eff_buffer_size + 1, 1), "..."}) * gamma * qtens.index({Slice(1, eff_buffer_size + 1, 1), "..."}) -
+    qtens.index({Slice(0, eff_buffer_size, 1), "..."});
 
   // compute discounted cumulative sum:
-  float delta = deltatens.index({static_cast<int>(buffer_size) - 1}).item<float>();
-  advtens.index_put_({static_cast<int>(buffer_size) - 1}, delta);
-  for (int i = (buffer_size - 2); i >= 0; --i) {
-    delta = deltatens.index({i}).item<float>();
+  torch::Tensor delta = deltatens.index({static_cast<int>(eff_buffer_size) - 1, "..."});
+  advtens.index({static_cast<int>(eff_buffer_size) - 1, "..."}) = delta.index({"..."});
+  for (int i = (eff_buffer_size - 2); i >= 0; --i) {
+    delta = deltatens.index({i, "..."});
     // do not incorporate next entry if new episode starts
-    advtens.index_put_({i}, delta + gamma * lambda * dftens.index({i + 1}) * advtens.index({i + 1}));
+    advtens.index({i, "..."}) = delta + gamma * lambda * dftens.index({i + 1, "..."}) * advtens.index({i + 1, "..."});
   }
 
   float adv_diff = torch::sum(advtens_compare - advtens).item<float>();
   EXPECT_FLOAT_EQ(adv_diff, 0.);
 }
+
 
 TEST_P(RolloutBuffer, SaveRestore) {
   // rng

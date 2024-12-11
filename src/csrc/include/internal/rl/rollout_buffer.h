@@ -155,6 +155,10 @@ public:
     torch::Tensor next_non_terminal = 1. - dones; // (done ? 0. : 1.);
     torch::Tensor next_values = last_values;
 
+    // send to device
+    next_non_terminal = next_non_terminal.to(device_);
+    next_values = next_values.to(device_);
+    
     for (int64_t step = size_ - 1; step >= 0; step--) {
       std::tie(s, a, r, q, log_p, e) = buffer_.at(step);
       delta = r + gamma_ * next_values * next_non_terminal - q;

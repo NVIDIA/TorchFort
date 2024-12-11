@@ -780,7 +780,7 @@ module torchfort
      module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_1d_1d_dev
      module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_1d_dev
      module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_3d_dev
-      module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d_dev
+     module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d_dev
 #endif
   end interface torchfort_rl_on_policy_update_rollout_buffer
 
@@ -3382,7 +3382,7 @@ contains
   function torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d(mname, state, act, &
                                                                           reward, terminal, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: state(:, :, :,:), act(:,:), reward(:), terminal(:)
+    real(real32) :: state(:, :, :, :), act(:, :), reward(:), terminal(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -3534,7 +3534,7 @@ contains
     function torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d_dev(mname, state, act, &
                                                                                 reward, terminal, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: state(:, :, :,:), act(:,:), reward(:), terminal(:)
+    real(real32), device :: state(:, :, :, :), act(:, :), reward(:), terminal(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 

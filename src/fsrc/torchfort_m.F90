@@ -775,10 +775,12 @@ module torchfort
      module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_1d_1d
      module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_1d
      module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_3d
+     module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d
 #ifdef _CUDA
      module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_1d_1d_dev
      module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_1d_dev
      module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_3d_dev
+      module procedure torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d_dev
 #endif
   end interface torchfort_rl_on_policy_update_rollout_buffer
 

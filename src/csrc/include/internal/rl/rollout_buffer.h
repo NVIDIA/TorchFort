@@ -53,6 +53,10 @@ public:
   // base constructor
   RolloutBuffer(size_t size, size_t n_envs, int device)
     : size_(size/n_envs), n_envs_(n_envs), device_(get_device(device)), indices_((size/n_envs) * n_envs), pos_(0), rng_() {
+    // some asserts
+    if (size < n_envs) {
+      throw std::runtime_error("GAELambdaRolloutBuffer::GAELambdaRolloutBuffer: Error, make sure the buffer size is bigger than or equal to the number of environments");
+    }
     // last episode starts == True is the same as setting its float to 1., since we are using next_state_terminal = 1-dones later:
     auto options = torch::TensorOptions().dtype(torch::kFloat32).device(device_);
     last_episode_starts_ = torch::ones({static_cast<int64_t>(n_envs_)}, options);

@@ -3377,6 +3377,44 @@ contains
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_1d
 
+  function torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d(mname, state, act, &
+                                                                          reward, terminal, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: state(:, :, :,:), act(:,:), reward(:), terminal(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    state_dim = size(shape(state))
+    act_dim = size(shape(act))
+    reward_dim = size(shape(reward))
+    terminal_dim = size(shape(terminal))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: state_shape(state_dim)
+      integer(c_int64_t) :: act_shape(act_dim)
+      integer(c_int64_t) :: reward_shape(reward_dim)
+      integer(c_int64_t) :: terminal_shape(terminal_dim)
+
+      state_shape(:) = shape(state)
+      act_shape(:) = shape(act)
+      reward_shape(:) = shape(reward)
+      terminal_shape(:) = shape(terminal)
+
+      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname), C_NULL_CHAR], &
+                                                                  state, state_dim, state_shape, &
+                                                                  act, act_dim, act_shape, &
+                                                                  reward, reward_dim, reward_shape, &
+                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d
+
 #ifdef _CUDA
   function torchfort_rl_on_policy_update_rollout_buffer_multi_float_1d_1d_dev(mname, state, act, &
                                                                               reward, terminal, stream) result(res)
@@ -3490,6 +3528,44 @@ contains
                                                                     TORCHFORT_FLOAT, stream_)
       end block
     end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_1d_dev
+
+    function torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d_dev(mname, state, act, &
+                                                                                reward, terminal, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: state(:, :, :,:), act(:,:), reward(:), terminal(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    state_dim = size(shape(state))
+    act_dim = size(shape(act))
+    reward_dim = size(shape(reward))
+    terminal_dim = size(shape(terminal))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: state_shape(state_dim)
+      integer(c_int64_t) :: act_shape(act_dim)
+      integer(c_int64_t) :: reward_shape(reward_dim)
+      integer(c_int64_t) :: terminal_shape(terminal_dim)
+
+      state_shape(:) = shape(state)
+      act_shape(:) = shape(act)
+      reward_shape(:) = shape(reward)
+      terminal_shape(:) = shape(terminal)
+
+      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname), C_NULL_CHAR], &
+                                                                  state, state_dim, state_shape, &
+                                                                  act, act_dim, act_shape, &
+                                                                  reward, reward_dim, reward_shape, &
+                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d_dev
 #endif
 
   ! utility routines

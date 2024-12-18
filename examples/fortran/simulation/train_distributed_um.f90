@@ -473,8 +473,6 @@ program train_distributed_um
 
   end do
 
-
-
   if (tuning) then
       ! Prefetch output
       istat = cudaMemPrefetchAsync(output, n * n * nchannels * batch_size, -1, 0)
@@ -489,7 +487,6 @@ program train_distributed_um
       print *, "Error in cudaDeviceSynchronize: ", trim(adjustl(cudaGetErrorString(istat)))
       stop
   endif
-
 
   if (rank == 0) then
 

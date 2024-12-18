@@ -9,7 +9,7 @@ else()
 message(STATUS "MPI::MPI_C not found")
 endif()
 
-set( CMAKE_PREFIX_PATH "/home/tartarughina/hdf5/build/HDF5-1.17.0-Linux/HDF_Group/HDF5/1.17.0/cmake"; ${CMAKE_PREFIX_PATH})
+set( CMAKE_PREFIX_PATH "/home/tartarughina/hdf5/build/HDF5-1.17.0-Linux/HDF_Group/HDF5/1.17.0/cmake";${CMAKE_PREFIX_PATH})
 find_package(HDF5 REQUIRED COMPONENTS Fortran)
 
 if (TARGET HDF5::HDF5)
@@ -21,6 +21,7 @@ endif()
 set(fortran_example_targets
   train
   train_distributed
+  train_distributed_um
 )
 
 add_executable(train)
@@ -37,6 +38,13 @@ target_sources(train_distributed
   simulation.f90
 )
 
+add_executable(train_distributed_um)
+target_sources(train_distributed_um
+  PRIVATE
+  train_distributed_um.f90
+  simulation.f90
+)
+
 foreach(tgt ${fortran_example_targets})
   target_include_directories(${tgt}
     PRIVATE
@@ -49,8 +57,14 @@ foreach(tgt ${fortran_example_targets})
   target_link_libraries(${tgt} PRIVATE "${PROJECT_NAME}_fort")
   target_link_libraries(${tgt} PRIVATE ${PROJECT_NAME})
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-    target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -acc -gpu=${CUF_GPU_ARG}>)
-    target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>: -acc -gpu=${CUF_GPU_ARG}>)
+    if(${tgt} STREQUAL "train_distributed_um")
+        target_link_libraries(${tgt} PRIVATE NVHPC::PROFILER)
+        target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -acc -cuda -gpu=${CUF_GPU_ARG}>)
+        target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-acc -cuda -gpu=${CUF_GPU_ARG}>)
+    else()
+        target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -acc -gpu=${CUF_GPU_ARG}>)
+        target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-acc -gpu=${CUF_GPU_ARG}>)
+    endif()
   elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -fbackslash>)
   endif()

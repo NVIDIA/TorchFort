@@ -1,5 +1,5 @@
 general:
-  enable_wandb_hook: 1
+  enable_wandb_hook: 0
   report_frequency: 100
 
 model:

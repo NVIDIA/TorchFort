@@ -222,9 +222,17 @@ if (TORCHFORT_BUILD_FORTRAN)
         target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
     endif()
 
-    if (CMAKE_Fortran_COMPILER MATCHES "ftn")
-        target_compile_definitions("${PROJECT_NAME}_fort" PRIVATE MPICH)
-    endif()
+  # Test for MPI_Comm_f2c/c2f
+  try_compile(
+    TEST_F2C_RESULT
+    ${CMAKE_BINARY_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/test_mpi_f2c.f90
+    LINK_LIBRARIES MPI::MPI_Fortran
+  )
+  if (NOT TEST_F2C_RESULT)
+    message(STATUS "Could not link MPI_Comm_f2c in Fortran module. Setting -DMPICH flag during module compilation.")
+    target_compile_definitions("${PROJECT_NAME}_fort" PRIVATE MPICH)
+  endif()
 
     target_sources("${PROJECT_NAME}_fort"
     PRIVATE

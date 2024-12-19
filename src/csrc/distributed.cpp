@@ -116,7 +116,9 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
 #ifdef ENABLE_GPU
   if (tensor.device().type() == torch::kCUDA) {
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
+    // enqueue event onto torch_stream
     CHECK_CUDA(cudaEventRecord(event, torch_stream));
+    // stream waits for event
     CHECK_CUDA(cudaStreamWaitEvent(stream, event));
 
     auto count = torch::numel(tensor);
@@ -130,7 +132,9 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
     CHECK_NCCL(ncclAllReduce(tensor.data_ptr(), tensor.data_ptr(), count, nccl_dtype, (average) ? ncclAvg : ncclSum,
                              nccl_comm, stream));
 
+    // enqueue event onto stream
     CHECK_CUDA(cudaEventRecord(event, stream));
+    // torch_stream waits for event
     CHECK_CUDA(cudaStreamWaitEvent(torch_stream, event));
   } else if (tensor.device().type() == torch::kCPU) {
 #endif
@@ -159,6 +163,7 @@ void Comm::allreduce(std::vector<torch::Tensor>& tensors, bool average) const {
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
     CHECK_CUDA(cudaEventRecord(event, torch_stream));
     CHECK_CUDA(cudaStreamWaitEvent(stream, event));
+    double start = MPI_Wtime();
     CHECK_NCCL(ncclGroupStart());
   }
 #endif
@@ -173,6 +178,15 @@ void Comm::allreduce(std::vector<torch::Tensor>& tensors, bool average) const {
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
     CHECK_CUDA(cudaEventRecord(event, stream));
     CHECK_CUDA(cudaStreamWaitEvent(torch_stream, event));
+
+    CHECK_CUDA(cudaEventSynchronize(event));
+    double end = MPI_Wtime();
+    auto bytes = std::accumulate(tensors.begin(), tensors.end(), 0, [](auto sum, const torch::Tensor& t) {
+      return sum + torch::numel(t) * t.element_size();
+    });
+
+    if (rank == 0)
+      std::cout << "# Allreduce sent: " << bytes << " in seconds: " << end - start << std::endl;
   }
 #endif
 }
@@ -207,10 +221,21 @@ void Comm::broadcast(torch::Tensor& tensor, int root) const {
     CHECK_CUDA(cudaEventRecord(event, torch_stream));
     CHECK_CUDA(cudaStreamWaitEvent(stream, event));
 
+    double start = MPI_Wtime();
     CHECK_NCCL(ncclBroadcast(tensor.data_ptr(), tensor.data_ptr(), count, nccl_dtype, root, nccl_comm, stream));
 
     CHECK_CUDA(cudaEventRecord(event, stream));
     CHECK_CUDA(cudaStreamWaitEvent(torch_stream, event));
+
+    CHECK_CUDA(cudaEventSynchronize(event));
+
+    double end = MPI_Wtime();
+    auto bytes = std::accumulate(tensors.begin(), tensors.end(), 0, [](auto sum, const torch::Tensor& t) {
+      return sum + torch::numel(t) * t.element_size();
+    });
+
+    if (rank == 0)
+      std::cout << "# Broadcast sent: " << bytes << " in seconds: " << end - start << std::endl;
   } else if (tensor.device().type() == torch::kCPU) {
 #endif
     // Use MPI for CPU tensors

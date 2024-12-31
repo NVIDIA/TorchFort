@@ -100,21 +100,12 @@ find_dependency(CUDA)
 find_package(Torch REQUIRED)
 
 # yaml-cpp
-set (CMAKE_PREFIX_PATH ${HOME}/yaml-cpp-def/lib64/cmake/yaml-cpp; ${CMAKE_PREFIX_PATH})
 find_package(yaml-cpp REQUIRED)
-# FetchContent_Declare(
-#   yaml-cpp
-#   GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-#   GIT_TAG master # Can be a tag (yaml-cpp-x.x.x), a commit hash, or a branch name (master)
-# )
-# set (YAML_BUILD_SHARED_LIBS ON CACHE BOOL "")
-# FetchContent_MakeAvailable(yaml-cpp)
 if (TARGET yaml-cpp::yaml-cpp)
-    message(STATUS "Found yaml-cpp")
+    message(STATUS "yaml-cpp found")
     message(STATUS "yaml-cpp include dir: ${YAML_CPP_INCLUDE_DIR}")
-    message(STATUS "yaml-cpp library: ${YAML_CPP_LIBRARIES}")
 else()
-    message(FATAL_ERROR "Failed to fetch yaml-cpp")
+    message(FATAL_ERROR "yaml-cpp not found")
     return()
 endif()
 
@@ -222,17 +213,17 @@ if (TORCHFORT_BUILD_FORTRAN)
         target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
     endif()
 
-  # Test for MPI_Comm_f2c/c2f
-  try_compile(
+    # Test for MPI_Comm_f2c/c2f
+    try_compile(
     TEST_F2C_RESULT
     ${CMAKE_BINARY_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/test_mpi_f2c.f90
     LINK_LIBRARIES MPI::MPI_Fortran
   )
-  if (NOT TEST_F2C_RESULT)
-    message(STATUS "Could not link MPI_Comm_f2c in Fortran module. Setting -DMPICH flag during module compilation.")
-    target_compile_definitions("${PROJECT_NAME}_fort" PRIVATE MPICH)
-  endif()
+    if (NOT TEST_F2C_RESULT)
+        message(STATUS "Could not link MPI_Comm_f2c in Fortran module. Setting -DMPICH flag during module compilation.")
+        target_compile_definitions("${PROJECT_NAME}_fort" PRIVATE MPICH)
+    endif()
 
     target_sources("${PROJECT_NAME}_fort"
     PRIVATE

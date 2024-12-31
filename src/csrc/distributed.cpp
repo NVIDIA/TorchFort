@@ -159,11 +159,13 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
 void Comm::allreduce(std::vector<torch::Tensor>& tensors, bool average) const {
 
 #ifdef ENABLE_GPU
+  double start = 0.0;
+
   if (tensors[0].device().type() == torch::kCUDA) {
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
     CHECK_CUDA(cudaEventRecord(event, torch_stream));
     CHECK_CUDA(cudaStreamWaitEvent(stream, event));
-    double start = MPI_Wtime();
+    start = MPI_Wtime();
     CHECK_NCCL(ncclGroupStart());
   }
 #endif
@@ -230,9 +232,7 @@ void Comm::broadcast(torch::Tensor& tensor, int root) const {
     CHECK_CUDA(cudaEventSynchronize(event));
 
     double end = MPI_Wtime();
-    auto bytes = std::accumulate(tensors.begin(), tensors.end(), 0, [](auto sum, const torch::Tensor& t) {
-      return sum + torch::numel(t) * t.element_size();
-    });
+    auto bytes = count * sizeof(nccl_dtype);
 
     if (rank == 0)
       std::cout << "# Broadcast sent: " << bytes << " in seconds: " << end - start << std::endl;

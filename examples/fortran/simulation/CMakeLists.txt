@@ -9,12 +9,9 @@ else()
 message(STATUS "MPI::MPI_C not found")
 endif()
 
-# set( CMAKE_PREFIX_PATH "/home/tartarughina/hdf5/build/HDF5-1.17.0-Linux/HDF_Group/HDF5/1.17.0/cmake";${CMAKE_PREFIX_PATH})
 find_package(HDF5 REQUIRED COMPONENTS Fortran)
-
 if (TARGET HDF5::HDF5)
 message(STATUS "HDF5::HDF5 found")
-message(STATUS "HDF5_Fortran_INCLUDE_DIRS: ${HDF5_Fortran_INCLUDE_DIRS}")
 else()
 message(STATUS "HDF5::HDF5 not found")
 endif()
@@ -75,7 +72,6 @@ install(
   TARGETS ${fortran_example_targets}
   RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/examples/fortran/simulation
 )
-
 
 install(
   FILES ${CMAKE_CURRENT_SOURCE_DIR}/config_mlp_native.yaml

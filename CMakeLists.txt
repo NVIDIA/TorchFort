@@ -100,21 +100,12 @@ find_dependency(CUDA)
 find_package(Torch REQUIRED)
 
 # yaml-cpp
-set (CMAKE_PREFIX_PATH ${HOME}/yaml-cpp-def/lib64/cmake/yaml-cpp; ${CMAKE_PREFIX_PATH})
+# set (CMAKE_PREFIX_PATH ${HOME}/yaml-cpp-def/lib64/cmake/yaml-cpp; ${CMAKE_PREFIX_PATH})
 find_package(yaml-cpp REQUIRED)
-# FetchContent_Declare(
-#   yaml-cpp
-#   GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-#   GIT_TAG master # Can be a tag (yaml-cpp-x.x.x), a commit hash, or a branch name (master)
-# )
-# set (YAML_BUILD_SHARED_LIBS ON CACHE BOOL "")
-# FetchContent_MakeAvailable(yaml-cpp)
 if (TARGET yaml-cpp::yaml-cpp)
-    message(STATUS "Found yaml-cpp")
-    message(STATUS "yaml-cpp include dir: ${YAML_CPP_INCLUDE_DIR}")
-    message(STATUS "yaml-cpp library: ${YAML_CPP_LIBRARIES}")
+    message(STATUS "yaml-cpp found")
 else()
-    message(FATAL_ERROR "Failed to fetch yaml-cpp")
+    message(FATAL_ERROR "yaml-cpp not found")
     return()
 endif()
 

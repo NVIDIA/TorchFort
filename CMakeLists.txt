@@ -100,7 +100,6 @@ find_dependency(CUDA)
 find_package(Torch REQUIRED)
 
 # yaml-cpp
-# set (CMAKE_PREFIX_PATH ${HOME}/yaml-cpp-def/lib64/cmake/yaml-cpp; ${CMAKE_PREFIX_PATH})
 find_package(yaml-cpp REQUIRED)
 if (TARGET yaml-cpp::yaml-cpp)
     message(STATUS "yaml-cpp found")

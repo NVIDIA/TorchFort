@@ -14,6 +14,7 @@ find_package(HDF5 REQUIRED COMPONENTS Fortran)
 
 if (TARGET HDF5::HDF5)
 message(STATUS "HDF5::HDF5 found")
+message(STATUS "HDF5_Fortran_INCLUDE_DIRS: ${HDF5_Fortran_INCLUDE_DIRS}")
 else()
 message(STATUS "HDF5::HDF5 not found")
 endif()

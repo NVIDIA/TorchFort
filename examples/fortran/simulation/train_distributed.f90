@@ -100,6 +100,8 @@ program train_distributed
   logical :: skip_next
   character(len=256) :: arg
 
+  double precision :: start, end
+
   ! initialize MPI
   call MPI_Init(istat)
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, istat)
@@ -294,7 +296,10 @@ program train_distributed
   call init_simulation(n, dt, a, train_step_ckpt*batch_size*dt, rank, nranks, simulation_device)
 
   ! run training
-  if (rank == 0 .and. ntrain_steps >= 1) print*, "start training..."
+  if (rank == 0 .and. ntrain_steps >= 1)
+      print*, "start training..."
+      start = MPI_Wtime()
+  endif
   !$acc data copyin(u, u_div, input, label, input_local, label_local) if(simulation_device >= 0)
   do i = 1, ntrain_steps
     do j = 1, batch_size * nranks
@@ -381,6 +386,8 @@ program train_distributed
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     istat = torchfort_save_checkpoint("mymodel", output_checkpoint_dir)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
+    end = MPI_Wtime()
+    print*, "# Simulation time: ", end - start, " s"
   endif
 
   call MPI_Finalize(istat)

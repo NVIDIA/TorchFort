@@ -105,6 +105,8 @@ program train_distributed_um
   logical :: skip_next
   character(len=256) :: arg
 
+  double precision :: start, end
+
   ! initialize MPI
   call MPI_Init(istat)
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, istat)
@@ -334,7 +336,10 @@ endif
   call init_simulation(n, dt, a, train_step_ckpt*batch_size*dt, rank, nranks, simulation_device)
 
   ! run training
-  if (rank == 0 .and. ntrain_steps >= 1) print*, "start training..."
+  if (rank == 0 .and. ntrain_steps >= 1)
+      print*, "start training..."
+      start = MPI_Wtime()
+  endif
 
   ! Profiling showed that this is probably the most neeaded tune to improve performance
   ! Page faults are present only during initial iterations of training, especially during the MPI_Alltoallv calls
@@ -508,8 +513,8 @@ endif
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
     istat = torchfort_save_checkpoint("mymodel", output_checkpoint_dir)
     if (istat /= TORCHFORT_RESULT_SUCCESS) stop
-    print*, "saving model and checkpoint done"
-
+    end = MPI_Wtime()
+    print*, "# Simulation time: ", end - start, " s"
   endif
 
   call MPI_Finalize(istat)

@@ -44,5 +44,5 @@ NTOTRANKS=$(( NNODES * nranks ))
 cd $HOME/TorchFort-def/bin/examples/fortran/simulation
 
 for i in {1..10}; do
-    mpirun --envall --np "${NTOTRANKS}" --ppn "${nranks}" --hostfile "$PBS_NODEFILE" --cpu-bind list:0,8,16,24 ./train_distributed_um --tuning --size $size --batch $size > "${log_path}/UM_gpus_${NTOTRANKS}_size_${size}_iter_${i}.txt"
+    mpirun --envall --np "${NTOTRANKS}" --ppn "${nranks}" --hostfile "$PBS_NODEFILE" --cpu-bind list:0,8,16,24 ./train_distributed_um --tuning --size $size --batch $size > "${log_path}/UMT_gpus_${NTOTRANKS}_size_${size}_iter_${i}.txt"
 done

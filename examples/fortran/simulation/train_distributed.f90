@@ -30,6 +30,10 @@ subroutine print_help_message
   print*, &
   "Usage: train_distributed [options]\n"// &
   "options:\n"// &
+  "\t--size\n" //&
+  "\t\tChange the problem size. (default: 32) \n" // &
+  "\t--batch\n" //&
+  "\t\tChange the batch sampling size divided by rank. (default: 16) \n" // &
   "\t--configfile\n" // &
   "\t\tTorchFort configuration file to use. (default: config_mlp_native.yaml) \n" // &
   "\t--simulation_device\n" // &
@@ -103,10 +107,13 @@ program train_distributed
   call MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, local_comm, istat)
   call MPI_Comm_rank(local_comm, local_rank, istat)
 
-  if (nranks /= 2) then
-    print*, "This example requires 2 ranks to run. Exiting."
+  if (nranks < 2) then
+    print*, "This example requires at least 2 ranks to run. Exiting."
     stop
   endif
+
+  n = 32
+  batch_size = 16 / nranks ! splitting global batch across GPUs
 
   ! read command line arguments
   skip_next = .false.
@@ -117,6 +124,15 @@ program train_distributed
     end if
     call get_command_argument(i, arg)
     select case(arg)
+      case('--size')
+        call get_command_argument(i+1, arg)
+        read(arg, *) n
+        skip_next = .true.
+      case('--batch')
+        call get_command_argument(i+1, arg)
+        read(arg, *) batch_size
+        batch_size = batch_size / nranks
+        skip_next = .true.
       case('--configfile')
         call get_command_argument(i+1, arg)
         read(arg, *) configfile
@@ -172,6 +188,13 @@ program train_distributed
     end select
   end do
 
+  ! The ideal ratio of batch size to problem size is 1:4
+  ! In the first example size was 32 and batch size was 16 / nranks (2) = 8
+  if (batch_size > n) then
+      print*, "Batch size cannot be larger than the problem size. Exiting."
+      call exit(1)
+  endif
+
 #ifndef _OPENACC
   if (simulation_device /= -1) then
     print*, "OpenACC support required to run simulation on GPU. &
@@ -220,9 +243,7 @@ program train_distributed
   endif
 
   ! model/simulation parameters
-  n = 32
   nchannels = 1
-  batch_size = 16 / nranks ! splitting global batch across GPUs
   dt = 0.01
   a = [1.0, 0.789] ! off-angle to generate more varied training data
 

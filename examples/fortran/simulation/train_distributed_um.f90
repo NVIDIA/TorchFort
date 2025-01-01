@@ -32,6 +32,10 @@ subroutine print_help_message
   "options:\n"// &
   "\t--tuning\n" //&
   "\t\tEnable unified memory tuning. (default: disabled) \n" // &
+  "\t--size\n" //&
+  "\t\tChange the problem size. (default: 32) \n" // &
+  "\t--batch\n" //&
+  "\t\tChange the batch sampling size divided by rank. (default: 16) \n" // &
   "\t--configfile\n" // &
   "\t\tTorchFort configuration file to use. (default: config_mlp_native.yaml) \n" // &
   "\t--simulation_device\n" // &
@@ -190,6 +194,15 @@ program train_distributed_um
         call exit(1)
     end select
   end do
+
+! The ideal ratio of batch size to problem size is 1:4
+! In the first example size was 32 and batch size was 16 / nranks (2) = 8
+if (batch_size > n) then
+    print*, "Batch size cannot be larger than the problem size. Exiting."
+    call exit(1)
+endif
+
+  ! check for OpenACC support
 
 #ifndef _OPENACC
   if (simulation_device /= -1) then

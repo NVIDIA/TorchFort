@@ -336,7 +336,7 @@ endif
   call init_simulation(n, dt, a, train_step_ckpt*batch_size*dt, rank, nranks, simulation_device)
 
   ! run training
-  if (rank == 0 .and. ntrain_steps >= 1)
+  if (rank == 0 .and. ntrain_steps >= 1) then
       print*, "start training..."
       start = MPI_Wtime()
   endif

@@ -236,6 +236,9 @@ program train_distributed
     endif
     print*, "\toutput_model_name: ", trim(output_model_name)
     print*, "\toutput_checkpoint_dir: ", trim(output_checkpoint_dir)
+    print*, "\tNumber of ranks: ", nranks
+    print*, "\tProblem size: ", n
+    print*, "\tBatch size: ", batch_size
     print*, "\tntrain_steps: ", ntrain_steps
     print*, "\tnval_steps: ", nval_steps
     print*, "\tval_write_freq: ", val_write_freq

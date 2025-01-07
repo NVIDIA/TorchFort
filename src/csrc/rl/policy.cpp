@@ -84,17 +84,17 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::evaluateAction(torch::T
   }
 
   // compute log prop
-  torch::Tensor log_prob = torch::sum(torch::flatten(pi_dist->log_prob(gaussian_action), 1), 1, true);
+  torch::Tensor log_prob = torch::sum(torch::flatten(pi_dist->log_prob(gaussian_action), 1), 1, false);
 
   // account for squashing
   torch::Tensor entropy;
   if (squashed_) {
-    log_prob = log_prob - torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, true);
+    log_prob = log_prob - torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, false);
     // in this case no analytical form for the entropy exists and we need to estimate it from the log probs directly:
     entropy = -log_prob;
   } else {
     // use analytical formula for entropy
-    entropy = torch::sum(torch::flatten(pi_dist->entropy(), 1), 1, true);
+    entropy = torch::sum(torch::flatten(pi_dist->entropy(), 1), 1, false);
   }
   return std::make_tuple(log_prob, entropy);
 }
@@ -106,12 +106,12 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::forwardNoise(torch::Ten
   // sample action and compute log prob
   // do not squash yet
   auto action = pi_dist->rsample();
-  auto log_prob = torch::sum(torch::flatten(pi_dist->log_prob(action), 1), 1, true);
+  auto log_prob = torch::sum(torch::flatten(pi_dist->log_prob(action), 1), 1, false);
 
   // account for squashing
   if (squashed_) {
     log_prob =
-        log_prob - torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
+        log_prob - torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
     action = torch::tanh(action);
   }
 
@@ -182,18 +182,22 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::evalua
   }
 
   // compute log prop
-  torch::Tensor log_prob = torch::sum(torch::flatten(pi_dist->log_prob(gaussian_action), 1), 1, true);
+  torch::Tensor log_prob = torch::sum(torch::flatten(pi_dist->log_prob(gaussian_action), 1), 1, false);
 
   // account for squashing
   torch::Tensor entropy;
   if (squashed_) {
-    log_prob = log_prob - torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, true);
+    log_prob = log_prob - torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, false);
     // in this case no analytical form for the entropy exists and we need to estimate it from the log probs directly:
     entropy = -log_prob;
   } else {
     // use analytical formula for entropy
-    entropy = torch::sum(torch::flatten(pi_dist->entropy(), 1), 1, true);
+    entropy = torch::sum(torch::flatten(pi_dist->entropy(), 1), 1, false);
   }
+
+  // squeeze value
+  value = torch::squeeze(value, 1);
+  
   return std::make_tuple(log_prob, entropy, value);
 }
 
@@ -206,14 +210,17 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::forwar
   // sample action and compute log prob
   // do not squash yet
   auto action = pi_dist->rsample();
-  auto log_prob = torch::sum(torch::flatten(pi_dist->log_prob(action), 1), 1, true);
+  auto log_prob = torch::sum(torch::flatten(pi_dist->log_prob(action), 1), 1, false);
 
   // account for squashing
   if (squashed_) {
     log_prob =
-        log_prob - torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, true);
+        log_prob - torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
     action = torch::tanh(action);
   }
+
+  // squeeze value
+  value = torch::squeeze(value, 1);
 
   return std::make_tuple(action, log_prob, value);
 }
@@ -227,6 +234,9 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianACPolicy::forwardDeterministic(
   if (squashed_) {
     action = torch::tanh(action);
   }
+
+  // squeeze value
+  value = torch::squeeze(value, 1);
 
   return std::make_tuple(action, value);
 }

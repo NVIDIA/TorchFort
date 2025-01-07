@@ -95,13 +95,14 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node, int model_
     std::string rb_type = sanitize(rb_node["type"].as<std::string>());
     if (rb_node["parameters"]) {
       auto params = get_params(rb_node["parameters"]);
-      std::set<std::string> supported_params{"type", "size"};
+      std::set<std::string> supported_params{"type", "size", "n_envs"};
       check_params(supported_params, params.keys());
       auto size = static_cast<size_t>(params.get_param<int>("size")[0]);
+      auto n_envs = static_cast<size_t>(params.get_param<int>("n_envs", 1)[0]);
 
       // distinction between buffer types
       if (rb_type == "gae_lambda") {
-        rollout_buffer_ = std::make_shared<GAELambdaRolloutBuffer>(size, gamma_, gae_lambda_, rb_device);
+        rollout_buffer_ = std::make_shared<GAELambdaRolloutBuffer>(size, n_envs, gamma_, gae_lambda_, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
       }
@@ -302,34 +303,43 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
   }
 }
 
+// convenience function for n_envs=1: if this is not the case, the error will be captured
+// in the replay buffer update function, so no need to check it here
+void PPOSystem::updateRolloutBuffer(torch::Tensor stens, torch::Tensor atens, float r, bool d) {
+  auto options = torch::TensorOptions().dtype(torch::kFloat32).device(rb_device_);
+  torch::Tensor stensu = torch::unsqueeze(stens, 0);
+  torch::Tensor	atensu = torch::unsqueeze(atens, 0);
+  torch::Tensor rtens = torch::tensor({r}, options);
+  torch::Tensor etens = torch::tensor({d ? 1. : 0.}, options);
+
+  updateRolloutBuffer(stensu, atensu, rtens, etens);
+}
+  
 // we should pass a tuple (s, a, r, d)
-void PPOSystem::updateRolloutBuffer(torch::Tensor s, torch::Tensor a, float r, bool d) {
+void PPOSystem::updateRolloutBuffer(torch::Tensor stens, torch::Tensor atens, torch::Tensor rtens, torch::Tensor etens) {
   // note that we have to rescale the action: [a_low, a_high] -> [-1, 1]
   torch::Tensor as;
   switch (actor_normalization_mode_) {
   case ActorNormalizationMode::Scale:
     // clamp to [a_low, a_high]
-    as = torch::clamp(a, a_low_, a_high_);
+    as = torch::clamp(atens, a_low_, a_high_);
     // scale to [-1, 1]
     as = scale_action(as, a_low_, a_high_);
     break;
   case ActorNormalizationMode::Clip:
     // clamp to [a_low, a_high]
-    as = torch::clamp(a, a_low_, a_high_);
+    as = torch::clamp(atens, a_low_, a_high_);
     break;
   }
 
   // compute q:
-  // we need to unsqueeze s and a to make sure that we can pass them to the NN:
-  torch::Tensor ad = torch::unsqueeze(as.to(model_device_), 0);
-  torch::Tensor sd = torch::unsqueeze(s.to(model_device_), 0);
+  torch::Tensor ad = as.to(model_device_);
+  torch::Tensor sd = stens.to(model_device_);
   torch::Tensor log_p_tensor, entropy_tensor, value;
   std::tie(log_p_tensor, entropy_tensor, value) = (pq_model_.model)->evaluateAction(sd, ad);
-  float q = value.item<float>();
-  float log_p = log_p_tensor.item<float>();
 
   // the replay buffer only stores scaled actions!
-  rollout_buffer_->update(s, as, r, q, log_p, d);
+  rollout_buffer_->update(stens, as, rtens, value, log_p_tensor, etens);
 }
 
 void PPOSystem::resetRolloutBuffer() { rollout_buffer_->reset(); }

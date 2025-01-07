@@ -42,8 +42,8 @@ namespace torchfort {
 
 namespace rl {
 
-using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, float, float, float, bool>;
-using ExtendedBufferEntry = std::tuple<torch::Tensor, torch::Tensor, float, float, float, float, float, bool>;
+  using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>;
+  using ExtendedBufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>;
 
 // abstract base class for rollout buffer
 class RolloutBuffer {
@@ -51,18 +51,26 @@ public:
   // disable copy constructor
   RolloutBuffer(const RolloutBuffer&) = delete;
   // base constructor
-  RolloutBuffer(size_t size, int device)
-      : size_(size), device_(get_device(device)), last_episode_starts_(true), indices_(size), pos_(0), rng_() {
+  RolloutBuffer(size_t size, size_t n_envs, int device)
+    : size_(size/n_envs), n_envs_(n_envs), device_(get_device(device)), indices_((size/n_envs) * n_envs), pos_(0), rng_() {
+    // some asserts
+    if (size < n_envs) {
+      throw std::runtime_error("GAELambdaRolloutBuffer::GAELambdaRolloutBuffer: Error, make sure the buffer size is bigger than or equal to the number of environments");
+    }
+    // last episode starts == True is the same as setting its float to 1., since we are using next_state_terminal = 1-dones later:
+    auto options = torch::TensorOptions().dtype(torch::kFloat32).device(device_);
+    last_episode_starts_ = torch::ones({static_cast<int64_t>(n_envs_)}, options);
     // fill index vector with indices
     std::generate(indices_.begin(), indices_.end(), [n = 0]() mutable { return n++; });
   }
 
   // accessors
-  size_t getSize() const { return size_; }
+  size_t getSize() const { return size_ * n_envs_; }
+  size_t nEnvs() const { return n_envs_; }
 
   // virtual functions
-  virtual void update(torch::Tensor, torch::Tensor, float, float, float, bool) = 0;
-  virtual void finalize(float, bool) = 0;
+  virtual void update(torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor) = 0;
+  virtual void finalize(torch::Tensor, torch::Tensor) = 0;
   virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
   sample(int) = 0;
   virtual BufferEntry get(int) = 0;
@@ -82,8 +90,9 @@ protected:
   }
 
   size_t size_;
+  size_t n_envs_;
   torch::Device device_;
-  bool last_episode_starts_;
+  torch::Tensor last_episode_starts_;
   std::vector<int> indices_;
   size_t pos_;
   std::mt19937_64 rng_;
@@ -93,15 +102,23 @@ class GAELambdaRolloutBuffer : public RolloutBuffer, public std::enable_shared_f
 
 public:
   // constructor
-  GAELambdaRolloutBuffer(size_t size, float gamma, float lambda, int device)
-      : RolloutBuffer(size, device), finalized_(false), gamma_(gamma), lambda_(lambda), returns_(size),
-        advantages_(size) {}
+  GAELambdaRolloutBuffer(size_t size, size_t n_envs, float gamma, float lambda, int device)
+    : RolloutBuffer(size, n_envs, device), finalized_(false), gamma_(gamma), lambda_(lambda), returns_(size*n_envs),
+        advantages_(size*n_envs) {}
 
   // disable copy constructor
   GAELambdaRolloutBuffer(const GAELambdaRolloutBuffer&) = delete;
 
   // update
-  void update(torch::Tensor s, torch::Tensor a, float r, float q, float log_p, bool d) {
+  void update(torch::Tensor s, torch::Tensor a, torch::Tensor r, torch::Tensor q, torch::Tensor log_p, torch::Tensor d) {
+
+    // some checks
+    if( (s.sizes()[0] != n_envs_) || (a.sizes()[0] != n_envs_) ) {
+      throw std::runtime_error("GAELambdaRolloutBuffer::update: the size of the leading dimension of tensors s and a has to be equal to the number of environments");
+    }
+    if ( (r.sizes()[0] != n_envs_) || (q.sizes()[0] != n_envs_) || (log_p.sizes()[0] != n_envs_) || (d.sizes()[0] != n_envs_) ) {
+      throw std::runtime_error("GAELambdaRolloutBuffer::update: tensors r, q, log_p and d have to be one dimensional and the size has to be equal to the number of environments");
+    }
 
     // add no grad guard
     torch::NoGradGuard no_grad;
@@ -116,37 +133,44 @@ public:
       // clone the tensors and move to device
       auto sc = s.to(device_, s.dtype(), /* non_blocking = */ false, /* copy = */ true);
       auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto rc = r.to(device_, r.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto qc =	q.to(device_, q.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto log_pc = log_p.to(device_, log_p.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto dc =	last_episode_starts_.to(device_, d.dtype(), /* non_blocking = */ false, /* copy = */ true);
 
       // add the newest/latest element in back
-      buffer_.push_back(std::make_tuple(sc, ac, r, q, log_p, last_episode_starts_));
+      buffer_.push_back(std::make_tuple(sc, ac, rc, qc, log_pc, dc));
     }
 
     // set next_state_inital to done:
-    last_episode_starts_ = d;
+    last_episode_starts_ = d.clone().to(device_);
   }
 
   // compute returns and advantages
-  void finalize(float last_value, bool done) {
+  void finalize(torch::Tensor last_values, torch::Tensor dones) {
 
     // temporary variables
-    torch::Tensor s, a;
-    float r, q, log_p, delta;
-    bool e;
+    torch::Tensor s, a, r, q, log_p, e, delta;
 
     // we need to keep track of those
     // initialize starting values
-    float last_gae_lam = 0.;
-    float next_non_terminal = (done ? 0. : 1.);
-    float next_value = last_value;
+    auto options = torch::TensorOptions().dtype(torch::kFloat32).device(device_);
+    torch::Tensor last_gae_lam = torch::zeros({static_cast<int64_t>(n_envs_)}, options);
+    torch::Tensor next_non_terminal = 1. - dones; // (done ? 0. : 1.);
+    torch::Tensor next_values = last_values;
 
+    // send to device
+    next_non_terminal = next_non_terminal.to(device_);
+    next_values = next_values.to(device_);
+    
     for (int64_t step = size_ - 1; step >= 0; step--) {
       std::tie(s, a, r, q, log_p, e) = buffer_.at(step);
-      delta = r + gamma_ * next_value * next_non_terminal - q;
+      delta = r + gamma_ * next_values * next_non_terminal - q;
       last_gae_lam = delta + gamma_ * lambda_ * next_non_terminal * last_gae_lam;
       advantages_[step] = last_gae_lam;
       returns_[step] = last_gae_lam + q;
-      next_value = q;
-      next_non_terminal = (e ? 0. : 1.);
+      next_values = q;
+      next_non_terminal = 1. - e; // (e ? 0. : 1.);
     }
 
     // create shuffled index list for sampling:
@@ -170,29 +194,30 @@ public:
     torch::NoGradGuard no_grad;
 
     // we need those
-    std::vector<torch::Tensor> stens_list, atens_list;
-    std::vector<float> q_list, log_p_list, adv_list, ret_list;
+    std::vector<torch::Tensor> stens_list, atens_list, qtens_list, log_ptens_list, advtens_list, rettens_list;
 
     // go through the buffer in random order
     auto lower = pos_;
-    auto upper = std::min(pos_ + static_cast<size_t>(batch_size), size_);
+    auto upper = std::min(pos_ + static_cast<size_t>(batch_size), size_ * n_envs_);
     for (size_t sample = lower; sample < upper; sample++) {
       // use sampling without replacement
-      auto index = indices_[sample];
+      size_t glob_idx = indices_[sample];
+
+      // we assume that glob_idx = env_idx + n_envs * step_idx
+      int64_t env_idx = glob_idx % n_envs_;
+      int64_t step_idx = glob_idx / n_envs_;
 
       // get buffer entry
-      torch::Tensor stens, atens;
-      float r, q, log_p;
-      bool d;
-      std::tie(stens, atens, r, q, log_p, d) = buffer_.at(index);
+      torch::Tensor stens, atens, rtens, qtens, log_ptens, etens;
+      std::tie(stens, atens, rtens, qtens, log_ptens, etens) = buffer_.at(step_idx);
 
       // append to lists
-      stens_list.push_back(stens);
-      atens_list.push_back(atens);
-      q_list.push_back(q);
-      log_p_list.push_back(log_p);
-      adv_list.push_back(advantages_[index]);
-      ret_list.push_back(returns_[index]);
+      stens_list.push_back(stens.index({env_idx, "..."}));
+      atens_list.push_back(atens.index({env_idx, "..."}));
+      qtens_list.push_back(qtens.index({env_idx}));
+      log_ptens_list.push_back(log_ptens.index({env_idx}));
+      advtens_list.push_back(advantages_[step_idx].index({env_idx}));
+      rettens_list.push_back(returns_[step_idx].index({env_idx}));
     }
 
     // update buffer position
@@ -201,13 +226,10 @@ public:
     // stack the lists
     auto stens = torch::stack(stens_list, 0).clone();
     auto atens = torch::stack(atens_list, 0).clone();
-
-    // create new tensors
-    auto options = torch::TensorOptions().dtype(torch::kFloat32);
-    auto qtens = torch::from_blob(q_list.data(), {batch_size, 1}, options).clone();
-    auto logptens = torch::from_blob(log_p_list.data(), {batch_size, 1}, options).clone();
-    auto advtens = torch::from_blob(adv_list.data(), {batch_size, 1}, options).clone();
-    auto rettens = torch::from_blob(ret_list.data(), {batch_size, 1}, options).clone();
+    auto qtens = torch::stack(qtens_list, 0).clone();
+    auto logptens = torch::stack(log_ptens_list, 0).clone();
+    auto advtens = torch::stack(advtens_list, 0).clone();
+    auto rettens = torch::stack(rettens_list, 0).clone();
 
     // some finalization checks:
     if (pos_ >= size_) {
@@ -229,9 +251,7 @@ public:
     torch::NoGradGuard no_grad;
 
     // emit the sample at index
-    torch::Tensor stens, atens;
-    float r, q, log_p;
-    bool d;
+    torch::Tensor stens, atens, r, q, log_p, d;
     std::tie(stens, atens, r, q, log_p, d) = buffer_.at(index);
 
     return std::make_tuple(stens, atens, r, q, log_p, d);
@@ -253,9 +273,7 @@ public:
     torch::NoGradGuard no_grad;
 
     // emit the sample at index
-    torch::Tensor stens, atens;
-    float r, q, log_p, adv, ret;
-    bool d;
+    torch::Tensor stens, atens, r, q, log_p, adv, ret, d;
     std::tie(stens, atens, r, q, log_p, d) = buffer_.at(index);
     adv = advantages_[index];
     ret = returns_[index];
@@ -271,14 +289,15 @@ public:
     buffer_.clear();
 
     // zero out the returns and advantage vectors just to be safe
-    std::fill(advantages_.begin(), advantages_.end(), 0.);
-    std::fill(returns_.begin(), returns_.end(), 0.);
+    auto options = torch::TensorOptions().dtype(torch::kFloat32).device(device_);
+    std::fill(advantages_.begin(), advantages_.end(), torch::zeros({static_cast<int64_t>(n_envs_)}, options));
+    std::fill(returns_.begin(), returns_.end(), torch::zeros({static_cast<int64_t>(n_envs_)}, options));
 
     // finally, set the finalized flag to false
     finalized_ = false;
 
     // mark a new episode:
-    last_episode_starts_ = true;
+    last_episode_starts_ = torch::ones({static_cast<int64_t>(n_envs_)}, options);
 
     return;
   }
@@ -289,37 +308,27 @@ public:
     std::vector<torch::Tensor> r_data, q_data, log_p_data, e_data, adv_data, ret_data;
     std::vector<torch::Tensor> state_data;
 
-    auto options_f = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCPU);
+    auto options = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCPU);
     auto options_b = torch::TensorOptions().dtype(torch::kBool).device(torch::kCPU);
     for (size_t index = 0; index < buffer_.size(); ++index) {
-      torch::Tensor s, a;
-      float r, q, log_p;
-      bool e;
+      torch::Tensor s, a, r, q, log_p, e;
       std::tie(s, a, r, q, log_p, e) = buffer_.at(index);
       s_data.push_back(s.to(torch::kCPU));
       a_data.push_back(a.to(torch::kCPU));
+      r_data.push_back(r.to(torch::kCPU));
+      q_data.push_back(q.to(torch::kCPU));
+      log_p_data.push_back(log_p.to(torch::kCPU));
+      e_data.push_back(e.to(torch::kCPU));
 
-      auto rt = torch::from_blob(&r, {1}, options_f).clone();
-      r_data.push_back(rt);
-      auto qt = torch::from_blob(&q, {1}, options_f).clone();
-      q_data.push_back(qt);
-      auto log_pt = torch::from_blob(&log_p, {1}, options_f).clone();
-      log_p_data.push_back(log_pt);
-      auto et = torch::from_blob(&e, {1}, options_b).clone();
-      e_data.push_back(et);
-      float adv = advantages_[index];
-      auto advt = torch::from_blob(&adv, {1}, options_f).clone();
+      torch::Tensor advt = advantages_[index].clone().to(torch::kCPU);
       adv_data.push_back(advt);
-      float ret = returns_[index];
-      auto rett = torch::from_blob(&ret, {1}, options_f).clone();
+      torch::Tensor rett = returns_[index].clone().to(torch::kCPU);
       ret_data.push_back(rett);
     }
     // state vector
-    bool tmpbool = last_episode_starts_;
-    auto st = torch::from_blob(&tmpbool, {1}, options_b).clone();
-    state_data.push_back(st);
-    tmpbool = finalized_;
-    st = torch::from_blob(&tmpbool, {1}, options_b).clone();
+    state_data.push_back(last_episode_starts_.clone());
+    bool tmpbool = finalized_;
+    torch::Tensor st = torch::from_blob(&tmpbool, {1}, options_b).clone();
     state_data.push_back(st);
 
     // create subdirectory:
@@ -373,24 +382,28 @@ public:
     for (size_t index = 0; index < s_data.size(); ++index) {
       auto s = s_data[index];
       auto a = a_data[index];
-      float r = r_data[index].item<float>();
-      float q = q_data[index].item<float>();
-      float log_p = log_p_data[index].item<float>();
-      bool e = e_data[index].item<bool>();
-      advantages_[index] = adv_data[index].item<float>();
-      returns_[index] = ret_data[index].item<float>();
+      auto r = r_data[index];
+      auto q = q_data[index];
+      auto log_p = log_p_data[index];
+      auto e = e_data[index];
+      advantages_[index] = adv_data[index].clone().to(device_);
+      returns_[index] = ret_data[index].clone().to(device_);
 
       // writing manual update here instead of using the member function to override the next last episode logic:
       // clone the tensors and move to device
       auto sc = s.to(device_, s.dtype(), /* non_blocking = */ false, /* copy = */ true);
       auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto rc = r.to(device_, r.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto qc = q.to(device_, q.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto log_pc = log_p.to(device_, log_p.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto ec = e.to(device_, e.dtype(), /* non_blocking = */ false, /* copy = */ true);
 
       // add the newest/latest element in back
-      buffer_.push_back(std::make_tuple(sc, ac, r, q, log_p, e));
+      buffer_.push_back(std::make_tuple(sc, ac, rc, qc, log_pc, ec));
     }
 
     // restore buffer state
-    last_episode_starts_ = state_data[0].item<bool>();
+    last_episode_starts_ = state_data[0].clone().to(device_);
     finalized_ = state_data[1].item<bool>();
 
     return;
@@ -413,7 +426,7 @@ private:
   // the rbuffer contains tuples: (s, a, r, q, log_p, e)
   std::deque<BufferEntry> buffer_;
   // additional storage for returns and advantage
-  std::vector<float> returns_, advantages_;
+  std::vector<torch::Tensor> returns_, advantages_;
 };
 
 } // namespace rl

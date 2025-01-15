@@ -11,6 +11,7 @@ target_sources(train
   train.f90
   simulation.f90
 )
+set_target_properties(train PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/mod/0 )
 
 add_executable(train_distributed)
 target_sources(train_distributed
@@ -18,6 +19,7 @@ target_sources(train_distributed
   train_distributed.f90
   simulation.f90
 )
+set_target_properties(train_distributed PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/mod/1 )
 
 foreach(tgt ${fortran_example_targets})
   target_include_directories(${tgt}

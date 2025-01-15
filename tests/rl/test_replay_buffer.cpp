@@ -36,11 +36,11 @@ using namespace torchfort;
 using namespace torch::indexing;
 
 // helper functions
-std::shared_ptr<rl::UniformReplayBuffer> getTestReplayBuffer(int buffer_size, float gamma = 0.95, int nstep = 1) {
+std::shared_ptr<rl::UniformReplayBuffer> getTestReplayBuffer(int buffer_size, int n_envs = 1, float gamma = 0.95, int nstep = 1) {
 
   torch::NoGradGuard no_grad;
 
-  auto rbuff = std::make_shared<rl::UniformReplayBuffer>(buffer_size, buffer_size, gamma, nstep,
+  auto rbuff = std::make_shared<rl::UniformReplayBuffer>(buffer_size, buffer_size, n_envs, gamma, nstep,
                                                          rl::RewardReductionMode::Sum, -1);
 
   // initialize rng
@@ -49,15 +49,14 @@ std::shared_ptr<rl::UniformReplayBuffer> getTestReplayBuffer(int buffer_size, fl
   std::uniform_int_distribution<std::mt19937::result_type> dist(1, 5);
 
   // fill the buffer
-  float reward;
-  bool done;
-  torch::Tensor state = torch::zeros({1}, torch::kFloat32), state_p, action;
+  torch::Tensor state = torch::zeros({n_envs,1}, torch::kFloat32), state_p, action, rtens, dtens;
   for (unsigned int i = 0; i < buffer_size; ++i) {
-    action = torch::ones({1}, torch::kFloat32) * static_cast<float>(dist(rng));
+    action = torch::ones({n_envs, 1}, torch::kFloat32) * static_cast<float>(dist(rng));
     state_p = state + action;
-    reward = action.item<float>();
-    done = false;
-    rbuff->update(state, action, state_p, reward, done);
+    rtens = action.index({"...", 0}).clone();
+    // done = false: -> d=0;
+    dtens = torch::zeros({n_envs}, torch::kFloat32);
+    rbuff->update(state, action, state_p, rtens, dtens);
     state.copy_(state_p);
   }
 
@@ -66,37 +65,34 @@ std::shared_ptr<rl::UniformReplayBuffer> getTestReplayBuffer(int buffer_size, fl
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 extract_entries(std::shared_ptr<rl::UniformReplayBuffer> buffp) {
-  std::vector<float> svec, avec, spvec, rvec;
-  std::vector<float> dvec;
+  std::vector<torch::Tensor> slist, alist, splist, rlist, dlist;
   for (unsigned int i = 0; i < buffp->getSize(); ++i) {
-    torch::Tensor s, a, sp;
-    float r;
-    bool d;
+    torch::Tensor s, a, sp, r, d;
     std::tie(s, a, sp, r, d) = buffp->get(i);
-    svec.push_back(s.item<float>());
-    avec.push_back(a.item<float>());
-    spvec.push_back(sp.item<float>());
-    rvec.push_back(r);
-    dvec.push_back((d ? 1. : 0.));
+    slist.push_back(s);
+    alist.push_back(a);
+    splist.push_back(sp);
+    rlist.push_back(r);
+    dlist.push_back(d);
   }
-  auto options = torch::TensorOptions().dtype(torch::kFloat32);
-  torch::Tensor stens = torch::from_blob(svec.data(), {1}, options).clone();
-  torch::Tensor atens = torch::from_blob(avec.data(), {1}, options).clone();
-  torch::Tensor sptens = torch::from_blob(spvec.data(), {1}, options).clone();
-  torch::Tensor rtens = torch::from_blob(rvec.data(), {1}, options).clone();
-  torch::Tensor dtens = torch::from_blob(dvec.data(), {1}, options).clone();
+
+  torch::Tensor stens = torch::stack(slist, 0).clone();
+  torch::Tensor atens = torch::stack(alist, 0).clone();
+  torch::Tensor sptens = torch::stack(splist, 0).clone();
+  torch::Tensor rtens = torch::stack(rlist, 0).clone();
+  torch::Tensor dtens = torch::stack(dlist, 0).clone();
 
   return std::make_tuple(stens, atens, sptens, rtens, dtens);
 }
 
 void print_buffer(std::shared_ptr<rl::UniformReplayBuffer> buffp) {
-  torch::Tensor stens, atens, sptens;
-  float reward;
-  bool done;
-  for (unsigned int i = 0; i < buffp->getSize(); ++i) {
-    std::tie(stens, atens, sptens, reward, done) = buffp->get(i);
-    std::cout << "entry " << i << ": s = " << stens.item<float>() << " a = " << atens.item<float>()
-              << " s' = " << sptens.item<float>() << " r = " << reward << " d = " << done << std::endl;
+  torch::Tensor stens, atens, sptens, reward, d;
+  for (int i = 0; i < buffp->getSize(); ++i) {
+    std::tie(stens, atens, sptens, reward, d) = buffp->get(i);
+    for (int e = 0; e < buffp->nEnvs(); ++e) {
+      std::cout << "entry (index, env): (" << i << ", " << e << "): s = " << stens.index({e, "..."}).item<float>() << " a = " << atens.index({e, "..."}).item<float>()
+		<< " s' = " << sptens.index({e, "..."}).item<float>() << " r = " << reward.index({e}).item<float>() << " d = " << d.index({e}).item<float>() << std::endl;
+    }
   }
 }
 
@@ -109,9 +105,10 @@ TEST(ReplayBuffer, EntryConsistency) {
   // some parameters
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
+  unsigned int n_envs = 1;
 
   // get replay buffer
-  auto rbuff = getTestReplayBuffer(buffer_size, 0.95, 1);
+  auto rbuff = getTestReplayBuffer(buffer_size, n_envs, 0.95, 1);
 
   // sample
   torch::Tensor stens, atens, sptens, rtens, dtens;
@@ -122,7 +119,7 @@ TEST(ReplayBuffer, EntryConsistency) {
 
     // compute differences:
     state_diff += torch::sum(torch::abs(stens + atens - sptens)).item<float>();
-    reward_diff += torch::sum(torch::abs(atens - rtens)).item<float>();
+    reward_diff += torch::sum(torch::abs(atens.index({"...", 0}) - rtens)).item<float>();
   }
 
   // success condition
@@ -139,20 +136,19 @@ TEST(ReplayBuffer, TrajectoryConsistency) {
   // some parameters
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
+  unsigned int n_envs = 1;
 
   // get replay buffer
-  auto rbuff = getTestReplayBuffer(buffer_size, 0.95, 1);
+  auto rbuff = getTestReplayBuffer(buffer_size, n_envs, 0.95, 1);
 
   // get a few items and their successors:
-  torch::Tensor stens, atens, sptens, sptens_tmp;
-  float reward;
-  bool done;
+  torch::Tensor stens, atens, sptens, sptens_tmp, rtens, dtens;
   // get item at index
-  std::tie(stens, atens, sptens, reward, done) = rbuff->get(0);
+  std::tie(stens, atens, sptens, rtens, dtens) = rbuff->get(0);
   // get next item
   float state_diff = 0.;
   for (unsigned int i = 1; i < buffer_size; ++i) {
-    std::tie(stens, atens, sptens_tmp, reward, done) = rbuff->get(i);
+    std::tie(stens, atens, sptens_tmp, rtens, dtens) = rbuff->get(i);
     state_diff += torch::sum(torch::abs(stens - sptens)).item<float>();
     sptens.copy_(sptens_tmp);
   }
@@ -170,22 +166,22 @@ TEST(ReplayBuffer, NStepConsistency) {
   // some parameters
   unsigned int batch_size = 32;
   unsigned int buffer_size = 8 * batch_size;
+  unsigned int n_envs = 1;
   unsigned int nstep = 4;
   float gamma = 0.95;
 
   // get replay buffer
-  auto rbuff = getTestReplayBuffer(buffer_size, gamma, nstep);
+  auto rbuff = getTestReplayBuffer(buffer_size, n_envs, gamma, nstep);
 
   // sample a batch
   torch::Tensor stens, atens, sptens, rtens, dtens;
   float state_diff = 0;
   float reward_diff = 0.;
   std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
-
+  
   // iterate over samples in batch
-  torch::Tensor stemp, atemp, sptemp, sstens;
-  float rtemp, reward, gamma_eff, rdiff, sdiff, sstens_val;
-  bool dtemp;
+  torch::Tensor stemp, atemp, sptemp, sstens, rtemp, dtemp;
+  float reward, gamma_eff, rdiff, sdiff, sstens_val;
 
   // init differences:
   rdiff = 0.;
@@ -197,21 +193,20 @@ TEST(ReplayBuffer, NStepConsistency) {
     // find the corresponding state
     for (unsigned int i = 0; i < buffer_size; ++i) {
       std::tie(stemp, atemp, sptemp, rtemp, dtemp) = rbuff->get(i);
-      if (std::abs(stemp.item<float>() - sstens_val) < 1e-7) {
-
+      if (std::abs(stemp.index({0, "..."}).item<float>() - sstens_val) < 1e-7) {
         // found the right state
         gamma_eff = 1.;
-        reward = rtemp;
+        reward = rtemp.index({0}).item<float>();
         for (unsigned int k = 1; k < nstep; k++) {
           std::tie(stemp, atemp, sptemp, rtemp, dtemp) = rbuff->get(i + k);
           gamma_eff *= gamma;
-          reward += rtemp * gamma_eff;
+          reward += rtemp.index({0}).item<float>() * gamma_eff;
         }
         break;
       }
     }
-    rdiff += std::abs(reward - rtens.index({s, "..."}).item<float>());
-    sdiff += torch::sum(torch::abs(sptemp - sptens.index({s, "..."}))).item<float>();
+    rdiff += std::abs(reward - rtens.index({s}).item<float>());
+    sdiff += torch::sum(torch::abs(sptemp.index({0, "..."}) - sptens.index({s, "..."}))).item<float>();
   }
 
   EXPECT_FLOAT_EQ(sdiff, 0.);
@@ -226,11 +221,12 @@ TEST(ReplayBuffer, SaveRestore) {
   // some parameters
   unsigned int batch_size = 1;
   unsigned int buffer_size = 8 * batch_size;
+  unsigned int n_envs = 1;
   float gamma = 0.95;
   int nstep = 1;
 
   // get rollout buffer
-  std::shared_ptr<rl::UniformReplayBuffer> rbuff = getTestReplayBuffer(buffer_size, gamma, nstep);
+  std::shared_ptr<rl::UniformReplayBuffer> rbuff = getTestReplayBuffer(buffer_size, n_envs, gamma, nstep);
 
   // extract entries before storing
   torch::Tensor stens_b, atens_b, sptens_b, rtens_b, dtens_b;

@@ -412,6 +412,7 @@ public:
   void printInfo() const {
     std::cout << "GAE-lambda rollout buffer parameters:" << std::endl;
     std::cout << "size = " << size_ << std::endl;
+    std::cout << "n_envs = " << n_envs_ << std::endl;
     std::cout << "gamma = " << gamma_ << std::endl;
     std::cout << "lambda = " << lambda_ << std::endl;
   }

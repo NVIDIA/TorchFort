@@ -218,7 +218,7 @@ torchfort_result_t torchfort_rl_off_policy_evaluate_F(const char* name, void* st
 
 // RL off-policy replay buffer update functions
 /**
- * @brief Adds a new \f$(s, a, s', r, d)\f$ tuple to the replay buffer
+ * @brief Adds a new \f$(s, a, s', r, d)\f$ tuple to the replay buffer. This is for single env (n_env=1) only.
  * @details Here \f$s\f$ (\p state_old) is the state for which action \f$a\f$ (\p action_old) was taken, leading to
  * \f$s'\f$ (\p state_new) and receiving reward \f$r\f$ (\p reward). The terminal state flag \f$d\f$ (\p final_state)
  * specifies whether \f$s'\f$ is the final state in the episode.
@@ -254,6 +254,50 @@ torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_F(const char* na
                                                                   int64_t* action_shape, const void* reward,
                                                                   bool final_state, torchfort_datatype_t dtype,
                                                                   cudaStream_t stream);
+
+/**
+ * @brief Adds a new \f$(s, a, s', r, d)\f$ tuple to the replay buffer. This is for multi env (n_env>=1) only.
+ * @details Here \f$s\f$ (\p state_old) is the state for which action \f$a\f$ (\p action_old) was taken, leading to
+ * \f$s'\f$ (\p state_new) and receiving reward \f$r\f$ (\p reward). The terminal state flag \f$d\f$ (\p final_state)
+ * specifies whether \f$s'\f$ is the final state in the episode.
+ *
+ * @param[in] name The name of system instance to use, as defined during system creation.
+ * @param[in] state_old A pointer to a memory buffer containing previous state data.
+ * @param[in] state_new A pointer to a memory buffer containing new state data.
+ * @param[in] state_dim Rank of the state data.
+ * @param[in] state_shape A pointer to an array specifying the shape of the state data. Length should be equal to the
+ * rank of the \p state_old and \p state_new data plus 1. The first dimension of both must have size n_env.
+ * @param[in] action_old A pointer to a memory buffer containing action data.
+ * @param[in] action_dim Rank of the action data.
+ * @param[in] action_shape A pointer to an array specifying the shape of the action data. Length should be equal to the
+ * rank of the action data plus 1. The first dimension of action_shape must have size n_env.
+ * @param[in] reward A pointer to a memory buffer with reward data.
+ * @param[in] reward_dim A Rank of the reward data. Has to be equal to 1.
+ * @param[in] reward_shape A pointer to an array specifying the shape of the reward data. Length has to be equal to 1
+ * and the number of entries should be equal to n_env.
+ * @param[in] final_state A pointer to a memory buffer with final_state data. Values equal to 1 indicate the end of an episode and values
+ * equal to 0 indicate states within an episode. No other values should be passed.
+ * @param[in] final_state_dim A Rank of the final_state data. Has to be equal to 1.
+ * @param[in] final_state_shape A pointer to an array specifying the shape of the final_state data. Length has to be equal to 1
+ * and the number of entries should be equal to n_env.
+ * @param[out] dtype The TorchFort datatype to use for this operation.
+ * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
+ *
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_multi(const char* name, void* state_old,
+								      void* state_new, size_t state_dim, int64_t* state_shape,
+								      void* action_old, size_t action_dim, int64_t* action_shape,
+								      void* reward, size_t reward_dim, int64_t* reward_shape,
+								      void* final_state, size_t final_size_dim, int64_t* final_state_shape,
+								      torchfort_datatype_t dtype, cudaStream_t stream);
+
+torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_multi_F(const char* name, void* state_old,
+									void* state_new, size_t state_dim, int64_t* state_shape,
+									void* action_old, size_t action_dim, int64_t* action_shape,
+									void* reward, size_t reward_dim, int64_t* reward_shape,
+									void* final_state, size_t final_size_dim, int64_t* final_state_shape,
+									torchfort_datatype_t dtype, cudaStream_t stream);
 
 // RL off-policy checkpoint save and loading functions
 /**

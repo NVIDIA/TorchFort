@@ -123,14 +123,15 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_
     std::string rb_type = sanitize(rb_node["type"].as<std::string>());
     if (rb_node["parameters"]) {
       auto params = get_params(rb_node["parameters"]);
-      std::set<std::string> supported_params{"type", "max_size", "min_size"};
+      std::set<std::string> supported_params{"type", "max_size", "min_size", "n_envs"};
       check_params(supported_params, params.keys());
       auto max_size = static_cast<size_t>(params.get_param<int>("max_size")[0]);
       auto min_size = static_cast<size_t>(params.get_param<int>("min_size")[0]);
+      auto n_envs = static_cast<size_t>(params.get_param<int>("n_envs", 1)[0]);
 
       // distinction between buffer types
       if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, gamma_, nstep_,
+        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, n_envs, gamma_, nstep_,
                                                                nstep_reward_reduction_, rb_device);
       } else {
         THROW_INVALID_USAGE(rb_type);
@@ -494,11 +495,22 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
   }
 }
 
-// we should pass a tuple (s, a, s', r, d)
-void SACSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d) {
+// we should pass a tuple (s, a, s', r, d)  
+void SACSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r, torch::Tensor d) {
   // note that we have to rescale the action: [a_low, a_high] -> [-1, 1],
-  // but the replay buffer only stores scaled actions!
+  // but the replay buffer only stores scaled actions! 
   replay_buffer_->update(s, a, sp, r, d);
+}
+
+void SACSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d) {
+  auto options = torch::TensorOptions().dtype(torch::kFloat32).device(rb_device_);
+  torch::Tensor stensu = torch::unsqueeze(s, 0);
+  torch::Tensor atensu = torch::unsqueeze(a, 0);
+  torch::Tensor sptensu = torch::unsqueeze(sp, 0);
+  torch::Tensor rtensu = torch::tensor({r}, options);
+  torch::Tensor dtensu = torch::tensor({d ? 1. : 0.}, options);
+
+  SACSystem::updateReplayBuffer(stensu, atensu, sptensu, rtensu, dtensu);
 }
 
 bool SACSystem::isReady() { return (replay_buffer_->isReady()); }

@@ -98,23 +98,23 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   {
     torch::NoGradGuard no_grad;
     torch::Tensor q_new_tensor =
-        q_models_target[0].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
+      torch::squeeze(q_models_target[0].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0], 1);
     for (int i = 1; i < q_models_target.size(); ++i) {
       torch::Tensor q_tmp_tensor =
-          q_models_target[i].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
+	torch::squeeze(q_models_target[i].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0], 1);
       q_new_tensor = torch::minimum(q_new_tensor, q_tmp_tensor);
     }
     y_tensor = torch::Tensor(reward_tensor + q_new_tensor * gamma * (1. - d_tensor));
   }
-
+  
   // backward and update step
   // compute loss for critics and zero grads while we are at it
   torch::Tensor q_old_tensor =
-      q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+    torch::squeeze(q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
   q_models[0].optimizer->zero_grad();
   for (int i = 1; i < q_models.size(); ++i) {
-    q_old_tensor = q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+    q_old_tensor = torch::squeeze(q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
     q_loss_tensor = q_loss_tensor + q_loss_func->forward(q_old_tensor, y_tensor);
     q_models[i].optimizer->zero_grad();
   }
@@ -259,7 +259,10 @@ public:
   void initSystemComm(MPI_Comm mpi_comm);
 
   // we should pass a tuple (s, a, s', r, d)
+  // single env
   void updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d);
+  // multi env
+  void updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r, torch::Tensor d);
   bool isReady();
 
   // train step

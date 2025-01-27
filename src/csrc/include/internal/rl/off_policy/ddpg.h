@@ -94,14 +94,14 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
   {
     torch::NoGradGuard no_grad;
     auto q_new_tensor =
-        q_model_target.model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
+      torch::squeeze(q_model_target.model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0], 1);
     y_tensor = torch::Tensor(reward_tensor + q_new_tensor * gamma * (1. - d_tensor));
   }
 
   // backward and update step
   // compute loss
   torch::Tensor q_old_tensor =
-      q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+    torch::squeeze(q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
   q_model.optimizer->zero_grad();
   q_loss_tensor.backward();
@@ -218,7 +218,10 @@ public:
   void initSystemComm(MPI_Comm mpi_comm);
 
   // we should pass a tuple (s, a, s', r, d)
+  // single env
   void updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d);
+  // multi env
+  void updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r, torch::Tensor d);
   bool isReady();
 
   // train step

@@ -42,7 +42,7 @@ namespace torchfort {
 
 namespace rl {
 
-using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, float, bool>;
+  using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>;
 
 enum RewardReductionMode { Sum = 1, Mean = 2, WeightedMean = 3, SumNoSkip = 4, MeanNoSkip = 5, WeightedMeanNoSkip = 6 };
 
@@ -52,15 +52,21 @@ public:
   // disable copy constructor
   ReplayBuffer(const ReplayBuffer&) = delete;
   // base constructor
-  ReplayBuffer(size_t max_size, size_t min_size, int device)
-      : max_size_(max_size), min_size_(min_size), device_(get_device(device)) {}
+  ReplayBuffer(size_t max_size, size_t min_size, size_t n_envs, int device)
+    : max_size_(max_size/n_envs), min_size_(min_size/n_envs), n_envs_(n_envs), device_(get_device(device)) {
+    // some asserts
+    if ((max_size < n_envs) || (min_size < n_envs)) {
+      throw std::runtime_error("ReplayBuffer::ReplayBuffer: Error, make sure the buffer min and max buffer sizes are bigger than or equal to the number of environments");
+    }
+  }
 
   // accessor functions
-  size_t getMinSize() const { return min_size_; }
-  size_t getMaxSize() const { return max_size_; }
+  size_t getMinSize() const { return min_size_ * n_envs_; }
+  size_t getMaxSize() const { return max_size_ * n_envs_; }
+  size_t nEnvs() const { return n_envs_; }
 
   // virtual functions
-  virtual void update(torch::Tensor, torch::Tensor, torch::Tensor, float, bool) = 0;
+  virtual void update(torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor) = 0;
   // sample element randomly
   virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(int) = 0;
   // get specific element
@@ -77,6 +83,7 @@ public:
 protected:
   size_t max_size_;
   size_t min_size_;
+  size_t n_envs_;
   torch::Device device_;
 };
 
@@ -84,9 +91,9 @@ class UniformReplayBuffer : public ReplayBuffer, public std::enable_shared_from_
 
 public:
   // constructor
-  UniformReplayBuffer(size_t max_size, size_t min_size, float gamma, int nstep,
+  UniformReplayBuffer(size_t max_size, size_t min_size, size_t n_envs, float gamma, int nstep,
                       RewardReductionMode reward_reduction_mode, int device)
-      : ReplayBuffer(max_size, min_size, device), rng_(), gamma_(gamma), nstep_(nstep) {
+    : ReplayBuffer(max_size, min_size, n_envs, device), rng_(), gamma_(gamma), nstep_(nstep) {
 
     // set up reward reduction mode
     skip_incomplete_steps_ = true;
@@ -108,18 +115,27 @@ public:
   UniformReplayBuffer(const UniformReplayBuffer&) = delete;
 
   // update
-  void update(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d) {
+  void update(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r, torch::Tensor d) {
 
     // add no grad guard
     torch::NoGradGuard no_grad;
+
+    if( (s.sizes()[0] != n_envs_) || (a.sizes()[0] != n_envs_) || (sp.sizes()[0] != n_envs_) ) {
+      throw std::runtime_error("UniformReplayBuffer::update: the size of the leading dimension of tensors s, a and sp has to be equal to the number of environments");
+    }
+    if ( (r.sizes()[0] != n_envs_) || (d.sizes()[0] != n_envs_) ) {
+      throw std::runtime_error("UniformReplayBuffer::update: tensors r and d have to be one dimensional and the size has to be equal to the number of environments");
+    }
 
     // clone the tensors and move to device
     auto sc = s.to(device_, s.dtype(), /* non_blocking = */ false, /* copy = */ true);
     auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
     auto spc = sp.to(device_, sp.dtype(), /* non_blocking = */ false, /* copy = */ true);
+    auto rc = r.to(device_, r.dtype(), /* non_blocking = */ false, /* copy = */ true);
+    auto dc = d.to(device_, d.dtype(), /* non_blocking = */ false, /* copy = */ true);
 
     // add the newest element to the back
-    buffer_.push_back(std::make_tuple(sc, ac, spc, r, d));
+    buffer_.push_back(std::make_tuple(sc, ac, spc, rc, dc));
 
     // if we reached max size already, remove the oldest element
     if (buffer_.size() > max_size_) {
@@ -133,54 +149,65 @@ public:
     torch::NoGradGuard no_grad;
 
     // we need those
+    torch::Tensor stens, atens, sptens, rtens, dtens;
     auto stens_list = std::vector<torch::Tensor>(batch_size);
     auto atens_list = std::vector<torch::Tensor>(batch_size);
     auto sptens_list = std::vector<torch::Tensor>(batch_size);
-    auto r_list = std::vector<float>(batch_size);
-    auto d_list = std::vector<float>(batch_size);
+    auto rtens_list = std::vector<torch::Tensor>(batch_size);
+    auto dtens_list = std::vector<torch::Tensor>(batch_size);
+
+    // we need the tensor options too
+    auto options = torch::TensorOptions().dtype(torch::kFloat32);
 
     // be careful, the interval is CLOSED! We need to exclude the upper bound
-    std::uniform_int_distribution<size_t> uniform_dist(0, buffer_.size() - nstep_);
+    std::uniform_int_distribution<size_t> uniform_dist(0, (buffer_.size() - nstep_) * n_envs_);
     int sample = 0;
     while (sample < batch_size) {
 
-      // get index
-      auto index = uniform_dist(rng_);
-
+      // global index
+      auto glob_idx = uniform_dist(rng_);
+      
+      // we assume that glob_idx = env_idx + n_envs * step_idx
+      int64_t env_idx = glob_idx % n_envs_;
+      int64_t step_idx = glob_idx / n_envs_;
+      
       // emit the sample at index
-      float r;
+      std::tie(stens, atens, sptens, rtens, dtens) = buffer_.at(step_idx);
+
+      // extract values at env index
+      stens_list[sample] = stens.index({env_idx, "..."}).clone();
+      atens_list[sample] = atens.index({env_idx, "..."}).clone();
+      sptens_list[sample] = sptens.index({env_idx, "..."}).clone();
+      rtens_list[sample] = rtens.index({env_idx}).clone();
+      dtens_list[sample] = dtens.index({env_idx}).clone();
+      
+      // if nstep > 1, perform rollout
       float r_norm = 1.;
       int r_count = 1;
-      bool d;
-      std::tie(stens_list[sample], atens_list[sample], sptens_list[sample], r_list[sample], d) = buffer_.at(index);
-      if (d) {
-        d_list[sample] = 1.;
-      } else {
-        d_list[sample] = 0.;
-      }
-
-      // if nstep > 1, perform rollout
       bool skip = false;
-      float deff = 1. - d_list[sample];
+      torch::Tensor deff = 1. - dtens_list[sample];
       for (int off = 1; off < nstep_; ++off) {
-        torch::Tensor stmp, atmp;
-        std::tie(stmp, atmp, sptens_list[sample], r, d) = buffer_.at(index + off);
+        std::tie(stens, atens, sptens, rtens, dtens) = buffer_.at(step_idx + off);
+	sptens_list[sample] = sptens.index({env_idx, "..."}).clone();
         auto gamma_eff = static_cast<float>(std::pow(gamma_, off));
-        r_list[sample] += gamma_eff * r;
+        rtens_list[sample] += gamma_eff * rtens.index({env_idx});
         r_norm += gamma_eff;
         r_count++;
-        if (d) {
-          // 1-d = 0
+
+	// update deff
+	float d = dtens.index({env_idx}).item<float>();
+        if (std::abs(d - 1.) < 1.e-6) {
+          // episode ended: 1-d = 0
           deff *= 0.;
           if ((off != nstep_ - 1) && skip_incomplete_steps_) {
             skip = true;
           }
         } else {
-          // 1-d = 1
+          // episode continues: 1-d = 1
           deff *= 1.;
         }
       }
-      d_list[sample] = 1. - deff;
+      dtens_list[sample] = (1. - deff).clone();
 
       if (skip) {
         continue;
@@ -191,10 +218,10 @@ public:
       // where there is no final reward
       switch (reward_reduction_mode_) {
       case RewardReductionMode::Mean:
-        r_list[sample] /= static_cast<float>(r_count);
+        rtens_list[sample] /= static_cast<float>(r_count);
         break;
       case RewardReductionMode::WeightedMean:
-        r_list[sample] /= r_norm;
+        rtens_list[sample] /= r_norm;
         break;
       }
 
@@ -203,14 +230,11 @@ public:
     }
 
     // stack the lists
-    auto stens = torch::stack(stens_list, 0).clone();
-    auto atens = torch::stack(atens_list, 0).clone();
-    auto sptens = torch::stack(sptens_list, 0).clone();
-
-    // create new tensors
-    auto options = torch::TensorOptions().dtype(torch::kFloat32);
-    auto rtens = torch::from_blob(r_list.data(), {batch_size, 1}, options).clone();
-    auto dtens = torch::from_blob(d_list.data(), {batch_size, 1}, options).clone();
+    stens = torch::stack(stens_list, 0).clone();
+    atens = torch::stack(atens_list, 0).clone();
+    sptens = torch::stack(sptens_list, 0).clone();
+    rtens = torch::stack(rtens_list, 0).clone();
+    dtens = torch::stack(dtens_list, 0).clone();
 
     return std::make_tuple(stens, atens, sptens, rtens, dtens);
   }
@@ -228,11 +252,9 @@ public:
 
     // emit the sample at index
     torch::Tensor stens, atens, sptens, rtens, dtens;
-    float r;
-    bool d;
-    std::tie(stens, atens, sptens, r, d) = buffer_.at(index);
+    std::tie(stens, atens, sptens, rtens, dtens) = buffer_.at(index);
 
-    return std::make_tuple(stens, atens, sptens, r, d);
+    return std::make_tuple(stens, atens, sptens, rtens, dtens);
   }
 
   // check functions
@@ -249,23 +271,15 @@ public:
   // save and restore
   void save(const std::string& fname) const {
     // create an ordered dict with the buffer contents:
-    std::vector<torch::Tensor> s_data, a_data, sp_data;
-    std::vector<torch::Tensor> r_data, d_data;
-    auto options_f = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCPU);
-    auto options_b = torch::TensorOptions().dtype(torch::kBool).device(torch::kCPU);
+    std::vector<torch::Tensor> s_data, a_data, sp_data, r_data, d_data;
     for (size_t index = 0; index < buffer_.size(); ++index) {
-      torch::Tensor s, a, sp;
-      float r;
-      bool d;
+      torch::Tensor s, a, sp, r, d;
       std::tie(s, a, sp, r, d) = buffer_.at(index);
       s_data.push_back(s.to(torch::kCPU));
       a_data.push_back(a.to(torch::kCPU));
       sp_data.push_back(sp.to(torch::kCPU));
-
-      auto rt = torch::from_blob(&r, {1}, options_f).clone();
-      r_data.push_back(rt);
-      auto dt = torch::from_blob(&d, {1}, options_b).clone();
-      d_data.push_back(dt);
+      r_data.push_back(r.to(torch::kCPU));
+      d_data.push_back(d.to(torch::kCPU));
     }
 
     // create subdirectory:
@@ -291,8 +305,7 @@ public:
 
   void load(const std::string& fname) {
     // get vectors for buffers:
-    std::vector<torch::Tensor> s_data, a_data, sp_data;
-    std::vector<torch::Tensor> r_data, d_data;
+    std::vector<torch::Tensor> s_data, a_data, sp_data, r_data, d_data;
 
     using namespace torchfort;
     std::filesystem::path root_dir(fname);
@@ -309,8 +322,8 @@ public:
       auto s = s_data[index];
       auto a = a_data[index];
       auto sp = sp_data[index];
-      float r = r_data[index].item<float>();
-      bool d = d_data[index].item<bool>();
+      auto r = r_data[index];
+      auto d = d_data[index];
 
       // update buffer
       this->update(s, a, sp, r, d);
@@ -321,13 +334,13 @@ public:
     std::cout << "uniform replay buffer parameters:" << std::endl;
     std::cout << "max_size = " << max_size_ << std::endl;
     std::cout << "min_size = " << min_size_ << std::endl;
+    std::cout << "n_envs = " << n_envs_ << std::endl;
   }
 
   torch::Device device() const { return device_; }
 
 private:
   // the rbuffer contains tuples: (s, a, s', r, d)
-  // std::deque<std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, float, bool>> buffer_;
   std::deque<BufferEntry> buffer_;
   // rng
   std::mt19937_64 rng_;

@@ -286,6 +286,14 @@ torchfort_rl_off_policy_update_replay_buffer
 
 ------
 
+.. _torchfort_rl_off_policy_update_replay_buffer_multi-ref:
+
+torchfort_rl_off_policy_update_replay_buffer_multi
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. doxygenfunction:: torchfort_rl_off_policy_update_replay_buffer_multi
+
+------
+
 .. _torchfort_rl_off_policy_is_ready-ref:
 
 torchfort_rl_off_policy_is_ready
@@ -422,7 +430,7 @@ torchfort_rl_on_policy_update_rollout_buffer
 .. _torchfort_rl_on_policy_update_rollout_buffer_multi-ref:
 
 torchfort_rl_on_policy_update_rollout_buffer_multi
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_update_rollout_buffer_multi
 
 ------

@@ -62,7 +62,10 @@ public:
   RLOffPolicySystem(int model_device, int rb_device);
 
   // some important functions which have to be implemented by the base class
+  // single env
   virtual void updateReplayBuffer(torch::Tensor, torch::Tensor, torch::Tensor, float, bool) = 0;
+  // multi env
+  virtual void updateReplayBuffer(torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor) = 0;
   virtual bool isReady() = 0;
 
   // these have to be implemented
@@ -116,6 +119,41 @@ static void update_replay_buffer(const char* name, T* state_old, T* state_new, s
 
   registry[name]->updateReplayBuffer(state_old_tensor, action_old_tensor, state_new_tensor, static_cast<float>(reward),
                                      final_state);
+  return;
+}
+
+template <MemoryLayout L, typename T>
+static void update_replay_buffer(const char* name, T* state_old, T* state_new, size_t state_dim, int64_t* state_shape,
+                                 T* action_old, size_t action_dim, int64_t* action_shape,
+				 T* reward, size_t reward_dim, int64_t* reward_shape,
+				 T* final_state, size_t final_state_dim, int64_t* final_state_shape,
+                                 cudaStream_t ext_stream) {
+
+  // no grad
+  torch::NoGradGuard no_grad;
+
+#ifdef ENABLE_GPU
+  c10::cuda::OptionalCUDAStreamGuard guard;
+  auto rb_device = registry[name]->rbDevice();
+  if (rb_device.is_cuda()) {
+    auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
+    guard.reset_stream(stream);
+  }
+#endif
+
+  // get tensors and copy:
+  auto state_old_tensor = get_tensor<L>(state_old, state_dim, state_shape)
+                              .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  auto state_new_tensor = get_tensor<L>(state_new, state_dim, state_shape)
+                              .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  auto action_old_tensor = get_tensor<L>(action_old, action_dim, action_shape)
+                              .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  auto reward_tensor = get_tensor<L>(reward, reward_dim, reward_shape)
+                              .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  auto final_state_tensor = get_tensor<L>(final_state, final_state_dim, final_state_shape)
+                              .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true); 
+
+  registry[name]->updateReplayBuffer(state_old_tensor, action_old_tensor, state_new_tensor, reward_tensor, final_state_tensor);
   return;
 }
 

@@ -477,7 +477,7 @@ torchfort_rl_off_policy_update_replay_buffer
 
 .. f:function:: torchfort_rl_off_policy_update_replay_buffer(name, state_old, act_old, state_new, reward, terminal, stream)
   
-  Adds a new :math:`(s, a, s', r, d)` tuple to the replay buffer. Here :math:`s` (:code:`state_old`) is the state for which action :math:`a` (:code:`action_old`) was taken, leading to :math:`s'` (:code:`state_new`) and receiving reward :math:`r` (:code:`reward`). The terminal state flag :math:`d` (:code:`final_state`) specifies whether :math:`s'` is the final state in the episode.
+  Adds a new :math:`(s, a, s', r, d)` tuple to the replay buffer. Here :math:`s` (:code:`state_old`) is the state for which action :math:`a` (:code:`action_old`) was taken, leading to :math:`s'` (:code:`state_new`) and receiving reward :math:`r` (:code:`reward`). The terminal state flag :math:`d` (:code:`final_state`) specifies whether :math:`s'` is the final state in the episode. For a local multi-env environment (n_envs>=1), the last dim on the passed tensors has to be equal to n_envs, an reward and terminal both have to be 1D tensors of size n_env as well. For single env (n_env=1), the env dimension can be omitted and in that case reward has to be a scalar and terminal a boolean flag.
   
   For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
   
@@ -729,7 +729,7 @@ torchfort_rl_on_policy_update_rollout_buffer
 .. f:function:: torchfort_rl_on_policy_update_rollout_buffer(name, state_old, act_old, state_new, reward, terminal, stream)
   
   Adds a new :math:`(s, a, r, d)` tuple to the rollout buffer. Here :math:`s` (:code:`state`) is the state for which action :math:`a` (:code:`action`) was taken, leading to reward :math:`r` (:code:`reward`). The terminal state flag :math:`d` (:code:`terminal`) specifies whether the state is the final state in the episode.
-  Note that value estimates :math:`q` as well was log-probabilities are also stored but the user does not need to pass those manually, , those values are computed internally from the current policy and stored with the other values.
+  Note that value estimates :math:`q` as well was log-probabilities are also stored but the user does not need to pass those manually, , those values are computed internally from the current policy and stored with the other values. For a local multi-env environment (n_envs>=1), the last dim on the passed tensors has to be equal to n_envs, an reward and terminal both have to be 1D tensors of size n_env as well. For single	env (n_env=1), the env dimension can be	omitted and in that case reward has to be a scalar and terminal a boolean flag.
   
   For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
   

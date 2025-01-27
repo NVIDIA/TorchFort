@@ -271,6 +271,90 @@ torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_F(const char* na
   return TORCHFORT_RESULT_SUCCESS;
 }
 
+torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_multi(const char* name, void* state_old,
+								      void* state_new, size_t state_dim, int64_t* state_shape,
+                                                                      void* action_old, size_t action_dim, int64_t* action_shape,
+								      void* reward, size_t reward_dim, int64_t* reward_shape,
+                                                                      void* final_state, size_t final_state_dim, int64_t* final_state_shape,
+								      torchfort_datatype_t dtype, cudaStream_t ext_stream) {
+  using namespace torchfort;
+  try {
+    switch (dtype) {
+    case TORCHFORT_FLOAT: {
+      rl::off_policy::update_replay_buffer<RowMajor>(
+          name, reinterpret_cast<float*>(state_old),
+	  reinterpret_cast<float*>(state_new), state_dim, state_shape,
+          reinterpret_cast<float*>(action_old), action_dim, action_shape,
+	  reinterpret_cast<float*>(reward), reward_dim, reward_shape,
+	  reinterpret_cast<float*>(final_state), final_state_dim, final_state_shape,
+	  ext_stream);
+      break;
+    }
+    case TORCHFORT_DOUBLE: {
+      rl::off_policy::update_replay_buffer<RowMajor>(
+          name, reinterpret_cast<double*>(state_old),
+	  reinterpret_cast<double*>(state_new), state_dim, state_shape,
+          reinterpret_cast<double*>(action_old), action_dim, action_shape,
+	  reinterpret_cast<double*>(reward), reward_dim, reward_shape,
+          reinterpret_cast<double*>(final_state), final_state_dim, final_state_shape,
+	  ext_stream);
+      break;
+    }
+    default: {
+      THROW_INVALID_USAGE("Unknown datatype provided.");
+      break;
+    }
+    }
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_multi_F(const char* name, void* state_old,
+									void* state_new, size_t state_dim, int64_t* state_shape,
+									void* action_old, size_t action_dim, int64_t* action_shape,
+									void* reward, size_t reward_dim, int64_t* reward_shape,
+									void* final_state, size_t final_state_dim, int64_t* final_state_shape,
+									torchfort_datatype_t dtype, cudaStream_t stream) {
+  using namespace torchfort;
+  try {
+    switch (dtype) {
+    case TORCHFORT_FLOAT: {
+     
+      rl::off_policy::update_replay_buffer<ColMajor>(
+						     name, reinterpret_cast<float*>(state_old),
+						     reinterpret_cast<float*>(state_new), state_dim, state_shape,
+						     reinterpret_cast<float*>(action_old), action_dim, action_shape,
+						     reinterpret_cast<float*>(reward), reward_dim, reward_shape,
+						     reinterpret_cast<float*>(final_state), final_state_dim, final_state_shape,
+						     stream);
+      break;
+    }
+    case TORCHFORT_DOUBLE: {
+      rl::off_policy::update_replay_buffer<ColMajor>(
+						     name, reinterpret_cast<double*>(state_old),
+						     reinterpret_cast<double*>(state_new), state_dim, state_shape,
+						     reinterpret_cast<double*>(action_old), action_dim, action_shape,
+						     reinterpret_cast<double*>(reward), reward_dim, reward_shape,
+                                                     reinterpret_cast<double*>(final_state), final_state_dim, final_state_shape,
+						     stream);
+      break;
+    }
+    default: {
+      THROW_INVALID_USAGE("Unknown datatype provided.");
+      break;
+    }
+    }
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
+
 torchfort_result_t torchfort_rl_off_policy_predict_explore(const char* name, void* state, size_t state_dim,
                                                            int64_t* state_shape, void* action, size_t action_dim,
                                                            int64_t* action_shape, torchfort_datatype_t dtype,

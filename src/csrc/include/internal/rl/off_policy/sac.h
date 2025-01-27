@@ -120,7 +120,7 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     {
       torch::NoGradGuard no_grad;
       std::tie(action_tensor, action_log_prob) = p_model.model->forwardNoise(state_old_tensor);      
-      action_log_prob = torch::unsqueeze(action_log_prob + targ_ent, 1);
+      action_log_prob = action_log_prob + targ_ent;
     }
     alpha_loss = -torch::mean(alpha_model->log_alpha_ * action_log_prob);
     alpha_loss.backward();
@@ -148,31 +148,31 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     torch::NoGradGuard no_grad;
     torch::Tensor action_new_tensor, action_new_log_prob;
     std::tie(action_new_tensor, action_new_log_prob) = p_model.model->forwardNoise(state_new_tensor);
-    action_new_log_prob = torch::unsqueeze(action_new_log_prob, 1);
 
     // compute expected reward
     torch::Tensor q_new_tensor =
-        q_models_target[0].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
+      torch::squeeze(q_models_target[0].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0], 1);
     for (int i = 1; i < q_models_target.size(); ++i) {
       torch::Tensor q_tmp_tensor =
-          q_models_target[i].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0];
+	torch::squeeze(q_models_target[i].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0], 1);
       q_new_tensor = torch::minimum(q_new_tensor, q_tmp_tensor);
     }
+    
     // entropy regularization
     q_new_tensor = q_new_tensor - alpha_model->forward(action_new_log_prob);
 
     // target construction
     y_tensor = torch::Tensor(reward_tensor + q_new_tensor * gamma * (1. - d_tensor));
   }
-
+  
   // backward and update step
   torch::Tensor q_old_tensor =
-      q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+    torch::squeeze(q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
   q_models[0].optimizer->zero_grad();
   for (int i = 1; i < q_models.size(); ++i) {
     // compute loss
-    q_old_tensor = q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+    q_old_tensor = torch::squeeze(q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
     q_loss_tensor = q_loss_tensor + q_loss_func->forward(q_old_tensor, y_tensor);
     q_models[i].optimizer->zero_grad();
   }
@@ -220,10 +220,10 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   // just q1 is used
   // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
   torch::Tensor q_tens =
-      q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0];
+    torch::squeeze(q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0], 1);
   for (int i = 1; i < q_models_target.size(); ++i) {
     auto q_tmp_tensor =
-        q_models_target[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0];
+      torch::squeeze(q_models_target[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
     q_tens = torch::minimum(q_tens, q_tmp_tensor);
   }
   // entropy regularization
@@ -334,7 +334,10 @@ public:
   void initSystemComm(MPI_Comm mpi_comm);
 
   // we should pass a tuple (s, a, s', r, d)
+  // single env
   void updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d);
+  // multi env
+  void updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r, torch::Tensor d);
   bool isReady();
 
   // train step

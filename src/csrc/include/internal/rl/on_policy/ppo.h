@@ -273,6 +273,7 @@ public:
   void updateRolloutBuffer(torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor);
   // void finalizeRolloutBuffer(float, bool);
   void resetRolloutBuffer();
+  void setSeed(unsigned int);
   bool isReady();
 
   // train step

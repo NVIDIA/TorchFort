@@ -121,6 +121,9 @@ torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char*
   try {
     torchfort_rl_off_policy_create_system(name, config_fname, model_device, rb_device);
     rl::off_policy::registry[sanitize(name)]->initSystemComm(mpi_comm);
+    // set the RNG for the rollout buffer
+    unsigned int seed = 5489u + static_cast<unsigned int>(rl::off_policy::registry[sanitize(name)]->getRank());
+    rl::off_policy::registry[sanitize(name)]->setSeed(seed);
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();

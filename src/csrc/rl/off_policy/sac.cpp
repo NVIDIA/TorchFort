@@ -265,6 +265,14 @@ torch::Device SACSystem::modelDevice() const { return model_device_; }
 
 torch::Device SACSystem::rbDevice() const { return rb_device_; }
 
+int SACSystem::getRank() const	{
+  if (!system_comm_) {
+    return 0;
+  } else {
+    return system_comm_->rank;
+  }
+}
+
 void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // system
@@ -512,6 +520,8 @@ void SACSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tens
 
   SACSystem::updateReplayBuffer(stensu, atensu, sptensu, rtensu, dtensu);
 }
+
+void SACSystem::setSeed(unsigned int seed) { replay_buffer_->setSeed(seed); }
 
 bool SACSystem::isReady() { return (replay_buffer_->isReady()); }
 

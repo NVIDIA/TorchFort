@@ -344,6 +344,8 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor stens, torch::Tensor atens, to
 
 void PPOSystem::resetRolloutBuffer() { rollout_buffer_->reset(); }
 
+void PPOSystem::setSeed(unsigned int seed) { rollout_buffer_->setSeed(seed); }
+
 bool PPOSystem::isReady() { return (rollout_buffer_->isReady()); }
 
 std::shared_ptr<ModelState> PPOSystem::getSystemState_() { return system_state_; }

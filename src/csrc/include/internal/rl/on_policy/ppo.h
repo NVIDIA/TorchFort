@@ -84,25 +84,31 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     torch::NoGradGuard no_grad;
 
     // compute mean
-    torch::Tensor adv_mean = torch::mean(adv_tensor);
+    torch::Tensor adv_mean = torch::sum(adv_tensor);
+    auto options = torch::TensorOptions().dtype(torch::Long).device(adv_mean.device());
+    torch::Tensor adv_count = torch::tensor({torch::numel(adv_tensor)}, options)
 
     // average mean across all nodes
     if (pq_model.comm) {
       std::vector<torch::Tensor> means = {adv_mean};
-      pq_model.comm->allreduce(means, true);
+      pq_model.comm->allreduce(means, false);
       adv_mean = means[0];
+      means = {adv_count};
+      pq_model.comm->allreduce(means, false);
+      adv_count = means[0];
     }
+    adv_mean = adv_mean / adv_count;
 
     // compute std
-    torch::Tensor adv_std = torch::mean(torch::square(adv_tensor - adv_mean));
+    torch::Tensor adv_std = torch::sum(torch::square(adv_tensor - adv_mean));
 
     // average std across all nodes
     if (pq_model.comm) {
       std::vector<torch::Tensor> stds = {adv_std};
-      pq_model.comm->allreduce(stds, true);
+      pq_model.comm->allreduce(stds, false);
       adv_std = stds[0];
     }
-    adv_std = torch::sqrt(adv_std);
+    adv_std = torch::sqrt(adv_std / (adv_count - 1));
 
     // update advantage tensor
     adv_tensor = (adv_tensor - adv_mean) / (adv_std + 1.e-8);

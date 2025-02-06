@@ -90,12 +90,10 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
 
     // average mean across all nodes
     if (pq_model.comm) {
-      std::vector<torch::Tensor> means = {adv_mean};
+      std::vector<torch::Tensor> means = {adv_mean, adv_count};
       pq_model.comm->allreduce(means, false);
       adv_mean = means[0];
-      means = {adv_count};
-      pq_model.comm->allreduce(means, false);
-      adv_count = means[0];
+      adv_count = means[1];
     }
     adv_mean = adv_mean / adv_count;
 

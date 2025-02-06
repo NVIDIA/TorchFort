@@ -113,6 +113,11 @@ void Comm::finalize() {
 }
 
 void Comm::allreduce(torch::Tensor& tensor, bool average) const {
+
+  if (!tensor.is_contiguous()) {
+    THROW_NOT_SUPPORTED("allreduce method does not support non-contiguous tensors.");
+  }
+
 #ifdef ENABLE_GPU
   if (tensor.device().type() == torch::kCUDA) {
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
@@ -164,6 +169,9 @@ void Comm::allreduce(std::vector<torch::Tensor>& tensors, bool average) const {
 #endif
 
   for (auto& t : tensors) {
+    if (!t.is_contiguous()) {
+      THROW_NOT_SUPPORTED("allreduce method does not support non-contiguous tensors.");
+    }
     allreduce(t, average);
   }
 

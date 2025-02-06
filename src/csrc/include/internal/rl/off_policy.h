@@ -66,6 +66,7 @@ public:
   virtual void updateReplayBuffer(torch::Tensor, torch::Tensor, torch::Tensor, float, bool) = 0;
   // multi env
   virtual void updateReplayBuffer(torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor) = 0;
+  virtual void setSeed(unsigned int seed) = 0;
   virtual bool isReady() = 0;
 
   // these have to be implemented
@@ -80,6 +81,7 @@ public:
   virtual void loadCheckpoint(const std::string& checkpoint_dir) = 0;
   virtual torch::Device modelDevice() const = 0;
   virtual torch::Device rbDevice() const = 0;
+  virtual int getRank() const =0;
 
 protected:
   virtual std::shared_ptr<ModelState> getSystemState_() = 0;

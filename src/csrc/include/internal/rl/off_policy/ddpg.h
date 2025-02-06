@@ -222,6 +222,7 @@ public:
   void updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, float r, bool d);
   // multi env
   void updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r, torch::Tensor d);
+  void setSeed(unsigned int seed);
   bool isReady();
 
   // train step
@@ -243,6 +244,7 @@ public:
   // accessors
   torch::Device modelDevice() const;
   torch::Device rbDevice() const;
+  int getRank() const;
 
 private:
   // we need those accessors for logging

@@ -239,6 +239,14 @@ torch::Device DDPGSystem::modelDevice() const { return model_device_; }
 
 torch::Device DDPGSystem::rbDevice() const { return rb_device_; }
 
+int DDPGSystem::getRank() const {
+  if (!system_comm_) {
+    return 0;
+  } else {
+    return system_comm_->rank;
+  }
+}
+
 void DDPGSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // system
@@ -367,6 +375,8 @@ void DDPGSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Ten
 
   DDPGSystem::updateReplayBuffer(stensu, atensu, sptensu, rtensu, dtensu);
 }
+
+void DDPGSystem::setSeed(unsigned int seed) { replay_buffer_->setSeed(seed); }
 
 bool DDPGSystem::isReady() { return (replay_buffer_->isReady()); }
 

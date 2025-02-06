@@ -75,6 +75,7 @@ public:
   virtual bool isReady() const = 0;
   virtual void reset() = 0;
   virtual size_t getSize() const = 0;
+  virtual void setSeed(unsigned int seed) = 0;
   virtual void printInfo() const = 0;
   virtual void save(const std::string& fname) const = 0;
   virtual void load(const std::string& fname) = 0;
@@ -267,6 +268,10 @@ public:
   }
 
   size_t getSize() const { return buffer_.size(); }
+
+  void setSeed(unsigned int seed) {
+    rng_.seed(seed);
+  }
 
   // save and restore
   void save(const std::string& fname) const {

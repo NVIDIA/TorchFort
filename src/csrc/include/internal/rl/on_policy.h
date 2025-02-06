@@ -68,6 +68,7 @@ public:
   virtual void updateRolloutBuffer(torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor) = 0;
   // virtual void finalizeRolloutBuffer(float, bool) = 0;
   virtual void resetRolloutBuffer() = 0;
+  virtual void setSeed(unsigned int seed) = 0;
   virtual bool isReady() = 0;
 
   // these have to be implemented

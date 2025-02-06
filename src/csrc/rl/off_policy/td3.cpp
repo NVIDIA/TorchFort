@@ -253,6 +253,14 @@ torch::Device TD3System::modelDevice() const { return model_device_; }
 
 torch::Device TD3System::rbDevice() const { return rb_device_; }
 
+int TD3System::getRank() const	{
+  if (!system_comm_) {
+    return 0;
+  } else {
+    return system_comm_->rank;
+  }
+}
+
 void TD3System::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // system
@@ -413,6 +421,8 @@ void TD3System::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tens
 
   TD3System::updateReplayBuffer(stensu, atensu, sptensu, rtensu, dtensu);
 }
+
+void TD3System::setSeed(unsigned int seed) { replay_buffer_->setSeed(seed); }
 
 bool TD3System::isReady() { return (replay_buffer_->isReady()); }
 

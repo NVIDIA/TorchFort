@@ -85,8 +85,8 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
 
     // compute mean
     torch::Tensor adv_mean = torch::sum(adv_tensor);
-    auto options = torch::TensorOptions().dtype(torch::Long).device(adv_mean.device());
-    torch::Tensor adv_count = torch::tensor({torch::numel(adv_tensor)}, options)
+    auto options = torch::TensorOptions().dtype(torch::kLong).device(adv_mean.device());
+    torch::Tensor adv_count = torch::tensor({torch::numel(adv_tensor)}, options);
 
     // average mean across all nodes
     if (pq_model.comm) {

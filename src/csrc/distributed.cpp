@@ -198,8 +198,11 @@ void Comm::allreduce(float& val, bool average) const {
 }
 
 void Comm::broadcast(torch::Tensor& tensor, int root) const {
-  auto count = torch::numel(tensor);
+  if (!tensor.is_contiguous()) {
+    THROW_NOT_SUPPORTED("broadcast method does not support non-contiguous tensors.");
+  }
 
+  auto count = torch::numel(tensor);
 #ifdef ENABLE_GPU
   if (tensor.device().type() == torch::kCUDA) {
     // Use NCCL for GPU tensors

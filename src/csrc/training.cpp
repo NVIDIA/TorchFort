@@ -129,39 +129,47 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
 
   model->train();
   auto opt = models[name].optimizer.get();
+  auto state = models[name].state.get();
 
   // fwd pass
   auto results = model->forward(inputs->tensors);
   auto loss =
       models[name].loss->forward(results, labels->tensors, (extra_loss_args) ? extra_loss_args->tensors : std::vector<torch::Tensor>());
 
+  if (models[name].grad_accumulation_steps > 1) loss /= models[name].grad_accumulation_steps;
+
   // extract loss
   *loss_val = loss.item<float>();
 
   // bwd pass
-  opt->zero_grad();
+  if (state->step_train_current % models[name].grad_accumulation_steps == 0) {
+    opt->zero_grad();
+  }
+
   loss.backward();
 
-  // allreduce (average) gradients (if running distributed)
-  if (models[name].comm) {
-    std::vector<torch::Tensor> grads;
-    grads.reserve(model->parameters().size());
-    for (const auto& p : model->parameters()) {
-      grads.push_back(p.grad());
+  if ((state->step_train_current + 1) % models[name].grad_accumulation_steps == 0) {
+    // allreduce (average) gradients (if running distributed)
+    if (models[name].comm) {
+      std::vector<torch::Tensor> grads;
+      grads.reserve(model->parameters().size());
+      for (const auto& p : model->parameters()) {
+        grads.push_back(p.grad());
+      }
+      models[name].comm->allreduce(grads, true);
+
+      // average returned loss value
+      models[name].comm->allreduce(*loss_val, true);
     }
-    models[name].comm->allreduce(grads, true);
 
-    // average returned loss value
-    models[name].comm->allreduce(*loss_val, true);
+    opt->step();
+    if (models[name].lr_scheduler) {
+      models[name].lr_scheduler->step();
+    }
   }
 
-  opt->step();
-  if (models[name].lr_scheduler) {
-    models[name].lr_scheduler->step();
-  }
-
-  auto state = models[name].state.get();
   state->step_train++;
+  state->step_train_current++;
   if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
     std::stringstream os;
     os << "model: " << name << ", ";

@@ -108,6 +108,17 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
     // Setting up optimizer
     if (config["optimizer"]) {
       models[name].optimizer = get_optimizer(config["optimizer"], models[name].model);
+
+      if (config["optimizer"]["general"]) {
+        auto params = get_params(config["optimizer"]["general"]);
+        std::set<std::string> supported_params{"grad_accumulation_steps"};
+        check_params(supported_params, params.keys());
+        try {
+          models[name].grad_accumulation_steps = params.get_param<int>("grad_accumulation_steps")[0];
+        } catch (std::out_of_range) {
+          // default
+        }
+      }
     }
 
     // Setting up lr_scheduler

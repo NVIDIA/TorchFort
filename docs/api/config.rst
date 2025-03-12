@@ -55,6 +55,10 @@ The block in the configuration file defining optimizer properties takes the foll
     type: <optimizer_type>
     parameters:
       <option> = <value>
+    general:
+      <option> = value
+
+The :code:`general` block is optional.
 
 The following table lists the available optimizer types:
 
@@ -67,7 +71,7 @@ The following table lists the available optimizer types:
 +----------------+---------------------------------------+
 
 
-The following table lists the available options by optimizer type:
+The following table lists the available parameter options by optimizer type:
 
 +----------------+-------------------+-----------+-------------------------------------------------------------------------------------------+
 | Optimizer Type | Option            | Data Type | Description                                                                               |
@@ -94,6 +98,14 @@ The following table lists the available options by optimizer type:
 +                +-------------------+-----------+-------------------------------------------------------------------------------------------+
 |                | ``amsgrad``       | boolean   | whether to use AMSGrad variant (default = ``false``)                                      |
 +----------------+-------------------+-----------+-------------------------------------------------------------------------------------------+
+
+The following table lists the available general options:
+
++------------------------------+-----------+------------------------------------------------------------------------------------------------+
+| Option                       | Data Type | Description                                                                                    |
++==============================+===========+================================================================================================+
+| ``grad_accumulation_steps``  | integer   | number of training steps to accumulate gradients between optimizer steps  (default = ``1``)    |
++------------------------------+-----------+------------------------------------------------------------------------------------------------+
 
 .. _lr_schedule_properties-ref:
 

@@ -34,8 +34,7 @@ endif()
 
 project(torchfort LANGUAGES ${LANGS})
 
-message(STATUS "${CMAKE_CXX_COMPILER_ID}")
-if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
   # __rdtsc() in torch not supported by nvc++. Use g++ for CXX files.
   message(FATAL_ERROR "TorchFort does not support compilation of C++ files with nvc++. "
                       "Set CMAKE_CXX_COMPILER to g++ to proceed.")

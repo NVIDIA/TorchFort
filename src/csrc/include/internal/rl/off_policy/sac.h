@@ -169,30 +169,41 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   torch::Tensor q_old_tensor =
     torch::squeeze(q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
-  q_models[0].optimizer->zero_grad();
+  auto state = q_models[0].state;
+  if (state->step_train_current % q_models[0].grad_accumulation_steps == 0) {
+    q_models[0].optimizer->zero_grad();
+  }
   for (int i = 1; i < q_models.size(); ++i) {
     // compute loss
     q_old_tensor = torch::squeeze(q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
     q_loss_tensor = q_loss_tensor + q_loss_func->forward(q_old_tensor, y_tensor);
-    q_models[i].optimizer->zero_grad();
+    state = q_models[i].state;
+    if (state->step_train_current % q_models[i].grad_accumulation_steps == 0) {
+      q_models[i].optimizer->zero_grad();
+    }
   }
   q_loss_tensor.backward();
 
   // update critics
   for (const auto& q_model : q_models) {
-    // grad comm
-    if (q_model.comm) {
-      std::vector<torch::Tensor> grads;
-      grads.reserve(q_model.model->parameters().size());
-      for (const auto& p : q_model.model->parameters()) {
-        grads.push_back(p.grad());
-      }
-      q_model.comm->allreduce(grads, true);
-    }
 
-    // optimizer step
-    q_model.optimizer->step();
-    q_model.lr_scheduler->step();
+    // finish gradient accumulation
+    state = q_model.state;
+    if ((state->step_train_current + 1) % q_model.grad_accumulation_steps == 0) { 
+      // grad comm
+      if (q_model.comm) {
+	std::vector<torch::Tensor> grads;
+	grads.reserve(q_model.model->parameters().size());
+	for (const auto& p : q_model.model->parameters()) {
+	  grads.push_back(p.grad());
+	}
+	q_model.comm->allreduce(grads, true);
+      }
+      
+      // optimizer step
+      q_model.optimizer->step();
+      q_model.lr_scheduler->step();
+    }
   }
 
   // save loss values
@@ -233,22 +244,27 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   torch::Tensor p_loss_tensor = -torch::mean(q_tens);
 
   // bwd pass
-  p_model.optimizer->zero_grad();
+  state = p_model.state;
+  if ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0) {
+    p_model.optimizer->zero_grad();
+  }
   p_loss_tensor.backward();
 
   // allreduce (average) gradients (if running distributed)
-  if (p_model.comm) {
-    std::vector<torch::Tensor> grads;
-    grads.reserve(p_model.model->parameters().size());
-    for (const auto& p : p_model.model->parameters()) {
-      grads.push_back(p.grad());
+  if ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0) {
+    if (p_model.comm) {
+      std::vector<torch::Tensor> grads;
+      grads.reserve(p_model.model->parameters().size());
+      for (const auto& p : p_model.model->parameters()) {
+	grads.push_back(p.grad());
+      }
+      p_model.comm->allreduce(grads, true);
     }
-    p_model.comm->allreduce(grads, true);
-  }
 
-  // optimizer step
-  p_model.optimizer->step();
-  p_model.lr_scheduler->step();
+    // optimizer step
+    p_model.optimizer->step();
+    p_model.lr_scheduler->step();
+  }
 
   // unfreeze the qmodels
   for (const auto& q_model : q_models) {
@@ -265,28 +281,33 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
 
   // print some info
   // value functions
-  auto q_model = q_models[0];
-  auto qstate = q_models[0].state;
-  qstate->step_train++;
-  if (qstate->report_frequency > 0 && qstate->step_train % qstate->report_frequency == 0) {
+  for (const auto& q_model : q_models) {
+    state = q_model.state;
+    state->step_train++;
+    state->step_train_current++;
+  }
+  auto q_model = q_models[0]
+  state = q_models.state;
+  if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
     std::stringstream os;
     os << "model: critic,";
-    os << "step_train: " << qstate->step_train << ", ";
+    os << "step_train: " << state->step_train << ", ";
     os << "loss: " << q_loss_val << ", ";
     auto lrs = get_current_lrs(q_model.optimizer);
     os << "lr: " << lrs[0];
     if (!q_model.comm || (q_model.comm && q_model.comm->rank == 0)) {
       torchfort::logging::print(os.str(), torchfort::logging::info);
-      if (qstate->enable_wandb_hook) {
-        torchfort::wandb_log(qstate, q_model.comm, "critic_0", "train_loss", qstate->step_train, q_loss_val);
-        torchfort::wandb_log(qstate, q_model.comm, "critic_0", "train_lr", qstate->step_train, lrs[0]);
+      if (state->enable_wandb_hook) {
+        torchfort::wandb_log(state, q_model.comm, "critic_0", "train_loss", state->step_train, q_loss_val);
+        torchfort::wandb_log(state, q_model.comm, "critic_0", "train_lr", state->step_train, lrs[0]);
       }
     }
   }
 
   // policy function
-  auto state = p_model.state;
+  state = p_model.state;
   state->step_train++;
+  state->step_train_current++;
   if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
     std::stringstream os;
     os << "model: actor, ";

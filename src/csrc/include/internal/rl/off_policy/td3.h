@@ -112,29 +112,40 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   torch::Tensor q_old_tensor =
     torch::squeeze(q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
-  q_models[0].optimizer->zero_grad();
+  auto state = q_models[0].state;
+  if (state->step_train_current % q_models[0].grad_accumulation_steps == 0) {
+    q_models[0].optimizer->zero_grad();
+  }
   for (int i = 1; i < q_models.size(); ++i) {
     q_old_tensor = torch::squeeze(q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
     q_loss_tensor = q_loss_tensor + q_loss_func->forward(q_old_tensor, y_tensor);
-    q_models[i].optimizer->zero_grad();
+    state = q_models[i].state;
+    if (state->step_train_current % q_models[i].grad_accumulation_steps == 0) {
+      q_models[i].optimizer->zero_grad();
+    }
   }
   q_loss_tensor.backward();
 
   // update critics
   for (const auto& q_model : q_models) {
-    // grad comm
-    if (q_model.comm) {
-      std::vector<torch::Tensor> grads;
-      grads.reserve(q_model.model->parameters().size());
-      for (const auto& p : q_model.model->parameters()) {
-        grads.push_back(p.grad());
-      }
-      q_model.comm->allreduce(grads, true);
-    }
 
-    // optimizer step
-    q_model.optimizer->step();
-    q_model.lr_scheduler->step();
+    // finish gradient accumulation
+    state = q_model.state;
+    if ((state->step_train_current + 1) % q_model.grad_accumulation_steps == 0) {
+      // grad comm
+      if (q_model.comm) {
+	std::vector<torch::Tensor> grads;
+	grads.reserve(q_model.model->parameters().size());
+	for (const auto& p : q_model.model->parameters()) {
+	  grads.push_back(p.grad());
+	}
+	q_model.comm->allreduce(grads, true);
+      }
+
+      // optimizer step
+      q_model.optimizer->step();
+      q_model.lr_scheduler->step();
+    }
   }
 
   // save loss values
@@ -161,23 +172,29 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
         q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0]);
 
     // bwd pass
-    p_model.optimizer->zero_grad();
+    state = p_model.state;
+    if ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0) {
+      p_model.optimizer->zero_grad();
+    }
     p_loss_tensor.backward();
 
     // allreduce (average) gradients (if running distributed)
-    if (p_model.comm) {
-      std::vector<torch::Tensor> grads;
-      grads.reserve(p_model.model->parameters().size());
-      for (const auto& p : p_model.model->parameters()) {
-        grads.push_back(p.grad());
+    if ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0) {
+      
+      if (p_model.comm) {
+	std::vector<torch::Tensor> grads;
+	grads.reserve(p_model.model->parameters().size());
+	for (const auto& p : p_model.model->parameters()) {
+	  grads.push_back(p.grad());
+	}
+	p_model.comm->allreduce(grads, true);
       }
-      p_model.comm->allreduce(grads, true);
+      
+      // optimizer step
+      p_model.optimizer->step();
+      p_model.lr_scheduler->step();
     }
-
-    // optimizer step
-    p_model.optimizer->step();
-    p_model.lr_scheduler->step();
-
+    
     // unfreeze the q1model
     set_grad_state(q_models[0].model, true);
 
@@ -196,7 +213,8 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   }
 
   // do polyak averaging: only if we also trained the policy
-  if (update_policy) {
+  state = p_model.state;
+  if ( update_policy && ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0) ) {
     for (int i = 0; i < q_models_target.size(); ++i) {
       polyak_update<T>(q_models_target[i].model, q_models[i].model, rho);
     }
@@ -205,9 +223,13 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
 
   // print some info
   // value functions
+  for (const auto& q_model : q_models) {
+    state = q_model.state;
+    state->step_train++;
+    state->step_train_current++;
+  }
   auto q_model = q_models[0];
-  auto state = q_models[0].state;
-  state->step_train++;
+  state = q_models[0].state;
   if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
     std::stringstream os;
     os << "model: critic, ";
@@ -226,8 +248,9 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
 
   // policy function
   if (update_policy) {
-    auto state = p_model.state;
+    state = p_model.state;
     state->step_train++;
+    state->step_train_current++;
     if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
       std::stringstream os;
       os << "model: actor, ";

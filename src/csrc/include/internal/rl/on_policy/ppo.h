@@ -169,29 +169,38 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     skip_step = true;
   }
 
-  // backward pass
-  pq_model.optimizer->zero_grad();
-  loss_tensor.backward();
-
-  // allreduces
-  if (pq_model.comm) {
-    std::vector<torch::Tensor> grads;
-    grads.reserve(pq_model.model->parameters().size());
-    for (const auto& p : pq_model.model->parameters()) {
-      grads.push_back(p.grad());
-    }
-    pq_model.comm->allreduce(grads, true);
-  }
-  // clip
-  if (max_grad_norm > 0.) {
-    torch::nn::utils::clip_grad_norm_(pq_model.model->parameters(), max_grad_norm);
-  }
-
-  // optimizer step, only if not skipped
-  // policy
+  // backward pass: only perform if we do not skip the step
   if (!skip_step) {
-    pq_model.optimizer->step();
-    pq_model.lr_scheduler->step();
+    auto state = pq_model.state;
+    if (state->step_train_current % pq_model.grad_accumulation_steps == 0) {
+      pq_model.optimizer->zero_grad();
+    }
+    // we need to be careful here: if we decide to skip the step, we might not want
+    // to gradient accumulate here, so better skip backward pass entirely
+    loss_tensor.backward();
+
+    // weight update: only trigger if this is the last step
+    // of the accumulation procedure
+    if ((state->step_train_current + 1) % pq_model.grad_accumulation_steps == 0) {
+      if (pq_model.comm) {
+	std::vector<torch::Tensor> grads;
+	grads.reserve(pq_model.model->parameters().size());
+	for (const auto& p : pq_model.model->parameters()) {
+	  grads.push_back(p.grad());
+	}
+	pq_model.comm->allreduce(grads, true);
+      }
+      
+      // clip
+      if (max_grad_norm > 0.) {
+	torch::nn::utils::clip_grad_norm_(pq_model.model->parameters(), max_grad_norm);
+      }
+
+      // optimizer step
+      // policy
+      pq_model.optimizer->step();
+      pq_model.lr_scheduler->step();
+    }
   }
 
   // reduce losses across ranks for printing
@@ -215,8 +224,10 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
 
   // policy function
   auto state = pq_model.state;
-  if (!skip_step)
+  if (!skip_step) {
     state->step_train++;
+    state->step_train_current++;
+  }
   if ((state->report_frequency > 0) && (state->step_train % state->report_frequency == 0)) {
     std::stringstream os;
     os << "model: "

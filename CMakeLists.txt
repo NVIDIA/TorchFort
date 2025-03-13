@@ -25,15 +25,21 @@ if (NOT TORCHFORT_YAML_CPP_ROOT)
   message(FATAL_ERROR "Please set TORCHFORT_YAML_CPP_ROOT to yaml-cpp installation directory.")
 endif()
 
-# __rdtsc() in torch not supported by nvc++. Use g++ for CXX files.
-set(CMAKE_CXX_COMPILER "g++")
 
 if (TORCHFORT_BUILD_FORTRAN)
   set(LANGS Fortran CXX)
 else()
   set(LANGS CXX)
 endif()
+
 project(torchfort LANGUAGES ${LANGS})
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
+  # __rdtsc() in torch not supported by nvc++. Use g++ for CXX files.
+  message(FATAL_ERROR "TorchFort does not support compilation of C++ files with nvc++. "
+                      "Set CMAKE_CXX_COMPILER to g++ to proceed.")
+endif()
+
 
 # unit testing with gtest
 if (TORCHFORT_BUILD_TESTS)

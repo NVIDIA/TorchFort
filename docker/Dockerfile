@@ -68,6 +68,7 @@ COPY . /torchfort
 RUN cd /torchfort && mkdir build && cd build && \
     CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/24.1/cuda \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/torchfort \
+    -DCMAKE_CXX_COMPILER=`which g++` \
     -DTORCHFORT_YAML_CPP_ROOT=/opt/yaml-cpp \
     -DTORCHFORT_NCCL_ROOT=/opt/nccl/build \
     -DTORCHFORT_BUILD_EXAMPLES=1 \

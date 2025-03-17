@@ -286,8 +286,8 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     state->step_train++;
     state->step_train_current++;
   }
-  auto q_model = q_models[0]
-  state = q_models.state;
+  auto q_model = q_models[0];
+  state = q_models[0].state;
   if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
     std::stringstream os;
     os << "model: critic,";

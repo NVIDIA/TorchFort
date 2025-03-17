@@ -136,8 +136,6 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   auto loss =
       models[name].loss->forward(results, labels->tensors, (extra_loss_args) ? extra_loss_args->tensors : std::vector<torch::Tensor>());
 
-  if (models[name].grad_accumulation_steps > 1) loss /= models[name].grad_accumulation_steps;
-
   // extract loss
   *loss_val = loss.item<float>();
 

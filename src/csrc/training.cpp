@@ -66,7 +66,7 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
 
   torch::NoGradGuard no_grad;
 
-  auto model = models[name].model.get();
+  auto model = models[name].model;
 
 #if ENABLE_GPU
   c10::cuda::OptionalCUDAStreamGuard guard;
@@ -114,7 +114,7 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
     THROW_INVALID_USAGE("Training requires a loss function, but loss block was missing in configuration file.");
   }
 
-  auto model = models[name].model.get();
+  auto model = models[name].model;
 
 #ifdef ENABLE_GPU
   c10::cuda::OptionalCUDAStreamGuard guard;
@@ -128,8 +128,8 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   labels->to(model->device());
 
   model->train();
-  auto opt = models[name].optimizer.get();
-  auto state = models[name].state.get();
+  auto opt = models[name].optimizer;
+  auto state = models[name].state;
 
   // fwd pass
   auto results = model->forward(inputs->tensors);

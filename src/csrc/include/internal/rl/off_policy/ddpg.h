@@ -103,22 +103,29 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
   torch::Tensor q_old_tensor =
     torch::squeeze(q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
-  q_model.optimizer->zero_grad();
+
+  auto state = q_model.state;
+  if (state->step_train_current % q_model.grad_accumulation_steps == 0) {
+    q_model.optimizer->zero_grad();
+  }
   q_loss_tensor.backward();
 
-  // grad comm
-  if (q_model.comm) {
-    std::vector<torch::Tensor> grads;
-    grads.reserve(q_model.model->parameters().size());
-    for (const auto& p : q_model.model->parameters()) {
-      grads.push_back(p.grad());
+  // optimizer step if accumulation is done
+  if ((state->step_train_current + 1) % q_model.grad_accumulation_steps == 0) {
+    // grad comm
+    if (q_model.comm) {
+      std::vector<torch::Tensor> grads;
+      grads.reserve(q_model.model->parameters().size());
+      for (const auto& p : q_model.model->parameters()) {
+	grads.push_back(p.grad());
+      }
+      q_model.comm->allreduce(grads, true);
     }
-    q_model.comm->allreduce(grads, true);
-  }
 
-  // optimizer step
-  q_model.optimizer->step();
-  q_model.lr_scheduler->step();
+    // optimizer step
+    q_model.optimizer->step();
+    q_model.lr_scheduler->step();
+  }
 
   // save loss values
   q_loss_val = q_loss_tensor.item<T>();
@@ -135,22 +142,28 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
       -torch::mean(q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0]);
 
   // bwd pass
-  p_model.optimizer->zero_grad();
+  state = p_model.state;
+  if (state->step_train_current % p_model.grad_accumulation_steps == 0) {
+    p_model.optimizer->zero_grad();
+  }
   p_loss_tensor.backward();
 
-  // allreduce (average) gradients (if running distributed)
-  if (p_model.comm) {
-    std::vector<torch::Tensor> grads;
-    grads.reserve(p_model.model->parameters().size());
-    for (const auto& p : p_model.model->parameters()) {
-      grads.push_back(p.grad());
+  // finish gradient accumulation
+  if ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0) {
+    // allreduce (average) gradients (if running distributed)
+    if (p_model.comm) {
+      std::vector<torch::Tensor> grads;
+      grads.reserve(p_model.model->parameters().size());
+      for (const auto& p : p_model.model->parameters()) {
+	grads.push_back(p.grad());
+      }
+      p_model.comm->allreduce(grads, true);
     }
-    p_model.comm->allreduce(grads, true);
-  }
 
-  // optimizer step
-  p_model.optimizer->step();
-  p_model.lr_scheduler->step();
+    // optimizer step
+    p_model.optimizer->step();
+    p_model.lr_scheduler->step();
+  }
 
   // unfreeze the q1model
   set_grad_state(q_model.model, true);
@@ -164,9 +177,10 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
 
   // print some info
   // value functions
-  auto state = q_model.state;
+  state = q_model.state;
   std::string qname = "critic";
   state->step_train++;
+  state->step_train_current++;
   if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
     std::stringstream os;
     os << "model: " << qname << ", ";
@@ -186,6 +200,7 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
   // policy function
   state = p_model.state;
   state->step_train++;
+  state->step_train_current++;
   if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
     std::stringstream os;
     os << "model: "

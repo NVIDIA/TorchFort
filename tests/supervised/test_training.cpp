@@ -270,6 +270,68 @@ void training_test_multiarg_errors(const std::string& model_config) {
 
 }
 
+void training_test_grad_accumulation(const std::string& model_config, int dev_model, int dev_input,
+                                     int grad_accumulation_steps) {
+
+  std::string model_name = generate_random_name(10);
+
+  CHECK_TORCHFORT(torchfort_create_model(model_name.c_str(), model_config.c_str(), dev_model));
+
+#ifdef ENABLE_GPU
+  if (dev_input != TORCHFORT_DEVICE_CPU) {
+    CHECK_CUDA(cudaSetDevice(dev_input));
+  }
+#endif
+
+  std::vector<int64_t> shape = {10, 10};
+  auto input = generate_random<float>(shape);
+  auto label = generate_random<float>(shape);
+  auto output = generate_random<float>(shape);
+  auto output2 = generate_random<float>(shape);
+  float loss_val;
+
+  float *input_ptr = get_data_ptr(input, dev_input);
+  float *label_ptr = get_data_ptr(label, dev_input);
+  float *output_ptr = get_data_ptr(output, dev_input);
+  float *output2_ptr = get_data_ptr(output2, dev_input);
+
+  // Get initial output
+  CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(),
+                                      output_ptr, shape.size(), shape.data(), TORCHFORT_FLOAT, 0));
+#ifdef ENABLE_GPU
+    if (dev_input != TORCHFORT_DEVICE_CPU) {
+      copy_to_host_vector(output, output_ptr);
+    }
+#endif
+
+  // Run several training steps. Model output should only change after grad_accumulation_steps steps have completed.
+  for (int i = 0; i < grad_accumulation_steps; ++i) {
+    CHECK_TORCHFORT(torchfort_train(model_name.c_str(), input_ptr, shape.size(), shape.data(),
+                                    label_ptr, shape.size(), shape.data(), &loss_val,
+                                    TORCHFORT_FLOAT, 0));
+
+    CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(),
+                                        output2_ptr, shape.size(), shape.data(), TORCHFORT_FLOAT, 0));
+
+#ifdef ENABLE_GPU
+    if (dev_input != TORCHFORT_DEVICE_CPU) {
+      copy_to_host_vector(output2, output2_ptr);
+    }
+#endif
+    if (i < grad_accumulation_steps - 1) {
+      EXPECT_EQ(output, output2);
+    } else {
+      EXPECT_NE(output, output2);
+    }
+  }
+
+  free_data_ptr(input_ptr, dev_input);
+  free_data_ptr(label_ptr, dev_input);
+  free_data_ptr(output_ptr, dev_input);
+  free_data_ptr(output2_ptr, dev_input);
+
+}
+
 TEST(TorchFort, TrainTestMLPCPUCPU) {
   training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, false, false, false);
 }
@@ -281,6 +343,10 @@ TEST(TorchFort, TrainTestTorchScriptMultiArgCPUCPU) {
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgExtraCPUCPU) {
   training_test_multiarg("configs/torchscript_multiarg_extra.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, true);
+}
+
+TEST(TorchFort, TrainTestGradAccumulationCPUCPU) {
+  training_test_grad_accumulation("configs/mlp2_gradacc.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, 4);
 }
 
 #ifdef ENABLE_GPU

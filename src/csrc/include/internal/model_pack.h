@@ -49,6 +49,7 @@ struct ModelPack {
   std::shared_ptr<BaseLoss> loss;
   std::shared_ptr<Comm> comm;
   std::shared_ptr<ModelState> state;
+  int grad_accumulation_steps = 1;
 };
 
 void save_model_pack(const ModelPack& model_pack, const std::string& fname, bool save_optimizer = true);

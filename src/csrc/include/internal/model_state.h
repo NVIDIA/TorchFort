@@ -40,6 +40,7 @@ namespace torchfort {
 struct ModelState {
   int64_t step_train;
   int64_t step_inference;
+  int64_t step_train_current; // training step of current run (ignoring restarted state)
   torch::Device device = torch::Device(torch::kCPU);
 
   // General option settings

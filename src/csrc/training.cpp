@@ -66,7 +66,7 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
 
   torch::NoGradGuard no_grad;
 
-  auto model = models[name].model.get();
+  auto model = models[name].model;
 
 #if ENABLE_GPU
   c10::cuda::OptionalCUDAStreamGuard guard;
@@ -114,7 +114,7 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
     THROW_INVALID_USAGE("Training requires a loss function, but loss block was missing in configuration file.");
   }
 
-  auto model = models[name].model.get();
+  auto model = models[name].model;
 
 #ifdef ENABLE_GPU
   c10::cuda::OptionalCUDAStreamGuard guard;
@@ -128,7 +128,8 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   labels->to(model->device());
 
   model->train();
-  auto opt = models[name].optimizer.get();
+  auto opt = models[name].optimizer;
+  auto state = models[name].state;
 
   // fwd pass
   auto results = model->forward(inputs->tensors);
@@ -139,29 +140,34 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   *loss_val = loss.item<float>();
 
   // bwd pass
-  opt->zero_grad();
+  if (state->step_train_current % models[name].grad_accumulation_steps == 0) {
+    opt->zero_grad();
+  }
+
   loss.backward();
 
-  // allreduce (average) gradients (if running distributed)
-  if (models[name].comm) {
-    std::vector<torch::Tensor> grads;
-    grads.reserve(model->parameters().size());
-    for (const auto& p : model->parameters()) {
-      grads.push_back(p.grad());
+  if ((state->step_train_current + 1) % models[name].grad_accumulation_steps == 0) {
+    // allreduce (average) gradients (if running distributed)
+    if (models[name].comm) {
+      std::vector<torch::Tensor> grads;
+      grads.reserve(model->parameters().size());
+      for (const auto& p : model->parameters()) {
+        grads.push_back(p.grad());
+      }
+      models[name].comm->allreduce(grads, true);
+
+      // average returned loss value
+      models[name].comm->allreduce(*loss_val, true);
     }
-    models[name].comm->allreduce(grads, true);
 
-    // average returned loss value
-    models[name].comm->allreduce(*loss_val, true);
+    opt->step();
+    if (models[name].lr_scheduler) {
+      models[name].lr_scheduler->step();
+    }
   }
 
-  opt->step();
-  if (models[name].lr_scheduler) {
-    models[name].lr_scheduler->step();
-  }
-
-  auto state = models[name].state.get();
   state->step_train++;
+  state->step_train_current++;
   if (state->report_frequency > 0 && state->step_train % state->report_frequency == 0) {
     std::stringstream os;
     os << "model: " << name << ", ";

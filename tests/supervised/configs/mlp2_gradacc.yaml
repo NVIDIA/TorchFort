@@ -1,0 +1,13 @@
+model:
+  type: mlp
+  parameters:
+    dropout: 0.0
+    layer_sizes: [10, 10, 10]
+
+loss:
+  type: MSE
+
+optimizer:
+  type: adam
+  general:
+    grad_accumulation_steps: 4

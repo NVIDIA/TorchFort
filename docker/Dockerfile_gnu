@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/cuda:12.3.1-devel-ubuntu22.04
+FROM nvcr.io/nvidia/cuda:12.8.1-devel-ubuntu22.04
 
 # Install System Dependencies
 ENV DEBIAN_FRONTEND noninteractive
@@ -10,9 +10,9 @@ RUN apt update -y && \
 
 # Download HPCX and compile with Fortran support
 RUN cd /opt && \
-    wget https://content.mellanox.com/hpc/hpc-x/v2.17.1/hpcx-v2.17.1-gcc-mlnx_ofed-ubuntu22.04-cuda12-x86_64.tbz && \
-    tar xjf hpcx-v2.17.1-gcc-mlnx_ofed-ubuntu22.04-cuda12-x86_64.tbz && \
-    mv hpcx-v2.17.1-gcc-mlnx_ofed-ubuntu22.04-cuda12-x86_64 hpcx && \
+    wget http://content.mellanox.com/hpc/hpc-x/v2.22.1rc4/hpcx-v2.22.1-gcc-doca_ofed-ubuntu22.04-cuda12-x86_64.tbz && \
+    tar xjf hpcx-v2.22.1-gcc-doca_ofed-ubuntu22.04-cuda12-x86_64.tbz && \
+    mv hpcx-v2.22.1-gcc-doca_ofed-ubuntu22.04-cuda12-x86_64 hpcx && \
     rm -rf hpcx/ompi && \
     cd hpcx/sources && \
     tar xzf openmpi-gitclone.tar.gz && \
@@ -29,22 +29,22 @@ RUN cd /opt && \
                                            --with-ucx=/opt/hpcx/ucx \
                                            --with-ucc=/opt/hpcx/ucc && \
     make -j$(nproc) install && \
-    cd /opt && rm -rf /opt/hpcx/sources/openmpi-gitclone && rm hpcx-v2.17.1-gcc-mlnx_ofed-ubuntu22.04-cuda12-x86_64.tbz
+    cd /opt && rm -rf /opt/hpcx/sources/openmpi-gitclone && rm hpcx-v2.22.1-gcc-doca_ofed-ubuntu22.04-cuda12-x86_64.tbz
 
 ENV PATH /opt/hpcx/ompi/bin:$PATH
 ENV LD_LIBRARY_PATH /opt/hpcx/ompi/lib:$LD_LIBRARY_PATH
 
 RUN echo "source /opt/hpcx/hpcx-init.sh; hpcx_load" >>  /root/.bashrc
 
-# Install newer NCCL for compatibility with PyTorch 2.2.1+
-RUN cd /opt && \
-    git clone --branch v2.20.3-1 https://github.com/NVIDIA/nccl.git && \
-    cd nccl && \
-    make -j src.build NVCC_GENCODE="-gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90"
-ENV LD_LIBRARY_PATH /opt/nccl/build/lib:$LD_LIBRARY_PATH
+## Install newer NCCL for compatibility with PyTorch 2.2.1+
+#RUN cd /opt && \
+#    git clone --branch v2.20.3-1 https://github.com/NVIDIA/nccl.git && \
+#    cd nccl && \
+#    make -j src.build NVCC_GENCODE="-gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90"
+#ENV LD_LIBRARY_PATH /opt/nccl/build/lib:$LD_LIBRARY_PATH
 
 # Install PyTorch
-RUN pip3 install torch==2.4.0
+RUN pip3 install torch==2.6.0
 
 # Install yaml-cpp
 RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \

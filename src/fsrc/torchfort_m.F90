@@ -95,7 +95,7 @@ module torchfort
     function torchfort_wandb_log_int_c(mname, metric_name, step, val) result(res) &
       bind(C, name="torchfort_wandb_log_int")
       import
-      character(kind=c_char) :: mname(*), metric_name(*)
+      type(*) :: mname(*), metric_name(*)
       integer(c_int64_t), value :: step
       integer(c_int32_t), value :: val
       integer(c_int) :: res
@@ -104,7 +104,7 @@ module torchfort
     function torchfort_wandb_log_float_c(mname, metric_name, step, val) result(res) &
       bind(C, name="torchfort_wandb_log_float")
       import
-      character(kind=c_char) :: mname(*), metric_name(*)
+      type(*) :: mname(*), metric_name(*)
       integer(c_int64_t), value :: step
       real(c_float), value :: val
       integer(c_int) :: res
@@ -113,7 +113,7 @@ module torchfort
     function torchfort_wandb_log_double_c(mname, metric_name, step, val) result(res) &
       bind(C, name="torchfort_wandb_log_double")
       import
-      character(kind=c_char) :: mname(*), metric_name(*)
+      type(*) :: mname(*), metric_name(*)
       integer(c_int64_t), value :: step
       real(c_double), value :: val
       integer(c_int) :: res
@@ -123,7 +123,7 @@ module torchfort
                                    output, output_dim, output_shape, dtype, stream) result(res) &
       bind(C, name="torchfort_inference_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr (dk)input, (dk)output
       !GCC$ attributes no_arg_check :: input, output
       real(c_float) :: input(*), output(*)
@@ -137,7 +137,7 @@ module torchfort
     function torchfort_inference_multiarg_c(mname, inputs, outputs, stream) result(res) &
       bind(C, name="torchfort_inference_multiarg")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       type(torchfort_tensor_list), value :: inputs, outputs
       integer(int64), value :: stream
       integer(c_int) :: res
@@ -148,7 +148,7 @@ module torchfort
                                loss_val, dtype, stream) result(res) &
       bind(C, name="torchfort_train_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr (dk)input, (dk)label, (k)loss_val
       !GCC$ attributes no_arg_check :: input, label, loss_val
       real(c_float) :: input(*), label(*)
@@ -164,7 +164,7 @@ module torchfort
                                         loss_val, extra_loss_args, stream) result(res) &
       bind(C, name="torchfort_train_multiarg")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       type(torchfort_tensor_list), value :: inputs, labels
       real(c_float) :: loss_val
       type(torchfort_tensor_list), value :: extra_loss_args
@@ -203,8 +203,8 @@ module torchfort
     function torchfort_create_model_c(mname, fname, dev) result(res) &
       bind(C, name="torchfort_create_model")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: fname(*)
+      type(*) :: mname(*)
+      type(*) :: fname(*)
       integer(c_int), value :: dev
       integer(c_int) :: res
     end function torchfort_create_model_c
@@ -212,8 +212,8 @@ module torchfort
     function torchfort_create_distributed_model_c(mname, fname, mpi_comm, dev) result(res) &
       bind(C, name="torchfort_create_distributed_model")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: fname(*)
+      type(*) :: mname(*)
+      type(*) :: fname(*)
       integer(c_int), value :: dev
       type(MPI_C_Comm), value :: mpi_comm
       integer(c_int) :: res
@@ -222,24 +222,24 @@ module torchfort
     function torchfort_save_model_c(mname, fname) result(res) &
       bind(C, name="torchfort_save_model")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: fname(*)
+      type(*) :: mname(*)
+      type(*) :: fname(*)
       integer(c_int) :: res
     end function torchfort_save_model_c
 
     function torchfort_load_model_c(mname, fname) result(res) &
       bind(C, name="torchfort_load_model")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: fname(*)
+      type(*) :: mname(*)
+      type(*) :: fname(*)
       integer(c_int) :: res
     end function torchfort_load_model_c
 
     function torchfort_save_checkpoint_c(mname, checkpoint_dir) result(res) &
       bind(C, name="torchfort_save_checkpoint")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: checkpoint_dir(*)
+      type(*) :: mname(*)
+      type(*) :: checkpoint_dir(*)
       integer(c_int) :: res
     end function torchfort_save_checkpoint_c
 
@@ -247,8 +247,8 @@ module torchfort
                                          step_train, step_inference) result(res) &
       bind(C, name="torchfort_load_checkpoint")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: checkpoint_dir(*)
+      type(*) :: mname(*)
+      type(*) :: checkpoint_dir(*)
       integer(c_int64_t)  :: step_train
       integer(c_int64_t)  :: step_inference
       integer(c_int) :: res
@@ -259,7 +259,7 @@ module torchfort
     function torchfort_rl_off_policy_wandb_log_int_c(mname, metric_name, step, val) result(res) &
       bind(C, name="torchfort_rl_off_policy_wandb_log_int")
       import
-      character(kind=c_char) :: mname(*), metric_name(*)
+      type(*) :: mname(*), metric_name(*)
       integer(c_int64_t), value :: step
       integer(c_int32_t), value :: val
       integer(c_int) :: res
@@ -268,7 +268,7 @@ module torchfort
     function torchfort_rl_off_policy_wandb_log_float_c(mname, metric_name, step, val) result(res) &
       bind(C, name="torchfort_rl_off_policy_wandb_log_float")
       import
-      character(kind=c_char) :: mname(*), metric_name(*)
+      type(*) :: mname(*), metric_name(*)
       integer(c_int64_t), value :: step
       real(c_float), value :: val
       integer(c_int) :: res
@@ -277,7 +277,7 @@ module torchfort
     function torchfort_rl_off_policy_wandb_log_double_c(mname, metric_name, step, val) result(res) &
       bind(C, name="torchfort_rl_off_policy_wandb_log_double")
       import
-      character(kind=c_char) :: mname(*), metric_name(*)
+      type(*) :: mname(*), metric_name(*)
       integer(c_int64_t), value :: step
       real(c_double), value :: val
       integer(c_int) :: res
@@ -287,8 +287,8 @@ module torchfort
     function torchfort_rl_off_policy_create_system_c(mname, fname, model_dev, rb_dev) result(res) &
       bind(C, name="torchfort_rl_off_policy_create_system")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: fname(*)
+      type(*) :: mname(*)
+      type(*) :: fname(*)
       integer(c_int), value :: model_dev, rb_dev
       integer(c_int) :: res
     end function torchfort_rl_off_policy_create_system_c
@@ -296,8 +296,8 @@ module torchfort
     function torchfort_rl_off_policy_create_distributed_system_c(mname, fname, mpi_comm, model_dev, rb_dev) result(res) &
       bind(C, name="torchfort_rl_off_policy_create_distributed_system")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: fname(*)
+      type(*) :: mname(*)
+      type(*) :: fname(*)
       type(MPI_C_Comm), value :: mpi_comm
       integer(c_int), value :: model_dev, rb_dev
       integer(c_int) :: res
@@ -307,16 +307,16 @@ module torchfort
     function torchfort_rl_off_policy_save_checkpoint_c(mname, checkpoint_dir) result(res) &
       bind(C, name="torchfort_rl_off_policy_save_checkpoint")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: checkpoint_dir(*)
+      type(*) :: mname(*)
+      type(*) :: checkpoint_dir(*)
       integer(c_int) :: res
     end function torchfort_rl_off_policy_save_checkpoint_c
 
     function torchfort_rl_off_policy_load_checkpoint_c(mname, checkpoint_dir) result(res) &
       bind(C, name="torchfort_rl_off_policy_load_checkpoint")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: checkpoint_dir(*)
+      type(*) :: mname(*)
+      type(*) :: checkpoint_dir(*)
       integer(c_int) :: res
     end function torchfort_rl_off_policy_load_checkpoint_c
 
@@ -327,7 +327,7 @@ module torchfort
                                                             reward, cterminal, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_off_policy_update_replay_buffer_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr (dk)state_old, (dk)state_new, (dk)act_old, (k)reward
       !GCC$ attributes no_arg_check :: state_old, state_new, act_old, reward
       real(c_float) :: state_old(*), state_new(*), act_old(*)
@@ -348,7 +348,7 @@ module torchfort
                                                                   dtype, stream) result(res) &
       bind(C, name="torchfort_rl_off_policy_update_replay_buffer_multi_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr (dk)state_old, (dk)state_new, (dk)act_old, (dk)reward, (dk)cterminal
       !GCC$ attributes no_arg_check :: state_old, state_new, act_old, reward, cterminal
       real(c_float) :: state_old(*), state_new(*), act_old(*), reward(*), cterminal(*)
@@ -362,7 +362,7 @@ module torchfort
     function torchfort_rl_off_policy_is_ready_c(mname, ready) result(res) &
       bind(C, name="torchfort_rl_off_policy_is_ready")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       logical :: ready
       integer(c_int) :: res
     end function torchfort_rl_off_policy_is_ready_c
@@ -370,7 +370,7 @@ module torchfort
     function torchfort_rl_off_policy_train_step_float_c(mname, p_loss_val, q_loss_val, stream) result(res) &
       bind(C, name="torchfort_rl_off_policy_train_step")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       real(c_float) :: p_loss_val, q_loss_val
       integer(int64), value :: stream
       integer(c_int) :: res
@@ -381,7 +381,7 @@ module torchfort
                                                        act, act_dim, act_shape, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_off_policy_predict_explore_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr (dk)state, (dk)act
       !GCC$ attributes no_arg_check :: state, act
       real(c_float) :: state(*), act(*)
@@ -396,7 +396,7 @@ module torchfort
                                                act, act_dim, act_shape, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_off_policy_predict_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr (dk)state, (dk)act
       !GCC$ attributes no_arg_check :: state, act
       real(c_float) :: state(*), act(*)
@@ -413,7 +413,7 @@ module torchfort
                                                 dtype, stream) result(res) &
       bind(C, name="torchfort_rl_off_policy_evaluate_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr state, act, reward
       !GCC$ attributes no_arg_check :: state, act, reward
       real(c_float) :: state(*), act(*), reward(*)
@@ -429,7 +429,7 @@ module torchfort
     function torchfort_rl_on_policy_wandb_log_int_c(mname, metric_name, step, val) result(res) &
       bind(C, name="torchfort_rl_on_policy_wandb_log_int")
       import
-      character(kind=c_char) :: mname(*), metric_name(*)
+      type(*) :: mname(*), metric_name(*)
       integer(c_int64_t), value :: step
       integer(c_int32_t), value :: val
       integer(c_int) :: res
@@ -438,7 +438,7 @@ module torchfort
     function torchfort_rl_on_policy_wandb_log_float_c(mname, metric_name, step, val) result(res) &
       bind(C, name="torchfort_rl_on_policy_wandb_log_float")
       import
-      character(kind=c_char) :: mname(*), metric_name(*)
+      type(*) :: mname(*), metric_name(*)
       integer(c_int64_t), value :: step
       real(c_float), value :: val
       integer(c_int) :: res
@@ -447,7 +447,7 @@ module torchfort
     function torchfort_rl_on_policy_wandb_log_double_c(mname, metric_name, step, val) result(res) &
       bind(C, name="torchfort_rl_on_policy_wandb_log_double")
       import
-      character(kind=c_char) :: mname(*), metric_name(*)
+      type(*) :: mname(*), metric_name(*)
       integer(c_int64_t), value :: step
       real(c_double), value :: val
       integer(c_int) :: res
@@ -457,8 +457,8 @@ module torchfort
     function torchfort_rl_on_policy_create_system_c(mname, fname, model_dev, rb_dev) result(res) &
       bind(C, name="torchfort_rl_on_policy_create_system")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: fname(*)
+      type(*) :: mname(*)
+      type(*) :: fname(*)
       integer(c_int), value :: model_dev, rb_dev
       integer(c_int) :: res
     end function torchfort_rl_on_policy_create_system_c
@@ -466,8 +466,8 @@ module torchfort
     function torchfort_rl_on_policy_create_distributed_system_c(mname, fname, mpi_comm, model_dev, rb_dev) result(res) &
       bind(C, name="torchfort_rl_on_policy_create_distributed_system")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: fname(*)
+      type(*) :: mname(*)
+      type(*) :: fname(*)
       type(MPI_C_Comm), value :: mpi_comm
       integer(c_int), value :: model_dev, rb_dev
       integer(c_int) :: res
@@ -477,16 +477,16 @@ module torchfort
     function torchfort_rl_on_policy_save_checkpoint_c(mname, checkpoint_dir) result(res) &
       bind(C, name="torchfort_rl_on_policy_save_checkpoint")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: checkpoint_dir(*)
+      type(*) :: mname(*)
+      type(*) :: checkpoint_dir(*)
       integer(c_int) :: res
     end function torchfort_rl_on_policy_save_checkpoint_c
 
     function torchfort_rl_on_policy_load_checkpoint_c(mname, checkpoint_dir) result(res) &
       bind(C, name="torchfort_rl_on_policy_load_checkpoint")
       import
-      character(kind=c_char) :: mname(*)
-      character(kind=c_char) :: checkpoint_dir(*)
+      type(*) :: mname(*)
+      type(*) :: checkpoint_dir(*)
       integer(c_int) :: res
     end function torchfort_rl_on_policy_load_checkpoint_c
 
@@ -497,7 +497,7 @@ module torchfort
                                                             reward, cterminal, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_on_policy_update_rollout_buffer_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr (dk)state, (dk)act, (k)reward
       !GCC$ attributes no_arg_check :: state, act, reward
       real(c_float) :: state(*), act(*)
@@ -518,7 +518,7 @@ module torchfort
                                                                   dtype, stream) result(res) &
       bind(C, name="torchfort_rl_on_policy_update_rollout_buffer_multi_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr (dk)state, (dk)act, (dk)reward, (dk)cterminal
       !GCC$ attributes no_arg_check :: state, act, reward, cterminal
       real(c_float) :: state(*), act(*), reward(*), cterminal(*)
@@ -532,14 +532,14 @@ module torchfort
     function torchfort_rl_on_policy_reset_rollout_buffer_c(mname) result(res) &
       bind(C, name="torchfort_rl_on_policy_reset_rollout_buffer")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       integer(c_int) :: res
     end function torchfort_rl_on_policy_reset_rollout_buffer_c
 
     function torchfort_rl_on_policy_is_ready_c(mname, ready) result(res) &
       bind(C, name="torchfort_rl_on_policy_is_ready")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       logical :: ready
       integer(c_int) :: res
     end function torchfort_rl_on_policy_is_ready_c
@@ -547,7 +547,7 @@ module torchfort
     function torchfort_rl_on_policy_train_step_float_c(mname, p_loss_val, q_loss_val, stream) result(res) &
       bind(C, name="torchfort_rl_on_policy_train_step")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       real(c_float) :: p_loss_val, q_loss_val
       integer(int64), value :: stream
       integer(c_int) :: res
@@ -558,7 +558,7 @@ module torchfort
                                                       act, act_dim, act_shape, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_on_policy_predict_explore_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr (dk)state, (dk)act
       !GCC$ attributes no_arg_check :: state, act
       real(c_float) :: state(*), act(*)
@@ -573,7 +573,7 @@ module torchfort
                                                act, act_dim, act_shape, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_on_policy_predict_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr (dk)state, (dk)act
       !GCC$ attributes no_arg_check :: state, act
       real(c_float) :: state(*), act(*)
@@ -590,7 +590,7 @@ module torchfort
                                                dtype, stream) result(res) &
       bind(C, name="torchfort_rl_on_policy_evaluate_F")
       import
-      character(kind=c_char) :: mname(*)
+      type(*) :: mname(*)
       !dir$ ignore_tkr (dk)state, (dk)act, (dk)reward
       !GCC$ attributes no_arg_check :: state, act, reward
       real(c_float) :: state(*), act(*), reward(*)
@@ -928,7 +928,7 @@ contains
     character(len=*) :: mname, fname
     integer(c_int) :: dev
     integer(c_int) :: res
-    res = torchfort_create_model_c(trim(mname) // C_NULL_CHAR, trim(fname) // C_NULL_CHAR, dev)
+    res = torchfort_create_model_c([trim(mname) // C_NULL_CHAR], [trim(fname) // C_NULL_CHAR], dev)
   end function torchfort_create_model
 
   function torchfort_create_distributed_model_MPI_F(mname, fname, comm, dev) result(res)
@@ -971,7 +971,7 @@ contains
 #else
     mpi_comm_c%comm = comm%comm
 #endif
-    res = torchfort_create_distributed_model_c(trim(mname) // C_NULL_CHAR, trim(fname) // C_NULL_CHAR, &
+    res = torchfort_create_distributed_model_c([trim(mname) // C_NULL_CHAR], [trim(fname) // C_NULL_CHAR], &
                                                mpi_comm_c, dev)
   end function torchfort_create_distributed_model_type
 
@@ -981,7 +981,7 @@ contains
     integer(int64) :: step
     integer(int32) :: val
     integer(c_int) :: res
-    res = torchfort_wandb_log_int_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_wandb_log_int_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                     step, val)
   end function torchfort_wandb_log_int
 
@@ -990,7 +990,7 @@ contains
     integer(int64) :: step
     real(real32) :: val
     integer(c_int) :: res
-    res = torchfort_wandb_log_float_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_wandb_log_float_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                       step, val)
   end function torchfort_wandb_log_float
 
@@ -1001,7 +1001,7 @@ contains
     integer(c_int) :: res
     integer(int64) :: step64
     step64 = step
-    res = torchfort_wandb_log_float_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_wandb_log_float_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                       step64, val)
   end function torchfort_wandb_log_float_int32step
 
@@ -1010,7 +1010,7 @@ contains
     integer(int64) :: step
     real(real64) :: val
     integer(c_int) :: res
-    res = torchfort_wandb_log_double_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_wandb_log_double_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                        step, val)
   end function torchfort_wandb_log_double
 
@@ -1021,7 +1021,7 @@ contains
     integer(c_int) :: res
     integer(int64) :: step64
     step64 = step
-    res = torchfort_wandb_log_double_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_wandb_log_double_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                        step64, val)
   end function torchfort_wandb_log_double_int32step
 
@@ -1048,7 +1048,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_FLOAT, stream_)
@@ -1078,7 +1078,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
@@ -1108,7 +1108,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_FLOAT, stream_)
@@ -1138,7 +1138,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
@@ -1168,7 +1168,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_FLOAT, stream_)
@@ -1198,7 +1198,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
@@ -1228,7 +1228,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_FLOAT, stream_)
@@ -1258,7 +1258,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
@@ -1288,7 +1288,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_FLOAT, stream_)
@@ -1318,7 +1318,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
@@ -1348,7 +1348,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_FLOAT, stream_)
@@ -1378,7 +1378,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
@@ -1408,7 +1408,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_FLOAT, stream_)
@@ -1438,7 +1438,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
@@ -1468,7 +1468,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_FLOAT, stream_)
@@ -1498,7 +1498,7 @@ contains
     input_shape(:) = shape(input)
     output_shape(:) = shape(output)
 
-    res = torchfort_inference_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
@@ -1517,7 +1517,7 @@ contains
     stream_ = 0
     if (present(stream)) stream_ = stream
 
-    res = torchfort_inference_multiarg_c(trim(mname) // C_NULL_CHAR, &
+    res = torchfort_inference_multiarg_c([trim(mname) // C_NULL_CHAR], &
                                          inputs, outputs, stream_)
   end function torchfort_inference_multiarg
 
@@ -1546,7 +1546,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res =  torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                                input, input_dim, input_shape, &
                                label, label_dim, label_shape, &
                                loss_val, TORCHFORT_FLOAT, stream_)
@@ -1577,7 +1577,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
@@ -1608,7 +1608,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_FLOAT, stream_)
@@ -1639,7 +1639,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
@@ -1670,7 +1670,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_FLOAT, stream_)
@@ -1701,7 +1701,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
@@ -1732,7 +1732,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_FLOAT, stream_)
@@ -1763,7 +1763,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
@@ -1795,7 +1795,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res =  torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                                input, input_dim, input_shape, &
                                label, label_dim, label_shape, &
                                loss_val, TORCHFORT_FLOAT, stream_)
@@ -1826,7 +1826,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
@@ -1857,7 +1857,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_FLOAT, stream_)
@@ -1888,7 +1888,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
@@ -1919,7 +1919,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_FLOAT, stream_)
@@ -1950,7 +1950,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
@@ -1981,7 +1981,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_FLOAT, stream_)
@@ -2012,7 +2012,7 @@ contains
       input_shape(:) = shape(input)
       label_shape(:) = shape(label)
 
-      res = torchfort_train_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
@@ -2036,7 +2036,7 @@ contains
     stream_ = 0
     if (present(stream)) stream_ = stream
 
-    res =  torchfort_train_multiarg_c(trim(mname) // C_NULL_CHAR, &
+    res =  torchfort_train_multiarg_c([trim(mname) // C_NULL_CHAR], &
                                       inputs, labels, loss_val, &
                                       extra_loss_args_, stream_)
   end function torchfort_train_multiarg
@@ -2045,22 +2045,22 @@ contains
     character(len=*) :: mname
     character(len=*) :: fname
     integer(c_int) :: res
-    res = torchfort_save_model_c(trim(mname) // C_NULL_CHAR, trim(fname) // C_NULL_CHAR)
+    res = torchfort_save_model_c([trim(mname) // C_NULL_CHAR], [trim(fname) // C_NULL_CHAR])
   end function torchfort_save_model
 
   function torchfort_load_model(mname, fname) result(res)
     character(len=*) :: mname
     character(len=*) :: fname
     integer(c_int) :: res
-    res = torchfort_load_model_c(trim(mname) // C_NULL_CHAR, trim(fname) // C_NULL_CHAR)
+    res = torchfort_load_model_c([trim(mname) // C_NULL_CHAR], [trim(fname) // C_NULL_CHAR])
   end function torchfort_load_model
 
   function torchfort_save_checkpoint(mname, checkpoint_dir) result(res)
     character(len=*) :: mname
     character(len=*) :: checkpoint_dir
     integer(c_int) :: res
-    res = torchfort_save_checkpoint_c(trim(mname) // C_NULL_CHAR, &
-                                      trim(checkpoint_dir) // C_NULL_CHAR)
+    res = torchfort_save_checkpoint_c([trim(mname) // C_NULL_CHAR], &
+                                      [trim(checkpoint_dir) // C_NULL_CHAR])
   end function torchfort_save_checkpoint
 
   function torchfort_load_checkpoint_int64step(mname, checkpoint_dir, step_train, step_inference) result(res)
@@ -2069,8 +2069,8 @@ contains
     integer(int64)  :: step_train
     integer(int64)  :: step_inference
     integer(c_int) :: res
-    res = torchfort_load_checkpoint_c(trim(mname) // C_NULL_CHAR, &
-                                      trim(checkpoint_dir) // C_NULL_CHAR, &
+    res = torchfort_load_checkpoint_c([trim(mname) // C_NULL_CHAR], &
+                                      [trim(checkpoint_dir) // C_NULL_CHAR], &
                                       step_train, step_inference)
   end function torchfort_load_checkpoint_int64step
 
@@ -2084,8 +2084,8 @@ contains
     integer(int64) :: step_train64, step_inference64
     step_train64 = step_train
     step_inference64 = step_inference
-    res = torchfort_load_checkpoint_c(trim(mname) // C_NULL_CHAR, &
-                                      trim(checkpoint_dir) // C_NULL_CHAR, &
+    res = torchfort_load_checkpoint_c([trim(mname) // C_NULL_CHAR], &
+                                      [trim(checkpoint_dir) // C_NULL_CHAR], &
                                       step_train64, step_inference64)
     step_train = step_train64
     step_inference = step_inference64
@@ -2098,7 +2098,7 @@ contains
     integer(int64) :: step
     integer(int32) :: val
     integer(c_int) :: res
-    res = torchfort_rl_off_policy_wandb_log_int_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_rl_off_policy_wandb_log_int_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                                   step, val)
   end function torchfort_rl_off_policy_wandb_log_int
 
@@ -2107,7 +2107,7 @@ contains
     integer(int64) :: step
     real(real32) :: val
     integer(c_int) :: res
-    res = torchfort_rl_off_policy_wandb_log_float_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_rl_off_policy_wandb_log_float_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                                     step, val)
   end function torchfort_rl_off_policy_wandb_log_float
 
@@ -2118,7 +2118,7 @@ contains
     integer(c_int) :: res
     integer(int64) :: step64
     step64 = step
-    res = torchfort_rl_off_policy_wandb_log_float_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_rl_off_policy_wandb_log_float_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                                     step64, val)
   end function torchfort_rl_off_policy_wandb_log_float_int32step
 
@@ -2127,7 +2127,7 @@ contains
     integer(int64) :: step
     real(real64) :: val
     integer(c_int) :: res
-    res = torchfort_rl_off_policy_wandb_log_double_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_rl_off_policy_wandb_log_double_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                                      step, val)
   end function torchfort_rl_off_policy_wandb_log_double
 
@@ -2138,7 +2138,7 @@ contains
     integer(c_int) :: res
     integer(int64) :: step64
     step64 = step
-    res = torchfort_rl_off_policy_wandb_log_double_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_rl_off_policy_wandb_log_double_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                                      step64, val)
   end function torchfort_rl_off_policy_wandb_log_double_int32step
 
@@ -2147,7 +2147,7 @@ contains
     character(len=*) :: sname, fname
     integer(c_int) :: res
     integer(c_int) :: model_dev, rb_dev
-    res = torchfort_rl_off_policy_create_system_c(trim(sname) // C_NULL_CHAR, trim(fname) // C_NULL_CHAR, model_dev, rb_dev)
+    res = torchfort_rl_off_policy_create_system_c([trim(sname) // C_NULL_CHAR], [trim(fname) // C_NULL_CHAR], model_dev, rb_dev)
   end function torchfort_rl_off_policy_create_system
 
   function torchfort_rl_off_policy_create_distributed_system_MPI_F(mname, fname, comm, model_dev, rb_dev) result(res)
@@ -2189,8 +2189,8 @@ contains
 #else
     mpi_comm_c%comm = comm%comm
 #endif
-    res = torchfort_rl_off_policy_create_distributed_system_c(trim(mname) // C_NULL_CHAR, &
-                                                              trim(fname) // C_NULL_CHAR, &
+    res = torchfort_rl_off_policy_create_distributed_system_c([trim(mname) // C_NULL_CHAR], &
+                                                              [trim(fname) // C_NULL_CHAR], &
                                                               mpi_comm_c, model_dev, rb_dev)
   end function torchfort_rl_off_policy_create_distributed_system_type
 
@@ -2199,16 +2199,16 @@ contains
     character(len=*) :: mname
     character(len=*) :: checkpoint_dir
     integer(c_int) :: res
-    res = torchfort_rl_off_policy_save_checkpoint_c(trim(mname) // C_NULL_CHAR, &
-                                                    trim(checkpoint_dir) // C_NULL_CHAR)
+    res = torchfort_rl_off_policy_save_checkpoint_c([trim(mname) // C_NULL_CHAR], &
+                                                    [trim(checkpoint_dir) // C_NULL_CHAR])
   end function torchfort_rl_off_policy_save_checkpoint
 
   function torchfort_rl_off_policy_load_checkpoint(mname, checkpoint_dir) result(res)
     character(len=*) :: mname
     character(len=*) :: checkpoint_dir
     integer(c_int) :: res
-    res = torchfort_rl_off_policy_load_checkpoint_c(trim(mname) // C_NULL_CHAR, &
-                                                    trim(checkpoint_dir) // C_NULL_CHAR)
+    res = torchfort_rl_off_policy_load_checkpoint_c([trim(mname) // C_NULL_CHAR], &
+                                                    [trim(checkpoint_dir) // C_NULL_CHAR])
   end function torchfort_rl_off_policy_load_checkpoint
 
   ! Training routines
@@ -2239,7 +2239,7 @@ contains
       act_shape(:) = shape(act_old)
       cterminal = terminal
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
                                                             reward, cterminal, TORCHFORT_FLOAT, stream_)
@@ -2273,7 +2273,7 @@ contains
       act_shape(:) = shape(act_old)
       cterminal = terminal
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
                                                             reward, cterminal, TORCHFORT_FLOAT, stream_)
@@ -2307,7 +2307,7 @@ contains
       act_shape(:) = shape(act_old)
       cterminal = terminal
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
                                                             reward, cterminal, TORCHFORT_FLOAT, stream_)
@@ -2342,7 +2342,7 @@ contains
       act_shape(:) = shape(act_old)
       cterminal = terminal
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
                                                             reward, cterminal, TORCHFORT_FLOAT, stream_)
@@ -2376,7 +2376,7 @@ contains
       act_shape(:) = shape(act_old)
       cterminal = terminal
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
                                                             reward, cterminal, TORCHFORT_FLOAT, stream_)
@@ -2410,7 +2410,7 @@ contains
       act_shape(:) = shape(act_old)
       cterminal = terminal
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
                                                             reward, cterminal, TORCHFORT_FLOAT, stream_)
@@ -2447,7 +2447,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state_old, state_new, state_dim, state_shape, &
                                                                   act_old, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -2485,7 +2485,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state_old, state_new, state_dim, state_shape, &
                                                                   act_old, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -2523,7 +2523,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state_old, state_new, state_dim, state_shape, &
                                                                   act_old, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -2562,7 +2562,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state_old, state_new, state_dim, state_shape, &
                                                                   act_old, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -2600,7 +2600,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
                                                             reward, reward_dim, reward_shape, &
@@ -2638,7 +2638,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state_old, state_new, state_dim, state_shape, &
                                                                   act_old, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -2653,7 +2653,7 @@ contains
     character(len=*) :: mname
     logical :: ready
     integer(c_int) :: res
-    res = torchfort_rl_off_policy_is_ready_c(trim(mname) // C_NULL_CHAR, ready)
+    res = torchfort_rl_off_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready)
   end function torchfort_rl_off_policy_is_ready
 
   function torchfort_rl_off_policy_train_step_float(mname, p_loss_val, q_loss_val, stream) result(res)
@@ -2667,7 +2667,7 @@ contains
     stream_ = 0
     if (present(stream)) stream_ = stream
 
-    res = torchfort_rl_off_policy_train_step_float_c(trim(mname) // C_NULL_CHAR, p_loss_val, q_loss_val, stream_)
+    res = torchfort_rl_off_policy_train_step_float_c([trim(mname) // C_NULL_CHAR], p_loss_val, q_loss_val, stream_)
   end function torchfort_rl_off_policy_train_step_float
 
   ! prediction and evaluation routines
@@ -2694,7 +2694,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_off_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                       state, state_dim, state_shape, &
                                                       act, act_dim, act_shape, &
                                                       TORCHFORT_FLOAT, stream_)
@@ -2724,7 +2724,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_off_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                       state, state_dim, state_shape, &
                                                       act, act_dim, act_shape, &
                                                       TORCHFORT_FLOAT, stream_)
@@ -2755,7 +2755,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_off_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                       state, state_dim, state_shape, &
                                                       act, act_dim, act_shape, &
                                                       TORCHFORT_FLOAT, stream_)
@@ -2785,7 +2785,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_off_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                       state, state_dim, state_shape, &
                                                       act, act_dim, act_shape, &
                                                       TORCHFORT_FLOAT, stream_)
@@ -2816,7 +2816,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_off_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                       state, state_dim, state_shape, &
                                                       act, act_dim, act_shape, &
                                                       TORCHFORT_FLOAT, stream_)
@@ -2847,7 +2847,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_off_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                       state, state_dim, state_shape, &
                                                       act, act_dim, act_shape, &
                                                       TORCHFORT_FLOAT, stream_)
@@ -2878,7 +2878,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_off_policy_predict_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_predict_c([trim(mname) // C_NULL_CHAR], &
                                               state, state_dim, state_shape, &
                                               act, act_dim, act_shape, &
                                               TORCHFORT_FLOAT, stream_)
@@ -2909,7 +2909,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_off_policy_predict_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_predict_c([trim(mname) // C_NULL_CHAR], &
                                               state, state_dim, state_shape, &
                                               act, act_dim, act_shape, &
                                               TORCHFORT_FLOAT, stream_)
@@ -2940,7 +2940,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_off_policy_predict_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_predict_c([trim(mname) // C_NULL_CHAR], &
                                               state, state_dim, state_shape, &
                                               act, act_dim, act_shape, &
                                               TORCHFORT_FLOAT, stream_)
@@ -2971,7 +2971,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_off_policy_predict_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_predict_c([trim(mname) // C_NULL_CHAR], &
                                               state, state_dim, state_shape, &
                                               act, act_dim, act_shape, &
                                               TORCHFORT_FLOAT, stream_)
@@ -3005,7 +3005,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_off_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                                state, state_dim, state_shape, &
                                                act, act_dim, act_shape, &
                                                reward, reward_dim, reward_shape, &
@@ -3039,7 +3039,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_off_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                                state, state_dim, state_shape, &
                                                act, act_dim, act_shape, &
                                                reward, reward_dim, reward_shape, &
@@ -3074,7 +3074,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_off_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                                state, state_dim, state_shape, &
                                                act, act_dim, act_shape, &
                                                reward, reward_dim, reward_shape, &
@@ -3108,7 +3108,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_off_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                                state, state_dim, state_shape, &
                                                act, act_dim, act_shape, &
                                                reward, reward_dim, reward_shape, &
@@ -3143,7 +3143,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_off_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                                state, state_dim, state_shape, &
                                                act, act_dim, act_shape, &
                                                reward, reward_dim, reward_shape, &
@@ -3178,7 +3178,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_off_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_off_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                                state, state_dim, state_shape, &
                                                act, act_dim, act_shape, &
                                                reward, reward_dim, reward_shape, &
@@ -3194,7 +3194,7 @@ contains
     integer(int64) :: step
     integer(int32) :: val
     integer(c_int) :: res
-    res = torchfort_rl_on_policy_wandb_log_int_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_rl_on_policy_wandb_log_int_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                                  step, val)
   end function torchfort_rl_on_policy_wandb_log_int
 
@@ -3203,7 +3203,7 @@ contains
     integer(int64) :: step
     real(real32) :: val
     integer(c_int) :: res
-    res = torchfort_rl_on_policy_wandb_log_float_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_rl_on_policy_wandb_log_float_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                                     step, val)
   end function torchfort_rl_on_policy_wandb_log_float
 
@@ -3214,7 +3214,7 @@ contains
     integer(c_int) :: res
     integer(int64) :: step64
     step64 = step
-    res = torchfort_rl_on_policy_wandb_log_float_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_rl_on_policy_wandb_log_float_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                                     step64, val)
   end function torchfort_rl_on_policy_wandb_log_float_int32step
 
@@ -3223,7 +3223,7 @@ contains
     integer(int64) :: step
     real(real64) :: val
     integer(c_int) :: res
-    res = torchfort_rl_on_policy_wandb_log_double_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_rl_on_policy_wandb_log_double_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                                      step, val)
   end function torchfort_rl_on_policy_wandb_log_double
 
@@ -3234,7 +3234,7 @@ contains
     integer(c_int) :: res
     integer(int64) :: step64
     step64 = step
-    res = torchfort_rl_on_policy_wandb_log_double_c(trim(mname) // C_NULL_CHAR, trim(metric_name) // C_NULL_CHAR, &
+    res = torchfort_rl_on_policy_wandb_log_double_c([trim(mname) // C_NULL_CHAR], [trim(metric_name) // C_NULL_CHAR], &
                                                      step64, val)
   end function torchfort_rl_on_policy_wandb_log_double_int32step
 
@@ -3243,7 +3243,7 @@ contains
     character(len=*) :: sname, fname
     integer(c_int) :: res
     integer(c_int) :: model_dev, rb_dev
-    res = torchfort_rl_on_policy_create_system_c(trim(sname) // C_NULL_CHAR, trim(fname) // C_NULL_CHAR, model_dev, rb_dev)
+    res = torchfort_rl_on_policy_create_system_c([trim(sname) // C_NULL_CHAR], [trim(fname) // C_NULL_CHAR], model_dev, rb_dev)
   end function torchfort_rl_on_policy_create_system
 
   function torchfort_rl_on_policy_create_distributed_system_MPI_F(mname, fname, comm, model_dev, rb_dev) result(res)
@@ -3285,8 +3285,8 @@ contains
 #else
     mpi_comm_c%comm = comm%comm
 #endif
-    res = torchfort_rl_on_policy_create_distributed_system_c(trim(mname) // C_NULL_CHAR, &
-                                                             trim(fname) // C_NULL_CHAR, &
+    res = torchfort_rl_on_policy_create_distributed_system_c([trim(mname) // C_NULL_CHAR], &
+                                                             [trim(fname) // C_NULL_CHAR], &
                                                              mpi_comm_c, model_dev, rb_dev)
   end function torchfort_rl_on_policy_create_distributed_system_type
 
@@ -3295,16 +3295,16 @@ contains
     character(len=*) :: mname
     character(len=*) :: checkpoint_dir
     integer(c_int) :: res
-    res = torchfort_rl_on_policy_save_checkpoint_c(trim(mname) // C_NULL_CHAR, &
-                                                    trim(checkpoint_dir) // C_NULL_CHAR)
+    res = torchfort_rl_on_policy_save_checkpoint_c([trim(mname) // C_NULL_CHAR], &
+                                                    [trim(checkpoint_dir) // C_NULL_CHAR])
   end function torchfort_rl_on_policy_save_checkpoint
 
   function torchfort_rl_on_policy_load_checkpoint(mname, checkpoint_dir) result(res)
     character(len=*) :: mname
     character(len=*) :: checkpoint_dir
     integer(c_int) :: res
-    res = torchfort_rl_on_policy_load_checkpoint_c(trim(mname) // C_NULL_CHAR, &
-                                                    trim(checkpoint_dir) // C_NULL_CHAR)
+    res = torchfort_rl_on_policy_load_checkpoint_c([trim(mname) // C_NULL_CHAR], &
+                                                    [trim(checkpoint_dir) // C_NULL_CHAR])
   end function torchfort_rl_on_policy_load_checkpoint
 
   ! Training routines
@@ -3336,7 +3336,7 @@ contains
       act_shape(:) = shape(act)
       cterminal = terminal
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
                                                             reward, cterminal, &
@@ -3371,7 +3371,7 @@ contains
       act_shape(:) = shape(act)
       cterminal = terminal
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
                                                             reward, cterminal, &
@@ -3406,7 +3406,7 @@ contains
       act_shape(:) = shape(act)
       cterminal = terminal
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
                                                             reward, cterminal, &
@@ -3442,7 +3442,7 @@ contains
       act_shape(:) = shape(act)
       cterminal = terminal
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
                                                             reward, cterminal, &
@@ -3477,7 +3477,7 @@ contains
       act_shape(:) = shape(act)
       cterminal = terminal
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
                                                             reward, cterminal, &
@@ -3512,7 +3512,7 @@ contains
       act_shape(:) = shape(act)
       cterminal = terminal
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
                                                             reward, cterminal, &
@@ -3552,7 +3552,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape = shape(terminal)
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -3590,7 +3590,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -3628,7 +3628,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -3666,7 +3666,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -3705,7 +3705,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -3742,7 +3742,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -3780,7 +3780,7 @@ contains
         reward_shape(:) = shape(reward)
         terminal_shape(:) = shape(terminal)
 
-        res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+        res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                     state, state_dim, state_shape, &
                                                                     act, act_dim, act_shape, &
                                                                     reward, reward_dim, reward_shape, &
@@ -3818,7 +3818,7 @@ contains
       reward_shape(:) = shape(reward)
       terminal_shape(:) = shape(terminal)
 
-      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c(trim(mname) // C_NULL_CHAR, &
+      res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
@@ -3832,7 +3832,7 @@ contains
   function torchfort_rl_on_policy_reset_rollout_buffer(mname) result(res)
     character(len=*) :: mname
     integer(c_int) :: res
-    res = torchfort_rl_on_policy_reset_rollout_buffer_c(trim(mname) // C_NULL_CHAR)
+    res = torchfort_rl_on_policy_reset_rollout_buffer_c([trim(mname) // C_NULL_CHAR])
   end function torchfort_rl_on_policy_reset_rollout_buffer
 
   function torchfort_rl_on_policy_is_ready(mname, ready) result(res)
@@ -3840,7 +3840,7 @@ contains
     logical :: ready
     integer(c_int) :: res
 
-    res = torchfort_rl_on_policy_is_ready_c(trim(mname) // C_NULL_CHAR, ready)
+    res = torchfort_rl_on_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready)
   end function torchfort_rl_on_policy_is_ready
 
   function torchfort_rl_on_policy_train_step_float(mname, p_loss_val, q_loss_val, stream) result(res)
@@ -3854,7 +3854,7 @@ contains
     stream_ = 0
     if (present(stream)) stream_ = stream
 
-    res = torchfort_rl_on_policy_train_step_float_c(trim(mname) // C_NULL_CHAR, p_loss_val, q_loss_val, stream_)
+    res = torchfort_rl_on_policy_train_step_float_c([trim(mname) // C_NULL_CHAR], p_loss_val, q_loss_val, stream_)
   end function torchfort_rl_on_policy_train_step_float
 
   ! prediction and evaluation routines
@@ -3881,7 +3881,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                      state, state_dim, state_shape, &
                                                      act, act_dim, act_shape, &
                                                      TORCHFORT_FLOAT, stream_)
@@ -3911,7 +3911,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                      state, state_dim, state_shape, &
                                                      act, act_dim, act_shape, &
                                                      TORCHFORT_FLOAT, stream_)
@@ -3942,7 +3942,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                      state, state_dim, state_shape, &
                                                      act, act_dim, act_shape, &
                                                      TORCHFORT_FLOAT, stream_)
@@ -3972,7 +3972,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                      state, state_dim, state_shape, &
                                                      act, act_dim, act_shape, &
                                                      TORCHFORT_FLOAT, stream_)
@@ -4003,7 +4003,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                      state, state_dim, state_shape, &
                                                      act, act_dim, act_shape, &
                                                      TORCHFORT_FLOAT, stream_)
@@ -4034,7 +4034,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_explore_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_explore_c([trim(mname) // C_NULL_CHAR], &
                                                      state, state_dim, state_shape, &
                                                      act, act_dim, act_shape, &
                                                      TORCHFORT_FLOAT, stream_)
@@ -4065,7 +4065,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_c([trim(mname) // C_NULL_CHAR], &
                                              state, state_dim, state_shape, &
                                              act, act_dim, act_shape, &
                                              TORCHFORT_FLOAT, stream_)
@@ -4095,7 +4095,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_c([trim(mname) // C_NULL_CHAR], &
                                              state, state_dim, state_shape, &
                                              act, act_dim, act_shape, &
                                              TORCHFORT_FLOAT, stream_)
@@ -4126,7 +4126,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_c([trim(mname) // C_NULL_CHAR], &
                                              state, state_dim, state_shape, &
                                              act, act_dim, act_shape, &
                                              TORCHFORT_FLOAT, stream_)
@@ -4156,7 +4156,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_c([trim(mname) // C_NULL_CHAR], &
                                              state, state_dim, state_shape, &
                                              act, act_dim, act_shape, &
                                              TORCHFORT_FLOAT, stream_)
@@ -4187,7 +4187,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_c([trim(mname) // C_NULL_CHAR], &
                                              state, state_dim, state_shape, &
                                              act, act_dim, act_shape, &
                                              TORCHFORT_FLOAT, stream_)
@@ -4218,7 +4218,7 @@ contains
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
 
-      res = torchfort_rl_on_policy_predict_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_predict_c([trim(mname) // C_NULL_CHAR], &
                                              state, state_dim, state_shape, &
                                              act, act_dim, act_shape, &
                                              TORCHFORT_FLOAT, stream_)
@@ -4252,7 +4252,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_on_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                               state, state_dim, state_shape, &
                                               act, act_dim, act_shape, &
                                               reward, reward_dim, reward_shape, &
@@ -4286,7 +4286,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_on_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                               state, state_dim, state_shape, &
                                               act, act_dim, act_shape, &
                                               reward, reward_dim, reward_shape, &
@@ -4320,7 +4320,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_on_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                               state, state_dim, state_shape, &
                                               act, act_dim, act_shape, &
                                               reward, reward_dim, reward_shape, &
@@ -4355,7 +4355,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_on_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                               state, state_dim, state_shape, &
                                               act, act_dim, act_shape, &
                                               reward, reward_dim, reward_shape, &
@@ -4389,7 +4389,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_on_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                               state, state_dim, state_shape, &
                                               act, act_dim, act_shape, &
                                               reward, reward_dim, reward_shape, &
@@ -4423,7 +4423,7 @@ contains
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
 
-      res = torchfort_rl_on_policy_evaluate_c(trim(mname) // C_NULL_CHAR, &
+      res = torchfort_rl_on_policy_evaluate_c([trim(mname) // C_NULL_CHAR], &
                                               state, state_dim, state_shape, &
                                               act, act_dim, act_shape, &
                                               reward, reward_dim, reward_shape, &

@@ -24,13 +24,6 @@ ENV CUDA_HOME /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda
 
 RUN echo "source /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/comm_libs/12.8/hpcx/latest/hpcx-init.sh; hpcx_load" >>  /root/.bashrc
 
-## Install newer NCCL for compatibility with PyTorch 2.6+
-#RUN cd /opt && \
-#    git clone --branch v2.20.3-1 https://github.com/NVIDIA/nccl.git && \
-#    cd nccl && \
-#    make -j src.build NVCC_GENCODE="-gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90" CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.1/cuda
-#ENV LD_LIBRARY_PATH /opt/nccl/build/lib:$LD_LIBRARY_PATH
-
 # Install PyTorch
 RUN pip3 install torch==2.6.0
 

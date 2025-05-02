@@ -36,13 +36,6 @@ ENV LD_LIBRARY_PATH /opt/hpcx/ompi/lib:$LD_LIBRARY_PATH
 
 RUN echo "source /opt/hpcx/hpcx-init.sh; hpcx_load" >>  /root/.bashrc
 
-## Install newer NCCL for compatibility with PyTorch 2.2.1+
-#RUN cd /opt && \
-#    git clone --branch v2.20.3-1 https://github.com/NVIDIA/nccl.git && \
-#    cd nccl && \
-#    make -j src.build NVCC_GENCODE="-gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90"
-#ENV LD_LIBRARY_PATH /opt/nccl/build/lib:$LD_LIBRARY_PATH
-
 # Install PyTorch
 RUN pip3 install torch==2.6.0
 

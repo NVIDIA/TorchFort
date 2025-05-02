@@ -26,7 +26,7 @@ ENV PATH /opt/openmpi/bin:$PATH
 ENV LD_LIBRARY_PATH /opt/openmpi/lib:$LD_LIBRARY_PATH
 
 # Install PyTorch
-RUN pip3 install torch==2.4.0 --index-url https://download.pytorch.org/whl/cpu
+RUN pip3 install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
 
 # Install yaml-cpp
 RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \

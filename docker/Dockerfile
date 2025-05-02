@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/cuda:12.3.1-devel-ubuntu22.04
+FROM nvcr.io/nvidia/cuda:12.8.1-devel-ubuntu22.04
 
 # Install System Dependencies
 ENV DEBIAN_FRONTEND noninteractive
@@ -9,30 +9,30 @@ RUN apt update -y && \
     apt install -y libibverbs-dev ibverbs-utils numactl
 
 # Install NVHPC SDK
-RUN wget https://developer.download.nvidia.com/hpc-sdk/24.1/nvhpc_2024_241_Linux_x86_64_cuda_12.3.tar.gz && \
-    tar xpzf nvhpc_2024_241_Linux_x86_64_cuda_12.3.tar.gz && \
-    nvhpc_2024_241_Linux_x86_64_cuda_12.3/install --quiet && \
-    rm -rf nvhpc_2024_241_Linux_x86_64_cuda_12.3 nvhpc_2024_241_Linux_x86_64_cuda_12.3.tar.gz
+RUN wget https://developer.download.nvidia.com/hpc-sdk/25.3/nvhpc_2025_253_Linux_x86_64_cuda_12.8.tar.gz && \
+    tar xpzf nvhpc_2025_253_Linux_x86_64_cuda_12.8.tar.gz && \
+    nvhpc_2025_253_Linux_x86_64_cuda_12.8/install --quiet && \
+    rm -rf nvhpc_2025_253_Linux_x86_64_cuda_12.8 nvhpc_2025_253_Linux_x86_64_cuda_12.8.tar.gz
 
-ENV PATH /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/compilers/bin:$PATH
-ENV PATH /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/mpi/bin:$PATH
-ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/cuda/lib64:$LD_LIBRARY_PATH
-ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/mpi/lib:$LD_LIBRARY_PATH
-ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/nvshmem/lib:$LD_LIBRARY_PATH
-ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/math_libs/lib64:$LD_LIBRARY_PATH
-ENV CUDA_HOME /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/cuda
+ENV PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/compilers/bin:$PATH
+ENV PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/comm_libs/mpi/bin:$PATH
+ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda/lib64:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/comm_libs/mpi/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/comm_libs/nvshmem/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/math_libs/lib64:$LD_LIBRARY_PATH
+ENV CUDA_HOME /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda
 
-RUN echo "source /opt/nvidia/hpc_sdk/Linux_x86_64/24.1/comm_libs/12.3/hpcx/latest/hpcx-init.sh; hpcx_load" >>  /root/.bashrc
+RUN echo "source /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/comm_libs/12.8/hpcx/latest/hpcx-init.sh; hpcx_load" >>  /root/.bashrc
 
-# Install newer NCCL for compatibility with PyTorch 2.2.1+
-RUN cd /opt && \
-    git clone --branch v2.20.3-1 https://github.com/NVIDIA/nccl.git && \
-    cd nccl && \
-    make -j src.build NVCC_GENCODE="-gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90" CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.1/cuda
-ENV LD_LIBRARY_PATH /opt/nccl/build/lib:$LD_LIBRARY_PATH
+## Install newer NCCL for compatibility with PyTorch 2.6+
+#RUN cd /opt && \
+#    git clone --branch v2.20.3-1 https://github.com/NVIDIA/nccl.git && \
+#    cd nccl && \
+#    make -j src.build NVCC_GENCODE="-gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90" CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.1/cuda
+#ENV LD_LIBRARY_PATH /opt/nccl/build/lib:$LD_LIBRARY_PATH
 
 # Install PyTorch
-RUN pip3 install torch==2.4.0
+RUN pip3 install torch==2.6.0
 
 # Install yaml-cpp
 RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \
@@ -66,7 +66,7 @@ ENV FC=nvfortran
 ENV HDF5_ROOT=/opt/hdf5
 COPY . /torchfort
 RUN cd /torchfort && mkdir build && cd build && \
-    CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/24.1/cuda \
+    CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/torchfort \
     -DCMAKE_CXX_COMPILER=`which g++` \
     -DTORCHFORT_YAML_CPP_ROOT=/opt/yaml-cpp \

@@ -25,14 +25,14 @@ ENV CUDA_HOME /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda
 RUN echo "source /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/comm_libs/12.8/hpcx/latest/hpcx-init.sh; hpcx_load" >>  /root/.bashrc
 
 # Install PyTorch
-RUN pip3 install torch==2.6.0
+RUN pip3 install torch==2.7.0
 
 # Install yaml-cpp
 RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \
     cd yaml-cpp && \
     mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/yaml-cpp \
-          -DCMAKE_CXX_FLAGS:="-D_GLIBCXX_USE_CXX11_ABI=0" \
+          -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=1" \
           -DBUILD_SHARED_LIBS=OFF \
           -DCMAKE_POSITION_INDEPENDENT_CODE=ON .. && \
     make -j$(nproc) && make install

@@ -83,9 +83,9 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   assert(batch_size == action_old_tensor.size(0));
   assert(batch_size == reward_tensor.size(0));
   assert(batch_size == d_tensor.size(0));
-  // singleton dims
-  assert(reward_tensor.size(1) == 1);
-  assert(d_tensor.size(1) == 1);
+  // dim check
+  assert(reward_tensor.dim() == 1);
+  assert(d_tensor.dim() == 1);
 
   // value functions
   // move models to device

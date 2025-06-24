@@ -37,7 +37,7 @@ project(torchfort LANGUAGES ${LANGS})
 # Configure debug flags for all targets
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   # Set debug flags for C++
-  set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -fno-omit-frame-pointer -rdynamic")
+  set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -fno-omit-frame-pointer -rdynamic -Wall -Wextra")
   # Set debug flags for Fortran if building Fortran
   if(TORCHFORT_BUILD_FORTRAN)
     if(CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")

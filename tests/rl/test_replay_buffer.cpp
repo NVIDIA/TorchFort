@@ -35,6 +35,8 @@
 using namespace torchfort;
 using namespace torch::indexing;
 
+class ReplayBuffer : public testing::TestWithParam<int> {};
+
 // helper functions
 std::shared_ptr<rl::UniformReplayBuffer> getTestReplayBuffer(int buffer_size, int n_envs = 1, float gamma = 0.95, int nstep = 1) {
 
@@ -96,16 +98,53 @@ void print_buffer(std::shared_ptr<rl::UniformReplayBuffer> buffp) {
   }
 }
 
+// check if shapes match expected shapes
+TEST_P(ReplayBuffer, ShapeConsistency) {
+  // set rng
+  torch::manual_seed(666);
+
+  // some parameters
+  unsigned int n_envs = GetParam();
+  unsigned int batch_size = 32;
+  unsigned int buffer_size = 4 * batch_size;
+
+  // get replay buffer
+  auto rbuff = getTestReplayBuffer(buffer_size, n_envs, 0.95, 1);
+
+  // sample
+  torch::Tensor stens, atens, sptens, rtens, dtens;
+  float state_diff = 0;
+  float reward_diff = 0.;
+
+  std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
+    
+  // check shapes
+  EXPECT_EQ(stens.dim(), 2);
+  EXPECT_EQ(atens.dim(), 2);
+  EXPECT_EQ(sptens.dim(), 2);
+  EXPECT_EQ(rtens.dim(), 1);
+  EXPECT_EQ(dtens.dim(), 1);
+
+  EXPECT_EQ(stens.size(0), batch_size);
+  EXPECT_EQ(atens.size(0), batch_size);
+  EXPECT_EQ(sptens.size(0), batch_size);
+  EXPECT_EQ(rtens.size(0), batch_size);
+  EXPECT_EQ(dtens.size(0), batch_size);
+
+  EXPECT_EQ(stens.size(1), 1);
+  EXPECT_EQ(atens.size(1), 1);
+}
+
 // check if entries are consistent
-TEST(ReplayBuffer, EntryConsistency) {
+TEST_P(ReplayBuffer, EntryConsistency) {
 
   // set rng
   torch::manual_seed(666);
 
   // some parameters
+  unsigned int n_envs = GetParam();
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
-  unsigned int n_envs = 1;
 
   // get replay buffer
   auto rbuff = getTestReplayBuffer(buffer_size, n_envs, 0.95, 1);
@@ -128,26 +167,27 @@ TEST(ReplayBuffer, EntryConsistency) {
 }
 
 // check if ordering between entries are consistent
-TEST(ReplayBuffer, TrajectoryConsistency) {
+TEST_P(ReplayBuffer, TrajectoryConsistency) {
 
   // set rng
   torch::manual_seed(666);
 
   // some parameters
+  unsigned int n_envs = GetParam();
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
-  unsigned int n_envs = 1;
 
   // get replay buffer
   auto rbuff = getTestReplayBuffer(buffer_size, n_envs, 0.95, 1);
 
   // get a few items and their successors:
   torch::Tensor stens, atens, sptens, sptens_tmp, rtens, dtens;
+
   // get item at index
   std::tie(stens, atens, sptens, rtens, dtens) = rbuff->get(0);
   // get next item
   float state_diff = 0.;
-  for (unsigned int i = 1; i < buffer_size; ++i) {
+  for (unsigned int i = 1; i < rbuff->getSize(); ++i) {
     std::tie(stens, atens, sptens_tmp, rtens, dtens) = rbuff->get(i);
     state_diff += torch::sum(torch::abs(stens - sptens)).item<float>();
     sptens.copy_(sptens_tmp);
@@ -158,15 +198,15 @@ TEST(ReplayBuffer, TrajectoryConsistency) {
 }
 
 // check if nstep reward calculation is correct
-TEST(ReplayBuffer, NStepConsistency) {
+TEST_P(ReplayBuffer, NStepConsistency) {
 
   // set rng
   torch::manual_seed(666);
 
   // some parameters
+  unsigned int n_envs = GetParam();
   unsigned int batch_size = 32;
   unsigned int buffer_size = 8 * batch_size;
-  unsigned int n_envs = 1;
   unsigned int nstep = 4;
   float gamma = 0.95;
 
@@ -180,7 +220,7 @@ TEST(ReplayBuffer, NStepConsistency) {
   std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
   
   // iterate over samples in batch
-  torch::Tensor stemp, atemp, sptemp, sstens, rtemp, dtemp;
+  torch::Tensor stemp, atemp, sptemp, sstens, rtemp, dtemp, spfin;
   float reward, gamma_eff, rdiff, sdiff, sstens_val;
 
   // init differences:
@@ -191,37 +231,43 @@ TEST(ReplayBuffer, NStepConsistency) {
     sstens_val = sstens.item<float>();
 
     // find the corresponding state
+    bool found = false;
     for (unsigned int i = 0; i < buffer_size; ++i) {
       std::tie(stemp, atemp, sptemp, rtemp, dtemp) = rbuff->get(i);
-      if (std::abs(stemp.index({0, "..."}).item<float>() - sstens_val) < 1e-7) {
-        // found the right state
-        gamma_eff = 1.;
-        reward = rtemp.index({0}).item<float>();
-        for (unsigned int k = 1; k < nstep; k++) {
-          std::tie(stemp, atemp, sptemp, rtemp, dtemp) = rbuff->get(i + k);
-          gamma_eff *= gamma;
-          reward += rtemp.index({0}).item<float>() * gamma_eff;
+      for (int64_t e = 0; e < n_envs; ++e) {
+        if (std::abs(stemp.index({e, "..."}).item<float>() - sstens_val) < 1e-7) {
+          // found the right state
+          found = true;
+          gamma_eff = 1.;
+          reward = rtemp.index({e}).item<float>();
+          for (unsigned int k = 1; k < nstep; k++) {
+            std::tie(stemp, atemp, sptemp, rtemp, dtemp) = rbuff->get(i + k);
+            gamma_eff *= gamma;
+            reward += rtemp.index({e}).item<float>() * gamma_eff;
+            spfin = sptemp.index({e, "..."});
+          }
+          break;
         }
-        break;
       }
+      if (found) break;
     }
     rdiff += std::abs(reward - rtens.index({s}).item<float>());
-    sdiff += torch::sum(torch::abs(sptemp.index({0, "..."}) - sptens.index({s, "..."}))).item<float>();
+    sdiff += torch::sum(torch::abs(spfin - sptens.index({s, "..."}))).item<float>();
   }
 
   EXPECT_FLOAT_EQ(sdiff, 0.);
   EXPECT_FLOAT_EQ(rdiff, 0.);
 }
 
-TEST(ReplayBuffer, SaveRestore) {
+TEST_P(ReplayBuffer, SaveRestore) {
 
   // rng
   torch::manual_seed(666);
 
   // some parameters
+  unsigned int n_envs = GetParam();
   unsigned int batch_size = 1;
   unsigned int buffer_size = 8 * batch_size;
-  unsigned int n_envs = 1;
   float gamma = 0.95;
   int nstep = 1;
 
@@ -259,6 +305,9 @@ TEST(ReplayBuffer, SaveRestore) {
   EXPECT_FLOAT_EQ(rtens_diff, 0.);
   EXPECT_FLOAT_EQ(dtens_diff, 0.);
 }
+
+INSTANTIATE_TEST_SUITE_P(MultiEnv, ReplayBuffer, testing::Range(1, 3),
+                         testing::PrintToStringParamName());
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

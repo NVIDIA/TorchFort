@@ -45,7 +45,7 @@ foreach(tgt ${cart_pole_example_targets})
   endif()
   # Apply debug link options when building in Debug mode
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS} -rdynamic>)
+    target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS} -rdynamic> -Wl,--export-dynamic)
   else()
     target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
   endif()

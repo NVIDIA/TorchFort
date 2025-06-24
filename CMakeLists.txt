@@ -211,6 +211,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_options(${PROJECT_NAME} PRIVATE 
     $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS} -g -O0 -DDEBUG -fno-omit-frame-pointer -rdynamic>
   )
+  # Add debug-specific link options
+  target_link_options(${PROJECT_NAME} PRIVATE -rdynamic -Wl,--export-dynamic)
 else()
   target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
 endif()

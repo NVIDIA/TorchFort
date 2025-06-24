@@ -113,9 +113,6 @@ TEST_P(ReplayBuffer, ShapeConsistency) {
 
   // sample
   torch::Tensor stens, atens, sptens, rtens, dtens;
-  float state_diff = 0;
-  float reward_diff = 0.;
-
   std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
     
   // check shapes

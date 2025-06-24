@@ -113,16 +113,58 @@ void print_buffer(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
   }
 }
 
+// check if shapes match expected shapes
+TEST_P(RolloutBuffer, ShapeConsistency) {
+  // rng
+  torch::manual_seed(666);
+
+  // some parameters
+  unsigned int n_env = GetParam();
+  unsigned int batch_size = 2;
+  unsigned int buffer_size = 4 * batch_size;
+  unsigned int n_iters = 4;
+  float gamma = 0.95;
+  float lambda = 0.99;
+
+  // get replay buffer
+  std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
+  torch::Tensor last_val, last_done;
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, n_env, gamma, lambda);
+
+  // sample
+  torch::Tensor stens, atens, qtens, log_p_tens, advtens, rettens;
+
+  std::tie(stens, atens, qtens, log_p_tens, advtens, rettens) = rbuff->sample(batch_size);
+
+  // check shapes
+  EXPECT_EQ(stens.dim(), 2);
+  EXPECT_EQ(atens.dim(), 2);
+  EXPECT_EQ(qtens.dim(), 1);
+  EXPECT_EQ(log_p_tens.dim(), 1);
+  EXPECT_EQ(advtens.dim(), 1);
+  EXPECT_EQ(rettens.dim(), 1);
+
+  EXPECT_EQ(stens.size(0), batch_size);
+  EXPECT_EQ(atens.size(0), batch_size);
+  EXPECT_EQ(qtens.size(0), batch_size);
+  EXPECT_EQ(log_p_tens.size(0), batch_size);
+  EXPECT_EQ(advtens.size(0), batch_size);
+  EXPECT_EQ(rettens.size(0), batch_size);
+
+  EXPECT_EQ(stens.size(1), 1);
+  EXPECT_EQ(atens.size(1), 1);
+}
+
 // check if entries are consistent
 TEST_P(RolloutBuffer, EntryConsistency) {
   // rng
   torch::manual_seed(666);
 
   // some parameters
+  unsigned int n_env = GetParam();
   unsigned int batch_size = 2;
   unsigned int buffer_size = 4 * batch_size;
   unsigned int n_iters = 4;
-  unsigned int n_env = GetParam();
   float gamma = 0.95;
   float lambda = 0.99;
 
@@ -145,16 +187,15 @@ TEST_P(RolloutBuffer, EntryConsistency) {
   EXPECT_NEAR(q_diff, 0., 1e-5);
 }
 
-
 // check if ordering between entries are consistent
 TEST_P(RolloutBuffer, AdvantageComputation) {
   // rng
   torch::manual_seed(666);
 
   // some parameters
+  unsigned int n_env = GetParam();
   unsigned int batch_size = 1;
   unsigned int buffer_size = 8 * batch_size;
-  unsigned int n_env = GetParam();
   unsigned int eff_buffer_size = (buffer_size / n_env);
   float gamma = 0.95;
   float lambda = 0.99;
@@ -208,9 +249,9 @@ TEST_P(RolloutBuffer, SaveRestore) {
   torch::manual_seed(666);
 
   // some parameters
+  unsigned int n_env = GetParam();
   unsigned int batch_size = 1;
   unsigned int buffer_size = 8 * batch_size;
-  unsigned int n_env = GetParam();
   float gamma = 0.95;
   float lambda = 0.99;
 

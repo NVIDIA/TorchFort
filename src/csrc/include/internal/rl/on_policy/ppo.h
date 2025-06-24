@@ -72,7 +72,7 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
   assert(batch_size == log_p_tensor.size(0));
   assert(batch_size == adv_tensor.size(0));
   assert(batch_size == ret_tensor.size(0));
-  // singleton dims
+  // dim check
   assert(q_tensor.dim() == 1);
   assert(log_p_tensor.dim() == 1);
   assert(adv_tensor.dim() == 1);

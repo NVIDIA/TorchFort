@@ -513,7 +513,7 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
  * @brief Adds a new \f$(s, a, r, d)\f$ tuple to the rollout buffer. This is for single env (n_env=1) only.
  * @details Here \f$s\f$ (\p state) is the state for which action \f$a\f$ (\p action) was taken,
  * and receiving reward \f$r\f$ (\p reward).
- * The terminal state flag \f$d\f$ (\p terminal_state) specifies whether \f$s\f$ is the final state of the episode.
+ * The terminal state flag \f$d\f$ (\p final_state) specifies whether \f$s\f$ is the final state of the episode.
  * Note that value estimates \f$q\f$ as well was log-probabilities are also stored but the user does not need to
  * pass those manually, those values are computed internally from the current policy and stored with the other values.
  *
@@ -550,7 +550,7 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* na
  * @brief Adds a new \f$(s, a, r, d)\f$ tuple to the rollout buffer. This is for multi env (n_env>=1) only.
  * @details Here \f$s\f$ (\p state) is the tensor of states for which actions \f$a\f$ (\p action) were taken,
  * and receiving rewards \f$r\f$ (\p rewards).
- * The terminal state flag \f$d\f$ (\p terminal_state) specifies which states \f$s\f$ are final states of the episode.
+ * The terminal state flag \f$d\f$ (\p final_state) specifies which states \f$s\f$ are final states of the episode.
  * It is important that the first dimension of s, a, r and d has to be of length n_env.
  * Note that value estimates \f$q\f$ as well was log-probabilities are also stored but the user does not need to
  * pass those manually, those values are computed internally from the current policy and stored with the other values.

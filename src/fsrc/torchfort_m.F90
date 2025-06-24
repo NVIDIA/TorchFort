@@ -189,14 +189,14 @@ module torchfort
     function torchfort_set_manual_seed_c(seed) result(res) &
       bind(C, name="torchfort_set_manual_seed")
       import
-      integer(c_int) :: seed
+      integer(c_int), value :: seed
       integer(c_int) :: res
     end function torchfort_set_manual_seed_c
 
     function torchfort_set_cuda_manual_seed_c(seed) result(res) &
       bind(C, name="torchfort_set_cuda_manual_seed")
       import
-      integer(c_int) :: seed
+      integer(c_int), value :: seed
       integer(c_int) :: res
     end function torchfort_set_cuda_manual_seed_c
 
@@ -363,7 +363,7 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_is_ready")
       import
       type(*) :: mname(*)
-      logical :: ready
+      logical(c_bool) :: ready
       integer(c_int) :: res
     end function torchfort_rl_off_policy_is_ready_c
 
@@ -540,7 +540,7 @@ module torchfort
       bind(C, name="torchfort_rl_on_policy_is_ready")
       import
       type(*) :: mname(*)
-      logical :: ready
+      logical(c_bool) :: ready
       integer(c_int) :: res
     end function torchfort_rl_on_policy_is_ready_c
 
@@ -2651,7 +2651,7 @@ contains
 
   function torchfort_rl_off_policy_is_ready(mname, ready) result(res)
     character(len=*) :: mname
-    logical :: ready
+    logical(c_bool) :: ready
     integer(c_int) :: res
     res = torchfort_rl_off_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready)
   end function torchfort_rl_off_policy_is_ready
@@ -3837,7 +3837,7 @@ contains
 
   function torchfort_rl_on_policy_is_ready(mname, ready) result(res)
     character(len=*) :: mname
-    logical :: ready
+    logical(c_bool) :: ready
     integer(c_int) :: res
 
     res = torchfort_rl_on_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready)

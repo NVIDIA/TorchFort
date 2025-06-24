@@ -37,16 +37,20 @@ project(torchfort LANGUAGES ${LANGS})
 # Configure debug flags for all targets
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   # Set debug flags for C++
-  set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -fno-omit-frame-pointer")
+  set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -fno-omit-frame-pointer -rdynamic")
   # Set debug flags for Fortran if building Fortran
   if(TORCHFORT_BUILD_FORTRAN)
     if(CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-      set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -DDEBUG")
+      # NVHPC specific debug flags
+      set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -DDEBUG -traceback")
     elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
       set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -DDEBUG -fno-omit-frame-pointer")
     endif()
   endif()
   message(STATUS "Debug build configured with flags: ${CMAKE_CXX_FLAGS_DEBUG}")
+  if(TORCHFORT_BUILD_FORTRAN)
+    message(STATUS "Fortran debug flags: ${CMAKE_Fortran_FLAGS_DEBUG}")
+  endif()
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
@@ -205,7 +209,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE YAML_CPP_STATIC_DEFINE)
 # Apply debug flags when building in Debug mode
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_options(${PROJECT_NAME} PRIVATE 
-    $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS} -g -O0 -DDEBUG -fno-omit-frame-pointer>
+    $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS} -g -O0 -DDEBUG -fno-omit-frame-pointer -rdynamic>
   )
 else()
   target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
@@ -244,7 +248,7 @@ if (TORCHFORT_BUILD_FORTRAN)
   # Apply debug flags when building in Debug mode
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-      target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -cuda -g -O0 -DDEBUG>)
+      target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -cuda -g -O0 -DDEBUG -traceback>)
     elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
       target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -g -O0 -DDEBUG -fno-omit-frame-pointer>)
     endif()

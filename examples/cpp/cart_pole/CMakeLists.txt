@@ -38,12 +38,17 @@ foreach(tgt ${cart_pole_example_targets})
   # Apply debug flags when building in Debug mode
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(${tgt} PRIVATE 
-      $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS} -g -O0 -DDEBUG -fno-omit-frame-pointer>
+      $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS} -g -O0 -DDEBUG -fno-omit-frame-pointer -rdynamic>
     )
   else()
     target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
   endif()
-  target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
+  # Apply debug link options when building in Debug mode
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS} -rdynamic>)
+  else()
+    target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
+  endif()
   if (TORCHFORT_ENABLE_GPU)
     target_include_directories(${tgt}
       PRIVATE

@@ -916,13 +916,13 @@ contains
   end function torchfort_set_cuda_allow_tf32
 
   function torchfort_set_manual_seed(seed) result(res)
-    integer(c_int) :: seed
+    integer(c_int), value :: seed
     integer(c_int) :: res
     res = torchfort_set_manual_seed_c(seed)
   end function torchfort_set_manual_seed
 
   function torchfort_set_cuda_manual_seed(seed) result(res)
-    integer(c_int) :: seed
+    integer(c_int), value :: seed
     integer(c_int) :: res
     res = torchfort_set_cuda_manual_seed_c(seed)
   end function torchfort_set_cuda_manual_seed

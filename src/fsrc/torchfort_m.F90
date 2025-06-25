@@ -363,7 +363,7 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_is_ready")
       import
       type(*) :: mname(*)
-      logical(c_bool), value :: ready
+      logical(c_bool) :: ready
       integer(c_int) :: res
     end function torchfort_rl_off_policy_is_ready_c
 
@@ -540,7 +540,7 @@ module torchfort
       bind(C, name="torchfort_rl_on_policy_is_ready")
       import
       type(*) :: mname(*)
-      logical(c_bool), value :: ready
+      logical(c_bool) :: ready
       integer(c_int) :: res
     end function torchfort_rl_on_policy_is_ready_c
 
@@ -2655,9 +2655,11 @@ contains
 
   function torchfort_rl_off_policy_is_ready(mname, ready) result(res)
     character(len=*) :: mname
-    logical(c_bool) :: ready
+    logical :: ready
+    logical(c_bool) :: ready_c
     integer(c_int) :: res
-    res = torchfort_rl_off_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready)
+    res = torchfort_rl_off_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready_c)
+    ready = ready_c
   end function torchfort_rl_off_policy_is_ready
 
   function torchfort_rl_off_policy_train_step_float(mname, p_loss_val, q_loss_val, stream) result(res)
@@ -3841,10 +3843,11 @@ contains
 
   function torchfort_rl_on_policy_is_ready(mname, ready) result(res)
     character(len=*) :: mname
-    logical(c_bool) :: ready
+    logical :: ready
+    logical(c_bool) :: ready_c
     integer(c_int) :: res
-
-    res = torchfort_rl_on_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready)
+    res = torchfort_rl_on_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready_c)
+    ready = ready_c
   end function torchfort_rl_on_policy_is_ready
 
   function torchfort_rl_on_policy_train_step_float(mname, p_loss_val, q_loss_val, stream) result(res)

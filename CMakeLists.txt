@@ -34,25 +34,6 @@ endif()
 
 project(torchfort LANGUAGES ${LANGS})
 
-# Configure debug flags for all targets
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  # Set debug flags for C++
-  set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -fno-omit-frame-pointer -rdynamic -Wall -Wextra")
-  # Set debug flags for Fortran if building Fortran
-  if(TORCHFORT_BUILD_FORTRAN)
-    if(CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-      # NVHPC specific debug flags
-      set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -DDEBUG -traceback")
-    elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-      set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -DDEBUG -fno-omit-frame-pointer")
-    endif()
-  endif()
-  message(STATUS "Debug build configured with flags: ${CMAKE_CXX_FLAGS_DEBUG}")
-  if(TORCHFORT_BUILD_FORTRAN)
-    message(STATUS "Fortran debug flags: ${CMAKE_Fortran_FLAGS_DEBUG}")
-  endif()
-endif()
-
 if (CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
   # __rdtsc() in torch not supported by nvc++. Use g++ for CXX files.
   message(FATAL_ERROR "TorchFort does not support compilation of C++ files with nvc++. "
@@ -206,16 +187,7 @@ if (TORCHFORT_ENABLE_GPU)
   target_compile_definitions(${PROJECT_NAME} PRIVATE ENABLE_GPU)
 endif()
 target_compile_definitions(${PROJECT_NAME} PRIVATE YAML_CPP_STATIC_DEFINE)
-# Apply debug flags when building in Debug mode
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_options(${PROJECT_NAME} PRIVATE 
-    $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS} -g -O0 -DDEBUG -fno-omit-frame-pointer -rdynamic>
-  )
-  # Add debug-specific link options
-  target_link_options(${PROJECT_NAME} PRIVATE -rdynamic -Wl,--export-dynamic)
-else()
-  target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
-endif()
+target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
 
 set(public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/include/torchfort.h
@@ -247,19 +219,10 @@ if (TORCHFORT_BUILD_FORTRAN)
   add_library("${PROJECT_NAME}_fort" SHARED)
   set_target_properties("${PROJECT_NAME}_fort" PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
   set_target_properties("${PROJECT_NAME}_fort" PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/include)
-  # Apply debug flags when building in Debug mode
-  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-      target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -cuda -g -O0 -DDEBUG -traceback>)
-    elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-      target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -g -O0 -DDEBUG -fno-omit-frame-pointer>)
-    endif()
-  else()
-    if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-      target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -cuda>)
-    elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-      target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
-    endif()
+  if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
+    target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp -cuda>)
+  elseif (CMAKE_Fortrain_COMPILER_ID STREQUAL "GNU")
+    target_compile_options("${PROJECT_NAME}_fort" PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
   endif()
 
   # Test for MPI_Comm_f2c/c2f

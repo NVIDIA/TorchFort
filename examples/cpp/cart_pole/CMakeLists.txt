@@ -35,20 +35,8 @@ foreach(tgt ${cart_pole_example_targets})
   target_link_libraries(${tgt} PRIVATE MPI::MPI_CXX)
   target_link_libraries(${tgt} PRIVATE ${YAML_CPP_LIBRARY})
   target_link_libraries(${tgt} PRIVATE environments)
-  # Apply debug flags when building in Debug mode
-  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(${tgt} PRIVATE 
-      $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS} -g -O0 -DDEBUG -fno-omit-frame-pointer -rdynamic>
-    )
-  else()
-    target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
-  endif()
-  # Apply debug link options when building in Debug mode
-  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS} -rdynamic> -Wl,--export-dynamic)
-  else()
-    target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
-  endif()
+  target_compile_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
+  target_link_options(${tgt} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${TORCH_CXX_FLAGS}>)
   if (TORCHFORT_ENABLE_GPU)
     target_include_directories(${tgt}
       PRIVATE

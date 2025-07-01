@@ -70,9 +70,6 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   // nvtx marker
   torchfort::nvtx::rangePush("torchfort_train_td3");
 
-  std::cout << "reward_tensor dim " << reward_tensor.dim() << std::endl;
-  std::cout << "d_tensor dim " << d_tensor.dim() << std::endl;
-  
   // sanity checks
   // batch size
   auto batch_size = state_old_tensor.size(0);

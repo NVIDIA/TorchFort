@@ -78,9 +78,9 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   assert(batch_size == action_new_tensor.size(0));
   assert(batch_size == reward_tensor.size(0));
   assert(batch_size == d_tensor.size(0));
-  // singleton dims
-  assert(reward_tensor.size(1) == 1);
-  assert(d_tensor.size(1) == 1);
+  // dim check
+  assert(reward_tensor.dim() == 1);
+  assert(d_tensor.dim() == 1);
 
   // value functions
   // set to train

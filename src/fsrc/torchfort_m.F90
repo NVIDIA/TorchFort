@@ -175,28 +175,28 @@ module torchfort
     function torchfort_set_cudnn_benchmark_c(flag) result(res) &
       bind(C, name="torchfort_set_cudnn_benchmark")
       import
-      logical :: flag
+      logical(c_bool), value :: flag
       integer(c_int) :: res
     end function torchfort_set_cudnn_benchmark_c
 
     function torchfort_set_cuda_allow_tf32_c(flag) result(res) &
       bind(C, name="torchfort_set_cuda_allow_tf32")
       import
-      logical :: flag
+      logical(c_bool), value :: flag
       integer(c_int) :: res
     end function torchfort_set_cuda_allow_tf32_c
 
     function torchfort_set_manual_seed_c(seed) result(res) &
       bind(C, name="torchfort_set_manual_seed")
       import
-      integer(c_int) :: seed
+      integer(c_int), value :: seed
       integer(c_int) :: res
     end function torchfort_set_manual_seed_c
 
     function torchfort_set_cuda_manual_seed_c(seed) result(res) &
       bind(C, name="torchfort_set_cuda_manual_seed")
       import
-      integer(c_int) :: seed
+      integer(c_int), value :: seed
       integer(c_int) :: res
     end function torchfort_set_cuda_manual_seed_c
 
@@ -324,7 +324,7 @@ module torchfort
     function torchfort_rl_off_policy_update_replay_buffer_c(mname, &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
-                                                            reward, cterminal, dtype, stream) result(res) &
+                                                            reward, final_state, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_off_policy_update_replay_buffer_F")
       import
       type(*) :: mname(*)
@@ -332,7 +332,7 @@ module torchfort
       !GCC$ attributes no_arg_check :: state_old, state_new, act_old, reward
       real(c_float) :: state_old(*), state_new(*), act_old(*)
       real(c_float) :: reward
-      logical(c_bool), value :: cterminal
+      logical(c_bool), value :: final_state
       integer(c_size_t), value :: state_dim, act_dim
       integer(c_int64_t) :: state_shape(*), act_shape(*)
       integer(c_int), value :: dtype
@@ -344,16 +344,16 @@ module torchfort
                                                                   state_old, state_new, state_dim, state_shape, &
                                                                   act_old, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  cterminal, cterminal_dim, cterminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   dtype, stream) result(res) &
       bind(C, name="torchfort_rl_off_policy_update_replay_buffer_multi_F")
       import
       type(*) :: mname(*)
-      !dir$ ignore_tkr (dk)state_old, (dk)state_new, (dk)act_old, (dk)reward, (dk)cterminal
-      !GCC$ attributes no_arg_check :: state_old, state_new, act_old, reward, cterminal
-      real(c_float) :: state_old(*), state_new(*), act_old(*), reward(*), cterminal(*)
-      integer(c_size_t), value :: state_dim, act_dim, reward_dim, cterminal_dim
-      integer(c_int64_t) :: state_shape(*), act_shape(*), reward_shape(*), cterminal_shape(*)
+      !dir$ ignore_tkr (dk)state_old, (dk)state_new, (dk)act_old, (dk)reward, (dk)final_state
+      !GCC$ attributes no_arg_check :: state_old, state_new, act_old, reward, final_state
+      real(c_float) :: state_old(*), state_new(*), act_old(*), reward(*), final_state(*)
+      integer(c_size_t), value :: state_dim, act_dim, reward_dim, final_state_dim
+      integer(c_int64_t) :: state_shape(*), act_shape(*), reward_shape(*), final_state_shape(*)
       integer(c_int), value :: dtype
       integer(int64), value :: stream
       integer(c_int) :: res
@@ -363,7 +363,7 @@ module torchfort
       bind(C, name="torchfort_rl_off_policy_is_ready")
       import
       type(*) :: mname(*)
-      logical :: ready
+      logical(c_bool) :: ready
       integer(c_int) :: res
     end function torchfort_rl_off_policy_is_ready_c
 
@@ -494,7 +494,7 @@ module torchfort
     function torchfort_rl_on_policy_update_rollout_buffer_c(mname, &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, cterminal, dtype, stream) result(res) &
+                                                            reward, final_state, dtype, stream) result(res) &
       bind(C, name="torchfort_rl_on_policy_update_rollout_buffer_F")
       import
       type(*) :: mname(*)
@@ -502,7 +502,7 @@ module torchfort
       !GCC$ attributes no_arg_check :: state, act, reward
       real(c_float) :: state(*), act(*)
       real(c_float) :: reward
-      logical(c_bool), value :: cterminal
+      logical(c_bool), value :: final_state
       integer(c_size_t), value :: state_dim, act_dim
       integer(c_int64_t) :: state_shape(*), act_shape(*)
       integer(c_int), value :: dtype
@@ -514,16 +514,16 @@ module torchfort
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  cterminal, cterminal_dim, cterminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   dtype, stream) result(res) &
       bind(C, name="torchfort_rl_on_policy_update_rollout_buffer_multi_F")
       import
       type(*) :: mname(*)
-      !dir$ ignore_tkr (dk)state, (dk)act, (dk)reward, (dk)cterminal
-      !GCC$ attributes no_arg_check :: state, act, reward, cterminal
-      real(c_float) :: state(*), act(*), reward(*), cterminal(*)
-      integer(c_size_t), value :: state_dim, act_dim, reward_dim, cterminal_dim
-      integer(c_int64_t) :: state_shape(*), act_shape(*), reward_shape(*), cterminal_shape(*)
+      !dir$ ignore_tkr (dk)state, (dk)act, (dk)reward, (dk)final_state
+      !GCC$ attributes no_arg_check :: state, act, reward, final_state
+      real(c_float) :: state(*), act(*), reward(*), final_state(*)
+      integer(c_size_t), value :: state_dim, act_dim, reward_dim, final_state_dim
+      integer(c_int64_t) :: state_shape(*), act_shape(*), reward_shape(*), final_state_shape(*)
       integer(c_int), value :: dtype
       integer(int64), value :: stream
       integer(c_int) :: res
@@ -540,7 +540,7 @@ module torchfort
       bind(C, name="torchfort_rl_on_policy_is_ready")
       import
       type(*) :: mname(*)
-      logical :: ready
+      logical(c_bool) :: ready
       integer(c_int) :: res
     end function torchfort_rl_on_policy_is_ready_c
 
@@ -902,23 +902,27 @@ contains
   function torchfort_set_cudnn_benchmark(flag) result(res)
     logical :: flag
     integer(c_int) :: res
-    res = torchfort_set_cudnn_benchmark_c(flag)
+    logical(c_bool) :: flag_c
+    flag_c = flag
+    res = torchfort_set_cudnn_benchmark_c(flag_c)
   end function torchfort_set_cudnn_benchmark
 
   function torchfort_set_cuda_allow_tf32(flag) result(res)
     logical :: flag
     integer(c_int) :: res
-    res = torchfort_set_cuda_allow_tf32_c(flag)
+    logical(c_bool) :: flag_c
+    flag_c = flag
+    res = torchfort_set_cuda_allow_tf32_c(flag_c)
   end function torchfort_set_cuda_allow_tf32
 
   function torchfort_set_manual_seed(seed) result(res)
-    integer(c_int) :: seed
+    integer(c_int), value :: seed
     integer(c_int) :: res
     res = torchfort_set_manual_seed_c(seed)
   end function torchfort_set_manual_seed
 
   function torchfort_set_cuda_manual_seed(seed) result(res)
-    integer(c_int) :: seed
+    integer(c_int), value :: seed
     integer(c_int) :: res
     res = torchfort_set_cuda_manual_seed_c(seed)
   end function torchfort_set_cuda_manual_seed
@@ -2213,11 +2217,11 @@ contains
 
   ! Training routines
   function torchfort_rl_off_policy_update_replay_buffer_float_1d_1d(mname, state_old, act_old, state_new, &
-                                                                    reward, terminal, stream) result(res)
+                                                                    reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state_old(:), state_new(:), act_old(:)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -2233,25 +2237,25 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
-                                                            reward, cterminal, TORCHFORT_FLOAT, stream_)
+                                                            reward, final_state_c, TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_1d_1d
 
   function torchfort_rl_off_policy_update_replay_buffer_float_3d_3d(mname, state_old, act_old, state_new, &
-                                                                    reward, terminal, stream) result(res)
+                                                                    reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state_old(:, :, :), state_new(:, :, :), act_old(:, :, :)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -2267,25 +2271,25 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
-                                                            reward, cterminal, TORCHFORT_FLOAT, stream_)
+                                                            reward, final_state_c, TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_3d_3d
 
   function torchfort_rl_off_policy_update_replay_buffer_float_3d_1d(mname, state_old, act_old, state_new, &
-                                                                    reward, terminal, stream) result(res)
+                                                                    reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state_old(:, :, :), state_new(:, :, :), act_old(:)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -2301,26 +2305,26 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
-                                                            reward, cterminal, TORCHFORT_FLOAT, stream_)
+                                                            reward, final_state_c, TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_3d_1d
 
 #ifdef _CUDA
   function torchfort_rl_off_policy_update_replay_buffer_float_1d_1d_dev(mname, state_old, act_old, state_new, &
-                                                                        reward, terminal, stream) result(res)
+                                                                        reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state_old(:), state_new(:), act_old(:)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -2336,25 +2340,25 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
-                                                            reward, cterminal, TORCHFORT_FLOAT, stream_)
+                                                            reward, final_state_c, TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_1d_1d_dev
 
   function torchfort_rl_off_policy_update_replay_buffer_float_3d_3d_dev(mname, state_old, act_old, state_new, &
-                                                                        reward, terminal, stream) result(res)
+                                                                        reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state_old(:, :, :), state_new(:, :, :), act_old(:, :, :)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -2370,25 +2374,25 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
-                                                            reward, cterminal, TORCHFORT_FLOAT, stream_)
+                                                            reward, final_state_c, TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_3d_3d_dev
   
   function torchfort_rl_off_policy_update_replay_buffer_float_3d_1d_dev(mname, state_old, act_old, state_new, &
-                                                                        reward, terminal, stream) result(res)
+                                                                        reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state_old(:, :, :), state_new(:, :, :), act_old(:)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -2404,34 +2408,34 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_off_policy_update_replay_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
-                                                            reward, cterminal, TORCHFORT_FLOAT, stream_)
+                                                            reward, final_state_c, TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_float_3d_1d_dev
 #endif
 
   function torchfort_rl_off_policy_update_replay_buffer_multi_float_1d_1d(mname, state_old, act_old, state_new, &
-                                                                          reward, terminal, stream) result(res)
+                                                                          reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: state_old(:), state_new(:), act_old(:), reward(:), terminal(:)
+    real(real32) :: state_old(:), state_new(:), act_old(:), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state_old))
     act_dim = size(shape(act_old))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -2440,36 +2444,36 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state_old, state_new, state_dim, state_shape, &
                                                                   act_old, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_multi_float_1d_1d
 
   function torchfort_rl_off_policy_update_replay_buffer_multi_float_3d_3d(mname, state_old, act_old, state_new, &
-                                                                          reward, terminal, stream) result(res)
+                                                                          reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: state_old(:, :, :), state_new(:, :, :), act_old(:, :, :), reward(:), terminal(:)
+    real(real32) :: state_old(:, :, :), state_new(:, :, :), act_old(:, :, :), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state_old))
     act_dim = size(shape(act_old))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -2478,36 +2482,36 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state_old, state_new, state_dim, state_shape, &
                                                                   act_old, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_multi_float_3d_3d
 
   function torchfort_rl_off_policy_update_replay_buffer_multi_float_3d_1d(mname, state_old, act_old, state_new, &
-                                                                          reward, terminal, stream) result(res)
+                                                                          reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: state_old(:, :, :), state_new(:, :, :), act_old(:), reward(:), terminal(:)
+    real(real32) :: state_old(:, :, :), state_new(:, :, :), act_old(:), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state_old))
     act_dim = size(shape(act_old))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -2516,37 +2520,37 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state_old, state_new, state_dim, state_shape, &
                                                                   act_old, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_multi_float_3d_1d
 
 #ifdef _CUDA
   function torchfort_rl_off_policy_update_replay_buffer_multi_float_1d_1d_dev(mname, state_old, act_old, state_new, &
-                                                                              reward, terminal, stream) result(res)
+                                                                              reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: state_old(:), state_new(:), act_old(:), reward(:), terminal(:)
+    real(real32), device :: state_old(:), state_new(:), act_old(:), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state_old))
     act_dim = size(shape(act_old))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -2555,36 +2559,36 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state_old, state_new, state_dim, state_shape, &
                                                                   act_old, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_multi_float_1d_1d_dev
 
   function torchfort_rl_off_policy_update_replay_buffer_multi_float_3d_3d_dev(mname, state_old, act_old, state_new, &
-                                                                              reward, terminal, stream) result(res)
+                                                                              reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: state_old(:, :, :), state_new(:, :, :), act_old(:, :, :), reward(:), terminal(:)
+    real(real32), device :: state_old(:, :, :), state_new(:, :, :), act_old(:, :, :), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state_old))
     act_dim = size(shape(act_old))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -2593,36 +2597,36 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                             state_old, state_new, state_dim, state_shape, &
                                                             act_old, act_dim, act_shape, &
                                                             reward, reward_dim, reward_shape, &
-                                                            terminal, terminal_dim, terminal_shape, &
+                                                            final_state, final_state_dim, final_state_shape, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_multi_float_3d_3d_dev
 
   function torchfort_rl_off_policy_update_replay_buffer_multi_float_3d_1d_dev(mname, state_old, act_old, state_new, &
-                                                                              reward, terminal, stream) result(res)
+                                                                              reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: state_old(:, :, :), state_new(:, :, :), act_old(:), reward(:), terminal(:)
+    real(real32), device :: state_old(:, :, :), state_new(:, :, :), act_old(:), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state_old))
     act_dim = size(shape(act_old))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -2631,18 +2635,18 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state_old)
       act_shape(:) = shape(act_old)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_off_policy_update_replay_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state_old, state_new, state_dim, state_shape, &
                                                                   act_old, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_off_policy_update_replay_buffer_multi_float_3d_1d_dev
@@ -2652,8 +2656,10 @@ contains
   function torchfort_rl_off_policy_is_ready(mname, ready) result(res)
     character(len=*) :: mname
     logical :: ready
+    logical(c_bool) :: ready_c
     integer(c_int) :: res
-    res = torchfort_rl_off_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready)
+    res = torchfort_rl_off_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready_c)
+    ready = ready_c
   end function torchfort_rl_off_policy_is_ready
 
   function torchfort_rl_off_policy_train_step_float(mname, p_loss_val, q_loss_val, stream) result(res)
@@ -3310,11 +3316,11 @@ contains
   ! Training routines
   ! single env tollout buffer updates
   function torchfort_rl_on_policy_update_rollout_buffer_float_1d_1d(mname, state, act, &
-                                                                    reward, terminal, stream) result(res)
+                                                                    reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state(:), act(:)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -3330,26 +3336,26 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, cterminal, &
+                                                            reward, final_state_c, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_1d_1d
 
   function torchfort_rl_on_policy_update_rollout_buffer_float_3d_3d(mname, state, act, &
-                                                                    reward, terminal, stream) result(res)
+                                                                    reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state(:, :, :), act(:, :, :)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -3365,26 +3371,26 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, cterminal, &
+                                                            reward, final_state_c, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_3d_3d
 
   function torchfort_rl_on_policy_update_rollout_buffer_float_3d_1d(mname, state, act, &
-                                                                    reward, terminal, stream) result(res)
+                                                                    reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32) :: state(:, :, :), act(:)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -3400,27 +3406,27 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, cterminal, &
+                                                            reward, final_state_c, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_3d_1d
 
 #ifdef _CUDA
   function torchfort_rl_on_policy_update_rollout_buffer_float_1d_1d_dev(mname, state, act, &
-                                                                        reward, terminal, stream) result(res)
+                                                                        reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state(:), act(:)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -3436,26 +3442,26 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, cterminal, &
+                                                            reward, final_state_c, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_1d_1d_dev
 
   function torchfort_rl_on_policy_update_rollout_buffer_float_3d_3d_dev(mname, state, act, &
-                                                                        reward, terminal, stream) result(res)
+                                                                        reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state(:, :, :), act(:, :, :)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -3471,26 +3477,26 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, cterminal, &
+                                                            reward, final_state_c, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_3d_3d_dev
 
   function torchfort_rl_on_policy_update_rollout_buffer_float_3d_1d_dev(mname, state, act, &
-                                                                        reward, terminal, stream) result(res)
+                                                                        reward, final_state, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: state(:, :, :), act(:)
     real(real32) :: reward
-    logical :: terminal
+    logical :: final_state
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -3506,16 +3512,16 @@ contains
     block
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
-      logical(c_bool) :: cterminal
+      logical(c_bool) :: final_state_c
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
-      cterminal = terminal
+      final_state_c = final_state
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_c([trim(mname) // C_NULL_CHAR], &
                                                             state, state_dim, state_shape, &
                                                             act, act_dim, act_shape, &
-                                                            reward, cterminal, &
+                                                            reward, final_state_c, &
                                                             TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_float_3d_1d_dev
@@ -3524,19 +3530,19 @@ contains
   
   ! multi env tollout buffer updates
   function torchfort_rl_on_policy_update_rollout_buffer_multi_float_1d_1d(mname, state, act, &
-                                                                          reward, terminal, stream) result(res)
+                                                                          reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: state(:), act(:), reward(:), terminal(:)
+    real(real32) :: state(:), act(:), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state))
     act_dim = size(shape(act))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 	
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -3545,36 +3551,36 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
-      terminal_shape = shape(terminal)
+      final_state_shape = shape(final_state)
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_1d_1d
 
   function torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_3d(mname, state, act, &
-                                                                          reward, terminal, stream) result(res)
+                                                                          reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: state(:, :, :), act(:, :, :), reward(:), terminal(:)
+    real(real32) :: state(:, :, :), act(:, :, :), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state))
     act_dim = size(shape(act))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -3583,36 +3589,36 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_3d
 
   function torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_1d(mname, state, act, &
-                                                                          reward, terminal, stream) result(res)
+                                                                          reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: state(:, :, :), act(:), reward(:), terminal(:)
+    real(real32) :: state(:, :, :), act(:), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state))
     act_dim = size(shape(act))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -3621,36 +3627,36 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_1d
 
   function torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d(mname, state, act, &
-                                                                          reward, terminal, stream) result(res)
+                                                                          reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: state(:, :, :, :), act(:, :), reward(:), terminal(:)
+    real(real32) :: state(:, :, :, :), act(:, :), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state))
     act_dim = size(shape(act))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -3659,37 +3665,37 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d
 
 #ifdef _CUDA
   function torchfort_rl_on_policy_update_rollout_buffer_multi_float_1d_1d_dev(mname, state, act, &
-                                                                              reward, terminal, stream) result(res)
+                                                                              reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: state(:), act(:), reward(:), terminal(:)
+    real(real32), device :: state(:), act(:), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state))
     act_dim = size(shape(act))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -3698,32 +3704,32 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_1d_1d_dev
 
   function torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_3d_dev(mname, state, act, &
-                                                                              reward, terminal, stream) result(res)
+                                                                              reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: state(:, :, :), act(:, :, :), reward(:), terminal(:)
+    real(real32), device :: state(:, :, :), act(:, :, :), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state))
     act_dim = size(shape(act))
     reward_dim = size(shape(reward))
@@ -3735,36 +3741,36 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_3d_dev
 
   function torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_1d_dev(mname, state, act, &
-                                                                              reward, terminal, stream) result(res)
+                                                                              reward, final_state, stream) result(res)
       character(len=*) :: mname
-      real(real32), device :: state(:, :, :), act(:), reward(:), terminal(:)
+      real(real32), device :: state(:, :, :), act(:), reward(:), final_state(:)
       integer(int64), optional :: stream
       integer(c_int) :: res
 
       integer(int64) :: stream_
 
-      integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+      integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
       state_dim = size(shape(state))
       act_dim = size(shape(act))
       reward_dim = size(shape(reward))
-      terminal_dim = size(shape(terminal))
+      final_state_dim = size(shape(final_state))
 
       stream_ = 0
       if (present(stream)) stream_ = stream
@@ -3773,36 +3779,36 @@ contains
         integer(c_int64_t) :: state_shape(state_dim)
         integer(c_int64_t) :: act_shape(act_dim)
         integer(c_int64_t) :: reward_shape(reward_dim)
-        integer(c_int64_t) :: terminal_shape(terminal_dim)
+        integer(c_int64_t) :: final_state_shape(final_state_dim)
 
         state_shape(:) = shape(state)
         act_shape(:) = shape(act)
         reward_shape(:) = shape(reward)
-        terminal_shape(:) = shape(terminal)
+        final_state_shape(:) = shape(final_state)
 
         res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                     state, state_dim, state_shape, &
                                                                     act, act_dim, act_shape, &
                                                                     reward, reward_dim, reward_shape, &
-                                                                    terminal, terminal_dim, terminal_shape, &
+                                                                    final_state, final_state_dim, final_state_shape, &
                                                                     TORCHFORT_FLOAT, stream_)
       end block
     end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_3d_1d_dev
 
     function torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d_dev(mname, state, act, &
-                                                                                reward, terminal, stream) result(res)
+                                                                                reward, final_state, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: state(:, :, :, :), act(:, :), reward(:), terminal(:)
+    real(real32), device :: state(:, :, :, :), act(:, :), reward(:), final_state(:)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
     integer(int64) :: stream_
 
-    integer(c_size_t) :: state_dim, act_dim, reward_dim, terminal_dim
+    integer(c_size_t) :: state_dim, act_dim, reward_dim, final_state_dim
     state_dim = size(shape(state))
     act_dim = size(shape(act))
     reward_dim = size(shape(reward))
-    terminal_dim = size(shape(terminal))
+    final_state_dim = size(shape(final_state))
 
     stream_ = 0
     if (present(stream)) stream_ = stream
@@ -3811,18 +3817,18 @@ contains
       integer(c_int64_t) :: state_shape(state_dim)
       integer(c_int64_t) :: act_shape(act_dim)
       integer(c_int64_t) :: reward_shape(reward_dim)
-      integer(c_int64_t) :: terminal_shape(terminal_dim)
+      integer(c_int64_t) :: final_state_shape(final_state_dim)
 
       state_shape(:) = shape(state)
       act_shape(:) = shape(act)
       reward_shape(:) = shape(reward)
-      terminal_shape(:) = shape(terminal)
+      final_state_shape(:) = shape(final_state)
 
       res =  torchfort_rl_on_policy_update_rollout_buffer_multi_c([trim(mname) // C_NULL_CHAR], &
                                                                   state, state_dim, state_shape, &
                                                                   act, act_dim, act_shape, &
                                                                   reward, reward_dim, reward_shape, &
-                                                                  terminal, terminal_dim, terminal_shape, &
+                                                                  final_state, final_state_dim, final_state_shape, &
                                                                   TORCHFORT_FLOAT, stream_)
     end block
   end function torchfort_rl_on_policy_update_rollout_buffer_multi_float_4d_2d_dev
@@ -3838,9 +3844,10 @@ contains
   function torchfort_rl_on_policy_is_ready(mname, ready) result(res)
     character(len=*) :: mname
     logical :: ready
+    logical(c_bool) :: ready_c
     integer(c_int) :: res
-
-    res = torchfort_rl_on_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready)
+    res = torchfort_rl_on_policy_is_ready_c([trim(mname) // C_NULL_CHAR], ready_c)
+    ready = ready_c
   end function torchfort_rl_on_policy_is_ready
 
   function torchfort_rl_on_policy_train_step_float(mname, p_loss_val, q_loss_val, stream) result(res)

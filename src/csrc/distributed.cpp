@@ -120,6 +120,11 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
     THROW_NOT_SUPPORTED("allreduce method does not support non-contiguous tensors.");
   }
 
+  auto dtype = tensor.dtype();
+  if ((dtype == torch::kLong) && average) {
+      THROW_NOT_SUPPORTED("allreduce method for integer-valued tensors does not support averaging.");
+  }
+
 #ifdef ENABLE_GPU
   if (tensor.device().type() == torch::kCUDA) {
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();

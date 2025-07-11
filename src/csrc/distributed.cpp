@@ -48,6 +48,8 @@ static MPI_Datatype get_mpi_dtype(torch::Tensor tensor) {
     return MPI_FLOAT;
   } else if (dtype == torch::kFloat64) {
     return MPI_DOUBLE;
+  } else if (dtype == torch::kLong) {
+    return MPI_INT64_T;
   } else {
     THROW_INVALID_USAGE("Unsupported dtype encountered.");
   }
@@ -116,6 +118,11 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
 
   if (!tensor.is_contiguous()) {
     THROW_NOT_SUPPORTED("allreduce method does not support non-contiguous tensors.");
+  }
+
+  auto dtype = tensor.dtype();
+  if ((dtype == torch::kLong) && average) {
+      THROW_NOT_SUPPORTED("allreduce method for integer-valued tensors does not support averaging.");
   }
 
 #ifdef ENABLE_GPU

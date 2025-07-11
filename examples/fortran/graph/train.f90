@@ -213,7 +213,7 @@ program train
       endif
       mse = mse + val
     enddo
-    write(6, '(a3,1x,f5.2,1x,a4,2x,e12.4)'), "t:", t + dt, "mse:", mse / (num_nodes - num_boundary_nodes)
+    write(6, '(a3,1x,f5.2,1x,a4,2x,e12.4)') "t:", t + dt, "mse:", mse / (num_nodes - num_boundary_nodes)
 
     write(fidx,'(i7.7)') i
     ! Write ground truth

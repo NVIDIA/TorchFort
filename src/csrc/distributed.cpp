@@ -48,6 +48,9 @@ static MPI_Datatype get_mpi_dtype(torch::Tensor tensor) {
     return MPI_FLOAT;
   } else if (dtype == torch::kFloat64) {
     return MPI_DOUBLE;
+  } else if (dtype == torch::kLong) {
+    return MPI_INT64_T;
+  }
   } else {
     THROW_INVALID_USAGE("Unsupported dtype encountered.");
   }

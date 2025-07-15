@@ -63,6 +63,8 @@ static ncclDataType_t get_nccl_dtype(torch::Tensor tensor) {
     return ncclFloat;
   } else if (dtype == torch::kFloat64) {
     return ncclDouble;
+  } else if (dtype == torch::kLong) {
+    return ncclInt64;
   } else {
     THROW_INVALID_USAGE("Unsupported dtype encountered.");
   }

@@ -43,6 +43,7 @@ foreach(tgt ${cart_pole_example_targets})
       ${CUDAToolkit_INCLUDE_DIRS}
     )
     target_link_libraries(${tgt} PRIVATE CUDA::cudart)
+    target_compile_definitions(${tgt} PRIVATE ENABLE_GPU)
   endif()
 endforeach()
 

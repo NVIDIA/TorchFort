@@ -103,6 +103,7 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
     // Setting up loss
     if (config["loss"]) {
       models[name].loss = get_loss(config["loss"]);
+      models[name].loss->to(get_device(device));
     }
 
     // Setting up optimizer

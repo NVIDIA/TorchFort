@@ -1,0 +1,49 @@
+name: "Documentation"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-documentation:
+    runs-on: ubuntu-latest
+    name: "Build Documentation"
+
+    steps:
+    - name: "Checkout code"
+      uses: actions/checkout@v4
+
+    - name: "Install dependencies"
+      run: |
+        sudo apt-get update && sudo apt-get install -y doxygen
+        pip install -r docs/requirements.txt
+
+    - name: "Build documentation"
+      run: |
+        cd docs
+        export TORCHFORT_GIT_SHA=${{ github.event.pull_request.head.sha || github.sha }}
+        make html
+
+    - name: "Upload documentation"
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: docs/_build/html
+
+
+  deploy-documentation:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    needs: build-documentation
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{steps.deployment.outputs.page_url}}
+    steps:
+    - name: "Deploy documentation"
+      id: deployment
+      uses: actions/deploy-pages@v4

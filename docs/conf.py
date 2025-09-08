@@ -19,7 +19,7 @@ import os
 
 # -- Project information -----------------------------------------------------
 
-project = 'torchfort'
+project = 'TorchFort'
 copyright = '2023-2025, NVIDIA Corporation'
 author = 'NVIDIA Corporation'
 

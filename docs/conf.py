@@ -12,19 +12,19 @@ import sphinx_rtd_theme
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
+import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'torchfort'
-copyright = '2023, NVIDIA Corporation'
+project = 'TorchFort'
+copyright = '2023-2025, NVIDIA Corporation'
 author = 'NVIDIA Corporation'
 
-# The full version, including alpha/beta/rc tags
-release = '2023'
+version = os.getenv("TORCHFORT_GIT_SHA", default="N/A")
+#release = version
 
 
 # -- General configuration ---------------------------------------------------
@@ -61,10 +61,11 @@ def setup(app):
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+#html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 html_theme_options = {
-  'navigation_depth': 6
+    "collapse_navigation" : False,
+    "navigation_depth" : 6,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

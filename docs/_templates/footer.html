@@ -1,0 +1,5 @@
+{% extends "!footer.html" %}
+{%- block contentinfo %}
+{{ super() }}
+<br> Documentation built from commit <code>{{ version }}</code>.
+{% endblock %}

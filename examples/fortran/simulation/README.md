@@ -70,12 +70,12 @@ $ ./train --configfile config_mlp_native.yaml
 ```
 
 The training will proceed for 100,000 steps, printing information on the loss every 100 iterations. This is followed by validation testing of the trained
-model for 1,000 steps, with model input, target output (label), and predicted output fields writted to HDF5 files every 10 steps.
+model for 1,000 steps, with model input, target output (label), and predicted output fields written to text files every 10 steps.
 
 To visualize the output of the trained model, we've provided a `visualize.py` Python script to load the validation output samples and produce
 a short video of the results. An example command to run this script is:
 ```
-$ python visualize.py --input_path <path to directory containing validation HDF files> --output_path <path to directory to write output video>
+$ python visualize.py --input_path <path to directory containing validation text files> --output_path <path to directory to write output video>
 ```
 
 The resulting video for the trained MLP should look like this:

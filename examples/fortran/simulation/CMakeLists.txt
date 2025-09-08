@@ -1,4 +1,3 @@
-find_package(HDF5 COMPONENTS Fortran REQUIRED)
 
 set(fortran_example_targets
   train
@@ -26,10 +25,8 @@ foreach(tgt ${fortran_example_targets})
     PRIVATE
     ${CMAKE_BINARY_DIR}/include
     ${MPI_Fortran_INCLUDE_DIRS}
-    ${HDF5_Fortran_INCLUDE_DIRS}
   )
   target_link_libraries(${tgt} PRIVATE MPI::MPI_Fortran)
-  target_link_libraries(${tgt} PRIVATE hdf5::hdf5_fortran)
   target_link_libraries(${tgt} PRIVATE "${PROJECT_NAME}_fort")
   target_link_libraries(${tgt} PRIVATE ${PROJECT_NAME})
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")

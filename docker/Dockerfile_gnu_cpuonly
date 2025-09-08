@@ -39,25 +39,11 @@ RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \
     make -j$(nproc) && make install
 ENV LD_LIBRARY_PATH /opt/yaml-cpp/lib:${LD_LIBRARY_PATH}
 
-# Install HDF5
-RUN wget https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_14_3.tar.gz && \
-    tar xzf hdf5-1_14_3.tar.gz && \
-    cd hdf5-hdf5-1_14_3 && \
-    CC=mpicc FC=mpifort \
-    ./configure --enable-parallel \
-                --enable-fortran \
-                --prefix=/opt/hdf5 && \
-    make -j$(nproc) install && \
-    cd .. && \
-    rm -rf hdf5-hdf5-1_14_3 hdf5-1_14_3.tar.gz
-ENV LD_LIBRARY_PATH /opt/hdf5/lib:$LD_LIBRARY_PATH
-
 # Install additional Python dependencies
-RUN pip3 install wandb ruamel-yaml h5py matplotlib pygame moviepy
+RUN pip3 install wandb ruamel-yaml matplotlib pygame moviepy
 
 # Install TorchFort without GPU support
 ENV FC=gfortran
-ENV HDF5_ROOT=/opt/hdf5
 COPY . /torchfort
 RUN cd /torchfort && mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/torchfort \

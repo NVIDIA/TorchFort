@@ -30,7 +30,6 @@ For a native installation TorchFort provides a `CMakeList.txt <https://github.co
   - ``yaml-cpp`` from https://github.com/jbeder/yaml-cpp.git
   - MPI
   - NVIDIA Collective Communication Library (``NCCL``)
-  - ``HDF5``
   - the Python modules specified in `requirements.txt <https://github.com/NVIDIA/TorchFort/blob/master/requirements.txt>`_
   - GNU or `NVHPC <https://developer.nvidia.com/hpc-sdk>`_ compilers. NVHPC compilers are **required** if CUDA Fortran device array support is desired.
 

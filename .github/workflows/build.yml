@@ -34,7 +34,7 @@ jobs:
 
     - name: "Build docker container"
       run: |
-        docker build -t torchfort -f ${{ matrix.dockerfile }} .
+        docker build -t torchfort -f docker/${{ matrix.dockerfile }} .
 
     - name: "Run tests"
       if: ${{ matrix.run_tests }} == true

@@ -13,7 +13,8 @@ jobs:
             dockerfile: "Dockerfile_gnu_cpuonly"
 
     name: ${{ matrix.name }}
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
+    #if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
+    if: github.event.comment.body == '/build'
     runs-on: ubuntu-latest
 
     steps:

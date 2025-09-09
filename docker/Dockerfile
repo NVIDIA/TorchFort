@@ -1,31 +1,28 @@
-FROM nvcr.io/nvidia/cuda:12.8.1-devel-ubuntu22.04
+FROM  nvcr.io/nvidia/nvhpc:25.7-devel-cuda12.9-ubuntu22.04
+
+SHELL ["/bin/bash", "-c"]
+
+ENV CUDA_HOME /opt/nvidia/hpc_sdk/Linux_x86_64/25.7/cuda
+ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.7/cuda/12.9/extras/CUPTI/lib64:$LD_LIBRARY_PATH
 
 # Install System Dependencies
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt update -y && \
-    apt install -y curl unzip wget cmake && \
+    apt install -y wget cmake && \
     apt install -y python3 python-is-python3 python3-pip python3-pybind11 && \
-    apt install -y git vim gfortran doxygen && \
-    apt install -y libibverbs-dev ibverbs-utils numactl
+    apt install -y vim gfortran
 
-# Install NVHPC SDK
-RUN wget https://developer.download.nvidia.com/hpc-sdk/25.3/nvhpc_2025_253_Linux_x86_64_cuda_12.8.tar.gz && \
-    tar xpzf nvhpc_2025_253_Linux_x86_64_cuda_12.8.tar.gz && \
-    nvhpc_2025_253_Linux_x86_64_cuda_12.8/install --quiet && \
-    rm -rf nvhpc_2025_253_Linux_x86_64_cuda_12.8 nvhpc_2025_253_Linux_x86_64_cuda_12.8.tar.gz
+# Install newer NCCL for compatibility with PyTorch 2.8, remove conflucting version from NVHPC SDK
+RUN cd /opt && \
+    git clone --branch v2.27.7-1 https://github.com/NVIDIA/nccl.git && \
+    cd nccl && \
+    make -j$(nproc) src.build NVCC_GENCODE="-gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90" && \
+    rm -rf /opt/nvidia/hpc_sdk/Linux_x86_64/25.7/comm_libs/nccl/
+ENV LD_LIBRARY_PATH /opt/nccl/build/lib:$LD_LIBRARY_PATH
 
-ENV PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/compilers/bin:$PATH
-ENV PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/comm_libs/mpi/bin:$PATH
-ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda/lib64:$LD_LIBRARY_PATH
-ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/comm_libs/mpi/lib:$LD_LIBRARY_PATH
-ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/comm_libs/nvshmem/lib:$LD_LIBRARY_PATH
-ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/math_libs/lib64:$LD_LIBRARY_PATH
-ENV CUDA_HOME /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda
-
-RUN echo "source /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/comm_libs/12.8/hpcx/latest/hpcx-init.sh; hpcx_load" >>  /root/.bashrc
-
-# Install PyTorch
-RUN pip3 install torch==2.7.0
+# Install PyTorch (and select dependencies)
+RUN pip3 install --no-deps torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129 && \
+    pip3 install --no-deps nvidia-cudnn-cu12==9.10.2.21 nvidia-cusparselt-cu12==0.7.1 nvidia-cufile-cu12==1.14.1.1
 
 # Install yaml-cpp
 RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \
@@ -45,7 +42,7 @@ RUN pip3 install wandb ruamel-yaml matplotlib pygame moviepy
 ENV FC=nvfortran
 COPY . /torchfort
 RUN cd /torchfort && mkdir build && cd build && \
-    CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda \
+    CUDA_PATH=$CUDA_HOME \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/torchfort \
     -DCMAKE_CXX_COMPILER=`which g++` \
     -DTORCHFORT_YAML_CPP_ROOT=/opt/yaml-cpp \

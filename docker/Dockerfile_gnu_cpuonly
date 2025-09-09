@@ -1,32 +1,19 @@
 FROM ubuntu:22.04
 
+SHELL ["/bin/bash", "-c"]
+
 # Install System Dependencies
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt update -y && \
     apt install -y build-essential && \
-    apt install -y curl unzip wget cmake && \
+    apt install -y wget cmake && \
     apt install -y python3 python-is-python3 python3-pip python3-pybind11 && \
-    apt install -y git vim gfortran doxygen && \
-    apt install -y libibverbs-dev ibverbs-utils numactl
-
-# Download OpenMPI and compile with Fortran support
-RUN cd /opt && \
-    wget https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-5.0.5.tar.gz && \
-    tar xzf openmpi-5.0.5.tar.gz && \
-    cd openmpi-5.0.5 && \
-    FC=gfortran CC=gcc CXX=g++ ./configure --prefix=/opt/openmpi \
-                                           --with-libevent=internal \
-                                           --enable-mpi1-compatibility \
-                                           --without-xpmem \
-                                           --with-slurm && \
-    make -j$(nproc) install && \
-    cd /opt && rm -rf openmpi-5.0.5 && rm openmpi-5.0.5.tar.gz 
-
-ENV PATH /opt/openmpi/bin:$PATH
-ENV LD_LIBRARY_PATH /opt/openmpi/lib:$LD_LIBRARY_PATH
+    apt install -y git vim gfortran && \
+    apt install -y libibverbs-dev ibverbs-utils numactl && \
+    apt install -y openmpi-bin libopenmpi-dev
 
 # Install PyTorch
-RUN pip3 install torch==2.7.0 --index-url https://download.pytorch.org/whl/cpu
+RUN pip3 install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
 
 # Install yaml-cpp
 RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \

@@ -12,17 +12,15 @@ RUN apt update -y && \
     apt install -y python3 python-is-python3 python3-pip python3-pybind11 && \
     apt install -y vim gfortran
 
-# Install newer NCCL for compatibility with PyTorch 2.8, remove conflucting version from NVHPC SDK
-RUN cd /opt && \
-    git clone --branch v2.27.7-1 https://github.com/NVIDIA/nccl.git && \
-    cd nccl && \
-    make -j$(nproc) src.build NVCC_GENCODE="-gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90" && \
-    rm -rf /opt/nvidia/hpc_sdk/Linux_x86_64/25.7/comm_libs/nccl/
-ENV LD_LIBRARY_PATH /opt/nccl/build/lib:$LD_LIBRARY_PATH
-
 # Install PyTorch (and select dependencies)
 RUN pip3 install --no-deps torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129 && \
-    pip3 install --no-deps nvidia-cudnn-cu12==9.10.2.21 nvidia-cusparselt-cu12==0.7.1 nvidia-cufile-cu12==1.14.1.1
+    pip3 install --no-deps nvidia-cudnn-cu12==9.10.2.21 nvidia-cusparselt-cu12==0.7.1 nvidia-cufile-cu12==1.14.1.1 nvidia-nccl-cu12==2.27.3
+
+# Remove conflicting NCCL version from NVHPC SDK, add libnccl.so symlink to pip installed NCCL
+RUN rm -rf /opt/nvidia/hpc_sdk/Linux_x86_64/25.7/comm_libs/nccl/ && \
+    cd /usr/local/lib/python3.10/dist-packages/nvidia/nccl/lib && \
+    ln -s libnccl.so.2 libnccl.so
+ENV LD_LIBRARY_PATH /usr/local/lib/python3.10/dist-packages/nvidia/nccl/lib:$LD_LIBRARY_PATH
 
 # Install yaml-cpp
 RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \
@@ -46,7 +44,7 @@ RUN cd /torchfort && mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/torchfort \
     -DCMAKE_CXX_COMPILER=`which g++` \
     -DTORCHFORT_YAML_CPP_ROOT=/opt/yaml-cpp \
-    -DTORCHFORT_NCCL_ROOT=/opt/nccl/build \
+    -DTORCHFORT_NCCL_ROOT=/usr/local/lib/python3.10/dist-packages/nvidia/nccl \
     -DTORCHFORT_BUILD_EXAMPLES=1 \
     -DTORCHFORT_BUILD_TESTS=1 \
     -DCMAKE_PREFIX_PATH="`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`" \
@@ -55,5 +53,3 @@ RUN cd /torchfort && mkdir build && cd build && \
     cd / && rm -rf torchfort
 ENV LD_LIBRARY_PATH /opt/torchfort/lib:${LD_LIBRARY_PATH}
 ENV LD_LIBRARY_PATH /usr/local/lib/python3.10/dist-packages/torch/lib:${LD_LIBRARY_PATH}
-
-ENTRYPOINT bash

@@ -15,7 +15,6 @@ foreach(tgt ${fortran_example_targets})
     PRIVATE
     ${CMAKE_BINARY_DIR}/include
     ${MPI_Fortran_INCLUDE_DIRS}
-    ${HDF5_Fortran_INCLUDE_DIRS}
   )
   target_link_libraries(${tgt} PRIVATE MPI::MPI_Fortran)
   target_link_libraries(${tgt} PRIVATE "${PROJECT_NAME}_fort")

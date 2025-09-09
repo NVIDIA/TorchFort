@@ -118,34 +118,27 @@ module simulation
     end subroutine run_simulation_step
 
     subroutine write_sample(sample, fname)
-      use hdf5
       character(len=*) :: fname
       real(real32), intent(in) :: sample(n, n)
-      integer(HID_T) :: in_file_id
-      integer(HID_T) :: out_file_id
-      integer(HID_T) :: dset_id
-      integer(HID_T) :: dspace_id
+      integer :: unit, i, j, err
 
-      integer :: err
+      !$acc update host(sample) if(simulation_device >= 0)
 
-      block
-        integer(HSIZE_T) :: dims(size(shape(sample)))
+      open(newunit=unit, file=fname, status='replace', action='write', iostat=err)
+      if (err /= 0) then
+        write(*,*) 'Error opening file: ', fname
+        return
+      endif
 
-        !$acc update host(sample) if(simulation_device >= 0)
+      do j = 1, n
+        do i = 1, n-1
+          write(unit, '(ES14.6E2)', advance='no') sample(i, j)
+          write(unit, '(A)', advance='no') ' '
+        end do
+        write(unit, '(ES14.6E2)') sample(n, j)
+      end do
 
-        call h5open_f(err)
-        call h5fcreate_f (fname, H5F_ACC_TRUNC_F, out_file_id, err)
-
-        dims(:) = shape(sample)
-        call h5screate_simple_f(size(shape(sample)), dims, dspace_id, err)
-        call h5dcreate_f(out_file_id, "data", H5T_NATIVE_REAL, dspace_id, dset_id, err)
-        call h5dwrite_f(dset_id, H5T_NATIVE_REAL, sample, dims, err)
-        call h5dclose_f(dset_id, err)
-        call h5sclose_f(dspace_id, err)
-
-        call h5fclose_f(out_file_id, err)
-        call h5close_f(err)
-      end block
+      close(unit)
     end subroutine write_sample
 
 end module

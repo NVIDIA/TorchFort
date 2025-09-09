@@ -15,4 +15,3 @@ moviepy
 
 # Supervised learning example visualization related
 matplotlib
-h5py

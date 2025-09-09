@@ -59,11 +59,17 @@ def main(args):
     ax2.set_ylabel(r"$y$")
 
     c = ax1.tricontourf(triangulation, np.loadtxt(reffiles[0]), levels=np.linspace(-0.1, 1.0, 15))
-    artists += c.collections
+    try:
+      artists += c.collections
+    except:
+      artists.append(c)
     c = ax1.triplot(triangulation, linewidth=0.3, color='black')
     artists.append(c)
     c = ax2.tricontourf(triangulation, np.loadtxt(predfiles[0]), levels=np.linspace(-0.1, 1.0, 15))
-    artists += c.collections
+    try:
+      artists += c.collections
+    except:
+      artists.append(c)
     c = ax2.triplot(triangulation, linewidth=0.3, color='black')
     artists.append(c)
 
@@ -79,11 +85,17 @@ def main(args):
         artists.clear()
 
         c = ax1.tricontourf(triangulation, np.loadtxt(reffiles[i]), levels=np.linspace(-0.1, 1.0, 15))
-        artists += c.collections
+        try:
+          artists += c.collections
+        except:
+          artists.append(c)
         c = ax1.triplot(triangulation, linewidth=0.3, color='black')
         artists.append(c)
         c = ax2.tricontourf(triangulation, np.loadtxt(predfiles[i]), levels=np.linspace(-0.1, 1.0, 15))
-        artists += c.collections
+        try:
+          artists += c.collections
+        except:
+          artists.append(c)
         c = ax2.triplot(triangulation, linewidth=0.3, color='black')
         artists.append(c)
 

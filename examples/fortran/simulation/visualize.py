@@ -28,7 +28,6 @@
 
 import argparse as ap
 import glob
-import h5py as h5
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, PillowWriter
 import numpy as np
@@ -59,21 +58,27 @@ def main(args):
     ax4.set_title(r"1D sample along dotted line")
     ax4.set_xlabel(r"$x$")
 
-    with h5.File(infiles[0], 'r') as f:
-        idata = f["data"][...]
-    with h5.File(labelfiles[0], 'r') as f:
-        ldata = f["data"][...]
-    with h5.File(outfiles[0], 'r') as f:
-        odata = f["data"][...]
+    idata = np.loadtxt(infiles[0])
+    ldata = np.loadtxt(labelfiles[0])
+    odata = np.loadtxt(outfiles[0])
 
     c = ax1.contourf(idata)
-    artists += c.collections
+    try:
+      artists += c.collections
+    except:
+      artists.append(c)
     c = ax1.hlines(idata.shape[0]//2 + 1, 0, idata.shape[1]-1, colors="black", linestyles="dashed")
     artists.append(c)
     c = ax2.contourf(ldata)
-    artists += c.collections
+    try:
+      artists += c.collections
+    except:
+      artists.append(c)
     c = ax3.contourf(odata)
-    artists += c.collections
+    try:
+      artists += c.collections
+    except:
+      artists.append(c)
     c, = ax4.plot(idata[idata.shape[0]//2 + 1,:], 'k')
     artists.append(c)
     c, = ax4.plot(ldata[idata.shape[0]//2 + 1,:], 'b')
@@ -89,20 +94,26 @@ def main(args):
             c.remove()
         artists.clear()
 
-        with h5.File(infiles[i], 'r') as f:
-            idata = f["data"][...]
-        with h5.File(labelfiles[i], 'r') as f:
-            ldata = f["data"][...]
-        with h5.File(outfiles[i], 'r') as f:
-            odata = f["data"][...]
+        idata = np.loadtxt(infiles[i])
+        ldata = np.loadtxt(labelfiles[i])
+        odata = np.loadtxt(outfiles[i])
         c = ax1.contourf(idata)
-        artists += c.collections
+        try:
+          artists += c.collections
+        except:
+          artists.append(c)
         c = ax1.hlines(idata.shape[0]//2 + 1, 0, idata.shape[1]-1, colors="black", linestyles="dashed")
         artists.append(c)
         c = ax2.contourf(ldata)
-        artists += c.collections
+        try:
+          artists += c.collections
+        except:
+          artists.append(c)
         c = ax3.contourf(odata)
-        artists += c.collections
+        try:
+          artists += c.collections
+        except:
+          artists.append(c)
         c, = ax4.plot(idata[idata.shape[0]//2 + 1,:], 'k')
         artists.append(c)
         c, = ax4.plot(ldata[idata.shape[0]//2 + 1,:], 'b')
@@ -121,7 +132,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = ap.ArgumentParser()
-    parser.add_argument("--input_path", type=str, help="Directory containing validation hdf5 files", required=True)
+    parser.add_argument("--input_path", type=str, help="Directory containing validation text files", required=True)
     parser.add_argument("--output_path", type=str, help="Directory to store the generated videos", required=True)
     args = parser.parse_args()
 

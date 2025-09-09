@@ -41,7 +41,7 @@ subroutine print_help_message
   "\t--nval_steps\n" // &
   "\t\tNumber of validation steps to run. (default: 1000) \n" // &
   "\t--val_write_freq\n" // &
-  "\t\tFrequency to write validation HDF5 files. (default: 10) \n" // &
+  "\t\tFrequency to write validation sample files. (default: 10) \n" // &
   "\t--checkpoint_dir\n" // &
   "\t\tCheckpoint directory to load. (default: don't load checkpoint) \n" // &
   "\t--output_model_name\n" // &
@@ -341,11 +341,11 @@ program train_distributed
     if (rank == 0 .and. mod(i-1, val_write_freq) == 0) then
       print*, "writing validation sample:", i, "mse:", mse
       write(idx,'(i7.7)') i
-      filename = 'input_'//idx//'.h5'
+      filename = 'input_'//idx//'.txt'
       call write_sample(input(:,:,1,1), filename)
-      filename = 'label_'//idx//'.h5'
+      filename = 'label_'//idx//'.txt'
       call write_sample(label(:,:,1,1), filename)
-      filename = 'output_'//idx//'.h5'
+      filename = 'output_'//idx//'.txt'
       call write_sample(output(:,:,1,1), filename)
     endif
   end do

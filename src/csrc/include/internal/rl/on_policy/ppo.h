@@ -183,17 +183,17 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
     // of the accumulation procedure
     if ((state->step_train_current + 1) % pq_model.grad_accumulation_steps == 0) {
       if (pq_model.comm) {
-	std::vector<torch::Tensor> grads;
-	grads.reserve(pq_model.model->parameters().size());
-	for (const auto& p : pq_model.model->parameters()) {
-	  grads.push_back(p.grad());
-	}
-	pq_model.comm->allreduce(grads, true);
+        std::vector<torch::Tensor> grads;
+        grads.reserve(pq_model.model->parameters().size());
+        for (const auto& p : pq_model.model->parameters()) {
+          grads.push_back(p.grad());
+        }
+        pq_model.comm->allreduce(grads, true);
       }
-      
+
       // clip
       if (max_grad_norm > 0.) {
-	torch::nn::utils::clip_grad_norm_(pq_model.model->parameters(), max_grad_norm);
+        torch::nn::utils::clip_grad_norm_(pq_model.model->parameters(), max_grad_norm);
       }
 
       // optimizer step

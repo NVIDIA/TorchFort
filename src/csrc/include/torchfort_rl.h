@@ -188,17 +188,18 @@ torchfort_result_t torchfort_rl_off_policy_predict_F(const char* name, void* sta
  *
  * @param[in] name The name of system instance to use, as defined during system creation.
  * @param[in] state A pointer to a memory buffer containing state data.
- * @param[in] state_dim Rank of the state data. Has to equal to state space dimension plus one, where the size of the 
+ * @param[in] state_dim Rank of the state data. Has to equal to state space dimension plus one, where the size of the
  * leading dimension is equal to the batch size.
- * @param[in] state_shape A pointer to an array specifying the shape of the state data. The length has to 
- * be equal to state space dimension plus one, where the size of the leading dimension is equal to the batch size. 
+ * @param[in] state_shape A pointer to an array specifying the shape of the state data. The length has to
+ * be equal to state space dimension plus one, where the size of the leading dimension is equal to the batch size.
  * @param[in] action A pointer to a memory buffer containing action data.
  * @param[in] action_dim Rank of the action data.
  * @param[in] action_shape A pointer to an array specifying the shape of the action data. The length has to
  * be equal to action space dimension plus one, where the size of the leading dimension is equal to the batch size.
  * @param[in, out] reward A pointer to a memory buffer to write reward data.
  * @param[in] reward_dim Rank of the reward data. Has to be equal to 1.
- * @param[in] reward_shape A pointer to an array specifying the shape of the reward data. Length has to be equal to batch size.
+ * @param[in] reward_shape A pointer to an array specifying the shape of the reward data. Length has to be equal to
+ * batch size.
  * @param[out] dtype The TorchFort datatype to use for this operation.
  * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
@@ -275,29 +276,25 @@ torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_F(const char* na
  * @param[in] reward_dim A Rank of the reward data. Has to be equal to 1.
  * @param[in] reward_shape A pointer to an array specifying the shape of the reward data. Length has to be equal to 1
  * and the number of entries should be equal to n_env.
- * @param[in] final_state A pointer to a memory buffer with final_state data. Values equal to 1 indicate the end of an episode and values
- * equal to 0 indicate states within an episode. No other values should be passed.
+ * @param[in] final_state A pointer to a memory buffer with final_state data. Values equal to 1 indicate the end of an
+ * episode and values equal to 0 indicate states within an episode. No other values should be passed.
  * @param[in] final_state_dim A Rank of the final_state data. Has to be equal to 1.
- * @param[in] final_state_shape A pointer to an array specifying the shape of the final_state data. Length has to be equal to 1
- * and the number of entries should be equal to n_env.
+ * @param[in] final_state_shape A pointer to an array specifying the shape of the final_state data. Length has to be
+ * equal to 1 and the number of entries should be equal to n_env.
  * @param[out] dtype The TorchFort datatype to use for this operation.
  * @param[out] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_multi(const char* name, void* state_old,
-								      void* state_new, size_t state_dim, int64_t* state_shape,
-								      void* action_old, size_t action_dim, int64_t* action_shape,
-								      void* reward, size_t reward_dim, int64_t* reward_shape,
-								      void* final_state, size_t final_size_dim, int64_t* final_state_shape,
-								      torchfort_datatype_t dtype, cudaStream_t stream);
+torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_multi(
+    const char* name, void* state_old, void* state_new, size_t state_dim, int64_t* state_shape, void* action_old,
+    size_t action_dim, int64_t* action_shape, void* reward, size_t reward_dim, int64_t* reward_shape, void* final_state,
+    size_t final_size_dim, int64_t* final_state_shape, torchfort_datatype_t dtype, cudaStream_t stream);
 
-torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_multi_F(const char* name, void* state_old,
-									void* state_new, size_t state_dim, int64_t* state_shape,
-									void* action_old, size_t action_dim, int64_t* action_shape,
-									void* reward, size_t reward_dim, int64_t* reward_shape,
-									void* final_state, size_t final_size_dim, int64_t* final_state_shape,
-									torchfort_datatype_t dtype, cudaStream_t stream);
+torchfort_result_t torchfort_rl_off_policy_update_replay_buffer_multi_F(
+    const char* name, void* state_old, void* state_new, size_t state_dim, int64_t* state_shape, void* action_old,
+    size_t action_dim, int64_t* action_shape, void* reward, size_t reward_dim, int64_t* reward_shape, void* final_state,
+    size_t final_size_dim, int64_t* final_state_shape, torchfort_datatype_t dtype, cudaStream_t stream);
 
 // RL off-policy checkpoint save and loading functions
 /**
@@ -482,15 +479,16 @@ torchfort_result_t torchfort_rl_on_policy_predict_F(const char* name, void* stat
  * @param[in] name The name of system instance to use, as defined during system creation.
  * @param[in] state A pointer to a memory buffer containing state data.
  * @param[in] state_dim Rank of the state data.
- * @param[in] state_shape A pointer to an array specifying the shape of the state data. The length has to be equal to state space 
- * dimension plus one, where the size of the leading dimension is equal to the batch size.
+ * @param[in] state_shape A pointer to an array specifying the shape of the state data. The length has to be equal to
+ * state space dimension plus one, where the size of the leading dimension is equal to the batch size.
  * @param[in] action A pointer to a memory buffer containing action data.
  * @param[in] action_dim Rank of the action data.
- * @param[in] action_shape A pointer to an array specifying the shape of the action data. The length has to be equal to 
+ * @param[in] action_shape A pointer to an array specifying the shape of the action data. The length has to be equal to
  * action space dimension plus one, where the size of the leading dimension is equal to the batch size.
  * @param[in, out] reward A pointer to a memory buffer to write reward data.
  * @param[in] reward_dim Rank of the reward data. Has to be equal to 1.
- * @param[in] reward_shape A pointer to an array specifying the shape of the reward data. Length has to be equal to batch size.
+ * @param[in] reward_shape A pointer to an array specifying the shape of the reward data. Length has to be equal to
+ * batch size.
  * @param[out] dtype The TorchFort datatype to use for this operation.
  * @param[out] stream CUDA stream to enqueue the action prediction operations.
  *
@@ -568,29 +566,25 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* na
  * @param[in] reward_dim A Rank of the reward data. Has to be equal to 1.
  * @param[in] reward_shape A pointer to an array specifying the shape of the reward data. Length has to be equal to 1
  * and the number of entries should be equal to n_env.
- * @param[in] final_state A pointer to a memory buffer with final_state data. Values equal to 1 indicate the end of an episode and values
- * equal to 0 indicate states within an episode. No other values should be passed.
+ * @param[in] final_state A pointer to a memory buffer with final_state data. Values equal to 1 indicate the end of an
+ * episode and values equal to 0 indicate states within an episode. No other values should be passed.
  * @param[in] final_state_dim A Rank of the final_state data. Has to be equal to 1.
- * @param[in] final_state_shape A pointer to an array specifying the shape of the final_state data. Length has to be equal to 1
- * and the number of entries should be equal to n_env. 
+ * @param[in] final_state_shape A pointer to an array specifying the shape of the final_state data. Length has to be
+ * equal to 1 and the number of entries should be equal to n_env.
  * @param[out] dtype The TorchFort datatype to use for this operation.
  * @param[out] stream CUDA stream to enqueue the action prediction operations.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_multi(const char* name,
-								      void* state, size_t state_dim, int64_t* state_shape,
-								      void* action, size_t action_dim, int64_t* action_shape,
-								      void* reward, size_t reward_dim, int64_t* reward_shape,
-								      void* final_state, size_t final_state_dim, int64_t* final_state_shape,
-								      torchfort_datatype_t dtype, cudaStream_t stream);
+torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_multi(
+    const char* name, void* state, size_t state_dim, int64_t* state_shape, void* action, size_t action_dim,
+    int64_t* action_shape, void* reward, size_t reward_dim, int64_t* reward_shape, void* final_state,
+    size_t final_state_dim, int64_t* final_state_shape, torchfort_datatype_t dtype, cudaStream_t stream);
 
-torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_multi_F(const char* name,
-								        void* state, size_t state_dim, int64_t* state_shape,
-								        void* action, size_t action_dim, int64_t* action_shape,
-								        void* reward, size_t reward_dim, int64_t* reward_shape,
-								        void* final_state, size_t final_state_dim, int64_t* final_state_shape,
-								        torchfort_datatype_t dtype, cudaStream_t stream);
+torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_multi_F(
+    const char* name, void* state, size_t state_dim, int64_t* state_shape, void* action, size_t action_dim,
+    int64_t* action_shape, void* reward, size_t reward_dim, int64_t* reward_shape, void* final_state,
+    size_t final_state_dim, int64_t* final_state_shape, torchfort_datatype_t dtype, cudaStream_t stream);
 
 /**
  * @brief Resets the rollout buffer

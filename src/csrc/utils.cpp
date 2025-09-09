@@ -115,5 +115,4 @@ std::vector<double> get_current_lrs(const char* name) {
   return learnings_rates;
 }
 
-
 } // namespace torchfort

@@ -126,7 +126,8 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
 
   inputs->to(model->device());
   labels->to(model->device());
-  if (extra_loss_args) extra_loss_args->to(model->device());
+  if (extra_loss_args)
+    extra_loss_args->to(model->device());
 
   model->train();
   auto opt = models[name].optimizer;
@@ -134,8 +135,8 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
 
   // fwd pass
   auto results = model->forward(inputs->tensors);
-  auto loss =
-      models[name].loss->forward(results, labels->tensors, (extra_loss_args) ? extra_loss_args->tensors : std::vector<torch::Tensor>());
+  auto loss = models[name].loss->forward(results, labels->tensors,
+                                         (extra_loss_args) ? extra_loss_args->tensors : std::vector<torch::Tensor>());
 
   // extract loss
   *loss_val = loss.item<float>();

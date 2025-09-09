@@ -222,8 +222,9 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_train_multiarg(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
-                                            float* loss_val, torchfort_tensor_list_t extra_loss_args, cudaStream_t stream) {
+torchfort_result_t torchfort_train_multiarg(const char* name, torchfort_tensor_list_t inputs,
+                                            torchfort_tensor_list_t labels, float* loss_val,
+                                            torchfort_tensor_list_t extra_loss_args, cudaStream_t stream) {
   using namespace torchfort;
   try {
     torchfort::train_multiarg(name, inputs, labels, loss_val, extra_loss_args, stream);
@@ -415,8 +416,8 @@ torchfort_result_t torchfort_tensor_list_add_tensor(torchfort_tensor_list_t tens
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_tensor_list_add_tensor_F(torchfort_tensor_list_t tensor_list_in, void* data_ptr, size_t dim,
-                                                      int64_t* shape, torchfort_datatype_t dtype) {
+torchfort_result_t torchfort_tensor_list_add_tensor_F(torchfort_tensor_list_t tensor_list_in, void* data_ptr,
+                                                      size_t dim, int64_t* shape, torchfort_datatype_t dtype) {
   using namespace torchfort;
   try {
     auto tensor_list = static_cast<torchfort::TensorList*>(tensor_list_in);

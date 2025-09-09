@@ -38,22 +38,19 @@
 
 namespace torchfort {
 struct TensorList {
-  template <MemoryLayout L, typename T>
-  void add_tensor(T* data, size_t dim, int64_t* shape) {
+  template <MemoryLayout L, typename T> void add_tensor(T* data, size_t dim, int64_t* shape) {
     auto tensor = get_tensor<L>(data, dim, shape);
     tensors.push_back(tensor);
     tensors_original_.push_back(tensor);
   };
 
   void to(torch::Device device, bool non_blocking = false) {
-    for (auto &t : tensors) {
+    for (auto& t : tensors) {
       t = t.to(device, non_blocking);
     }
   };
 
-  void reset() {
-    tensors = tensors_original_;
-  }
+  void reset() { tensors = tensors_original_; }
 
   std::vector<torch::Tensor> tensors;
   // To preserve references to external data, we store the original tensor objects

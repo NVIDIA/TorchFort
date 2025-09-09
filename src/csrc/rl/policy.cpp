@@ -110,8 +110,8 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::forwardNoise(torch::Ten
 
   // account for squashing
   if (squashed_) {
-    log_prob =
-        log_prob - torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
+    log_prob = log_prob -
+               torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
     action = torch::tanh(action);
   }
 
@@ -197,7 +197,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::evalua
 
   // squeeze value
   value = torch::squeeze(value, 1);
-  
+
   return std::make_tuple(log_prob, entropy, value);
 }
 
@@ -214,8 +214,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::forwar
 
   // account for squashing
   if (squashed_) {
-    log_prob =
-        log_prob - torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
+    log_prob = log_prob -
+               torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
     action = torch::tanh(action);
   }
 

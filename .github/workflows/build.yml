@@ -1,9 +1,8 @@
 name: "Build"
 
 on:
-  workflow_dispatch:
-  pull_request:
-    branches: [ master ]
+  issue_comment:
+    types: [created]
 
 jobs:
   build:
@@ -14,7 +13,7 @@ jobs:
             dockerfile: "Dockerfile_gnu_cpuonly"
 
     name: ${{ matrix.name }}
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
     runs-on: ubuntu-latest
 
     steps:

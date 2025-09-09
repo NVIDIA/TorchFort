@@ -42,8 +42,10 @@ namespace torchfort {
 
 namespace rl {
 
-  using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>;
-  using ExtendedBufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>;
+using BufferEntry =
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>;
+using ExtendedBufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
+                                       torch::Tensor, torch::Tensor, torch::Tensor>;
 
 // abstract base class for rollout buffer
 class RolloutBuffer {
@@ -52,12 +54,15 @@ public:
   RolloutBuffer(const RolloutBuffer&) = delete;
   // base constructor
   RolloutBuffer(size_t size, size_t n_envs, int device)
-    : size_(size/n_envs), n_envs_(n_envs), device_(get_device(device)), indices_((size/n_envs) * n_envs), pos_(0), rng_() {
+      : size_(size / n_envs), n_envs_(n_envs), device_(get_device(device)), indices_((size / n_envs) * n_envs), pos_(0),
+        rng_() {
     // some asserts
     if (size < n_envs) {
-      throw std::runtime_error("RolloutBuffer::RolloutBuffer: Error, make sure the buffer size is bigger than or equal to the number of environments");
+      throw std::runtime_error("RolloutBuffer::RolloutBuffer: Error, make sure the buffer size is bigger than or equal "
+                               "to the number of environments");
     }
-    // last episode starts == True is the same as setting its float to 1., since we are using next_state_terminal = 1-dones later:
+    // last episode starts == True is the same as setting its float to 1., since we are using next_state_terminal =
+    // 1-dones later:
     auto options = torch::TensorOptions().dtype(torch::kFloat32).device(device_);
     last_episode_starts_ = torch::ones({static_cast<int64_t>(n_envs_)}, options);
     // fill index vector with indices
@@ -104,21 +109,25 @@ class GAELambdaRolloutBuffer : public RolloutBuffer, public std::enable_shared_f
 public:
   // constructor
   GAELambdaRolloutBuffer(size_t size, size_t n_envs, float gamma, float lambda, int device)
-    : RolloutBuffer(size, n_envs, device), finalized_(false), gamma_(gamma), lambda_(lambda), returns_(size*n_envs),
-        advantages_(size*n_envs) {}
+      : RolloutBuffer(size, n_envs, device), finalized_(false), gamma_(gamma), lambda_(lambda), returns_(size * n_envs),
+        advantages_(size * n_envs) {}
 
   // disable copy constructor
   GAELambdaRolloutBuffer(const GAELambdaRolloutBuffer&) = delete;
 
   // update
-  void update(torch::Tensor s, torch::Tensor a, torch::Tensor r, torch::Tensor q, torch::Tensor log_p, torch::Tensor d) {
+  void update(torch::Tensor s, torch::Tensor a, torch::Tensor r, torch::Tensor q, torch::Tensor log_p,
+              torch::Tensor d) {
 
     // some checks
-    if( (s.sizes()[0] != n_envs_) || (a.sizes()[0] != n_envs_) ) {
-      throw std::runtime_error("GAELambdaRolloutBuffer::update: the size of the leading dimension of tensors s and a has to be equal to the number of environments");
+    if ((s.sizes()[0] != n_envs_) || (a.sizes()[0] != n_envs_)) {
+      throw std::runtime_error("GAELambdaRolloutBuffer::update: the size of the leading dimension of tensors s and a "
+                               "has to be equal to the number of environments");
     }
-    if ( (r.sizes()[0] != n_envs_) || (q.sizes()[0] != n_envs_) || (log_p.sizes()[0] != n_envs_) || (d.sizes()[0] != n_envs_) ) {
-      throw std::runtime_error("GAELambdaRolloutBuffer::update: tensors r, q, log_p and d have to be one dimensional and the size has to be equal to the number of environments");
+    if ((r.sizes()[0] != n_envs_) || (q.sizes()[0] != n_envs_) || (log_p.sizes()[0] != n_envs_) ||
+        (d.sizes()[0] != n_envs_)) {
+      throw std::runtime_error("GAELambdaRolloutBuffer::update: tensors r, q, log_p and d have to be one dimensional "
+                               "and the size has to be equal to the number of environments");
     }
 
     // add no grad guard
@@ -135,9 +144,9 @@ public:
       auto sc = s.to(device_, s.dtype(), /* non_blocking = */ false, /* copy = */ true);
       auto ac = a.to(device_, a.dtype(), /* non_blocking = */ false, /* copy = */ true);
       auto rc = r.to(device_, r.dtype(), /* non_blocking = */ false, /* copy = */ true);
-      auto qc =	q.to(device_, q.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto qc = q.to(device_, q.dtype(), /* non_blocking = */ false, /* copy = */ true);
       auto log_pc = log_p.to(device_, log_p.dtype(), /* non_blocking = */ false, /* copy = */ true);
-      auto dc =	last_episode_starts_.to(device_, d.dtype(), /* non_blocking = */ false, /* copy = */ true);
+      auto dc = last_episode_starts_.to(device_, d.dtype(), /* non_blocking = */ false, /* copy = */ true);
 
       // add the newest/latest element in back
       buffer_.push_back(std::make_tuple(sc, ac, rc, qc, log_pc, dc));
@@ -163,7 +172,7 @@ public:
     // send to device
     next_non_terminal = next_non_terminal.to(device_);
     next_values = next_values.to(device_);
-    
+
     for (int64_t step = size_ - 1; step >= 0; step--) {
       std::tie(s, a, r, q, log_p, e) = buffer_.at(step);
       delta = r + gamma_ * next_values * next_non_terminal - q;
@@ -303,9 +312,7 @@ public:
     return;
   }
 
-  void setSeed(unsigned int seed) {
-    rng_.seed(seed);
-  }
+  void setSeed(unsigned int seed) { rng_.seed(seed); }
 
   void save(const std::string& fname) const {
     // create an ordered dict with the buffer contents:

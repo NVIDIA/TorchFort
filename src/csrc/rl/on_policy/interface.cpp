@@ -260,31 +260,25 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_F(const char* na
 }
 
 // multi env
-torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_multi(const char* name,
-								      void* state, size_t state_dim, int64_t* state_shape,
-								      void* action, size_t action_dim, int64_t* action_shape,
-								      void* reward, size_t reward_dim, int64_t* reward_shape,
-                                                                      void* final_state, size_t final_state_dim, int64_t* final_state_shape,
-								      torchfort_datatype_t dtype, cudaStream_t ext_stream) {
+torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_multi(
+    const char* name, void* state, size_t state_dim, int64_t* state_shape, void* action, size_t action_dim,
+    int64_t* action_shape, void* reward, size_t reward_dim, int64_t* reward_shape, void* final_state,
+    size_t final_state_dim, int64_t* final_state_shape, torchfort_datatype_t dtype, cudaStream_t ext_stream) {
   using namespace torchfort;
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT: {
-      rl::on_policy::update_rollout_buffer<RowMajor>(name,
-						     reinterpret_cast<float*>(state), state_dim, state_shape,
-                                                     reinterpret_cast<float*>(action), action_dim, action_shape,
-						     reinterpret_cast<float*>(reward), reward_dim, reward_shape,
-						     reinterpret_cast<float*>(final_state), final_state_dim, final_state_shape,
-                                                     ext_stream);
+      rl::on_policy::update_rollout_buffer<RowMajor>(
+          name, reinterpret_cast<float*>(state), state_dim, state_shape, reinterpret_cast<float*>(action), action_dim,
+          action_shape, reinterpret_cast<float*>(reward), reward_dim, reward_shape,
+          reinterpret_cast<float*>(final_state), final_state_dim, final_state_shape, ext_stream);
       break;
     }
     case TORCHFORT_DOUBLE: {
-      rl::on_policy::update_rollout_buffer<RowMajor>(name,
-						     reinterpret_cast<double*>(state), state_dim, state_shape,
-                                                     reinterpret_cast<double*>(action), action_dim, action_shape,
-						     reinterpret_cast<double*>(reward), reward_dim, reward_shape,
-                                                     reinterpret_cast<double*>(final_state), final_state_dim, final_state_shape,
-                                                     ext_stream);
+      rl::on_policy::update_rollout_buffer<RowMajor>(
+          name, reinterpret_cast<double*>(state), state_dim, state_shape, reinterpret_cast<double*>(action), action_dim,
+          action_shape, reinterpret_cast<double*>(reward), reward_dim, reward_shape,
+          reinterpret_cast<double*>(final_state), final_state_dim, final_state_shape, ext_stream);
       break;
     }
     default: {
@@ -299,32 +293,26 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_multi(const char
   return TORCHFORT_RESULT_SUCCESS;
 }
 
-torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_multi_F(const char* name,
-									void* state, size_t state_dim, int64_t* state_shape,
-									void* action, size_t action_dim, int64_t* action_shape,
-									void* reward, size_t reward_dim, int64_t* reward_shape,
-									void* final_state, size_t final_state_dim, int64_t* final_state_shape,
-									torchfort_datatype_t dtype, cudaStream_t ext_stream) {
+torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_multi_F(
+    const char* name, void* state, size_t state_dim, int64_t* state_shape, void* action, size_t action_dim,
+    int64_t* action_shape, void* reward, size_t reward_dim, int64_t* reward_shape, void* final_state,
+    size_t final_state_dim, int64_t* final_state_shape, torchfort_datatype_t dtype, cudaStream_t ext_stream) {
 
   using namespace torchfort;
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT: {
-      rl::on_policy::update_rollout_buffer<ColMajor>(name,
-						     reinterpret_cast<float*>(state), state_dim, state_shape,
-                                                     reinterpret_cast<float*>(action), action_dim, action_shape,
-						     reinterpret_cast<float*>(reward), reward_dim, reward_shape,
-                                                     reinterpret_cast<float*>(final_state), final_state_dim, final_state_shape,
-                                                     ext_stream);
+      rl::on_policy::update_rollout_buffer<ColMajor>(
+          name, reinterpret_cast<float*>(state), state_dim, state_shape, reinterpret_cast<float*>(action), action_dim,
+          action_shape, reinterpret_cast<float*>(reward), reward_dim, reward_shape,
+          reinterpret_cast<float*>(final_state), final_state_dim, final_state_shape, ext_stream);
       break;
     }
     case TORCHFORT_DOUBLE: {
-      rl::on_policy::update_rollout_buffer<ColMajor>(name,
-						     reinterpret_cast<double*>(state), state_dim, state_shape,
-                                                     reinterpret_cast<double*>(action), action_dim, action_shape,
-						     reinterpret_cast<double*>(reward), reward_dim, reward_shape,
-                                                     reinterpret_cast<double*>(final_state), final_state_dim, final_state_shape,
-                                                     ext_stream);
+      rl::on_policy::update_rollout_buffer<ColMajor>(
+          name, reinterpret_cast<double*>(state), state_dim, state_shape, reinterpret_cast<double*>(action), action_dim,
+          action_shape, reinterpret_cast<double*>(reward), reward_dim, reward_shape,
+          reinterpret_cast<double*>(final_state), final_state_dim, final_state_shape, ext_stream);
       break;
     }
     default: {
@@ -338,7 +326,6 @@ torchfort_result_t torchfort_rl_on_policy_update_rollout_buffer_multi_F(const ch
   }
   return TORCHFORT_RESULT_SUCCESS;
 }
-
 
 torchfort_result_t torchfort_rl_on_policy_reset_rollout_buffer(const char* name) {
   using namespace torchfort;
@@ -464,11 +451,11 @@ torchfort_result_t torchfort_rl_on_policy_evaluate(const char* name, void* state
                                                    int64_t* reward_shape, torchfort_datatype_t dtype,
                                                    cudaStream_t ext_stream) {
   using namespace torchfort;
-  
+
   if (reward_dim != 1) {
     THROW_INVALID_USAGE("The dimension of the reward array has to be equal to 1.");
   }
-  
+
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT:
@@ -502,7 +489,7 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
   if (reward_dim != 1) {
     THROW_INVALID_USAGE("The dimension of the reward array has to be equal to 1.");
   }
-  
+
   try {
     switch (dtype) {
     case TORCHFORT_FLOAT:

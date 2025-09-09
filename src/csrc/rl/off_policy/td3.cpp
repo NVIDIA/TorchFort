@@ -253,7 +253,7 @@ torch::Device TD3System::modelDevice() const { return model_device_; }
 
 torch::Device TD3System::rbDevice() const { return rb_device_; }
 
-int TD3System::getRank() const	{
+int TD3System::getRank() const {
   if (!system_comm_) {
     return 0;
   } else {
@@ -407,7 +407,8 @@ void TD3System::loadCheckpoint(const std::string& checkpoint_dir) {
 }
 
 // we should pass a tuple (s, a, s', r, d)
-  void TD3System::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r, torch::Tensor d) {
+void TD3System::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r,
+                                   torch::Tensor d) {
   replay_buffer_->update(s, a, sp, r, d);
 }
 

@@ -361,7 +361,8 @@ void DDPGSystem::loadCheckpoint(const std::string& checkpoint_dir) {
 }
 
 // we should pass a tuple (s, a, s', r, d)
-void DDPGSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r, torch::Tensor d) {
+void DDPGSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r,
+                                    torch::Tensor d) {
   replay_buffer_->update(s, a, sp, r, d);
 }
 

@@ -59,7 +59,6 @@ typedef void* cudaStream_t;
  */
 typedef void* torchfort_tensor_list_t;
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -123,14 +122,17 @@ torchfort_result_t torchfort_train_F(const char* name, void* input, size_t input
  * @param[in] name The name of model instance to use, as defined during model creation.
  * @param[in] inputs A tensor list of input tensors.
  * @param[in] labels A tensor list of label tensors.
- * @param[out] loss_val A pointer to a single precision scalar to write the loss value computed during the training iteration.
- * @param[in] extra_loss_args A tensor list of additional tensors to pass into loss computation. Set to nullptr if unused.
+ * @param[out] loss_val A pointer to a single precision scalar to write the loss value computed during the training
+ * iteration.
+ * @param[in] extra_loss_args A tensor list of additional tensors to pass into loss computation. Set to nullptr if
+ * unused.
  * @param[in] stream CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
  *
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
-torchfort_result_t torchfort_train_multiarg(const char* name, torchfort_tensor_list_t inputs, torchfort_tensor_list_t labels,
-                                            float* loss_val, torchfort_tensor_list_t extra_loss_args, cudaStream_t stream);
+torchfort_result_t torchfort_train_multiarg(const char* name, torchfort_tensor_list_t inputs,
+                                            torchfort_tensor_list_t labels, float* loss_val,
+                                            torchfort_tensor_list_t extra_loss_args, cudaStream_t stream);
 
 /**
  * @brief Runs inference on a model using provided input data.
@@ -261,7 +263,6 @@ WANDB_LOG_PROTO(int)
 WANDB_LOG_PROTO(float)
 WANDB_LOG_PROTO(double)
 
-
 // Tensor List Management functions
 /**
  * @brief Creates a TorchFort tensor list.
@@ -298,7 +299,6 @@ torchfort_result_t torchfort_tensor_list_add_tensor(torchfort_tensor_list_t tens
                                                     int64_t* shape, torchfort_datatype_t dtype);
 torchfort_result_t torchfort_tensor_list_add_tensor_F(torchfort_tensor_list_t tensor_list, void* data_ptr, size_t dim,
                                                       int64_t* shape, torchfort_datatype_t dtype);
-
 
 #ifdef __cplusplus
 }

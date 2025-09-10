@@ -4,9 +4,31 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  actions: read
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
-  build:
+  trigger-comment:
     if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
+    runs-on: ubuntu-latest
+    steps:
+    - name: "Post trigger comment"
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const workflowUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `🚀 Build workflow triggered! [View run](${workflowUrl})`
+          });
+
+  build:
+    needs: trigger-comment
     strategy:
       matrix:
         include:
@@ -33,8 +55,22 @@ jobs:
         sudo rm -rf /usr/local/lib/android || true
         sudo rm -rf /usr/share/dotnet || true
 
-    - name: "Checkout code"
+    - name: "Retrieve PR info"
+      uses: actions/github-script@v7
+      id: pr-info
+      with:
+        script: |
+          const pr = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number
+          });
+          core.setOutput('sha', pr.data.head.sha);
+
+    - name: "Checkout PR code"
       uses: actions/checkout@v4
+      with:
+        ref: ${{ steps.pr-info.outputs.sha }}
 
     - name: "Set up Docker Buildx"
       uses: docker/setup-buildx-action@v3
@@ -73,4 +109,26 @@ jobs:
           cd /opt/torchfort/bin/tests/rl
           ./test_rollout_buffer
         "
-        
+
+  result-comment:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Post result comment"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflowUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
+            const success = '${{ needs.build.result }}' === 'success';
+
+            const message = success
+              ? `✅ Build workflow passed! [View run](${workflowUrl})`
+              : `❌ Build workflow failed! [View run](${workflowUrl})`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });

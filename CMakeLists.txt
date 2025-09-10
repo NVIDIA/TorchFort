@@ -25,7 +25,6 @@ if (NOT TORCHFORT_YAML_CPP_ROOT)
   message(FATAL_ERROR "Please set TORCHFORT_YAML_CPP_ROOT to yaml-cpp installation directory.")
 endif()
 
-
 if (TORCHFORT_BUILD_FORTRAN)
   set(LANGS Fortran CXX)
 else()
@@ -78,7 +77,7 @@ if (TORCHFORT_ENABLE_GPU)
       NAMES nccl.h
       HINTS ${TORCHFORT_NCCL_ROOT}/include
     )
-  
+
     find_library(NCCL_LIBRARY REQUIRED
       NAMES nccl
       HINTS ${TORCHFORT_NCCL_ROOT}/lib
@@ -92,10 +91,16 @@ if (TORCHFORT_ENABLE_GPU)
       )
       string(REPLACE "/lib" "/include" NCCL_INCLUDE_DIR ${NVHPC_NCCL_LIBRARY_DIR})
     else()
-      message(FATAL_ERROR "Cannot find NCCL library. Please set TORCHFORT_NCCL_ROOT to NCCL installation directory.")
+      find_path(NCCL_INCLUDE_DIR REQUIRED
+        NAMES nccl.h
+      )
+
+      find_library(NCCL_LIBRARY REQUIRED
+        NAMES nccl
+      )
     endif()
   endif()
-  
+
   message(STATUS "Using NCCL library: ${NCCL_LIBRARY}")
 
   # PyTorch

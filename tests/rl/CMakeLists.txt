@@ -59,6 +59,7 @@ foreach(tgt ${test_targets})
     target_include_directories(${tgt}
       PRIVATE
       ${CUDAToolkit_INCLUDE_DIRS}
+      ${NCCL_INCLUDE_DIR}
     )
     target_link_libraries(${tgt} PRIVATE CUDA::cudart)
     target_compile_definitions(${tgt} PRIVATE ENABLE_GPU)

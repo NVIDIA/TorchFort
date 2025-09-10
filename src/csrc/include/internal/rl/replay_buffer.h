@@ -42,7 +42,7 @@ namespace torchfort {
 
 namespace rl {
 
-  using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>;
+using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>;
 
 enum RewardReductionMode { Sum = 1, Mean = 2, WeightedMean = 3, SumNoSkip = 4, MeanNoSkip = 5, WeightedMeanNoSkip = 6 };
 
@@ -53,10 +53,11 @@ public:
   ReplayBuffer(const ReplayBuffer&) = delete;
   // base constructor
   ReplayBuffer(size_t max_size, size_t min_size, size_t n_envs, int device)
-    : max_size_(max_size/n_envs), min_size_(min_size/n_envs), n_envs_(n_envs), device_(get_device(device)) {
+      : max_size_(max_size / n_envs), min_size_(min_size / n_envs), n_envs_(n_envs), device_(get_device(device)) {
     // some asserts
     if ((max_size < n_envs) || (min_size < n_envs)) {
-      throw std::runtime_error("ReplayBuffer::ReplayBuffer: Error, make sure the buffer min and max buffer sizes are bigger than or equal to the number of environments");
+      throw std::runtime_error("ReplayBuffer::ReplayBuffer: Error, make sure the buffer min and max buffer sizes are "
+                               "bigger than or equal to the number of environments");
     }
   }
 
@@ -94,7 +95,7 @@ public:
   // constructor
   UniformReplayBuffer(size_t max_size, size_t min_size, size_t n_envs, float gamma, int nstep,
                       RewardReductionMode reward_reduction_mode, int device)
-    : ReplayBuffer(max_size, min_size, n_envs, device), rng_(), gamma_(gamma), nstep_(nstep) {
+      : ReplayBuffer(max_size, min_size, n_envs, device), rng_(), gamma_(gamma), nstep_(nstep) {
 
     // set up reward reduction mode
     skip_incomplete_steps_ = true;
@@ -121,11 +122,13 @@ public:
     // add no grad guard
     torch::NoGradGuard no_grad;
 
-    if( (s.sizes()[0] != n_envs_) || (a.sizes()[0] != n_envs_) || (sp.sizes()[0] != n_envs_) ) {
-      throw std::runtime_error("UniformReplayBuffer::update: the size of the leading dimension of tensors s, a and sp has to be equal to the number of environments");
+    if ((s.sizes()[0] != n_envs_) || (a.sizes()[0] != n_envs_) || (sp.sizes()[0] != n_envs_)) {
+      throw std::runtime_error("UniformReplayBuffer::update: the size of the leading dimension of tensors s, a and sp "
+                               "has to be equal to the number of environments");
     }
-    if ( (r.sizes()[0] != n_envs_) || (d.sizes()[0] != n_envs_) ) {
-      throw std::runtime_error("UniformReplayBuffer::update: tensors r and d have to be one dimensional and the size has to be equal to the number of environments");
+    if ((r.sizes()[0] != n_envs_) || (d.sizes()[0] != n_envs_)) {
+      throw std::runtime_error("UniformReplayBuffer::update: tensors r and d have to be one dimensional and the size "
+                               "has to be equal to the number of environments");
     }
 
     // clone the tensors and move to device
@@ -167,11 +170,11 @@ public:
 
       // global index
       auto glob_idx = uniform_dist(rng_);
-      
+
       // we assume that glob_idx = env_idx + n_envs * step_idx
       int64_t env_idx = glob_idx % n_envs_;
       int64_t step_idx = glob_idx / n_envs_;
-      
+
       // emit the sample at index
       std::tie(stens, atens, sptens, rtens, dtens) = buffer_.at(step_idx);
 
@@ -181,7 +184,7 @@ public:
       sptens_list[sample] = sptens.index({env_idx, "..."}).clone();
       rtens_list[sample] = rtens.index({env_idx}).clone();
       dtens_list[sample] = dtens.index({env_idx}).clone();
-      
+
       // if nstep > 1, perform rollout
       float r_norm = 1.;
       int r_count = 1;
@@ -189,14 +192,14 @@ public:
       torch::Tensor deff = 1. - dtens_list[sample];
       for (int off = 1; off < nstep_; ++off) {
         std::tie(stens, atens, sptens, rtens, dtens) = buffer_.at(step_idx + off);
-	sptens_list[sample] = sptens.index({env_idx, "..."}).clone();
+        sptens_list[sample] = sptens.index({env_idx, "..."}).clone();
         auto gamma_eff = static_cast<float>(std::pow(gamma_, off));
         rtens_list[sample] += gamma_eff * rtens.index({env_idx});
         r_norm += gamma_eff;
         r_count++;
 
-	// update deff
-	float d = dtens.index({env_idx}).item<float>();
+        // update deff
+        float d = dtens.index({env_idx}).item<float>();
         if (std::abs(d - 1.) < 1.e-6) {
           // episode ended: 1-d = 0
           deff *= 0.;
@@ -269,9 +272,7 @@ public:
 
   size_t getSize() const { return buffer_.size(); }
 
-  void setSeed(unsigned int seed) {
-    rng_.seed(seed);
-  }
+  void setSeed(unsigned int seed) { rng_.seed(seed); }
 
   // save and restore
   void save(const std::string& fname) const {

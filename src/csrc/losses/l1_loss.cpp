@@ -58,8 +58,7 @@ void L1Loss::setup(const ParamMap& params) {
   module = torch::nn::L1Loss(options);
 }
 
-torch::Tensor L1Loss::forward(const std::vector<torch::Tensor>& inputs,
-                              const std::vector<torch::Tensor>& labels,
+torch::Tensor L1Loss::forward(const std::vector<torch::Tensor>& inputs, const std::vector<torch::Tensor>& labels,
                               const std::vector<torch::Tensor>& extra_args) {
   if (inputs.size() != 1 || labels.size() != 1 || extra_args.size() != 0) {
     THROW_INVALID_USAGE("L1Loss only supports one input tensor, one label tensor, and no extra arguments.");

@@ -1,0 +1,76 @@
+name: "Build"
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  build:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
+    strategy:
+      matrix:
+        include:
+          - name: "GPU build (NVHPC SDK 25.7, Ubuntu 22.04)"
+            dockerfile: "Dockerfile"
+            free_space: true
+            run_tests: false
+          - name: "GPU build (GNU, Ubuntu 22.04)"
+            dockerfile: "Dockerfile_gnu"
+            free_space: false
+            run_tests: false
+          - name: "CPU build (GNU, Ubuntu 22.04)"
+            dockerfile: "Dockerfile_gnu_cpuonly"
+            free_space: false
+            run_tests: true
+
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: "Free disk space"
+      if: ${{ matrix.free_space }}
+      run: |
+        sudo rm -rf /usr/local/lib/android || true
+        sudo rm -rf /usr/share/dotnet || true
+
+    - name: "Checkout code"
+      uses: actions/checkout@v4
+
+    - name: "Set up Docker Buildx"
+      uses: docker/setup-buildx-action@v3
+
+    - name: "Build docker container"
+      run: |
+        docker build -t torchfort -f docker/${{ matrix.dockerfile }} .
+
+    - name: "Run tests"
+      if: ${{ matrix.run_tests }}
+      run: |
+        docker run --rm torchfort bash -c "
+          cd /opt/torchfort/bin/tests/general
+          python scripts/setup_tests.py
+          ./test_losses
+        "
+        docker run --rm torchfort bash -c "
+          cd /opt/torchfort/bin/tests/supervised
+          python scripts/setup_tests.py
+          ./test_checkpoint
+        "
+        docker run --rm torchfort bash -c "
+          cd /opt/torchfort/bin/tests/supervised
+          python scripts/setup_tests.py
+          ./test_training
+        "
+        docker run --rm torchfort bash -c "
+          cd /opt/torchfort/bin/tests/rl
+          ./test_distributions
+        "
+        docker run --rm torchfort bash -c "
+          cd /opt/torchfort/bin/tests/rl
+          ./test_replay_buffer
+        "
+        docker run --rm torchfort bash -c "
+          cd /opt/torchfort/bin/tests/rl
+          ./test_rollout_buffer
+        "
+        

@@ -81,7 +81,7 @@ public:
   virtual void loadCheckpoint(const std::string& checkpoint_dir) = 0;
   virtual torch::Device modelDevice() const = 0;
   virtual torch::Device rbDevice() const = 0;
-  virtual int getRank() const =0;
+  virtual int getRank() const = 0;
 
 protected:
   virtual std::shared_ptr<ModelState> getSystemState_() = 0;
@@ -126,10 +126,9 @@ static void update_replay_buffer(const char* name, T* state_old, T* state_new, s
 
 template <MemoryLayout L, typename T>
 static void update_replay_buffer(const char* name, T* state_old, T* state_new, size_t state_dim, int64_t* state_shape,
-                                 T* action_old, size_t action_dim, int64_t* action_shape,
-				 T* reward, size_t reward_dim, int64_t* reward_shape,
-				 T* final_state, size_t final_state_dim, int64_t* final_state_shape,
-                                 cudaStream_t ext_stream) {
+                                 T* action_old, size_t action_dim, int64_t* action_shape, T* reward, size_t reward_dim,
+                                 int64_t* reward_shape, T* final_state, size_t final_state_dim,
+                                 int64_t* final_state_shape, cudaStream_t ext_stream) {
 
   // no grad
   torch::NoGradGuard no_grad;
@@ -149,13 +148,14 @@ static void update_replay_buffer(const char* name, T* state_old, T* state_new, s
   auto state_new_tensor = get_tensor<L>(state_new, state_dim, state_shape)
                               .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
   auto action_old_tensor = get_tensor<L>(action_old, action_dim, action_shape)
-                              .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+                               .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
   auto reward_tensor = get_tensor<L>(reward, reward_dim, reward_shape)
-                              .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+                           .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
   auto final_state_tensor = get_tensor<L>(final_state, final_state_dim, final_state_shape)
-                              .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true); 
+                                .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
 
-  registry[name]->updateReplayBuffer(state_old_tensor, action_old_tensor, state_new_tensor, reward_tensor, final_state_tensor);
+  registry[name]->updateReplayBuffer(state_old_tensor, action_old_tensor, state_new_tensor, reward_tensor,
+                                     final_state_tensor);
   return;
 }
 
@@ -228,11 +228,10 @@ static void policy_evaluate(const char* name, T* state, size_t state_dim, int64_
 
   // create tensors
   auto state_tensor =
-    get_tensor<L>(state, state_dim, state_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto action_tensor =
-    get_tensor<L>(action, action_dim, action_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
-  auto reward_tensor =
-    get_tensor<L>(reward, reward_dim, reward_shape);
+      get_tensor<L>(state, state_dim, state_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  auto action_tensor = get_tensor<L>(action, action_dim, action_shape)
+                           .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
+  auto reward_tensor = get_tensor<L>(reward, reward_dim, reward_shape);
 
   // fwd pass
   torch::Tensor tmpreward = registry[name]->evaluate(state_tensor, action_tensor).to(reward_tensor.dtype());

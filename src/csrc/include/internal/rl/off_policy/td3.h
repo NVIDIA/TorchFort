@@ -97,27 +97,28 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   torch::Tensor y_tensor;
   {
     torch::NoGradGuard no_grad;
-    torch::Tensor q_new_tensor =
-      torch::squeeze(q_models_target[0].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0], 1);
+    torch::Tensor q_new_tensor = torch::squeeze(
+        q_models_target[0].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0], 1);
     for (int i = 1; i < q_models_target.size(); ++i) {
-      torch::Tensor q_tmp_tensor =
-	torch::squeeze(q_models_target[i].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0], 1);
+      torch::Tensor q_tmp_tensor = torch::squeeze(
+          q_models_target[i].model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0], 1);
       q_new_tensor = torch::minimum(q_new_tensor, q_tmp_tensor);
     }
     y_tensor = torch::Tensor(reward_tensor + q_new_tensor * gamma * (1. - d_tensor));
   }
-  
+
   // backward and update step
   // compute loss for critics and zero grads while we are at it
   torch::Tensor q_old_tensor =
-    torch::squeeze(q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
+      torch::squeeze(q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
   auto state = q_models[0].state;
   if (state->step_train_current % q_models[0].grad_accumulation_steps == 0) {
     q_models[0].optimizer->zero_grad();
   }
   for (int i = 1; i < q_models.size(); ++i) {
-    q_old_tensor = torch::squeeze(q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
+    q_old_tensor = torch::squeeze(
+        q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
     q_loss_tensor = q_loss_tensor + q_loss_func->forward(q_old_tensor, y_tensor);
     state = q_models[i].state;
     if (state->step_train_current % q_models[i].grad_accumulation_steps == 0) {
@@ -134,12 +135,12 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
     if ((state->step_train_current + 1) % q_model.grad_accumulation_steps == 0) {
       // grad comm
       if (q_model.comm) {
-	std::vector<torch::Tensor> grads;
-	grads.reserve(q_model.model->parameters().size());
-	for (const auto& p : q_model.model->parameters()) {
-	  grads.push_back(p.grad());
-	}
-	q_model.comm->allreduce(grads, true);
+        std::vector<torch::Tensor> grads;
+        grads.reserve(q_model.model->parameters().size());
+        for (const auto& p : q_model.model->parameters()) {
+          grads.push_back(p.grad());
+        }
+        q_model.comm->allreduce(grads, true);
       }
 
       // optimizer step
@@ -180,21 +181,21 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
 
     // allreduce (average) gradients (if running distributed)
     if ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0) {
-      
+
       if (p_model.comm) {
-	std::vector<torch::Tensor> grads;
-	grads.reserve(p_model.model->parameters().size());
-	for (const auto& p : p_model.model->parameters()) {
-	  grads.push_back(p.grad());
-	}
-	p_model.comm->allreduce(grads, true);
+        std::vector<torch::Tensor> grads;
+        grads.reserve(p_model.model->parameters().size());
+        for (const auto& p : p_model.model->parameters()) {
+          grads.push_back(p.grad());
+        }
+        p_model.comm->allreduce(grads, true);
       }
-      
+
       // optimizer step
       p_model.optimizer->step();
       p_model.lr_scheduler->step();
     }
-    
+
     // unfreeze the q1model
     set_grad_state(q_models[0].model, true);
 
@@ -214,7 +215,7 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
 
   // do polyak averaging: only if we also trained the policy
   state = p_model.state;
-  if ( update_policy && ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0) ) {
+  if (update_policy && ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0)) {
     for (int i = 0; i < q_models_target.size(); ++i) {
       polyak_update<T>(q_models_target[i].model, q_models[i].model, rho);
     }

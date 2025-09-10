@@ -40,8 +40,7 @@
 namespace torchfort {
 
 struct BaseLoss : torch::nn::Module {
-  virtual torch::Tensor forward(const std::vector<torch::Tensor>& inputs,
-                                const std::vector<torch::Tensor>& labels,
+  virtual torch::Tensor forward(const std::vector<torch::Tensor>& inputs, const std::vector<torch::Tensor>& labels,
                                 const std::vector<torch::Tensor>& extra_args) = 0;
   virtual void setup(const ParamMap& params) = 0;
 };

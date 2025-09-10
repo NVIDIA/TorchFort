@@ -1,0 +1,56 @@
+name: "Code Format"
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  clang-format:
+    env:
+      CLANG_FORMAT_VERSION: "15"
+
+    runs-on: ubuntu-latest
+    name: "clang-format check"
+
+    steps:
+    - name: "Checkout code"
+      uses: actions/checkout@v4
+
+    - name: "Install dependencies"
+      run: |
+        # Install clang-format
+        sudo apt-get update && sudo apt-get install -y clang-format-${CLANG_FORMAT_VERSION}
+
+        # Print clang-format version information
+        clang-format-${CLANG_FORMAT_VERSION} --version
+
+    - name: "Run clang-format check"
+      run: |
+        # Collect names of files that are not properly formatted
+        filelist=`find src examples -name "*.cpp" -o -name "*.h"`
+        files_to_fix=()
+        for file in $filelist; do
+          if ! clang-format-${CLANG_FORMAT_VERSION} --dry-run --Werror "$file" 2>/dev/null; then
+            files_to_fix+=("$file")
+          fi
+        done
+
+        # If any file is not properly formatted, print diff and exit with error
+        if [ ${#files_to_fix[@]} -gt 0 ]; then
+          # Print the list of files that are not properly formatted
+          echo "FAIL: Some files are not properly formatted. To resolve issues, run:"
+          for file in "${files_to_fix[@]}"; do
+            echo "clang-format-${CLANG_FORMAT_VERSION} -i $file"
+          done
+          echo
+
+          for file in "${files_to_fix[@]}"; do
+            echo "Diff for $file:"
+            bash -c "clang-format-${CLANG_FORMAT_VERSION} $file | diff $file -; exit 0"
+            echo
+          done
+
+          exit 1
+        fi
+
+        echo "PASS: All files are properly formatted."

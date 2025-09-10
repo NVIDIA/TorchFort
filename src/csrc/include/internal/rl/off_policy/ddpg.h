@@ -93,15 +93,15 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
   torch::Tensor y_tensor;
   {
     torch::NoGradGuard no_grad;
-    auto q_new_tensor =
-      torch::squeeze(q_model_target.model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0], 1);
+    auto q_new_tensor = torch::squeeze(
+        q_model_target.model->forward(std::vector<torch::Tensor>{state_new_tensor, action_new_tensor})[0], 1);
     y_tensor = torch::Tensor(reward_tensor + q_new_tensor * gamma * (1. - d_tensor));
   }
 
   // backward and update step
   // compute loss
   torch::Tensor q_old_tensor =
-    torch::squeeze(q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
+      torch::squeeze(q_model.model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
 
   auto state = q_model.state;
@@ -117,7 +117,7 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
       std::vector<torch::Tensor> grads;
       grads.reserve(q_model.model->parameters().size());
       for (const auto& p : q_model.model->parameters()) {
-	grads.push_back(p.grad());
+        grads.push_back(p.grad());
       }
       q_model.comm->allreduce(grads, true);
     }
@@ -155,7 +155,7 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
       std::vector<torch::Tensor> grads;
       grads.reserve(p_model.model->parameters().size());
       for (const auto& p : p_model.model->parameters()) {
-	grads.push_back(p.grad());
+        grads.push_back(p.grad());
       }
       p_model.comm->allreduce(grads, true);
     }

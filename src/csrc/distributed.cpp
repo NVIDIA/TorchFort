@@ -124,7 +124,7 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
 
   auto dtype = tensor.dtype();
   if ((dtype == torch::kLong) && average) {
-      THROW_NOT_SUPPORTED("allreduce method for integer-valued tensors does not support averaging.");
+    THROW_NOT_SUPPORTED("allreduce method for integer-valued tensors does not support averaging.");
   }
 
 #ifdef ENABLE_GPU

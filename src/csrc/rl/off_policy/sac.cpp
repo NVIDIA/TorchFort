@@ -265,7 +265,7 @@ torch::Device SACSystem::modelDevice() const { return model_device_; }
 
 torch::Device SACSystem::rbDevice() const { return rb_device_; }
 
-int SACSystem::getRank() const	{
+int SACSystem::getRank() const {
   if (!system_comm_) {
     return 0;
   } else {
@@ -503,10 +503,11 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
   }
 }
 
-// we should pass a tuple (s, a, s', r, d)  
-void SACSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r, torch::Tensor d) {
+// we should pass a tuple (s, a, s', r, d)
+void SACSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r,
+                                   torch::Tensor d) {
   // note that we have to rescale the action: [a_low, a_high] -> [-1, 1],
-  // but the replay buffer only stores scaled actions! 
+  // but the replay buffer only stores scaled actions!
   replay_buffer_->update(s, a, sp, r, d);
 }
 

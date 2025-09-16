@@ -422,7 +422,7 @@ TEST(TorchFort, TrainTestMultiArgErrors) {
   training_test_multiarg_errors("configs/torchscript_multiarg.yaml");
 }
 TEST(TorchFort, TrainTestMultiArgMLPError) {
-  training_test_multiarg("configs/mlp2.yaml", 0, 0, true, false, true, true, false);
+  training_test_multiarg("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, false, true, true, false);
 }
 
 int main(int argc, char* argv[]) {

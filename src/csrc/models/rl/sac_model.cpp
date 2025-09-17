@@ -11,10 +11,11 @@ namespace torchfort {
 // SACMLP model in C++ using libtorch
 void SACMLPModel::setup(const ParamMap& params) {
   // Extract params from input map.
-  std::set<std::string> supported_params{"dropout", "layer_sizes", "state_dependent_sigma", "log_sigma_init"};
+  std::set<std::string> supported_params{"dropout", "flatten_non_batch_dims",  "layer_sizes", "state_dependent_sigma", "log_sigma_init"};
   check_params(supported_params, params.keys());
 
   dropout = params.get_param<double>("dropout", 0.0)[0];
+  flatten_non_batch_dims = params.get_param<bool>("flatten_non_batch_dims", true)[0];
   layer_sizes = params.get_param<int>("layer_sizes");
   state_dependent_sigma = params.get_param<bool>("state_dependent_sigma", true)[0];
   double log_sigma_init = params.get_param<double>("log_sigma_init", 0.)[0];

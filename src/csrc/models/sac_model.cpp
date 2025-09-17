@@ -45,12 +45,9 @@ void SACMLPModel::setup(const ParamMap& params) {
 
 // Implement the forward function.
 std::vector<torch::Tensor> SACMLPModel::forward(const std::vector<torch::Tensor>& inputs) {
-  if (inputs.size() > 1)
-    THROW_INVALID_USAGE("Built-in SACMLP model does not support multiple input tensors.");
-
-  auto x = inputs[0];
+  // concatenate inputs
+  auto x = torch::cat(inputs, 1);
   x = x.reshape({x.size(0), -1});
-
   torch::Tensor y, z;
 
   for (int i = 0; i < layer_sizes.size() - 1; ++i) {

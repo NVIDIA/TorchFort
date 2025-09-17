@@ -125,7 +125,9 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
 }
 
 void training_test_multiarg(const std::string& model_config, int dev_model, int dev_input,
-                            bool use_extra_args) {
+                            bool use_extra_args, bool should_fail_create,
+                            bool should_fail_train, bool should_fail_inference,
+                            bool check_result) {
 
   std::string model_name = generate_random_name(10);
 
@@ -179,41 +181,64 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
     }
   }
 
-  CHECK_TORCHFORT(torchfort_train_multiarg(model_name.c_str(), inputs_tl, labels_tl, &loss_val, (use_extra_args) ? extra_args_tl : nullptr, 0));
+  try {
+    CHECK_TORCHFORT(torchfort_train_multiarg(model_name.c_str(), inputs_tl, labels_tl, &loss_val, (use_extra_args) ? extra_args_tl : nullptr, 0));
+    if (should_fail_train) {
+      FAIL() << "This test should fail train call, but did not.";
+    }
+  } catch (const torchfort::BaseException& e) {
+    if (should_fail_train) {
+      // pass
+    } else {
+      FAIL();
+    }
+  }
 
-  CHECK_TORCHFORT(torchfort_inference_multiarg(model_name.c_str(), inputs_tl, outputs_tl, 0));
+  try {
+    CHECK_TORCHFORT(torchfort_inference_multiarg(model_name.c_str(), inputs_tl, outputs_tl, 0));
+    if (should_fail_inference) {
+      FAIL() << "This test should fail inference call, but did not.";
+    }
+  } catch (const torchfort::BaseException& e) {
+    if (should_fail_inference) {
+      // pass
+    } else {
+      FAIL();
+    }
+  }
 
   // Check inference output
-  for (int i = 0; i < 2; ++i) {
+  if (check_result) {
+    for (int i = 0; i < 2; ++i) {
 #ifdef ENABLE_GPU
-    if (dev_input != TORCHFORT_DEVICE_CPU) {
-      copy_to_host_vector(outputs[i], output_ptrs[i]);
-    }
+      if (dev_input != TORCHFORT_DEVICE_CPU) {
+        copy_to_host_vector(outputs[i], output_ptrs[i]);
+      }
 #endif
-    EXPECT_EQ(inputs[i], outputs[i]);
-  }
+      EXPECT_EQ(inputs[i], outputs[i]);
+    }
 
-
-  // Check that external data changes reflect in tensor list
-  for (int i = 0; i < 2; ++i) {
-    auto tmp = generate_random<float>(shape);
-    inputs[i].assign(tmp.begin(), tmp.end());
+    // Check that external data changes reflect in tensor list
+    for (int i = 0; i < 2; ++i) {
+      auto tmp = generate_random<float>(shape);
+      inputs[i].assign(tmp.begin(), tmp.end());
 #ifdef ENABLE_GPU
-    if (dev_input != TORCHFORT_DEVICE_CPU) {
-      copy_from_host_vector(input_ptrs[i], inputs[i]);
-    }
+      if (dev_input != TORCHFORT_DEVICE_CPU) {
+        copy_from_host_vector(input_ptrs[i], inputs[i]);
+      }
 #endif
-  }
+    }
 
-  CHECK_TORCHFORT(torchfort_inference_multiarg(model_name.c_str(), inputs_tl, outputs_tl, 0));
+    CHECK_TORCHFORT(torchfort_inference_multiarg(model_name.c_str(), inputs_tl, outputs_tl, 0));
 
-  for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 2; ++i) {
 #ifdef ENABLE_GPU
-    if (dev_input != TORCHFORT_DEVICE_CPU) {
-      copy_to_host_vector(outputs[i], output_ptrs[i]);
-    }
+      if (dev_input != TORCHFORT_DEVICE_CPU) {
+        copy_to_host_vector(outputs[i], output_ptrs[i]);
+      }
 #endif
-    EXPECT_EQ(inputs[i], outputs[i]);
+      EXPECT_EQ(inputs[i], outputs[i]);
+    }
   }
 
   for (int i = 0; i < 2; ++i) {
@@ -231,7 +256,6 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
   if (use_extra_args) {
     CHECK_TORCHFORT(torchfort_tensor_list_destroy(extra_args_tl));
   }
-
 }
 
 void training_test_multiarg_errors(const std::string& model_config) {
@@ -339,10 +363,10 @@ TEST(TorchFort, TrainTestTorchScriptCPUCPU) {
   training_test("configs/torchscript.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgCPUCPU) {
-  training_test_multiarg("configs/torchscript_multiarg.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false);
+  training_test_multiarg("configs/torchscript_multiarg.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgExtraCPUCPU) {
-  training_test_multiarg("configs/torchscript_multiarg_extra.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, true);
+  training_test_multiarg("configs/torchscript_multiarg_extra.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, true, false, false, false, true);
 }
 
 TEST(TorchFort, TrainTestGradAccumulationCPUCPU) {
@@ -369,22 +393,22 @@ TEST(TorchFort, TrainTestTorchScriptGPUGPU) {
   training_test("configs/torchscript.yaml", 0, 0, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgCPUGPU) {
-  training_test_multiarg("configs/torchscript_multiarg.yaml", TORCHFORT_DEVICE_CPU, 0, false);
+  training_test_multiarg("configs/torchscript_multiarg.yaml", TORCHFORT_DEVICE_CPU, 0, false, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgGPUCPU) {
-  training_test_multiarg("configs/torchscript_multiarg.yaml", 0, TORCHFORT_DEVICE_CPU, false);
+  training_test_multiarg("configs/torchscript_multiarg.yaml", 0, TORCHFORT_DEVICE_CPU, false, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgGPUGPU) {
-  training_test_multiarg("configs/torchscript_multiarg.yaml", 0, 0, false);
+  training_test_multiarg("configs/torchscript_multiarg.yaml", 0, 0, false, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgExtraCPUGPU) {
-  training_test_multiarg("configs/torchscript_multiarg_extra.yaml", TORCHFORT_DEVICE_CPU, 0, true);
+  training_test_multiarg("configs/torchscript_multiarg_extra.yaml", TORCHFORT_DEVICE_CPU, 0, true, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgExtraGPUCPU) {
-  training_test_multiarg("configs/torchscript_multiarg_extra.yaml", 0, TORCHFORT_DEVICE_CPU, true);
+  training_test_multiarg("configs/torchscript_multiarg_extra.yaml", 0, TORCHFORT_DEVICE_CPU, true, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgExtraGPUGPU) {
-  training_test_multiarg("configs/torchscript_multiarg_extra.yaml", 0, 0, true);
+  training_test_multiarg("configs/torchscript_multiarg_extra.yaml", 0, 0, true, false, false, false, true);
 }
 #endif
 
@@ -400,6 +424,9 @@ TEST(TorchFort, TrainTestNoLossBlock) {
 }
 TEST(TorchFort, TrainTestMultiArgErrors) {
   training_test_multiarg_errors("configs/torchscript_multiarg.yaml");
+}
+TEST(TorchFort, TrainTestMultiArgMLPError) {
+  training_test_multiarg("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, false, true, true, false);
 }
 
 

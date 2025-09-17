@@ -57,7 +57,7 @@ getTestRolloutBuffer(int buffer_size, int n_env, float gamma = 0.95, float lambd
   for (int i = 0; i < (buffer_size / n_env) + 1; ++i) {
     action = torch::ones({n_env, 1}, torch::kFloat32);
     for (int e = 0; e < n_env; ++e) {
-      action.index_put_({e,0}, static_cast<float>(dist(rng)));
+      action.index_put_({e, 0}, static_cast<float>(dist(rng)));
     }
     reward = torch::squeeze(action, 1).clone();
     q = reward.clone();
@@ -74,8 +74,8 @@ getTestRolloutBuffer(int buffer_size, int n_env, float gamma = 0.95, float lambd
   return std::make_tuple(rbuff, q, done);
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
-	   torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
+           torch::Tensor>
 extract_entries(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
   std::vector<torch::Tensor> svec, avec, rvec, qvec, log_p_vec, advvec, retvec, dvec;
   unsigned int max_iter = (buffp->getSize()) / (buffp->nEnvs());
@@ -107,9 +107,10 @@ void print_buffer(std::shared_ptr<rl::GAELambdaRolloutBuffer> buffp) {
   torch::Tensor stens, atens, reward, q, log_p, done;
   for (unsigned int i = 0; i < buffp->getSize(); ++i) {
     std::tie(stens, atens, reward, q, log_p, done) = buffp->get(i);
-    std::cout << "entry " << i << ": s = " << stens.index({0,0}).item<float>() << " a = " << atens.index({0,0}).item<float>()
-	      << " r = " << reward.item<float>() << " q = " << q.item<float>() << " log_p = " << log_p.item<float>()
-	      << " d = " << (done.item<float>() > 0.5 ? true : false) << std::endl;
+    std::cout << "entry " << i << ": s = " << stens.index({0, 0}).item<float>()
+              << " a = " << atens.index({0, 0}).item<float>() << " r = " << reward.item<float>()
+              << " q = " << q.item<float>() << " log_p = " << log_p.item<float>()
+              << " d = " << (done.item<float>() > 0.5 ? true : false) << std::endl;
   }
 }
 
@@ -218,17 +219,18 @@ TEST_P(RolloutBuffer, AdvantageComputation) {
   }
   qvec.push_back(last_val);
   dfvec.push_back(1. - last_done);
-  
+
   torch::Tensor rtens = torch::stack(rvec, 0);
-  torch::Tensor	qtens =	torch::stack(qvec, 0);
-  torch::Tensor	dftens = torch::stack(dfvec, 0);
-  torch::Tensor	advtens_compare = torch::stack(advvec, 0);
+  torch::Tensor qtens = torch::stack(qvec, 0);
+  torch::Tensor dftens = torch::stack(dfvec, 0);
+  torch::Tensor advtens_compare = torch::stack(advvec, 0);
   torch::Tensor advtens = torch::zeros_like(advtens_compare);
 
   // compute delta
-  torch::Tensor deltatens =
-    rtens + dftens.index({Slice(1, eff_buffer_size + 1, 1), "..."}) * gamma * qtens.index({Slice(1, eff_buffer_size + 1, 1), "..."}) -
-    qtens.index({Slice(0, eff_buffer_size, 1), "..."});
+  torch::Tensor deltatens = rtens +
+                            dftens.index({Slice(1, eff_buffer_size + 1, 1), "..."}) * gamma *
+                                qtens.index({Slice(1, eff_buffer_size + 1, 1), "..."}) -
+                            qtens.index({Slice(0, eff_buffer_size, 1), "..."});
 
   // compute discounted cumulative sum:
   torch::Tensor delta = deltatens.index({static_cast<int>(eff_buffer_size) - 1, "..."});
@@ -242,7 +244,6 @@ TEST_P(RolloutBuffer, AdvantageComputation) {
   float adv_diff = torch::sum(advtens_compare - advtens).item<float>();
   EXPECT_FLOAT_EQ(adv_diff, 0.);
 }
-
 
 TEST_P(RolloutBuffer, SaveRestore) {
   // rng
@@ -298,8 +299,7 @@ TEST_P(RolloutBuffer, SaveRestore) {
   EXPECT_FLOAT_EQ(dtens_diff, 0.);
 }
 
-INSTANTIATE_TEST_SUITE_P(MultiEnv, RolloutBuffer, testing::Range(1, 3),
-                         testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(MultiEnv, RolloutBuffer, testing::Range(1, 3), testing::PrintToStringParamName());
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

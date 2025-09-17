@@ -102,7 +102,8 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
 
   // set up td3 learning systems
   std::string filename = "configs/" + system + ".yaml";
-  CHECK_TORCHFORT(torchfort_rl_off_policy_create_system("test", filename.c_str(), TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
+  CHECK_TORCHFORT(
+      torchfort_rl_off_policy_create_system("test", filename.c_str(), TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
 
   // do training loop: initial state
   int iter = 0;
@@ -119,7 +120,8 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
       } else {
         // exploit
         CHECK_TORCHFORT(torchfort_rl_off_policy_predict("test", state.data_ptr(), 2, state_batch_shape.data(),
-                                                        action.data_ptr(), 2, action_batch_shape.data(), TORCHFORT_FLOAT, 0));
+                                                        action.data_ptr(), 2, action_batch_shape.data(),
+                                                        TORCHFORT_FLOAT, 0));
       }
 
       // do environment step
@@ -127,10 +129,9 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
 
       if (iter < num_train_iters) {
         // update replay buffer
-        CHECK_TORCHFORT(torchfort_rl_off_policy_update_replay_buffer("test",
-							          state.data_ptr(), state_new.data_ptr(), 1, state_shape.data(),
-							          action.data_ptr(), 1, action_shape.data(),
-							          &reward, done, TORCHFORT_FLOAT, 0));
+        CHECK_TORCHFORT(torchfort_rl_off_policy_update_replay_buffer(
+            "test", state.data_ptr(), state_new.data_ptr(), 1, state_shape.data(), action.data_ptr(), 1,
+            action_shape.data(), &reward, done, TORCHFORT_FLOAT, 0));
 
         // perform training step if requested:
         CHECK_TORCHFORT(torchfort_rl_off_policy_is_ready("test", is_ready));
@@ -140,11 +141,9 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
       }
 
       // evaluate policy:
-      CHECK_TORCHFORT(torchfort_rl_off_policy_evaluate("test",
-                                                       state.data_ptr(), 2, state_batch_shape.data(),
-                                                       action.data_ptr(), 2, action_batch_shape.data(),
-					                                             &q_estimate, 1, reward_batch_shape.data(),
-                                                       TORCHFORT_FLOAT, 0));
+      CHECK_TORCHFORT(torchfort_rl_off_policy_evaluate("test", state.data_ptr(), 2, state_batch_shape.data(),
+                                                       action.data_ptr(), 2, action_batch_shape.data(), &q_estimate, 1,
+                                                       reward_batch_shape.data(), TORCHFORT_FLOAT, 0));
 
       if (iter >= num_train_iters) {
         auto q_expected = env->spotValue(-1., 1., 0.95);
@@ -197,7 +196,6 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
 
   return result;
 }
-
 
 /******************************************************************/
 /****************************** TD3 *******************************/
@@ -363,7 +361,6 @@ TEST(SAC, ActionStateEnv) {
   std::tie(val, cmp, tol) = TestSystem(ActionState, "sac", 20000, 0, 100, false);
   EXPECT_NEAR(val, cmp, 0.3);
 }
-
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

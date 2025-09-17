@@ -103,7 +103,8 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
 
   // set up td3 learning systems
   std::string filename = "configs/" + system + ".yaml";
-  CHECK_TORCHFORT(torchfort_rl_on_policy_create_system("test", filename.c_str(), TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
+  CHECK_TORCHFORT(
+      torchfort_rl_on_policy_create_system("test", filename.c_str(), TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
 
   // do training loop: initial state
   int iter = 0;
@@ -114,16 +115,14 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
     while (!done) {
       if (iter < num_explore_iters) {
         // explore
-        CHECK_TORCHFORT(torchfort_rl_on_policy_predict_explore("test",
-						                                                   state.data_ptr(), 2, state_batch_shape.data(),
+        CHECK_TORCHFORT(torchfort_rl_on_policy_predict_explore("test", state.data_ptr(), 2, state_batch_shape.data(),
                                                                action.data_ptr(), 2, action_batch_shape.data(),
-						                                                   TORCHFORT_FLOAT, 0));
+                                                               TORCHFORT_FLOAT, 0));
       } else {
         // exploit
-        CHECK_TORCHFORT(torchfort_rl_on_policy_predict("test",
-					                                             state.data_ptr(), 2, state_batch_shape.data(),
-					                                             action.data_ptr(), 2, action_batch_shape.data(),
-                                                       TORCHFORT_FLOAT, 0));
+        CHECK_TORCHFORT(torchfort_rl_on_policy_predict("test", state.data_ptr(), 2, state_batch_shape.data(),
+                                                       action.data_ptr(), 2, action_batch_shape.data(), TORCHFORT_FLOAT,
+                                                       0));
       }
 
       // do environment step
@@ -131,10 +130,9 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
 
       if (iter < num_train_iters) {
         // update replay buffer
-        CHECK_TORCHFORT(torchfort_rl_on_policy_update_rollout_buffer("test",
-							                                                       state.data_ptr(), 1, state_shape.data(),
-                                                                     action.data_ptr(), 1, action_shape.data(),
-							                                                       &reward, done, TORCHFORT_FLOAT, 0));
+        CHECK_TORCHFORT(torchfort_rl_on_policy_update_rollout_buffer("test", state.data_ptr(), 1, state_shape.data(),
+                                                                     action.data_ptr(), 1, action_shape.data(), &reward,
+                                                                     done, TORCHFORT_FLOAT, 0));
 
         // perform training step if requested:
         CHECK_TORCHFORT(torchfort_rl_on_policy_is_ready("test", is_ready));
@@ -148,11 +146,9 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
       }
 
       // evaluate policy:
-      CHECK_TORCHFORT(torchfort_rl_on_policy_evaluate("test",
-					                                           state.data_ptr(), 2, state_batch_shape.data(),
-					                                           action.data_ptr(), 2, action_batch_shape.data(),
-					                                           &q_estimate, 1, reward_batch_shape.data(),
-                                                     TORCHFORT_FLOAT, 0));
+      CHECK_TORCHFORT(torchfort_rl_on_policy_evaluate("test", state.data_ptr(), 2, state_batch_shape.data(),
+                                                      action.data_ptr(), 2, action_batch_shape.data(), &q_estimate, 1,
+                                                      reward_batch_shape.data(), TORCHFORT_FLOAT, 0));
 
       if (iter >= num_train_iters) {
         auto q_expected = env->spotValue(-1., 1., 0.95);
@@ -235,7 +231,7 @@ TEST(PPO, ActionStateEnvL0) {
   std::tie(val, cmp, tol) = TestSystem(ActionState, "ppo", 1, 0, 1, 1, false);
 }
 
-TEST(PPO, ConstantEnv) { 
+TEST(PPO, ConstantEnv) {
   float val, cmp, tol;
   std::tie(val, cmp, tol) = TestSystem(Constant, "ppo", 50000, 0, 100, 8, false);
   EXPECT_NEAR(val, cmp, tol);

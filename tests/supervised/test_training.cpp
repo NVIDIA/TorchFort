@@ -37,16 +37,15 @@
 #include <gtest/gtest.h>
 #include <torch/torch.h>
 
-#include "torchfort.h"
 #include "internal/defines.h"
 #include "internal/exceptions.h"
 #include "internal/utils.h"
+#include "torchfort.h"
 
 #include "test_utils.h"
 
-void training_test(const std::string& model_config, int dev_model, int dev_input,
-                   bool should_fail_create, bool should_fail_train, bool should_fail_inference,
-                   bool check_result) {
+void training_test(const std::string& model_config, int dev_model, int dev_input, bool should_fail_create,
+                   bool should_fail_train, bool should_fail_inference, bool check_result) {
 
   std::string model_name = generate_random_name(10);
 
@@ -75,14 +74,13 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
   auto output = generate_random<float>(shape);
   float loss_val;
 
-  float *input_ptr = get_data_ptr(input, dev_input);
-  float *label_ptr = get_data_ptr(label, dev_input);
-  float *output_ptr = get_data_ptr(output, dev_input);
+  float* input_ptr = get_data_ptr(input, dev_input);
+  float* label_ptr = get_data_ptr(label, dev_input);
+  float* output_ptr = get_data_ptr(output, dev_input);
 
   try {
-    CHECK_TORCHFORT(torchfort_train(model_name.c_str(), input_ptr, shape.size(), shape.data(),
-                                    label_ptr, shape.size(), shape.data(), &loss_val,
-                                    TORCHFORT_FLOAT, 0));
+    CHECK_TORCHFORT(torchfort_train(model_name.c_str(), input_ptr, shape.size(), shape.data(), label_ptr, shape.size(),
+                                    shape.data(), &loss_val, TORCHFORT_FLOAT, 0));
     if (should_fail_train) {
       FAIL() << "This test should fail train call, but did not.";
     }
@@ -95,8 +93,8 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
   }
 
   try {
-    CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(),
-                                        output_ptr, shape.size(), shape.data(), TORCHFORT_FLOAT, 0));
+    CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(), output_ptr,
+                                        shape.size(), shape.data(), TORCHFORT_FLOAT, 0));
     if (should_fail_inference) {
       FAIL() << "This test should fail inference call, but did not.";
     }
@@ -121,15 +119,13 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
   free_data_ptr(input_ptr, dev_input);
   free_data_ptr(label_ptr, dev_input);
   free_data_ptr(output_ptr, dev_input);
-
 }
 
-void training_test_multiarg(const std::string& model_config, int dev_model, int dev_input,
-                            bool use_extra_args) {
+void training_test_multiarg(const std::string& model_config, int dev_model, int dev_input, bool use_extra_args) {
 
   std::string model_name = generate_random_name(10);
 
- CHECK_TORCHFORT(torchfort_create_model(model_name.c_str(), model_config.c_str(), dev_model));
+  CHECK_TORCHFORT(torchfort_create_model(model_name.c_str(), model_config.c_str(), dev_model));
 
 #ifdef ENABLE_GPU
   if (dev_input != TORCHFORT_DEVICE_CPU) {
@@ -164,9 +160,12 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
     input_ptrs[i] = get_data_ptr(inputs[i], dev_input);
     label_ptrs[i] = get_data_ptr(labels[i], dev_input);
     output_ptrs[i] = get_data_ptr(outputs[i], dev_input);
-    CHECK_TORCHFORT(torchfort_tensor_list_add_tensor(inputs_tl, input_ptrs[i], shape.size(), shape.data(), TORCHFORT_FLOAT));
-    CHECK_TORCHFORT(torchfort_tensor_list_add_tensor(labels_tl, label_ptrs[i], shape.size(), shape.data(), TORCHFORT_FLOAT));
-    CHECK_TORCHFORT(torchfort_tensor_list_add_tensor(outputs_tl, output_ptrs[i], shape.size(), shape.data(), TORCHFORT_FLOAT));
+    CHECK_TORCHFORT(
+        torchfort_tensor_list_add_tensor(inputs_tl, input_ptrs[i], shape.size(), shape.data(), TORCHFORT_FLOAT));
+    CHECK_TORCHFORT(
+        torchfort_tensor_list_add_tensor(labels_tl, label_ptrs[i], shape.size(), shape.data(), TORCHFORT_FLOAT));
+    CHECK_TORCHFORT(
+        torchfort_tensor_list_add_tensor(outputs_tl, output_ptrs[i], shape.size(), shape.data(), TORCHFORT_FLOAT));
   }
 
   torchfort_tensor_list_t extra_args_tl;
@@ -175,11 +174,13 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
     torchfort_tensor_list_create(&extra_args_tl);
     for (int i = 0; i < 2; ++i) {
       extra_args_ptrs[i] = get_data_ptr(extra_args[i], dev_input);
-      CHECK_TORCHFORT(torchfort_tensor_list_add_tensor(extra_args_tl, extra_args_ptrs[i], shape.size(), shape.data(), TORCHFORT_FLOAT));
+      CHECK_TORCHFORT(torchfort_tensor_list_add_tensor(extra_args_tl, extra_args_ptrs[i], shape.size(), shape.data(),
+                                                       TORCHFORT_FLOAT));
     }
   }
 
-  CHECK_TORCHFORT(torchfort_train_multiarg(model_name.c_str(), inputs_tl, labels_tl, &loss_val, (use_extra_args) ? extra_args_tl : nullptr, 0));
+  CHECK_TORCHFORT(torchfort_train_multiarg(model_name.c_str(), inputs_tl, labels_tl, &loss_val,
+                                           (use_extra_args) ? extra_args_tl : nullptr, 0));
 
   CHECK_TORCHFORT(torchfort_inference_multiarg(model_name.c_str(), inputs_tl, outputs_tl, 0));
 
@@ -192,7 +193,6 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
 #endif
     EXPECT_EQ(inputs[i], outputs[i]);
   }
-
 
   // Check that external data changes reflect in tensor list
   for (int i = 0; i < 2; ++i) {
@@ -231,7 +231,6 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
   if (use_extra_args) {
     CHECK_TORCHFORT(torchfort_tensor_list_destroy(extra_args_tl));
   }
-
 }
 
 void training_test_multiarg_errors(const std::string& model_config) {
@@ -267,7 +266,6 @@ void training_test_multiarg_errors(const std::string& model_config) {
   CHECK_TORCHFORT(torchfort_tensor_list_destroy(labels));
   CHECK_TORCHFORT(torchfort_tensor_list_destroy(outputs));
   CHECK_TORCHFORT(torchfort_tensor_list_destroy(extra_args));
-
 }
 
 void training_test_grad_accumulation(const std::string& model_config, int dev_model, int dev_input,
@@ -290,28 +288,27 @@ void training_test_grad_accumulation(const std::string& model_config, int dev_mo
   auto output2 = generate_random<float>(shape);
   float loss_val;
 
-  float *input_ptr = get_data_ptr(input, dev_input);
-  float *label_ptr = get_data_ptr(label, dev_input);
-  float *output_ptr = get_data_ptr(output, dev_input);
-  float *output2_ptr = get_data_ptr(output2, dev_input);
+  float* input_ptr = get_data_ptr(input, dev_input);
+  float* label_ptr = get_data_ptr(label, dev_input);
+  float* output_ptr = get_data_ptr(output, dev_input);
+  float* output2_ptr = get_data_ptr(output2, dev_input);
 
   // Get initial output
-  CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(),
-                                      output_ptr, shape.size(), shape.data(), TORCHFORT_FLOAT, 0));
+  CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(), output_ptr,
+                                      shape.size(), shape.data(), TORCHFORT_FLOAT, 0));
 #ifdef ENABLE_GPU
-    if (dev_input != TORCHFORT_DEVICE_CPU) {
-      copy_to_host_vector(output, output_ptr);
-    }
+  if (dev_input != TORCHFORT_DEVICE_CPU) {
+    copy_to_host_vector(output, output_ptr);
+  }
 #endif
 
   // Run several training steps. Model output should only change after grad_accumulation_steps steps have completed.
   for (int i = 0; i < grad_accumulation_steps; ++i) {
-    CHECK_TORCHFORT(torchfort_train(model_name.c_str(), input_ptr, shape.size(), shape.data(),
-                                    label_ptr, shape.size(), shape.data(), &loss_val,
-                                    TORCHFORT_FLOAT, 0));
+    CHECK_TORCHFORT(torchfort_train(model_name.c_str(), input_ptr, shape.size(), shape.data(), label_ptr, shape.size(),
+                                    shape.data(), &loss_val, TORCHFORT_FLOAT, 0));
 
-    CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(),
-                                        output2_ptr, shape.size(), shape.data(), TORCHFORT_FLOAT, 0));
+    CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(), output2_ptr,
+                                        shape.size(), shape.data(), TORCHFORT_FLOAT, 0));
 
 #ifdef ENABLE_GPU
     if (dev_input != TORCHFORT_DEVICE_CPU) {
@@ -329,7 +326,6 @@ void training_test_grad_accumulation(const std::string& model_config, int dev_mo
   free_data_ptr(label_ptr, dev_input);
   free_data_ptr(output_ptr, dev_input);
   free_data_ptr(output2_ptr, dev_input);
-
 }
 
 TEST(TorchFort, TrainTestMLPCPUCPU) {
@@ -356,9 +352,7 @@ TEST(TorchFort, TrainTestMLPGPUCPU) {
 TEST(TorchFort, TrainTestMLPCPUGPU) {
   training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, 0, false, false, false, false);
 }
-TEST(TorchFort, TrainTestMLPGPUGPU) {
-  training_test("configs/mlp2.yaml", 0, 0, false, false, false, false);
-}
+TEST(TorchFort, TrainTestMLPGPUGPU) { training_test("configs/mlp2.yaml", 0, 0, false, false, false, false); }
 TEST(TorchFort, TrainTestTorchScriptCPUGPU) {
   training_test("configs/torchscript.yaml", TORCHFORT_DEVICE_CPU, 0, false, false, false, true);
 }
@@ -398,10 +392,7 @@ TEST(TorchFort, TrainTestNoOptimizerBlock) {
 TEST(TorchFort, TrainTestNoLossBlock) {
   training_test("configs/missing_loss.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, true, false, false);
 }
-TEST(TorchFort, TrainTestMultiArgErrors) {
-  training_test_multiarg_errors("configs/torchscript_multiarg.yaml");
-}
-
+TEST(TorchFort, TrainTestMultiArgErrors) { training_test_multiarg_errors("configs/torchscript_multiarg.yaml"); }
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

@@ -38,7 +38,8 @@ using namespace torch::indexing;
 class ReplayBuffer : public testing::TestWithParam<int> {};
 
 // helper functions
-std::shared_ptr<rl::UniformReplayBuffer> getTestReplayBuffer(int buffer_size, int n_envs = 1, float gamma = 0.95, int nstep = 1) {
+std::shared_ptr<rl::UniformReplayBuffer> getTestReplayBuffer(int buffer_size, int n_envs = 1, float gamma = 0.95,
+                                                             int nstep = 1) {
 
   torch::NoGradGuard no_grad;
 
@@ -51,7 +52,7 @@ std::shared_ptr<rl::UniformReplayBuffer> getTestReplayBuffer(int buffer_size, in
   std::uniform_int_distribution<std::mt19937::result_type> dist(1, 5);
 
   // fill the buffer
-  torch::Tensor state = torch::zeros({n_envs,1}, torch::kFloat32), state_p, action, rtens, dtens;
+  torch::Tensor state = torch::zeros({n_envs, 1}, torch::kFloat32), state_p, action, rtens, dtens;
   for (unsigned int i = 0; i < buffer_size; ++i) {
     action = torch::ones({n_envs, 1}, torch::kFloat32) * static_cast<float>(dist(rng));
     state_p = state + action;
@@ -92,8 +93,10 @@ void print_buffer(std::shared_ptr<rl::UniformReplayBuffer> buffp) {
   for (int i = 0; i < buffp->getSize(); ++i) {
     std::tie(stens, atens, sptens, reward, d) = buffp->get(i);
     for (int e = 0; e < buffp->nEnvs(); ++e) {
-      std::cout << "entry (index, env): (" << i << ", " << e << "): s = " << stens.index({e, "..."}).item<float>() << " a = " << atens.index({e, "..."}).item<float>()
-		<< " s' = " << sptens.index({e, "..."}).item<float>() << " r = " << reward.index({e}).item<float>() << " d = " << d.index({e}).item<float>() << std::endl;
+      std::cout << "entry (index, env): (" << i << ", " << e << "): s = " << stens.index({e, "..."}).item<float>()
+                << " a = " << atens.index({e, "..."}).item<float>()
+                << " s' = " << sptens.index({e, "..."}).item<float>() << " r = " << reward.index({e}).item<float>()
+                << " d = " << d.index({e}).item<float>() << std::endl;
     }
   }
 }
@@ -114,7 +117,7 @@ TEST_P(ReplayBuffer, ShapeConsistency) {
   // sample
   torch::Tensor stens, atens, sptens, rtens, dtens;
   std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
-    
+
   // check shapes
   EXPECT_EQ(stens.dim(), 2);
   EXPECT_EQ(atens.dim(), 2);
@@ -215,7 +218,7 @@ TEST_P(ReplayBuffer, NStepConsistency) {
   float state_diff = 0;
   float reward_diff = 0.;
   std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
-  
+
   // iterate over samples in batch
   torch::Tensor stemp, atemp, sptemp, sstens, rtemp, dtemp, spfin;
   float reward, gamma_eff, rdiff, sdiff, sstens_val;
@@ -246,7 +249,8 @@ TEST_P(ReplayBuffer, NStepConsistency) {
           break;
         }
       }
-      if (found) break;
+      if (found)
+        break;
     }
     rdiff += std::abs(reward - rtens.index({s}).item<float>());
     sdiff += torch::sum(torch::abs(spfin - sptens.index({s, "..."}))).item<float>();
@@ -303,8 +307,7 @@ TEST_P(ReplayBuffer, SaveRestore) {
   EXPECT_FLOAT_EQ(dtens_diff, 0.);
 }
 
-INSTANTIATE_TEST_SUITE_P(MultiEnv, ReplayBuffer, testing::Range(1, 3),
-                         testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(MultiEnv, ReplayBuffer, testing::Range(1, 3), testing::PrintToStringParamName());
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

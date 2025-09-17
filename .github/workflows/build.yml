@@ -1,42 +1,40 @@
 name: "Build"
 
 on:
-  pull_request:
-    branches: [ master ]
-  #issue_comment:
-  #  types: [created]
+  issue_comment:
+    types: [ created ]
 
 jobs:
-  #trigger-comment:
-  #  if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #  - name: "Post trigger comment"
-  #    uses: actions/github-script@v7
-  #    with:
-  #      script: |
-  #        const workflowUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
-  #        github.rest.issues.createComment({
-  #          issue_number: context.issue.number,
-  #          owner: context.repo.owner,
-  #          repo: context.repo.repo,
-  #          body: `🚀 Build workflow triggered! [View run](${workflowUrl})`
-  #        });
+  trigger-comment:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
+    runs-on: ubuntu-latest
+    steps:
+    - name: "Post trigger comment"
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const workflowUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `🚀 Build workflow triggered! [View run](${workflowUrl})`
+          });
 
   build:
-    #needs: trigger-comment
-    #if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
+    needs: trigger-comment
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
     strategy:
       matrix:
         include:
-          #- name: "GPU build (NVHPC SDK 25.7, Ubuntu 22.04)"
-          #  dockerfile: "Dockerfile"
-          #  free_space: true
-          #  run_tests: false
-          #- name: "GPU build (GNU, Ubuntu 22.04)"
-          #  dockerfile: "Dockerfile_gnu"
-          #  free_space: false
-          #  run_tests: false
+          - name: "GPU build (NVHPC SDK 25.7, Ubuntu 22.04)"
+            dockerfile: "Dockerfile"
+            free_space: true
+            run_tests: false
+          - name: "GPU build (GNU, Ubuntu 22.04)"
+            dockerfile: "Dockerfile_gnu"
+            free_space: false
+            run_tests: false
           - name: "CPU build (GNU, Ubuntu 22.04)"
             dockerfile: "Dockerfile_gnu_cpuonly"
             free_space: false
@@ -52,22 +50,22 @@ jobs:
         sudo rm -rf /usr/local/lib/android || true
         sudo rm -rf /usr/share/dotnet || true
 
-    #- name: "Retrieve PR info"
-    #  uses: actions/github-script@v7
-    #  id: pr-info
-    #  with:
-    #    script: |
-    #      const pr = await github.rest.pulls.get({
-    #        owner: context.repo.owner,
-    #        repo: context.repo.repo,
-    #        pull_number: context.issue.number
-    #      });
-    #      core.setOutput('sha', pr.data.head.sha);
+    - name: "Retrieve PR info"
+      uses: actions/github-script@v7
+      id: pr-info
+      with:
+        script: |
+          const pr = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number
+          });
+          core.setOutput('sha', pr.data.head.sha);
 
     - name: "Checkout PR code"
       uses: actions/checkout@v4
-      #with:
-      #  ref: ${{ steps.pr-info.outputs.sha }}
+      with:
+        ref: ${{ steps.pr-info.outputs.sha }}
 
     - name: "Set up Docker Buildx"
       uses: docker/setup-buildx-action@v3
@@ -115,25 +113,25 @@ jobs:
           ./test_on_policy --gtest_filter=*L0*
         "
 
-  #result-comment:
-  #  needs: build
-  #  if: always() && github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - name: "Post result comment"
-  #      uses: actions/github-script@v7
-  #      with:
-  #        script: |
-  #          const workflowUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
-  #          const success = '${{ needs.build.result }}' === 'success';
+  result-comment:
+    needs: build
+    if: always() && github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Post result comment"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflowUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
+            const success = '${{ needs.build.result }}' === 'success';
 
-  #          const message = success
-  #            ? `✅ Build workflow passed! [View run](${workflowUrl})`
-  #            : `❌ Build workflow failed! [View run](${workflowUrl})`;
+            const message = success
+              ? `✅ Build workflow passed! [View run](${workflowUrl})`
+              : `❌ Build workflow failed! [View run](${workflowUrl})`;
 
-  #          github.rest.issues.createComment({
-  #            issue_number: context.issue.number,
-  #            owner: context.repo.owner,
-  #            repo: context.repo.repo,
-  #            body: message
-  #          });
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });

@@ -33,6 +33,8 @@
 #include <gtest/gtest.h>
 #include <sstream>
 
+#include "internal/defines.h"
+
 enum EnvMode { Constant, Predictable, Delayed, Action, ActionState };
 
 struct CoutRedirect {
@@ -100,11 +102,8 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
 
   // set up td3 learning systems
   std::string filename = "configs/" + system + ".yaml";
-  torchfort_result_t tstat =
-      torchfort_rl_off_policy_create_system("test", filename.c_str(), TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU);
-  if (tstat != TORCHFORT_RESULT_SUCCESS) {
-    throw std::runtime_error("RL system creation failed");
-  }
+  CHECK_TORCHFORT(
+      torchfort_rl_off_policy_create_system("test", filename.c_str(), TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
 
   // do training loop: initial state
   int iter = 0;
@@ -115,13 +114,14 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
     while (!done) {
       if (iter < num_explore_iters) {
         // explore
-        tstat = torchfort_rl_off_policy_predict_explore("test", state.data_ptr(), 2, state_batch_shape.data(),
-                                                        action.data_ptr(), 2, action_batch_shape.data(),
-                                                        TORCHFORT_FLOAT, 0);
+        CHECK_TORCHFORT(torchfort_rl_off_policy_predict_explore("test", state.data_ptr(), 2, state_batch_shape.data(),
+                                                                action.data_ptr(), 2, action_batch_shape.data(),
+                                                                TORCHFORT_FLOAT, 0));
       } else {
         // exploit
-        tstat = torchfort_rl_off_policy_predict("test", state.data_ptr(), 2, state_batch_shape.data(),
-                                                action.data_ptr(), 2, action_batch_shape.data(), TORCHFORT_FLOAT, 0);
+        CHECK_TORCHFORT(torchfort_rl_off_policy_predict("test", state.data_ptr(), 2, state_batch_shape.data(),
+                                                        action.data_ptr(), 2, action_batch_shape.data(),
+                                                        TORCHFORT_FLOAT, 0));
       }
 
       // do environment step
@@ -129,24 +129,21 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
 
       if (iter < num_train_iters) {
         // update replay buffer
-        tstat = torchfort_rl_off_policy_update_replay_buffer("test",
-							     state.data_ptr(), state_new.data_ptr(), 1, state_shape.data(),
-							     action.data_ptr(), 1, action_shape.data(),
-							     &reward, done, TORCHFORT_FLOAT, 0);
+        CHECK_TORCHFORT(torchfort_rl_off_policy_update_replay_buffer(
+            "test", state.data_ptr(), state_new.data_ptr(), 1, state_shape.data(), action.data_ptr(), 1,
+            action_shape.data(), &reward, done, TORCHFORT_FLOAT, 0));
 
         // perform training step if requested:
-        tstat = torchfort_rl_off_policy_is_ready("test", is_ready);
+        CHECK_TORCHFORT(torchfort_rl_off_policy_is_ready("test", is_ready));
         if (is_ready) {
-          tstat = torchfort_rl_off_policy_train_step("test", &p_loss, &q_loss, 0);
+          CHECK_TORCHFORT(torchfort_rl_off_policy_train_step("test", &p_loss, &q_loss, 0));
         }
       }
 
       // evaluate policy:
-      tstat = torchfort_rl_off_policy_evaluate("test",
-					       state.data_ptr(), 2, state_batch_shape.data(),
-					       action.data_ptr(), 2, action_batch_shape.data(),
-					       &q_estimate, 1, reward_batch_shape.data(),
-                                               TORCHFORT_FLOAT, 0);
+      CHECK_TORCHFORT(torchfort_rl_off_policy_evaluate("test", state.data_ptr(), 2, state_batch_shape.data(),
+                                                       action.data_ptr(), 2, action_batch_shape.data(), &q_estimate, 1,
+                                                       reward_batch_shape.data(), TORCHFORT_FLOAT, 0));
 
       if (iter >= num_train_iters) {
         auto q_expected = env->spotValue(-1., 1., 0.95);
@@ -200,10 +197,34 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
   return result;
 }
 
-
 /******************************************************************/
 /****************************** TD3 *******************************/
 /******************************************************************/
+TEST(TD3, ConstantEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Constant, "td3", 1, 0, 1, false);
+}
+
+TEST(TD3, PredictableEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Predictable, "td3", 1, 0, 1, false);
+}
+
+TEST(TD3, DelayedEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Delayed, "td3", 1, 0, 1, false);
+}
+
+TEST(TD3, ActionEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Action, "td3", 1, 1, 1, false);
+}
+
+TEST(TD3, ActionStateEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(ActionState, "td3", 1, 0, 1, false);
+}
+
 TEST(TD3, ConstantEnv) {
   float val, cmp, tol;
   std::tie(val, cmp, tol) = TestSystem(Constant, "td3", 20000, 0, 100, false);
@@ -237,6 +258,26 @@ TEST(TD3, ActionStateEnv) {
 /******************************************************************/
 /****************************** DDPG ******************************/
 /******************************************************************/
+TEST(DDPG, ConstantEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Constant, "ddpg", 1, 0, 1, false);
+}
+
+TEST(DDPG, PredictableEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Predictable, "ddpg", 1, 0, 1, false);
+}
+
+TEST(DDPG, DelayedEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Delayed, "ddpg", 1, 0, 1, false);
+}
+
+TEST(DDPG, ActionEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Action, "ddpg", 1, 1, 1, false);
+}
+
 TEST(DDPG, ConstantEnv) {
   float val, cmp, tol;
   std::tie(val, cmp, tol) = TestSystem(Constant, "ddpg", 20000, 0, 100, false);
@@ -266,6 +307,31 @@ TEST(DDPG, ActionEnv) {
 /******************************************************************/
 /****************************** SAC *******************************/
 /******************************************************************/
+TEST(SAC, ConstantEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Constant, "sac", 1, 0, 1, false);
+}
+
+TEST(SAC, PredictableEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Predictable, "sac", 1, 0, 1, false);
+}
+
+TEST(SAC, DelayedEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Delayed, "sac", 1, 0, 1, false);
+}
+
+TEST(SAC, ActionEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(Action, "sac", 1, 1, 1, false);
+}
+
+TEST(SAC, ActionStateEnvL0) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(ActionState, "sac", 1, 0, 1, false);
+}
+
 TEST(SAC, ConstantEnv) {
   float val, cmp, tol;
   std::tie(val, cmp, tol) = TestSystem(Constant, "sac", 20000, 0, 100, false);
@@ -295,7 +361,6 @@ TEST(SAC, ActionStateEnv) {
   std::tie(val, cmp, tol) = TestSystem(ActionState, "sac", 20000, 0, 100, false);
   EXPECT_NEAR(val, cmp, 0.3);
 }
-
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

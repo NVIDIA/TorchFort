@@ -27,7 +27,7 @@ jobs:
     - name: "Run clang-format check"
       run: |
         # Collect names of files that are not properly formatted
-        filelist=`find src examples -name "*.cpp" -o -name "*.h"`
+        filelist=`find src examples tests -name "*.cpp" -o -name "*.h"`
         files_to_fix=()
         for file in $filelist; do
           if ! clang-format-${CLANG_FORMAT_VERSION} --dry-run --Werror "$file" 2>/dev/null; then

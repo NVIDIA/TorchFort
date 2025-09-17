@@ -2,13 +2,7 @@ name: "Build"
 
 on:
   issue_comment:
-    types: [created]
-
-permissions:
-  actions: read
-  contents: read
-  issues: write
-  pull-requests: write
+    types: [ created ]
 
 jobs:
   trigger-comment:
@@ -109,6 +103,14 @@ jobs:
         docker run --rm torchfort bash -c "
           cd /opt/torchfort/bin/tests/rl
           ./test_rollout_buffer
+        "
+        docker run --rm torchfort bash -c "
+          cd /opt/torchfort/bin/tests/rl
+          ./test_off_policy --gtest_filter=*L0*
+        "
+        docker run --rm torchfort bash -c "
+          cd /opt/torchfort/bin/tests/rl
+          ./test_on_policy --gtest_filter=*L0*
         "
 
   result-comment:

@@ -41,8 +41,7 @@
 #endif
 
 // Generate random vector data for testing
-template <typename T>
-std::vector<T> generate_random(const std::vector<int64_t>& shape) {
+template <typename T> std::vector<T> generate_random(const std::vector<int64_t>& shape) {
 
   int64_t num_values = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
   std::vector<T> data(num_values);
@@ -52,14 +51,11 @@ std::vector<T> generate_random(const std::vector<int64_t>& shape) {
   generator.seed(seed);
   std::uniform_real_distribution<T> dist((T)0, (T)1);
 
-  auto r = [&]() {
-    return dist(generator);
-  };
+  auto r = [&]() { return dist(generator); };
 
   std::generate(data.begin(), data.end(), r);
 
   return data;
-
 }
 
 // Generate random names to use as model keys to avoid conflicts between tests
@@ -79,8 +75,7 @@ std::string generate_random_name(int length) {
 }
 
 // Get raw data pointer from vector. If dev is GPU, this routine will allocate GPU memory and copy.
-template <typename T>
-T* get_data_ptr(std::vector<T>& data, int dev) {
+template <typename T> T* get_data_ptr(std::vector<T>& data, int dev) {
   T* data_ptr;
 #ifdef ENABLE_GPU
   if (dev == TORCHFORT_DEVICE_CPU) {
@@ -97,8 +92,7 @@ T* get_data_ptr(std::vector<T>& data, int dev) {
 }
 
 // Free raw data pointer. If dev is GPU, this routine will free GPU memory.
-template <typename T>
-void free_data_ptr(T* data_ptr, int dev) {
+template <typename T> void free_data_ptr(T* data_ptr, int dev) {
 #ifdef ENABLE_GPU
   if (dev != TORCHFORT_DEVICE_CPU) {
     CHECK_CUDA(cudaFree(data_ptr));
@@ -108,13 +102,10 @@ void free_data_ptr(T* data_ptr, int dev) {
 
 // Routines to copy vector data to and from GPU.
 #ifdef ENABLE_GPU
-template <typename T>
-void copy_to_host_vector(std::vector<T>& data, T* data_ptr) {
-    CHECK_CUDA(cudaMemcpy(data.data(), data_ptr, data.size()*sizeof(T(0)), cudaMemcpyDeviceToHost));
+template <typename T> void copy_to_host_vector(std::vector<T>& data, T* data_ptr) {
+  CHECK_CUDA(cudaMemcpy(data.data(), data_ptr, data.size() * sizeof(T(0)), cudaMemcpyDeviceToHost));
 }
-template <typename T>
-void copy_from_host_vector(T* data_ptr, std::vector<T>& data) {
-    CHECK_CUDA(cudaMemcpy(data_ptr, data.data(), data.size()*sizeof(T(0)), cudaMemcpyHostToDevice));
+template <typename T> void copy_from_host_vector(T* data_ptr, std::vector<T>& data) {
+  CHECK_CUDA(cudaMemcpy(data_ptr, data.data(), data.size() * sizeof(T(0)), cudaMemcpyHostToDevice));
 }
 #endif
-

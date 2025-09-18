@@ -77,7 +77,7 @@ void ActorCriticMLPModel::setup(const ParamMap& params) {
 // Implement the forward function.
 std::vector<torch::Tensor> ActorCriticMLPModel::forward(const std::vector<torch::Tensor>& inputs) {
 
-  // makse sure that exactly two tensors are fed, state and action:
+  // make sure only one tensor (state) is fed
   if (inputs.size() != 1) {
     THROW_INVALID_USAGE("You have to provide exactly one tensor (state) to the ActorCriticMLPModel");
   }

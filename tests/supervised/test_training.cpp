@@ -355,16 +355,19 @@ void training_test_grad_accumulation(const std::string& model_config, int dev_mo
 }
 
 TEST(TorchFort, TrainTestMLPCPUCPU) {
-  training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 5}, false, false, false, false);
+  training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 5}, false, false, false,
+                false);
 }
 TEST(TorchFort, TrainTestMLPCPUCPUNoFlatten) {
-  training_test("configs/mlp3.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 10}, false, false, false, false);
+  training_test("configs/mlp3.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 10}, false, false, false,
+                false);
 }
 TEST(TorchFort, TrainTestMLPCPUCPU1DNoFlatten) {
   training_test("configs/mlp3.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10}, false, false, false, false);
 }
 TEST(TorchFort, TrainTestTorchScriptCPUCPU) {
-  training_test("configs/torchscript.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 10},  false, false, false, true);
+  training_test("configs/torchscript.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 10}, false, false,
+                false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgCPUCPU) {
   training_test_multiarg("configs/torchscript_multiarg.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, false,
@@ -386,9 +389,7 @@ TEST(TorchFort, TrainTestMLPGPUCPU) {
 TEST(TorchFort, TrainTestMLPCPUGPU) {
   training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, 0, {10, 2, 5}, false, false, false, false);
 }
-TEST(TorchFort, TrainTestMLPGPUGPU) {
-  training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, false, false, false);
-}
+TEST(TorchFort, TrainTestMLPGPUGPU) { training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, false, false, false); }
 TEST(TorchFort, TrainTestTorchScriptCPUGPU) {
   training_test("configs/torchscript.yaml", TORCHFORT_DEVICE_CPU, 0, {10, 2, 10}, false, false, false, true);
 }
@@ -427,10 +428,12 @@ TEST(TorchFort, TrainTestBadConfigName) {
   training_test("configs/blah.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 10}, true, true, true, false);
 }
 TEST(TorchFort, TrainTestNoOptimizerBlock) {
-  training_test("configs/missing_opt.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 10}, false, true, false, false);
+  training_test("configs/missing_opt.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 10}, false, true, false,
+                false);
 }
 TEST(TorchFort, TrainTestNoLossBlock) {
-  training_test("configs/missing_loss.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 10}, false, true, false, false);
+  training_test("configs/missing_loss.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 10}, false, true, false,
+                false);
 }
 TEST(TorchFort, TrainTestMultiArgErrors) { training_test_multiarg_errors("configs/torchscript_multiarg.yaml"); }
 TEST(TorchFort, TrainTestMultiArgMLPError) {

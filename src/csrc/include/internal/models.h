@@ -58,7 +58,6 @@ struct SACMLPModel : BaseModel, public std::enable_shared_from_this<BaseModel> {
   std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs) override;
 
   double dropout;
-  bool flatten_non_batch_dims;
   std::vector<int> layer_sizes;
   bool state_dependent_sigma;
 

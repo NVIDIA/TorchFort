@@ -31,8 +31,8 @@
 
 #include "test_utils.h"
 
-void training_test(const std::string& model_config, int dev_model, int dev_input, bool should_fail_create,
-                   std::vector<int64_t> shape, bool should_fail_train, bool should_fail_inference, bool check_result) {
+void training_test(const std::string& model_config, int dev_model, int dev_input, std::vector<int64_t> shape,
+                   bool should_fail_create, bool should_fail_train, bool should_fail_inference, bool check_result) {
 
   std::string model_name = generate_random_name(10);
 
@@ -360,6 +360,9 @@ TEST(TorchFort, TrainTestMLPCPUCPU) {
 TEST(TorchFort, TrainTestMLPCPUCPUNoFlatten) {
   training_test("configs/mlp3.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 10}, false, false, false, false);
 }
+TEST(TorchFort, TrainTestMLPCPUCPU1DNoFlatten) {
+  training_test("configs/mlp3.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10}, false, false, false, false);
+}
 TEST(TorchFort, TrainTestTorchScriptCPUCPU) {
   training_test("configs/torchscript.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 10},  false, false, false, true);
 }
@@ -436,6 +439,9 @@ TEST(TorchFort, TrainTestMultiArgMLPError) {
 }
 TEST(TorchFort, TrainTestMLPCPUCPUNoFlattenDimError) {
   training_test("configs/mlp3.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 5}, false, true, true, false);
+}
+TEST(TorchFort, TrainTestMLPCPUCPU1DDimError) {
+  training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10}, false, true, true, false);
 }
 
 int main(int argc, char* argv[]) {

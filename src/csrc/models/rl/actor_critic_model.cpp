@@ -76,10 +76,24 @@ void ActorCriticMLPModel::setup(const ParamMap& params) {
 
 // Implement the forward function.
 std::vector<torch::Tensor> ActorCriticMLPModel::forward(const std::vector<torch::Tensor>& inputs) {
-  // concatenate inputs
-  auto x = torch::cat(inputs, 1);
-  x = x.reshape({x.size(0), -1});
 
+  // make sure only one tensor (state) is fed
+  if (inputs.size() != 1) {
+    THROW_INVALID_USAGE("You have to provide exactly one tensor (state) to the ActorCriticMLPModel");
+  }
+
+  // unpack
+  auto state = inputs[0];
+
+  // expand dims if necessary
+  if (state.dim() == 1) {
+    state = state.unsqueeze(0);
+  }
+
+  // flatten everything beyond dim 0:
+  auto x = state.reshape({state.size(0), -1});
+
+  // forward pass
   for (int i = 0; i < encoder_layer_sizes.size() - 1; ++i) {
     // encoder part
     x = torch::relu(encoder_layers[i]->forward(x) + encoder_biases[i]);

@@ -53,6 +53,18 @@ struct MLPModel : BaseModel, public std::enable_shared_from_this<BaseModel> {
   std::vector<torch::Tensor> biases;
 };
 
+struct CriticMLPModel : BaseModel, public std::enable_shared_from_this<BaseModel> {
+  void setup(const ParamMap& params) override;
+  std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs) override;
+
+  double dropout;
+  std::vector<int> layer_sizes;
+
+  // Use one of many "standard library" modules.
+  std::vector<torch::nn::Linear> fc_layers;
+  std::vector<torch::Tensor> biases;
+};
+
 struct SACMLPModel : BaseModel, public std::enable_shared_from_this<BaseModel> {
   void setup(const ParamMap& params) override;
   std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs) override;
@@ -86,6 +98,7 @@ BEGIN_MODEL_REGISTRY
 
 // Add entries for new models in this section.
 REGISTER_MODEL(MLP, MLPModel)
+REGISTER_MODEL(CriticMLP, CriticMLPModel)
 REGISTER_MODEL(SACMLP, SACMLPModel)
 REGISTER_MODEL(ActorCriticMLP, ActorCriticMLPModel)
 

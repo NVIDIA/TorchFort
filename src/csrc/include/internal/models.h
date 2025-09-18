@@ -60,11 +60,11 @@ struct CriticMLPModel : BaseModel, public std::enable_shared_from_this<BaseModel
   double dropout;
   std::vector<int> layer_sizes;
 
-  // Use one of many "standard library" modules.                                                                                                                                               
+  // Use one of many "standard library" modules.
   std::vector<torch::nn::Linear> fc_layers;
   std::vector<torch::Tensor> biases;
 };
-  
+
 struct SACMLPModel : BaseModel, public std::enable_shared_from_this<BaseModel> {
   void setup(const ParamMap& params) override;
   std::vector<torch::Tensor> forward(const std::vector<torch::Tensor>& inputs) override;

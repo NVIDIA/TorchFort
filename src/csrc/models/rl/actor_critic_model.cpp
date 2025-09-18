@@ -92,7 +92,7 @@ std::vector<torch::Tensor> ActorCriticMLPModel::forward(const std::vector<torch:
 
   // flatten everything beyond dim 0:
   auto x = state.reshape({state.size(0), -1});
-  
+
   // forward pass
   for (int i = 0; i < encoder_layer_sizes.size() - 1; ++i) {
     // encoder part

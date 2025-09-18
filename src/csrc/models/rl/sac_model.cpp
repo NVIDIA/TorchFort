@@ -45,9 +45,22 @@ void SACMLPModel::setup(const ParamMap& params) {
 
 // Implement the forward function.
 std::vector<torch::Tensor> SACMLPModel::forward(const std::vector<torch::Tensor>& inputs) {
-  // concatenate inputs
-  auto x = torch::cat(inputs, 1);
-  x = x.reshape({x.size(0), -1});
+
+  // makse sure that exactly two tensors are fed, state and action:
+  if (inputs.size() != 1) {
+    THROW_INVALID_USAGE("You have to provide exactly one tensor (state) to the SACMLPModel");
+  }
+
+  // unpack
+  auto state = inputs[0];
+
+  // expand dims if necessary
+  if (state.dim() == 1) {
+    state = state.unsqueeze(0);
+  }
+
+  // flatten everything beyond dim 0:
+  auto x = state.reshape({state.size(0), -1});
   torch::Tensor y, z;
 
   for (int i = 0; i < layer_sizes.size() - 1; ++i) {

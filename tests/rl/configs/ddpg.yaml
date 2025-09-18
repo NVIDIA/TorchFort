@@ -34,7 +34,7 @@ policy_model:
     layer_sizes: [1, 16, 1]
 
 critic_model:
-  type: MLP
+  type: CriticMLP
   parameters:
     dropout: 0.0
     layer_sizes: [2, 16, 1]

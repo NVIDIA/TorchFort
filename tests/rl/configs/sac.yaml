@@ -35,7 +35,7 @@ policy_model:
     log_sigma_init: 0.
 
 critic_model:
-  type: MLP
+  type: CriticMLP
   parameters:
     dropout: 0.0
     layer_sizes: [2, 16, 1]

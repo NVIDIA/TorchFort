@@ -6,7 +6,7 @@ on:
 
 jobs:
   trigger-comment:
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test') && (github.actor == 'romerojosh' || github.actor == 'azrael417')
     runs-on: ubuntu-latest
     steps:
     - name: "Post trigger comment"
@@ -23,7 +23,7 @@ jobs:
 
   build:
     needs: trigger-comment
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test') && (github.actor == 'romerojosh' || github.actor == 'azrael417')
     strategy:
       matrix:
         include:
@@ -65,6 +65,7 @@ jobs:
     - name: "Checkout PR code"
       uses: actions/checkout@v4
       with:
+        persist-credentials: false
         ref: ${{ steps.pr-info.outputs.sha }}
 
     - name: "Set up Docker Buildx"
@@ -115,7 +116,7 @@ jobs:
 
   result-comment:
     needs: build
-    if: always() && github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test')
+    if: always() && github.event.issue.pull_request && contains(github.event.comment.body, '/build_and_test') && (github.actor == 'romerojosh' || github.actor == 'azrael417')
     runs-on: ubuntu-latest
     steps:
       - name: "Post result comment"

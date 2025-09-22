@@ -643,45 +643,213 @@ module torchfort
 
   ! Generic interface for inference
   interface torchfort_inference
-    module procedure torchfort_inference_float_2d
-    module procedure torchfort_inference_double_2d
-    module procedure torchfort_inference_float_3d
-    module procedure torchfort_inference_double_3d
-    module procedure torchfort_inference_float_4d
-    module procedure torchfort_inference_double_4d
-    module procedure torchfort_inference_float_5d
-    module procedure torchfort_inference_double_5d
+    module procedure torchfort_inference_float_1d_1d
+    module procedure torchfort_inference_float_1d_2d
+    module procedure torchfort_inference_float_1d_3d
+    module procedure torchfort_inference_float_1d_4d
+    module procedure torchfort_inference_float_1d_5d
+    module procedure torchfort_inference_float_2d_1d
+    module procedure torchfort_inference_float_2d_2d
+    module procedure torchfort_inference_float_2d_3d
+    module procedure torchfort_inference_float_2d_4d
+    module procedure torchfort_inference_float_2d_5d
+    module procedure torchfort_inference_float_3d_1d
+    module procedure torchfort_inference_float_3d_2d
+    module procedure torchfort_inference_float_3d_3d
+    module procedure torchfort_inference_float_3d_4d
+    module procedure torchfort_inference_float_3d_5d
+    module procedure torchfort_inference_float_4d_1d
+    module procedure torchfort_inference_float_4d_2d
+    module procedure torchfort_inference_float_4d_3d
+    module procedure torchfort_inference_float_4d_4d
+    module procedure torchfort_inference_float_4d_5d
+    module procedure torchfort_inference_float_5d_1d
+    module procedure torchfort_inference_float_5d_2d
+    module procedure torchfort_inference_float_5d_3d
+    module procedure torchfort_inference_float_5d_4d
+    module procedure torchfort_inference_float_5d_5d
+    module procedure torchfort_inference_double_1d_1d
+    module procedure torchfort_inference_double_1d_2d
+    module procedure torchfort_inference_double_1d_3d
+    module procedure torchfort_inference_double_1d_4d
+    module procedure torchfort_inference_double_1d_5d
+    module procedure torchfort_inference_double_2d_1d
+    module procedure torchfort_inference_double_2d_2d
+    module procedure torchfort_inference_double_2d_3d
+    module procedure torchfort_inference_double_2d_4d
+    module procedure torchfort_inference_double_2d_5d
+    module procedure torchfort_inference_double_3d_1d
+    module procedure torchfort_inference_double_3d_2d
+    module procedure torchfort_inference_double_3d_3d
+    module procedure torchfort_inference_double_3d_4d
+    module procedure torchfort_inference_double_3d_5d
+    module procedure torchfort_inference_double_4d_1d
+    module procedure torchfort_inference_double_4d_2d
+    module procedure torchfort_inference_double_4d_3d
+    module procedure torchfort_inference_double_4d_4d
+    module procedure torchfort_inference_double_4d_5d
+    module procedure torchfort_inference_double_5d_1d
+    module procedure torchfort_inference_double_5d_2d
+    module procedure torchfort_inference_double_5d_3d
+    module procedure torchfort_inference_double_5d_4d
+    module procedure torchfort_inference_double_5d_5d
 #ifdef _CUDA
-    module procedure torchfort_inference_float_2d_dev
-    module procedure torchfort_inference_double_2d_dev
-    module procedure torchfort_inference_float_3d_dev
-    module procedure torchfort_inference_double_3d_dev
-    module procedure torchfort_inference_float_4d_dev
-    module procedure torchfort_inference_double_4d_dev
-    module procedure torchfort_inference_float_5d_dev
-    module procedure torchfort_inference_double_5d_dev
+    module procedure torchfort_inference_float_1d_1d_dev
+    module procedure torchfort_inference_float_1d_2d_dev
+    module procedure torchfort_inference_float_1d_3d_dev
+    module procedure torchfort_inference_float_1d_4d_dev
+    module procedure torchfort_inference_float_1d_5d_dev
+    module procedure torchfort_inference_float_2d_1d_dev
+    module procedure torchfort_inference_float_2d_2d_dev
+    module procedure torchfort_inference_float_2d_3d_dev
+    module procedure torchfort_inference_float_2d_4d_dev
+    module procedure torchfort_inference_float_2d_5d_dev
+    module procedure torchfort_inference_float_3d_1d_dev
+    module procedure torchfort_inference_float_3d_2d_dev
+    module procedure torchfort_inference_float_3d_3d_dev
+    module procedure torchfort_inference_float_3d_4d_dev
+    module procedure torchfort_inference_float_3d_5d_dev
+    module procedure torchfort_inference_float_4d_1d_dev
+    module procedure torchfort_inference_float_4d_2d_dev
+    module procedure torchfort_inference_float_4d_3d_dev
+    module procedure torchfort_inference_float_4d_4d_dev
+    module procedure torchfort_inference_float_4d_5d_dev
+    module procedure torchfort_inference_float_5d_1d_dev
+    module procedure torchfort_inference_float_5d_2d_dev
+    module procedure torchfort_inference_float_5d_3d_dev
+    module procedure torchfort_inference_float_5d_4d_dev
+    module procedure torchfort_inference_float_5d_5d_dev
+    module procedure torchfort_inference_double_1d_1d_dev
+    module procedure torchfort_inference_double_1d_2d_dev
+    module procedure torchfort_inference_double_1d_3d_dev
+    module procedure torchfort_inference_double_1d_4d_dev
+    module procedure torchfort_inference_double_1d_5d_dev
+    module procedure torchfort_inference_double_2d_1d_dev
+    module procedure torchfort_inference_double_2d_2d_dev
+    module procedure torchfort_inference_double_2d_3d_dev
+    module procedure torchfort_inference_double_2d_4d_dev
+    module procedure torchfort_inference_double_2d_5d_dev
+    module procedure torchfort_inference_double_3d_1d_dev
+    module procedure torchfort_inference_double_3d_2d_dev
+    module procedure torchfort_inference_double_3d_3d_dev
+    module procedure torchfort_inference_double_3d_4d_dev
+    module procedure torchfort_inference_double_3d_5d_dev
+    module procedure torchfort_inference_double_4d_1d_dev
+    module procedure torchfort_inference_double_4d_2d_dev
+    module procedure torchfort_inference_double_4d_3d_dev
+    module procedure torchfort_inference_double_4d_4d_dev
+    module procedure torchfort_inference_double_4d_5d_dev
+    module procedure torchfort_inference_double_5d_1d_dev
+    module procedure torchfort_inference_double_5d_2d_dev
+    module procedure torchfort_inference_double_5d_3d_dev
+    module procedure torchfort_inference_double_5d_4d_dev
+    module procedure torchfort_inference_double_5d_5d_dev
 #endif
   end interface torchfort_inference
 
   ! Generic interface for training
   interface torchfort_train
-    module procedure torchfort_train_float_2d
-    module procedure torchfort_train_double_2d
-    module procedure torchfort_train_float_3d
-    module procedure torchfort_train_double_3d
-    module procedure torchfort_train_float_4d
-    module procedure torchfort_train_double_4d
-    module procedure torchfort_train_float_5d
-    module procedure torchfort_train_double_5d
+    module procedure torchfort_train_float_1d_1d
+    module procedure torchfort_train_float_1d_2d
+    module procedure torchfort_train_float_1d_3d
+    module procedure torchfort_train_float_1d_4d
+    module procedure torchfort_train_float_1d_5d
+    module procedure torchfort_train_float_2d_1d
+    module procedure torchfort_train_float_2d_2d
+    module procedure torchfort_train_float_2d_3d
+    module procedure torchfort_train_float_2d_4d
+    module procedure torchfort_train_float_2d_5d
+    module procedure torchfort_train_float_3d_1d
+    module procedure torchfort_train_float_3d_2d
+    module procedure torchfort_train_float_3d_3d
+    module procedure torchfort_train_float_3d_4d
+    module procedure torchfort_train_float_3d_5d
+    module procedure torchfort_train_float_4d_1d
+    module procedure torchfort_train_float_4d_2d
+    module procedure torchfort_train_float_4d_3d
+    module procedure torchfort_train_float_4d_4d
+    module procedure torchfort_train_float_4d_5d
+    module procedure torchfort_train_float_5d_1d
+    module procedure torchfort_train_float_5d_2d
+    module procedure torchfort_train_float_5d_3d
+    module procedure torchfort_train_float_5d_4d
+    module procedure torchfort_train_float_5d_5d
+    module procedure torchfort_train_double_1d_1d
+    module procedure torchfort_train_double_1d_2d
+    module procedure torchfort_train_double_1d_3d
+    module procedure torchfort_train_double_1d_4d
+    module procedure torchfort_train_double_1d_5d
+    module procedure torchfort_train_double_2d_1d
+    module procedure torchfort_train_double_2d_2d
+    module procedure torchfort_train_double_2d_3d
+    module procedure torchfort_train_double_2d_4d
+    module procedure torchfort_train_double_2d_5d
+    module procedure torchfort_train_double_3d_1d
+    module procedure torchfort_train_double_3d_2d
+    module procedure torchfort_train_double_3d_3d
+    module procedure torchfort_train_double_3d_4d
+    module procedure torchfort_train_double_3d_5d
+    module procedure torchfort_train_double_4d_1d
+    module procedure torchfort_train_double_4d_2d
+    module procedure torchfort_train_double_4d_3d
+    module procedure torchfort_train_double_4d_4d
+    module procedure torchfort_train_double_4d_5d
+    module procedure torchfort_train_double_5d_1d
+    module procedure torchfort_train_double_5d_2d
+    module procedure torchfort_train_double_5d_3d
+    module procedure torchfort_train_double_5d_4d
+    module procedure torchfort_train_double_5d_5d
 #ifdef _CUDA
-    module procedure torchfort_train_float_2d_dev
-    module procedure torchfort_train_double_2d_dev
-    module procedure torchfort_train_float_3d_dev
-    module procedure torchfort_train_double_3d_dev
-    module procedure torchfort_train_float_4d_dev
-    module procedure torchfort_train_double_4d_dev
-    module procedure torchfort_train_float_5d_dev
-    module procedure torchfort_train_double_5d_dev
+    module procedure torchfort_train_float_1d_1d_dev
+    module procedure torchfort_train_float_1d_2d_dev
+    module procedure torchfort_train_float_1d_3d_dev
+    module procedure torchfort_train_float_1d_4d_dev
+    module procedure torchfort_train_float_1d_5d_dev
+    module procedure torchfort_train_float_2d_1d_dev
+    module procedure torchfort_train_float_2d_2d_dev
+    module procedure torchfort_train_float_2d_3d_dev
+    module procedure torchfort_train_float_2d_4d_dev
+    module procedure torchfort_train_float_2d_5d_dev
+    module procedure torchfort_train_float_3d_1d_dev
+    module procedure torchfort_train_float_3d_2d_dev
+    module procedure torchfort_train_float_3d_3d_dev
+    module procedure torchfort_train_float_3d_4d_dev
+    module procedure torchfort_train_float_3d_5d_dev
+    module procedure torchfort_train_float_4d_1d_dev
+    module procedure torchfort_train_float_4d_2d_dev
+    module procedure torchfort_train_float_4d_3d_dev
+    module procedure torchfort_train_float_4d_4d_dev
+    module procedure torchfort_train_float_4d_5d_dev
+    module procedure torchfort_train_float_5d_1d_dev
+    module procedure torchfort_train_float_5d_2d_dev
+    module procedure torchfort_train_float_5d_3d_dev
+    module procedure torchfort_train_float_5d_4d_dev
+    module procedure torchfort_train_float_5d_5d_dev
+    module procedure torchfort_train_double_1d_1d_dev
+    module procedure torchfort_train_double_1d_2d_dev
+    module procedure torchfort_train_double_1d_3d_dev
+    module procedure torchfort_train_double_1d_4d_dev
+    module procedure torchfort_train_double_1d_5d_dev
+    module procedure torchfort_train_double_2d_1d_dev
+    module procedure torchfort_train_double_2d_2d_dev
+    module procedure torchfort_train_double_2d_3d_dev
+    module procedure torchfort_train_double_2d_4d_dev
+    module procedure torchfort_train_double_2d_5d_dev
+    module procedure torchfort_train_double_3d_1d_dev
+    module procedure torchfort_train_double_3d_2d_dev
+    module procedure torchfort_train_double_3d_3d_dev
+    module procedure torchfort_train_double_3d_4d_dev
+    module procedure torchfort_train_double_3d_5d_dev
+    module procedure torchfort_train_double_4d_1d_dev
+    module procedure torchfort_train_double_4d_2d_dev
+    module procedure torchfort_train_double_4d_3d_dev
+    module procedure torchfort_train_double_4d_4d_dev
+    module procedure torchfort_train_double_4d_5d_dev
+    module procedure torchfort_train_double_5d_1d_dev
+    module procedure torchfort_train_double_5d_2d_dev
+    module procedure torchfort_train_double_5d_3d_dev
+    module procedure torchfort_train_double_5d_4d_dev
+    module procedure torchfort_train_double_5d_5d_dev
 #endif
   end interface torchfort_train
 
@@ -1030,7 +1198,181 @@ contains
   end function torchfort_wandb_log_double_int32step
 
   ! Inference routines
-  function torchfort_inference_float_2d(mname, input, output, stream) result(res)
+  function torchfort_inference_float_1d_1d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_1d_1d
+
+  function torchfort_inference_float_1d_2d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_1d_2d
+
+  function torchfort_inference_float_1d_3d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_1d_3d
+
+  function torchfort_inference_float_1d_4d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_1d_4d
+
+  function torchfort_inference_float_1d_5d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_1d_5d
+
+  function torchfort_inference_float_2d_1d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_2d_1d
+
+  function torchfort_inference_float_2d_2d(mname, input, output, stream) result(res)
     character(len=*) :: mname
     real(real32) :: input(:, :), output(:, :)
     integer(int64), optional :: stream
@@ -1057,9 +1399,711 @@ contains
                                 output, output_dim, output_shape, &
                                 TORCHFORT_FLOAT, stream_)
     end block
-  end function torchfort_inference_float_2d
+  end function torchfort_inference_float_2d_2d
 
-  function torchfort_inference_double_2d(mname, input, output, stream) result(res)
+  function torchfort_inference_float_2d_3d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_2d_3d
+
+  function torchfort_inference_float_2d_4d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_2d_4d
+
+  function torchfort_inference_float_2d_5d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_2d_5d
+
+  function torchfort_inference_float_3d_1d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_3d_1d
+
+  function torchfort_inference_float_3d_2d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_3d_2d
+
+  function torchfort_inference_float_3d_3d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_3d_3d
+
+  function torchfort_inference_float_3d_4d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_3d_4d
+
+  function torchfort_inference_float_3d_5d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_3d_5d
+
+  function torchfort_inference_float_4d_1d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_4d_1d
+
+  function torchfort_inference_float_4d_2d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_4d_2d
+
+  function torchfort_inference_float_4d_3d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_4d_3d
+
+  function torchfort_inference_float_4d_4d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_4d_4d
+
+  function torchfort_inference_float_4d_5d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_4d_5d
+
+  function torchfort_inference_float_5d_1d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_5d_1d
+
+  function torchfort_inference_float_5d_2d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_5d_2d
+
+  function torchfort_inference_float_5d_3d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_5d_3d
+
+  function torchfort_inference_float_5d_4d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_5d_4d
+
+  function torchfort_inference_float_5d_5d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_5d_5d
+
+  function torchfort_inference_double_1d_1d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_1d_1d
+
+  function torchfort_inference_double_1d_2d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_1d_2d
+
+  function torchfort_inference_double_1d_3d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_1d_3d
+
+  function torchfort_inference_double_1d_4d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_1d_4d
+
+  function torchfort_inference_double_1d_5d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_1d_5d
+
+  function torchfort_inference_double_2d_1d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_2d_1d
+
+  function torchfort_inference_double_2d_2d(mname, input, output, stream) result(res)
     character(len=*) :: mname
     real(real64) :: input(:, :), output(:, :)
     integer(int64), optional :: stream
@@ -1087,11 +2131,11 @@ contains
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_double_2d
+  end function torchfort_inference_double_2d_2d
 
-  function torchfort_inference_float_3d(mname, input, output, stream) result(res)
+  function torchfort_inference_double_2d_3d(mname, input, output, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: input(:, :, :), output(:, :, :)
+    real(real64) :: input(:, :), output(:, :, :)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1115,11 +2159,131 @@ contains
     res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
-                                TORCHFORT_FLOAT, stream_)
+                                TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_float_3d
+  end function torchfort_inference_double_2d_3d
 
-  function torchfort_inference_double_3d(mname, input, output, stream) result(res)
+  function torchfort_inference_double_2d_4d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_2d_4d
+
+  function torchfort_inference_double_2d_5d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_2d_5d
+
+  function torchfort_inference_double_3d_1d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_3d_1d
+
+  function torchfort_inference_double_3d_2d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_3d_2d
+
+  function torchfort_inference_double_3d_3d(mname, input, output, stream) result(res)
     character(len=*) :: mname
     real(real64) :: input(:, :, :), output(:, :, :)
     integer(int64), optional :: stream
@@ -1147,11 +2311,11 @@ contains
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_double_3d
+  end function torchfort_inference_double_3d_3d
 
-  function torchfort_inference_float_4d(mname, input, output, stream) result(res)
+  function torchfort_inference_double_3d_4d(mname, input, output, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: input(:, :, :, :), output(:, :, :, :)
+    real(real64) :: input(:, :, :), output(:, :, :, :)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1175,11 +2339,131 @@ contains
     res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
-                                TORCHFORT_FLOAT, stream_)
+                                TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_float_4d
+  end function torchfort_inference_double_3d_4d
 
-  function torchfort_inference_double_4d(mname, input, output, stream) result(res)
+  function torchfort_inference_double_3d_5d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_3d_5d
+
+  function torchfort_inference_double_4d_1d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_4d_1d
+
+  function torchfort_inference_double_4d_2d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_4d_2d
+
+  function torchfort_inference_double_4d_3d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_4d_3d
+
+  function torchfort_inference_double_4d_4d(mname, input, output, stream) result(res)
     character(len=*) :: mname
     real(real64) :: input(:, :, :, :), output(:, :, :, :)
     integer(int64), optional :: stream
@@ -1207,11 +2491,11 @@ contains
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_double_4d
+  end function torchfort_inference_double_4d_4d
 
-  function torchfort_inference_float_5d(mname, input, output, stream) result(res)
+  function torchfort_inference_double_4d_5d(mname, input, output, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: input(:, :, :, :, :), output(:, :, :, :, :)
+    real(real64) :: input(:, :, :, :), output(:, :, :, :, :)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1235,11 +2519,131 @@ contains
     res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
-                                TORCHFORT_FLOAT, stream_)
+                                TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_float_5d
+  end function torchfort_inference_double_4d_5d
 
-  function torchfort_inference_double_5d(mname, input, output, stream) result(res)
+  function torchfort_inference_double_5d_1d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_5d_1d
+
+  function torchfort_inference_double_5d_2d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_5d_2d
+
+  function torchfort_inference_double_5d_3d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_5d_3d
+
+  function torchfort_inference_double_5d_4d(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_5d_4d
+
+  function torchfort_inference_double_5d_5d(mname, input, output, stream) result(res)
     character(len=*) :: mname
     real(real64) :: input(:, :, :, :, :), output(:, :, :, :, :)
     integer(int64), optional :: stream
@@ -1267,10 +2671,185 @@ contains
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_double_5d
+  end function torchfort_inference_double_5d_5d
+
 
 #ifdef _CUDA
-  function torchfort_inference_float_2d_dev(mname, input, output, stream) result(res)
+  function torchfort_inference_float_1d_1d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_1d_1d_dev
+
+  function torchfort_inference_float_1d_2d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_1d_2d_dev
+
+  function torchfort_inference_float_1d_3d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_1d_3d_dev
+
+  function torchfort_inference_float_1d_4d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_1d_4d_dev
+
+  function torchfort_inference_float_1d_5d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_1d_5d_dev
+
+  function torchfort_inference_float_2d_1d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_2d_1d_dev
+
+  function torchfort_inference_float_2d_2d_dev(mname, input, output, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: input(:, :), output(:, :)
     integer(int64), optional :: stream
@@ -1297,9 +2876,711 @@ contains
                                 output, output_dim, output_shape, &
                                 TORCHFORT_FLOAT, stream_)
     end block
-  end function torchfort_inference_float_2d_dev
+  end function torchfort_inference_float_2d_2d_dev
 
-  function torchfort_inference_double_2d_dev(mname, input, output, stream) result(res)
+  function torchfort_inference_float_2d_3d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_2d_3d_dev
+
+  function torchfort_inference_float_2d_4d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_2d_4d_dev
+
+  function torchfort_inference_float_2d_5d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_2d_5d_dev
+
+  function torchfort_inference_float_3d_1d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_3d_1d_dev
+
+  function torchfort_inference_float_3d_2d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_3d_2d_dev
+
+  function torchfort_inference_float_3d_3d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_3d_3d_dev
+
+  function torchfort_inference_float_3d_4d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_3d_4d_dev
+
+  function torchfort_inference_float_3d_5d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_3d_5d_dev
+
+  function torchfort_inference_float_4d_1d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_4d_1d_dev
+
+  function torchfort_inference_float_4d_2d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_4d_2d_dev
+
+  function torchfort_inference_float_4d_3d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_4d_3d_dev
+
+  function torchfort_inference_float_4d_4d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_4d_4d_dev
+
+  function torchfort_inference_float_4d_5d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_4d_5d_dev
+
+  function torchfort_inference_float_5d_1d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_5d_1d_dev
+
+  function torchfort_inference_float_5d_2d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_5d_2d_dev
+
+  function torchfort_inference_float_5d_3d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_5d_3d_dev
+
+  function torchfort_inference_float_5d_4d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_5d_4d_dev
+
+  function torchfort_inference_float_5d_5d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_inference_float_5d_5d_dev
+
+  function torchfort_inference_double_1d_1d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_1d_1d_dev
+
+  function torchfort_inference_double_1d_2d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_1d_2d_dev
+
+  function torchfort_inference_double_1d_3d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_1d_3d_dev
+
+  function torchfort_inference_double_1d_4d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_1d_4d_dev
+
+  function torchfort_inference_double_1d_5d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_1d_5d_dev
+
+  function torchfort_inference_double_2d_1d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_2d_1d_dev
+
+  function torchfort_inference_double_2d_2d_dev(mname, input, output, stream) result(res)
     character(len=*) :: mname
     real(real64), device :: input(:, :), output(:, :)
     integer(int64), optional :: stream
@@ -1327,11 +3608,11 @@ contains
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_double_2d_dev
+  end function torchfort_inference_double_2d_2d_dev
 
-  function torchfort_inference_float_3d_dev(mname, input, output, stream) result(res)
+  function torchfort_inference_double_2d_3d_dev(mname, input, output, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: input(:, :, :), output(:, :, :)
+    real(real64), device :: input(:, :), output(:, :, :)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1355,11 +3636,131 @@ contains
     res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
-                                TORCHFORT_FLOAT, stream_)
+                                TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_float_3d_dev
+  end function torchfort_inference_double_2d_3d_dev
 
-  function torchfort_inference_double_3d_dev(mname, input, output, stream) result(res)
+  function torchfort_inference_double_2d_4d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_2d_4d_dev
+
+  function torchfort_inference_double_2d_5d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_2d_5d_dev
+
+  function torchfort_inference_double_3d_1d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_3d_1d_dev
+
+  function torchfort_inference_double_3d_2d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_3d_2d_dev
+
+  function torchfort_inference_double_3d_3d_dev(mname, input, output, stream) result(res)
     character(len=*) :: mname
     real(real64), device :: input(:, :, :), output(:, :, :)
     integer(int64), optional :: stream
@@ -1387,11 +3788,11 @@ contains
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_double_3d_dev
+  end function torchfort_inference_double_3d_3d_dev
 
-  function torchfort_inference_float_4d_dev(mname, input, output, stream) result(res)
+  function torchfort_inference_double_3d_4d_dev(mname, input, output, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: input(:, :, :, :), output(:, :, :, :)
+    real(real64), device :: input(:, :, :), output(:, :, :, :)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1415,11 +3816,131 @@ contains
     res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
-                                TORCHFORT_FLOAT, stream_)
+                                TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_float_4d_dev
+  end function torchfort_inference_double_3d_4d_dev
 
-  function torchfort_inference_double_4d_dev(mname, input, output, stream) result(res)
+  function torchfort_inference_double_3d_5d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :), output(:, :, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_3d_5d_dev
+
+  function torchfort_inference_double_4d_1d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_4d_1d_dev
+
+  function torchfort_inference_double_4d_2d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_4d_2d_dev
+
+  function torchfort_inference_double_4d_3d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_4d_3d_dev
+
+  function torchfort_inference_double_4d_4d_dev(mname, input, output, stream) result(res)
     character(len=*) :: mname
     real(real64), device :: input(:, :, :, :), output(:, :, :, :)
     integer(int64), optional :: stream
@@ -1447,11 +3968,11 @@ contains
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_double_4d_dev
+  end function torchfort_inference_double_4d_4d_dev
 
-  function torchfort_inference_float_5d_dev(mname, input, output, stream) result(res)
+  function torchfort_inference_double_4d_5d_dev(mname, input, output, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: input(:, :, :, :, :), output(:, :, :, :, :)
+    real(real64), device :: input(:, :, :, :), output(:, :, :, :, :)
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1475,11 +3996,131 @@ contains
     res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
                                 input, input_dim, input_shape, &
                                 output, output_dim, output_shape, &
-                                TORCHFORT_FLOAT, stream_)
+                                TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_float_5d_dev
+  end function torchfort_inference_double_4d_5d_dev
 
-  function torchfort_inference_double_5d_dev(mname, input, output, stream) result(res)
+  function torchfort_inference_double_5d_1d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :, :), output(:)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_5d_1d_dev
+
+  function torchfort_inference_double_5d_2d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :, :), output(:, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_5d_2d_dev
+
+  function torchfort_inference_double_5d_3d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :, :), output(:, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_5d_3d_dev
+
+  function torchfort_inference_double_5d_4d_dev(mname, input, output, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :, :), output(:, :, :, :)
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, output_dim
+
+    input_dim = size(shape(input))
+    output_dim = size(shape(output))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+    integer(c_int64_t) :: input_shape(input_dim)
+    integer(c_int64_t) :: output_shape(output_dim)
+
+    input_shape(:) = shape(input)
+    output_shape(:) = shape(output)
+
+    res = torchfort_inference_c([trim(mname) // C_NULL_CHAR], &
+                                input, input_dim, input_shape, &
+                                output, output_dim, output_shape, &
+                                TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_inference_double_5d_4d_dev
+
+  function torchfort_inference_double_5d_5d_dev(mname, input, output, stream) result(res)
     character(len=*) :: mname
     real(real64), device :: input(:, :, :, :, :), output(:, :, :, :, :)
     integer(int64), optional :: stream
@@ -1507,7 +4148,8 @@ contains
                                 output, output_dim, output_shape, &
                                 TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_inference_double_5d_dev
+  end function torchfort_inference_double_5d_5d_dev
+
 #endif
 
   function torchfort_inference_multiarg(mname, inputs, outputs, stream) result(res)
@@ -1526,7 +4168,193 @@ contains
   end function torchfort_inference_multiarg
 
   ! Training routines
-  function torchfort_train_float_2d(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_float_1d_1d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:), label(:)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_1d_1d
+
+  function torchfort_train_float_1d_2d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:), label(:, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_1d_2d
+
+  function torchfort_train_float_1d_3d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:), label(:, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_1d_3d
+
+  function torchfort_train_float_1d_4d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:), label(:, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_1d_4d
+
+  function torchfort_train_float_1d_5d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:), label(:, :, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_1d_5d
+
+  function torchfort_train_float_2d_1d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :), label(:)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_2d_1d
+
+  function torchfort_train_float_2d_2d(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
     real(real32) :: input(:, :), label(:, :)
     real(real32) :: loss_val
@@ -1555,12 +4383,105 @@ contains
                                label, label_dim, label_shape, &
                                loss_val, TORCHFORT_FLOAT, stream_)
     end block
-  end function torchfort_train_float_2d
+  end function torchfort_train_float_2d_2d
 
-  function torchfort_train_double_2d(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_float_2d_3d(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
-    real(real64) :: input(:, :), label(:, :)
-    real(real64) :: loss_val
+    real(real32) :: input(:, :), label(:, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_2d_3d
+
+  function torchfort_train_float_2d_4d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :), label(:, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_2d_4d
+
+  function torchfort_train_float_2d_5d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :), label(:, :, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_2d_5d
+
+  function torchfort_train_float_3d_1d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :), label(:)
+    real(real32) :: loss_val
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1584,11 +4505,42 @@ contains
       res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
-                              loss_val, TORCHFORT_DOUBLE, stream_)
+                              loss_val, TORCHFORT_FLOAT, stream_)
     end block
-  end function torchfort_train_double_2d
+  end function torchfort_train_float_3d_1d
 
-  function torchfort_train_float_3d(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_float_3d_2d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :), label(:, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_3d_2d
+
+  function torchfort_train_float_3d_3d(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
     real(real32) :: input(:, :, :), label(:, :, :)
     real(real32) :: loss_val
@@ -1617,9 +4569,443 @@ contains
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_FLOAT, stream_)
     end block
-  end function torchfort_train_float_3d
+  end function torchfort_train_float_3d_3d
 
-  function torchfort_train_double_3d(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_float_3d_4d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :), label(:, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_3d_4d
+
+  function torchfort_train_float_3d_5d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :), label(:, :, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_3d_5d
+
+  function torchfort_train_double_1d_1d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:), label(:)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_1d_1d
+
+  function torchfort_train_double_1d_2d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:), label(:, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_1d_2d
+
+  function torchfort_train_double_1d_3d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:), label(:, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_1d_3d
+
+  function torchfort_train_double_1d_4d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:), label(:, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_1d_4d
+
+  function torchfort_train_double_1d_5d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:), label(:, :, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_1d_5d
+
+  function torchfort_train_double_2d_1d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :), label(:)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_2d_1d
+
+  function torchfort_train_double_2d_2d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :), label(:, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_2d_2d
+
+  function torchfort_train_double_2d_3d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :), label(:, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_2d_3d
+
+  function torchfort_train_double_2d_4d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :), label(:, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_2d_4d
+
+  function torchfort_train_double_2d_5d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :), label(:, :, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_2d_5d
+
+  function torchfort_train_double_3d_1d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :), label(:)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_3d_1d
+
+  function torchfort_train_double_3d_2d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :), label(:, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_3d_2d
+
+  function torchfort_train_double_3d_3d(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
     real(real64) :: input(:, :, :), label(:, :, :)
     real(real64) :: loss_val
@@ -1648,12 +5034,12 @@ contains
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_double_3d
+  end function torchfort_train_double_3d_3d
 
-  function torchfort_train_float_4d(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_double_3d_4d(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: input(:, :, :, :), label(:, :, :, :)
-    real(real32) :: loss_val
+    real(real64) :: input(:, :, :), label(:, :, :, :)
+    real(real64) :: loss_val
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1677,11 +5063,135 @@ contains
       res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
-                              loss_val, TORCHFORT_FLOAT, stream_)
+                              loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_float_4d
+  end function torchfort_train_double_3d_4d
 
-  function torchfort_train_double_4d(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_double_3d_5d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :), label(:, :, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_3d_5d
+
+  function torchfort_train_double_4d_1d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :), label(:)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_4d_1d
+
+  function torchfort_train_double_4d_2d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :), label(:, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_4d_2d
+
+  function torchfort_train_double_4d_3d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :), label(:, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_4d_3d
+
+  function torchfort_train_double_4d_4d(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
     real(real64) :: input(:, :, :, :), label(:, :, :, :)
     real(real64) :: loss_val
@@ -1710,12 +5220,12 @@ contains
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_double_4d
+  end function torchfort_train_double_4d_4d
 
-  function torchfort_train_float_5d(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_double_4d_5d(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
-    real(real32) :: input(:, :, :, :, :), label(:, :, :, :, :)
-    real(real32) :: loss_val
+    real(real64) :: input(:, :, :, :), label(:, :, :, :, :)
+    real(real64) :: loss_val
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1739,11 +5249,135 @@ contains
       res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
-                              loss_val, TORCHFORT_FLOAT, stream_)
+                              loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_float_5d
+  end function torchfort_train_double_4d_5d
 
-  function torchfort_train_double_5d(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_double_5d_1d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :, :), label(:)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_5d_1d
+
+  function torchfort_train_double_5d_2d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :, :), label(:, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_5d_2d
+
+  function torchfort_train_double_5d_3d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :, :), label(:, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_5d_3d
+
+  function torchfort_train_double_5d_4d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64) :: input(:, :, :, :, :), label(:, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_5d_4d
+
+  function torchfort_train_double_5d_5d(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
     real(real64) :: input(:, :, :, :, :), label(:, :, :, :, :)
     real(real64) :: loss_val
@@ -1772,10 +5406,507 @@ contains
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_double_5d
+  end function torchfort_train_double_5d_5d
+
+  function torchfort_train_float_4d_1d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :), label(:)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_4d_1d
+
+  function torchfort_train_float_4d_2d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :), label(:, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_4d_2d
+
+  function torchfort_train_float_4d_3d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :), label(:, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_4d_3d
+
+  function torchfort_train_float_4d_4d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :), label(:, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_4d_4d
+
+  function torchfort_train_float_4d_5d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :), label(:, :, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_4d_5d
+
+  function torchfort_train_float_5d_1d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :, :), label(:)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_5d_1d
+
+  function torchfort_train_float_5d_2d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :, :), label(:, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_5d_2d
+
+  function torchfort_train_float_5d_3d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :, :), label(:, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_5d_3d
+
+  function torchfort_train_float_5d_4d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :, :), label(:, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_5d_4d
+
+  function torchfort_train_float_5d_5d(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32) :: input(:, :, :, :, :), label(:, :, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_5d_5d
+
 
 #ifdef _CUDA
-  function torchfort_train_float_2d_dev(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_float_1d_1d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:), label(:)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_1d_1d_dev
+
+  function torchfort_train_float_1d_2d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:), label(:, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_1d_2d_dev
+
+  function torchfort_train_float_1d_3d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:), label(:, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_1d_3d_dev
+
+  function torchfort_train_float_1d_4d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:), label(:, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_1d_4d_dev
+
+  function torchfort_train_float_1d_5d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:), label(:, :, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_1d_5d_dev
+
+  function torchfort_train_float_2d_1d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :), label(:)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_2d_1d_dev
+
+  function torchfort_train_float_2d_2d_dev(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
     real(real32), device :: input(:, :), label(:, :)
     real(real32) :: loss_val
@@ -1804,9 +5935,753 @@ contains
                                label, label_dim, label_shape, &
                                loss_val, TORCHFORT_FLOAT, stream_)
     end block
-  end function torchfort_train_float_2d_dev
+  end function torchfort_train_float_2d_2d_dev
 
-  function torchfort_train_double_2d_dev(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_float_2d_3d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :), label(:, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_2d_3d_dev
+
+  function torchfort_train_float_2d_4d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :), label(:, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_2d_4d_dev
+
+  function torchfort_train_float_2d_5d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :), label(:, :, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_2d_5d_dev
+
+  function torchfort_train_float_3d_1d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), label(:)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_3d_1d_dev
+
+  function torchfort_train_float_3d_2d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), label(:, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_3d_2d_dev
+
+  function torchfort_train_float_3d_3d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), label(:, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_3d_3d_dev
+
+  function torchfort_train_float_3d_4d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), label(:, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_3d_4d_dev
+
+  function torchfort_train_float_3d_5d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :), label(:, :, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_3d_5d_dev
+
+  function torchfort_train_float_4d_1d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), label(:)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_4d_1d_dev
+
+  function torchfort_train_float_4d_2d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), label(:, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_4d_2d_dev
+
+  function torchfort_train_float_4d_3d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), label(:, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_4d_3d_dev
+
+  function torchfort_train_float_4d_4d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), label(:, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_4d_4d_dev
+
+  function torchfort_train_float_4d_5d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :), label(:, :, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_4d_5d_dev
+
+  function torchfort_train_float_5d_1d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :, :), label(:)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_5d_1d_dev
+
+  function torchfort_train_float_5d_2d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :, :), label(:, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_5d_2d_dev
+
+  function torchfort_train_float_5d_3d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :, :), label(:, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_5d_3d_dev
+
+  function torchfort_train_float_5d_4d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :, :), label(:, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_5d_4d_dev
+
+  function torchfort_train_float_5d_5d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real32), device :: input(:, :, :, :, :), label(:, :, :, :, :)
+    real(real32) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res =  torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                               input, input_dim, input_shape, &
+                               label, label_dim, label_shape, &
+                               loss_val, TORCHFORT_FLOAT, stream_)
+    end block
+  end function torchfort_train_float_5d_5d_dev
+
+  function torchfort_train_double_1d_1d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:), label(:)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_1d_1d_dev
+
+  function torchfort_train_double_1d_2d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:), label(:, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_1d_2d_dev
+
+  function torchfort_train_double_1d_3d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:), label(:, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_1d_3d_dev
+
+  function torchfort_train_double_1d_4d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:), label(:, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_1d_4d_dev
+
+  function torchfort_train_double_1d_5d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:), label(:, :, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_1d_5d_dev
+
+  function torchfort_train_double_2d_1d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :), label(:)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_2d_1d_dev
+
+  function torchfort_train_double_2d_2d_dev(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
     real(real64), device :: input(:, :), label(:, :)
     real(real64) :: loss_val
@@ -1835,12 +6710,12 @@ contains
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_double_2d_dev
+  end function torchfort_train_double_2d_2d_dev
 
-  function torchfort_train_float_3d_dev(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_double_2d_3d_dev(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: input(:, :, :), label(:, :, :)
-    real(real32) :: loss_val
+    real(real64), device :: input(:, :), label(:, :, :)
+    real(real64) :: loss_val
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1864,11 +6739,135 @@ contains
       res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
-                              loss_val, TORCHFORT_FLOAT, stream_)
+                              loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_float_3d_dev
+  end function torchfort_train_double_2d_3d_dev
 
-  function torchfort_train_double_3d_dev(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_double_2d_4d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :), label(:, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_2d_4d_dev
+
+  function torchfort_train_double_2d_5d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :), label(:, :, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_2d_5d_dev
+
+  function torchfort_train_double_3d_1d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :), label(:)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_3d_1d_dev
+
+  function torchfort_train_double_3d_2d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :), label(:, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_3d_2d_dev
+
+  function torchfort_train_double_3d_3d_dev(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
     real(real64), device :: input(:, :, :), label(:, :, :)
     real(real64) :: loss_val
@@ -1897,12 +6896,12 @@ contains
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_double_3d_dev
+  end function torchfort_train_double_3d_3d_dev
 
-  function torchfort_train_float_4d_dev(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_double_3d_4d_dev(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: input(:, :, :, :), label(:, :, :, :)
-    real(real32) :: loss_val
+    real(real64), device :: input(:, :, :), label(:, :, :, :)
+    real(real64) :: loss_val
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1926,11 +6925,135 @@ contains
       res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
-                              loss_val, TORCHFORT_FLOAT, stream_)
+                              loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_float_4d_dev
+  end function torchfort_train_double_3d_4d_dev
 
-  function torchfort_train_double_4d_dev(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_double_3d_5d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :), label(:, :, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_3d_5d_dev
+
+  function torchfort_train_double_4d_1d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :), label(:)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_4d_1d_dev
+
+  function torchfort_train_double_4d_2d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :), label(:, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_4d_2d_dev
+
+  function torchfort_train_double_4d_3d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :), label(:, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_4d_3d_dev
+
+  function torchfort_train_double_4d_4d_dev(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
     real(real64), device :: input(:, :, :, :), label(:, :, :, :)
     real(real64) :: loss_val
@@ -1959,12 +7082,12 @@ contains
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_double_4d_dev
+  end function torchfort_train_double_4d_4d_dev
 
-  function torchfort_train_float_5d_dev(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_double_4d_5d_dev(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
-    real(real32), device :: input(:, :, :, :, :), label(:, :, :, :, :)
-    real(real32) :: loss_val
+    real(real64), device :: input(:, :, :, :), label(:, :, :, :, :)
+    real(real64) :: loss_val
     integer(int64), optional :: stream
     integer(c_int) :: res
 
@@ -1988,11 +7111,135 @@ contains
       res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
                               input, input_dim, input_shape, &
                               label, label_dim, label_shape, &
-                              loss_val, TORCHFORT_FLOAT, stream_)
+                              loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_float_5d_dev
+  end function torchfort_train_double_4d_5d_dev
 
-  function torchfort_train_double_5d_dev(mname, input, label, loss_val, stream) result(res)
+  function torchfort_train_double_5d_1d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :, :), label(:)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_5d_1d_dev
+
+  function torchfort_train_double_5d_2d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :, :), label(:, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_5d_2d_dev
+
+  function torchfort_train_double_5d_3d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :, :), label(:, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_5d_3d_dev
+
+  function torchfort_train_double_5d_4d_dev(mname, input, label, loss_val, stream) result(res)
+    character(len=*) :: mname
+    real(real64), device :: input(:, :, :, :, :), label(:, :, :, :)
+    real(real64) :: loss_val
+    integer(int64), optional :: stream
+    integer(c_int) :: res
+
+    integer(int64) :: stream_
+
+    integer(c_size_t) :: input_dim, label_dim
+
+    input_dim = size(shape(input))
+    label_dim = size(shape(label))
+
+    stream_ = 0
+    if (present(stream)) stream_ = stream
+
+    block
+      integer(c_int64_t) :: input_shape(input_dim)
+      integer(c_int64_t) :: label_shape(label_dim)
+
+      input_shape(:) = shape(input)
+      label_shape(:) = shape(label)
+
+      res = torchfort_train_c([trim(mname) // C_NULL_CHAR], &
+                              input, input_dim, input_shape, &
+                              label, label_dim, label_shape, &
+                              loss_val, TORCHFORT_DOUBLE, stream_)
+    end block
+  end function torchfort_train_double_5d_4d_dev
+
+  function torchfort_train_double_5d_5d_dev(mname, input, label, loss_val, stream) result(res)
     character(len=*) :: mname
     real(real64), device :: input(:, :, :, :, :), label(:, :, :, :, :)
     real(real64) :: loss_val
@@ -2021,7 +7268,8 @@ contains
                               label, label_dim, label_shape, &
                               loss_val, TORCHFORT_DOUBLE, stream_)
     end block
-  end function torchfort_train_double_5d_dev
+  end function torchfort_train_double_5d_5d_dev
+
 #endif
 
   function torchfort_train_multiarg(mname, inputs, labels, loss_val, extra_loss_args, stream) result(res)

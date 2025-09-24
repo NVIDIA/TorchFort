@@ -118,6 +118,21 @@ torchfort_result_t torchfort_rl_off_policy_create_distributed_system(const char*
   return TORCHFORT_RESULT_SUCCESS;
 }
 
+torchfort_result_t torchfort_rl_off_policy_create_distributed_system_F(const char* name, const char* config_fname,
+                                                                       MPI_Fint mpi_comm_f, int model_device,
+                                                                       int rb_device) {
+  using namespace torchfort;
+
+  try {
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_f);
+    torchfort_rl_off_policy_create_distributed_system(name, config_fname, mpi_comm, model_device, rb_device);
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
 // save system
 torchfort_result_t torchfort_rl_off_policy_save_checkpoint(const char* name, const char* checkpoint_dir) {
   using namespace torchfort;

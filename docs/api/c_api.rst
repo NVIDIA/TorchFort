@@ -101,6 +101,14 @@ torchfort_create_distributed_model
 
 ------
 
+.. _torchfort_create_distributed-model-f-ref:
+
+torchfort_create_distributed_model_F
+------------------------------------
+.. doxygenfunction:: torchfort_create_distributed_model_F
+
+------
+
 Model Training/Inference
 ========================
 
@@ -233,6 +241,14 @@ torchfort_rl_off_policy_create_system
 torchfort_rl_off_policy_create_distributed_system
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_off_policy_create_distributed_system
+
+------
+
+.. _torchfort_rl_off_policy_create_distributed_system_f-ref:
+
+torchfort_rl_off_policy_create_distributed_system_F
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. doxygenfunction:: torchfort_rl_off_policy_create_distributed_system_F
 
 ------
 
@@ -372,6 +388,14 @@ torchfort_rl_on_policy_create_system
 torchfort_rl_on_policy_create_distributed_system
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_create_distributed_system
+
+------
+
+.. _torchfort_rl_on_policy_create_distributed_system_f-ref:
+
+torchfort_rl_on_policy_create_distributed_system_F
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. doxygenfunction:: torchfort_rl_on_policy_create_distributed_system_F
 
 ------
 

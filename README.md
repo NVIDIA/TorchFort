@@ -18,4 +18,4 @@ Please refer to the [examples](examples) to see TorchFort in action.
 Contact us or open a GitHub issue if you are interested in using this library in your own solvers and have questions on usage and/or feature requests.
 
 ## License
-This library is released under a BSD 3-clause license, which can be found in [LICENSE](license).
+This library is released under an Apache 2.0 license, which can be found in [LICENSE](license).

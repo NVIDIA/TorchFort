@@ -1066,7 +1066,6 @@ contains
     integer(c_int) :: dev
     integer(c_int) :: res
 
-    print*, "F version"
     res = torchfort_create_distributed_model_f_c([trim(mname) // C_NULL_CHAR], [trim(fname) // C_NULL_CHAR], &
                                                  comm, dev)
   end function torchfort_create_distributed_model_MPI_F
@@ -1080,7 +1079,6 @@ contains
     integer(c_int) :: dev
     integer(c_int) :: res
 
-    print*, "F08 version"
     res = torchfort_create_distributed_model_f_c([trim(mname) // C_NULL_CHAR], [trim(fname) // C_NULL_CHAR], &
                                                  comm%MPI_VAL, dev)
   end function torchfort_create_distributed_model_MPI_F08

@@ -157,8 +157,8 @@ torchfort_train
   For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
   
   :p character(:) mname [in]: The key of the model instance.
-  :p T(*) input [in]: An array containing the input data. The last array dimension should be the batch dimension, the other dimensions are the feature dimensions.
-  :p T(*) label [in]: An array containing the label data. The last array dimension should be the batch dimension. :code:`label` does not need to be of the same shape as :code:`input` but the batch dimension should match. Additionally, :code:`label` should be of the same rank as `input`.
+  :p T(*) input [in]: An array containing the input data.
+  :p T(*) label [in]: An array containing the label data.
   :p T loss_val [out]: A variable that will hold the loss value computed during the training iteration.
   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
@@ -196,8 +196,8 @@ torchfort_inference
    For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
    
    :p character(:) mname [in]: The key of the model instance.
-   :p T(*) input [in]: An array containing the input data. The last array dimension should be the batch dimension, the other dimensions are the feature dimensions.
-   :p T(*) output [out]: An array which will hold the output of the model. The last array dimension should be the batch dimension. :code:`output` does not need to be of the same shape as :code:`input` but the batch dimension should match. Additionally, :code:`output` should be of the same rank as `input`. 
+   :p T(*) input [in]: An array containing the input data.
+   :p T(*) output [out]: An array which will hold the output of the model.
    :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
    :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
    

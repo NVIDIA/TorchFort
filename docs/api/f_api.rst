@@ -136,7 +136,7 @@ torchfort_create_distributed_model
 
   :p character(:) handle [in]: A name to assign to the created model instance to use as a key for other TorchFort routines.
   :p character(:) config_fname [in]: The filesystem path to the user-defined configuration file to use.
-  :p integer mpi_comm [in]: MPI communicator to use to initialize NCCL communication library for data-parallel communication.
+  :p integer mpi_comm [in]: MPI communicator to use to initialize backend communication library for data-parallel communication.
   :p integer device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
 
@@ -371,7 +371,7 @@ torchfort_rl_off_policy_create_distributed_system
 
   :p character(:) name [in]: A name to assign to the created training system instance to use as a key for other TorchFort routines.
   :p character(:) config_fname [in]: The filesystem path to the user-defined configuration file to use.
-  :p integer mpi_comm [in]: MPI communicator to use to initialize NCCL communication library for data-parallel communication.
+  :p integer mpi_comm [in]: MPI communicator to use to initialize backend communication library for data-parallel communication.
   :p integer model_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
   :p integer rb_device [in]: Which device to place the replay buffer on. For ``TORCHFORT_DEVICE_CPU`` (-1), replay buffer will be placed on CPU. For values >= 0, it will be placed on GPU with index corresponding to value.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
@@ -622,7 +622,7 @@ torchfort_rl_on_policy_create_distributed_system
 
   :p character(:) name [in]: A name to assign to the created training system instance to use as a key for other TorchFort routines.
   :p character(:) config_fname [in]: The filesystem path to the user-defined configuration file to use.
-  :p integer mpi_comm [in]: MPI communicator to use to initialize NCCL communication library for data-parallel communication.
+  :p integer mpi_comm [in]: MPI communicator to use to initialize backend communication library for data-parallel communication.
   :p integer model_device [in]: Which device to place and run the model on. For ``TORCHFORT_DEVICE_CPU`` (-1), model will be placed on CPU. For values >= 0, model will be placed on GPU with index corresponding to value.
   :p integer rb_device [in]: Which device to place the rollout buffer on. For ``TORCHFORT_DEVICE_CPU`` (-1), rollout buffer will be placed on CPU. For values >= 0, it will be placed on GPU with index corresponding to value.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.

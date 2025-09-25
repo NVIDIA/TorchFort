@@ -150,6 +150,20 @@ torchfort_result_t torchfort_create_distributed_model(const char* name, const ch
   return TORCHFORT_RESULT_SUCCESS;
 }
 
+torchfort_result_t torchfort_create_distributed_model_F(const char* name, const char* config_fname, MPI_Fint mpi_comm_f,
+                                                        int device) {
+  using namespace torchfort;
+
+  try {
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_f);
+    torchfort_create_distributed_model(name, config_fname, mpi_comm, device);
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
 // W&B log function implementations by type
 WANDB_LOG_FUNC(int)
 WANDB_LOG_FUNC(float)

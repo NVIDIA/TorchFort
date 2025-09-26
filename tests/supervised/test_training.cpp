@@ -31,8 +31,8 @@
 
 #include "test_utils.h"
 
-void training_test(const std::string& model_config, int dev_model, int dev_input, bool should_fail_create,
-                   bool should_fail_train, bool should_fail_inference, bool check_result) {
+void training_test(const std::string& model_config, int dev_model, int dev_input, std::vector<int64_t> shape,
+                   bool should_fail_create, bool should_fail_train, bool should_fail_inference, bool check_result) {
 
   std::string model_name = generate_random_name(10);
 
@@ -55,7 +55,6 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
   }
 #endif
 
-  std::vector<int64_t> shape = {10, 10};
   auto input = generate_random<float>(shape);
   auto label = generate_random<float>(shape);
   auto output = generate_random<float>(shape);
@@ -77,6 +76,13 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
     } else {
       FAIL();
     }
+  } catch (const c10::Error& e) {
+    std::cout << e.what() << std::endl;
+    if (should_fail_train) {
+      // pass
+    } else {
+      FAIL();
+    }
   }
 
   try {
@@ -87,6 +93,13 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
     }
   } catch (const torchfort::BaseException& e) {
     if (should_fail_inference) {
+      // pass
+    } else {
+      FAIL();
+    }
+  } catch (const c10::Error& e) {
+    std::cout << e.what() << std::endl;
+    if (should_fail_train) {
       // pass
     } else {
       FAIL();
@@ -342,10 +355,19 @@ void training_test_grad_accumulation(const std::string& model_config, int dev_mo
 }
 
 TEST(TorchFort, TrainTestMLPCPUCPU) {
-  training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, false, false, false);
+  training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 5}, false, false, false,
+                false);
+}
+TEST(TorchFort, TrainTestMLPCPUCPUNoFlatten) {
+  training_test("configs/mlp3.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 10}, false, false, false,
+                false);
+}
+TEST(TorchFort, TrainTestMLPCPUCPU1DNoFlatten) {
+  training_test("configs/mlp3.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10}, false, false, false, false);
 }
 TEST(TorchFort, TrainTestTorchScriptCPUCPU) {
-  training_test("configs/torchscript.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, false, false, true);
+  training_test("configs/torchscript.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 10}, false, false,
+                false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgCPUCPU) {
   training_test_multiarg("configs/torchscript_multiarg.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, false,
@@ -362,20 +384,20 @@ TEST(TorchFort, TrainTestGradAccumulationCPUCPU) {
 
 #ifdef ENABLE_GPU
 TEST(TorchFort, TrainTestMLPGPUCPU) {
-  training_test("configs/mlp2.yaml", 0, TORCHFORT_DEVICE_CPU, false, false, false, false);
+  training_test("configs/mlp2.yaml", 0, TORCHFORT_DEVICE_CPU, {10, 2, 5}, false, false, false, false);
 }
 TEST(TorchFort, TrainTestMLPCPUGPU) {
-  training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, 0, false, false, false, false);
+  training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, 0, {10, 2, 5}, false, false, false, false);
 }
-TEST(TorchFort, TrainTestMLPGPUGPU) { training_test("configs/mlp2.yaml", 0, 0, false, false, false, false); }
+TEST(TorchFort, TrainTestMLPGPUGPU) { training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, false, false, false); }
 TEST(TorchFort, TrainTestTorchScriptCPUGPU) {
-  training_test("configs/torchscript.yaml", TORCHFORT_DEVICE_CPU, 0, false, false, false, true);
+  training_test("configs/torchscript.yaml", TORCHFORT_DEVICE_CPU, 0, {10, 2, 10}, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptGPUCPU) {
-  training_test("configs/torchscript.yaml", 0, TORCHFORT_DEVICE_CPU, false, false, false, true);
+  training_test("configs/torchscript.yaml", 0, TORCHFORT_DEVICE_CPU, {10, 2, 10}, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptGPUGPU) {
-  training_test("configs/torchscript.yaml", 0, 0, false, false, false, true);
+  training_test("configs/torchscript.yaml", 0, 0, {10, 2, 10}, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgCPUGPU) {
   training_test_multiarg("configs/torchscript_multiarg.yaml", TORCHFORT_DEVICE_CPU, 0, false, false, false, false,
@@ -403,18 +425,26 @@ TEST(TorchFort, TrainTestTorchScriptMultiArgExtraGPUGPU) {
 
 // Testing expected error cases
 TEST(TorchFort, TrainTestBadConfigName) {
-  training_test("configs/blah.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, true, true, true, false);
+  training_test("configs/blah.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 10}, true, true, true, false);
 }
 TEST(TorchFort, TrainTestNoOptimizerBlock) {
-  training_test("configs/missing_opt.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, true, false, false);
+  training_test("configs/missing_opt.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 10}, false, true, false,
+                false);
 }
 TEST(TorchFort, TrainTestNoLossBlock) {
-  training_test("configs/missing_loss.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, true, false, false);
+  training_test("configs/missing_loss.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 10}, false, true, false,
+                false);
 }
 TEST(TorchFort, TrainTestMultiArgErrors) { training_test_multiarg_errors("configs/torchscript_multiarg.yaml"); }
 TEST(TorchFort, TrainTestMultiArgMLPError) {
   training_test_multiarg("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, false, false, true, true,
                          false);
+}
+TEST(TorchFort, TrainTestMLPCPUCPUNoFlattenDimError) {
+  training_test("configs/mlp3.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10, 2, 5}, false, true, true, false);
+}
+TEST(TorchFort, TrainTestMLPCPUCPU1DDimError) {
+  training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10}, false, true, true, false);
 }
 
 int main(int argc, char* argv[]) {

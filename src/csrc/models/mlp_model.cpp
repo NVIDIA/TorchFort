@@ -28,10 +28,11 @@ namespace torchfort {
 // MLP model in C++ using libtorch
 void MLPModel::setup(const ParamMap& params) {
   // Extract params from input map.
-  std::set<std::string> supported_params{"dropout", "layer_sizes"};
+  std::set<std::string> supported_params{"dropout", "flatten_non_batch_dims", "layer_sizes"};
   check_params(supported_params, params.keys());
 
   dropout = params.get_param<double>("dropout", 0.0)[0];
+  flatten_non_batch_dims = params.get_param<bool>("flatten_non_batch_dims", true)[0];
   layer_sizes = params.get_param<int>("layer_sizes");
 
   // Construct and register submodules.
@@ -50,7 +51,10 @@ std::vector<torch::Tensor> MLPModel::forward(const std::vector<torch::Tensor>& i
     THROW_INVALID_USAGE("Built-in MLP model does not support multiple input tensors.");
 
   auto x = inputs[0];
-  x = x.reshape({x.size(0), -1});
+
+  if (flatten_non_batch_dims) {
+    x = x.reshape({x.size(0), -1});
+  }
 
   for (int i = 0; i < layer_sizes.size() - 1; ++i) {
     if (i < layer_sizes.size() - 2) {

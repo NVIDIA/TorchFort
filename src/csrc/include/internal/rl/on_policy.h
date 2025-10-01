@@ -173,8 +173,8 @@ static void predict_explore(const char* name, T* state, size_t state_dim, int64_
   // expand dims if tensors are 1D
   bool flatten_output = false;
   if (state_tensor.dim() == 1) {
-      state_tensor = state_tensor.unsqueeze(0);
-      flatten_output = true;
+    state_tensor = state_tensor.unsqueeze(0);
+    flatten_output = true;
   }
 
   // fwd pass
@@ -212,8 +212,8 @@ static void predict(const char* name, T* state, size_t state_dim, int64_t* state
   // expand dims if tensors are 1D
   bool flatten_output = false;
   if (state_tensor.dim() == 1) {
-      state_tensor = state_tensor.unsqueeze(0);
-      flatten_output = true;
+    state_tensor = state_tensor.unsqueeze(0);
+    flatten_output = true;
   }
 
   // fwd pass

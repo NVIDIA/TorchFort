@@ -256,7 +256,6 @@ if (TORCHFORT_BUILD_EXAMPLES)
   if (TORCHFORT_BUILD_FORTRAN)
     add_subdirectory(examples/fortran/simulation)
     add_subdirectory(examples/fortran/graph)
-    add_subdirectory(examples/fortran/ppo)
   endif()
 endif()
 

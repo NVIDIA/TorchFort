@@ -41,7 +41,7 @@ void ActorCriticMLPModel::setup(const ParamMap& params) {
   // actor
   actor_layers.push_back(
       register_module("actor_fc_entry", torch::nn::Linear(encoder_last_layer_size, actor_layer_sizes[0])));
-  actor_biases.push_back(register_parameter("actor_b_entry", torch::zeros(encoder_layer_sizes[0])));
+  actor_biases.push_back(register_parameter("actor_b_entry", torch::zeros(actor_layer_sizes[0])));
   for (int i = 0; i < actor_layer_sizes.size() - 2; ++i) {
     actor_layers.push_back(register_module("actor_fc_" + std::to_string(i),
                                            torch::nn::Linear(actor_layer_sizes[i], actor_layer_sizes[i + 1])));
@@ -49,19 +49,24 @@ void ActorCriticMLPModel::setup(const ParamMap& params) {
   }
   int actor_last_layer_size = actor_layer_sizes[actor_layer_sizes.size() - 2];
 
-  // mu layer
+  // mu-sigma layer
+  int factor = state_dependent_sigma ? 2 : 1;
   actor_layers.push_back(register_module(
-      "actor_fc_mu", torch::nn::Linear(actor_last_layer_size, actor_layer_sizes[actor_layer_sizes.size() - 1])));
+      "actor_fc_mu", torch::nn::Linear(actor_last_layer_size, factor * actor_layer_sizes[actor_layer_sizes.size() - 1])));
   actor_biases.push_back(
-      register_parameter("actor_b_mu", torch::zeros(actor_layer_sizes[actor_layer_sizes.size() - 1])));
-  // sigma layer
-  if (state_dependent_sigma) {
-    actor_layers.push_back(
-        register_module("actor_fc_log_sigma",
-                        torch::nn::Linear(actor_last_layer_size, actor_layer_sizes[actor_layer_sizes.size() - 1])));
+      register_parameter("actor_b_mu", torch::zeros(factor * actor_layer_sizes[actor_layer_sizes.size() - 1])));
+  if (!state_dependent_sigma) {
+    actor_biases.push_back(register_parameter("actor_b_log_sigma", torch::zeros(actor_layer_sizes[actor_layer_sizes.size() - 1])));
   }
-  actor_biases.push_back(
-      register_parameter("actor_b_log_sigma", torch::zeros(actor_layer_sizes[actor_layer_sizes.size() - 1])));
+
+  // sigma layer
+  //if (state_dependent_sigma) {
+  //  actor_layers.push_back(
+  //      register_module("actor_fc_log_sigma",
+  //                      torch::nn::Linear(actor_last_layer_size, actor_layer_sizes[actor_layer_sizes.size() - 1])));
+ // }
+  //actor_biases.push_back(
+  //    register_parameter("actor_b_log_sigma", torch::zeros(actor_layer_sizes[actor_layer_sizes.size() - 1])));
 
   // value
   value_layers.push_back(
@@ -102,7 +107,7 @@ std::vector<torch::Tensor> ActorCriticMLPModel::forward(const std::vector<torch:
 
   // actor
   torch::Tensor act = x;
-  for (int i = 0; i < actor_layer_sizes.size() - 2; ++i) {
+  for (int i = 0; i < actor_layers.size() - 1; ++i) {
     // encoder part
     act = torch::tanh(actor_layers[i]->forward(act) + actor_biases[i]);
     act = torch::dropout(act, dropout, is_training());
@@ -110,21 +115,24 @@ std::vector<torch::Tensor> ActorCriticMLPModel::forward(const std::vector<torch:
 
   torch::Tensor mu, log_sigma;
   if (state_dependent_sigma) {
-    mu = actor_layers[actor_layer_sizes.size() - 2]->forward(act) + actor_biases[actor_layer_sizes.size() - 2];
-    log_sigma = actor_layers[actor_layer_sizes.size() - 1]->forward(act) + actor_biases[actor_layer_sizes.size() - 1];
+    // here, layer - 1 is for predicting mu, and layer -2 for predicting log_sigma
+    auto mu_sigma = actor_layers[actor_layers.size() - 1]->forward(act) + actor_biases[actor_biases.size() - 1];
+    auto mu_sigma_split = mu_sigma.split(mu_sigma.size(1) / 2, 1);
+    mu = mu_sigma_split[0];
+    log_sigma = mu_sigma_split[1];
   } else {
-    mu = actor_layers[actor_layer_sizes.size() - 1]->forward(act) + actor_biases[actor_layer_sizes.size() - 2];
-    auto batch_size = mu.sizes()[0];
-    log_sigma = torch::tile(actor_biases[actor_layer_sizes.size() - 1], {batch_size, 1});
+    mu = actor_layers[actor_layers.size() - 1]->forward(act) + actor_biases[actor_biases.size() - 2];
+    auto batch_size = mu.size(0);
+    log_sigma = torch::tile(actor_biases[actor_biases.size() - 1], {batch_size, 1});
   }
 
   // value
   torch::Tensor q = x;
-  for (int i = 0; i < value_layer_sizes.size() - 1; ++i) {
+  for (int i = 0; i < value_layers.size() - 1; ++i) {
     q = torch::tanh(value_layers[i]->forward(q) + value_biases[i]);
     q = torch::dropout(q, dropout, is_training());
   }
-  q = value_layers[value_layer_sizes.size() - 1]->forward(q) + value_biases[value_layer_sizes.size() - 1];
+  q = value_layers[value_layers.size() - 1]->forward(q) + value_biases[value_biases.size() - 1];
 
   return std::vector<torch::Tensor>{mu, log_sigma, q};
 }

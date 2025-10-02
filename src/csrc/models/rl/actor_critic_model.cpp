@@ -61,15 +61,6 @@ void ActorCriticMLPModel::setup(const ParamMap& params) {
         register_parameter("actor_b_log_sigma", torch::zeros(actor_layer_sizes[actor_layer_sizes.size() - 1])));
   }
 
-  // sigma layer
-  // if (state_dependent_sigma) {
-  //  actor_layers.push_back(
-  //      register_module("actor_fc_log_sigma",
-  //                      torch::nn::Linear(actor_last_layer_size, actor_layer_sizes[actor_layer_sizes.size() - 1])));
-  // }
-  // actor_biases.push_back(
-  //    register_parameter("actor_b_log_sigma", torch::zeros(actor_layer_sizes[actor_layer_sizes.size() - 1])));
-
   // value
   value_layers.push_back(
       register_module("value_fc_entry", torch::nn::Linear(encoder_last_layer_size, value_layer_sizes[0])));

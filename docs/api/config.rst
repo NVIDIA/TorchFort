@@ -436,7 +436,72 @@ The block in the configuration file defining model properties for actor/policy a
     parameters:
       <option> = <value>
 
-Refer to the :ref:`model_properties-ref` for available model types and options.
+In case of PPO, the policy and critic model are the same. Therefore, the block configuration looks as follows:
+
+.. code-block:: yaml
+
+  actor_critic_model:
+    type: <actor_critic_model_type>
+    parameters:
+      <option> = <value>
+
+The following table lists the available policy and critic model types for the different training algorithms.
+
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+| Model Type         | Description                                    | Allowed for Algorithms | Type                                           |
++====================+================================================+========================+================================================+
+| ``torchscript``    | Load a model from an exported TorchScript file | All                    | policy_model, critic_model, actor_critic_model |
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+| ``mlp``            | Use built-in MLP model                         | DDPG, TD3              | policy_model                                   |
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+| ``criticmlp``      | Use built-in critic MLP model                  | DDPG, TD3, SAC         | critic_model                                   |
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+| ``sacmlp``         | Use built-in soft actor critic MLP model       | SAC                    | policy_model                                   |
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+| ``actorcriticmlp`` | Use built-in actor-critic MLP model            | PPO                    | actor_critic_model                             |
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+
+The following table lists the available options for each model type:
+
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Model Type         | Option                     | Data Type        | Description                                                                                                                                                                                        |
++====================+============================+==================+====================================================================================================================================================================================================+
+| ``torchscript``    | ``filename``               | string           | path to TorchScript exported model file                                                                                                                                                            |
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``mlp``            | ``layer_sizes``            | list of integers | sequence of input/output sizes for linear layers e.g., ``[16, 32, 4]`` will create two linear layers with input/output of 16/32 for the first layer and 32/4 for the second layer.                 |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``dropout``                | float            | probability of an element to be zeroed in dropout layers (default = ``0.0``)                                                                                                                       |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``flatten_non_batch_dims`` | bool             | if set, input tensors are reshaped from ``[batch_size, ...]`` to ``[batch_size, -1]`` before passing to first linear layer (default = ``true``)                                                    |
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``criticmlp``      | ``layer_sizes``            | list of integers | sequence of input/output sizes for linear layers e.g., ``[16, 32, 4]`` will create two linear layers with input/output of 16/32 for the first layer and 32/4 for the second layer.                 |
+|                    |                            |                  | the first element of the list has to be the size of state dimension + action dimension. The final layer size has to be 1.                                                                          |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``dropout``                | float            | probability of an element to be zeroed in dropout layers (default = ``0.0``)                                                                                                                       |
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``sacmlp``         | ``layer_sizes``            | list of integers | sequence of input/output sizes for linear layers e.g., ``[16, 32, 4]`` will create two linear layers with input/output of 16/32 for the first layer and 32/4 for the second layer.                 |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``dropout``                | float            | probability of an element to be zeroed in dropout layers (default = ``0.0``)                                                                                                                       |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``state_dependent_sigma``  | bool             | if set, the returned variance estimate sigma is a function of the state (default = ``true``)                                                                                                       |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``log_sigma_init``         | float            | initial value for the log sigma (default = ``0.0``)                                                                                                                                                |
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``actorcriticmlp`` | ``encoder_layer_sizes``    | list of integers | sequence of input/output sizes for linear layers of common encoder part e.g., ``[16, 32, 8]`` will create two linear layers with input/output of 16/32 for the first layer                         |
+|                    |                            |                  | and 32/8 for the second layer.                                                                                                                                                                     |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``actor_layer_sizes``      | list of integers | sequence of input/output sizes for linear layers of actor part e.g., ``[4, 2]`` will create two linear layers with input/output of 8/4 for the first layer (matching the encoder output)           |
+|                    |                            |                  | and 4/2 for the second layer.                                                                                                                                                                      |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``value_layer_sizes``      | list of integers | sequence of input/output sizes for linear layers of value part e.g., ``[4, 1]`` will create two linear layers with input/output of 8/4 for the first layer (matching the encoder output)           |
+|                    |                            |                  | and 4/1 for the second layer. The final layer output size has to be 1.                                                                                                                             |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``dropout``                | float            | probability of an element to be zeroed in dropout layers (default = ``0.0``)                                                                                                                       |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``state_dependent_sigma``  | bool             | if set, the returned variance estimate sigma is a function of the state (default = ``true``)                                                                                                       |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``log_sigma_init``         | float            | initial value for the log sigma (default = ``0.0``)                                                                                                                                                |
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 .. note::
 
@@ -446,9 +511,15 @@ Refer to the :ref:`model_properties-ref` for available model types and options.
     
     In case of SAC algorithm, make sure that the policy network not only returns the mean actions value tensor but also the log probability sigma tensor. As an example see the policy function implementation of `stable baselines <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/sac/policies.py>`_.
 
+.. note::
+
+    In case of actor-critic models, the policy network is used for both policy and value function. Those models use a common encoder which only takes the state as input but returns a action mean, action log_variance (similar to SAC) as well as value estimates.
+
 Learning Rate Schedule Properties
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-For reinforcement learning, TorchFort supports different learning rate schedules for policy and critic. The block configuration looks as follows:
+For reinforcement learning, TorchFort supports different learning rate schedules for policy and critic. 
+
+The block configuration for DDPG and TD3 looks as follows:
 
 .. code-block:: yaml
 
@@ -458,6 +529,24 @@ For reinforcement learning, TorchFort supports different learning rate schedules
       <option> = <value>
 
   policy_lr_scheduler:
+    type: <schedule_type>
+    parameters:
+      <option> = <value>
+
+Since SAC uses additional parameters for the entropy regularization, the follwing block configuration can be added:
+
+.. code-block:: yaml
+
+  alpha_lr_scheduler:
+    type: <schedule_type>
+    parameters:
+      <option> = <value>
+
+Since all parameters are shared between policy and critic for actor-critic models, the following block configuration can be used:
+
+.. code-block:: yaml
+
+  lr_scheduler:
     type: <schedule_type>
     parameters:
       <option> = <value>

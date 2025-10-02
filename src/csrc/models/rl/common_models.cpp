@@ -34,6 +34,13 @@ void CriticMLPModel::setup(const ParamMap& params) {
   dropout = params.get_param<double>("dropout", 0.0)[0];
   layer_sizes = params.get_param<int>("layer_sizes");
 
+  // sanity checks
+  // make sure that value function is emitting a scalar.
+  if (layer_sizes[layer_sizes.size() - 1] != 1) {
+    THROW_INVALID_USAGE(
+        "CriticMLPModel::setup: error, the value of the last element of layer_sizes has to be equal to one.");
+  }
+
   // Construct and register submodules.
   for (int i = 0; i < layer_sizes.size() - 1; ++i) {
     fc_layers.push_back(

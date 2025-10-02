@@ -16,8 +16,8 @@
  */
 
 #pragma once
-#include <stdint.h>
 #include "torchfort_config.h"
+#include <stdint.h>
 #if TORCHFORT_ENABLE_GPU
 #include <cuda_runtime.h>
 #else

@@ -166,17 +166,15 @@ static void predict_explore(const char* name, T* state, size_t state_dim, int64_
   auto action_tensor = get_tensor<L>(action, action_dim, action_shape);
 
   // expand dims if tensors are 1D
-  bool flatten_output = false;
   if (state_tensor.dim() == 1) {
     state_tensor = state_tensor.unsqueeze(0);
-    flatten_output = true;
   }
 
   // fwd pass
   auto tmpaction = registry[name]->predictExplore(state_tensor).to(action_tensor.dtype());
 
   // flatten output if necessary
-  if (flatten_output) {
+  if (action_tensor.dim() == 1) {
     tmpaction = tmpaction.squeeze(0);
   }
 
@@ -206,17 +204,15 @@ static void predict(const char* name, T* state, size_t state_dim, int64_t* state
   auto action_tensor = get_tensor<L>(action, action_dim, action_shape);
 
   // expand dims if tensors are 1D
-  bool flatten_output = false;
   if (state_tensor.dim() == 1) {
     state_tensor = state_tensor.unsqueeze(0);
-    flatten_output = true;
   }
 
   // fwd pass
   auto tmpaction = registry[name]->predict(state_tensor).to(action_tensor.dtype());
 
   // flatten output if necessary
-  if (flatten_output) {
+  if (action_tensor.dim() == 1) {
     tmpaction = tmpaction.squeeze(0);
   }
 

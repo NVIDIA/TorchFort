@@ -4,6 +4,7 @@ set(test_targets
   test_replay_buffer
   test_rollout_buffer
   test_distributions
+  test_interface
   test_off_policy
   test_on_policy
   )
@@ -24,6 +25,12 @@ add_executable(test_distributions)
 target_sources(test_distributions
   PRIVATE
   test_distributions.cpp
+  )
+
+add_executable(test_interface)
+target_sources(test_interface
+  PRIVATE
+  test_interface.cpp
   )
 
 add_executable(test_off_policy)

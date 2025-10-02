@@ -17,7 +17,8 @@
 
 #pragma once
 #include <stdint.h>
-#ifdef ENABLE_GPU
+#include "torchfort_config.h"
+#if TORCHFORT_ENABLE_GPU
 #include <cuda_runtime.h>
 #else
 typedef void* cudaStream_t;

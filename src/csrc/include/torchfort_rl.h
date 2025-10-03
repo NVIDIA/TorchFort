@@ -163,8 +163,9 @@ torchfort_result_t torchfort_rl_off_policy_predict_explore_F(const char* name, v
  * @brief Suggests an action based on the current state of the system.
  * @details Depending on the algorithm used, the prediction is performed by the target network.
  * In contrast to \p torchfort_rl_off_policy_predict_explore, this routine does not add noise, which means it is
- * exploitative. Any one dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension as 
- * slowest dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
+ * exploitative. Any one dimensional tensors are expanded to two dimensional tensors by adding a singleton batch
+ * dimension as slowest dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the
+ * slowest dimension) is required to match.
  *
  * @param[in] name The name of system instance to use, as defined during system creation.
  * @param[in] state A pointer to a memory buffer containing state data.
@@ -194,8 +195,8 @@ torchfort_result_t torchfort_rl_off_policy_predict_F(const char* name, void* sta
  * @brief Predicts the future reward based on the current state and selected action
  * @details Depending on the learning algorithm, the routine queries the target critic networks for this.
  * The routine averages the predictions over all critics. Any one dimensional tensors are
- * expanded to two dimensional tensors by adding a singleton batch dimension as slowest dimension. For multi-dimensional tensors,
- * the batch dimension (which is assumed to be the slowest dimension) is required to match.
+ * expanded to two dimensional tensors by adding a singleton batch dimension as slowest dimension. For multi-dimensional
+ * tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
  *
  * @param[in] name The name of system instance to use, as defined during system creation.
  * @param[in] state A pointer to a memory buffer containing state data.
@@ -234,8 +235,8 @@ torchfort_result_t torchfort_rl_off_policy_evaluate_F(const char* name, void* st
  * @details Here \f$s\f$ (\p state_old) is the state for which action \f$a\f$ (\p action_old) was taken, leading to
  * \f$s'\f$ (\p state_new) and receiving reward \f$r\f$ (\p reward). The terminal state flag \f$d\f$ (\p final_state)
  * specifies whether \f$s'\f$ is the final state in the episode. Any one dimensional tensors are
- * expanded to two dimensional tensors by adding a singleton batch dimension as slowest dimension. For multi-dimensional tensors,
- * the batch dimension (which is assumed to be the slowest dimension) is required to match.
+ * expanded to two dimensional tensors by adding a singleton batch dimension as slowest dimension. For multi-dimensional
+ * tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
  *
  * @param[in] name The name of system instance to use, as defined during system creation.
  * @param[in] state_old A pointer to a memory buffer containing previous state data.
@@ -480,8 +481,9 @@ torchfort_result_t torchfort_rl_on_policy_predict_explore_F(const char* name, vo
  * @brief Suggests an action based on the current state of the system.
  * @details Depending on the algorithm used, the prediction is performed by the target network.
  * In contrast to \p torchfort_rl_on_policy_predict_explore, this routine does not add noise, which means it is
- * exploitative. Any one dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension as 
- * slowest dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
+ * exploitative. Any one dimensional tensors are expanded to two dimensional tensors by adding a singleton batch
+ * dimension as slowest dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the
+ * slowest dimension) is required to match.
  *
  * @param[in] name The name of system instance to use, as defined during system creation.
  * @param[in] state A pointer to a memory buffer containing state data.
@@ -509,9 +511,9 @@ torchfort_result_t torchfort_rl_on_policy_predict_F(const char* name, void* stat
 /**
  * @brief Predicts the future reward based on the current state and selected action
  * @details Depending on the learning algorithm, the routine queries the target critic networks for this.
- * The routine averages the predictions over all critics. Any one dimensional tensors are expanded to two dimensional tensors 
- * by adding a singleton batch dimension as slowest dimension. For multi-dimensional tensors,
- * the batch dimension (which is assumed to be the slowest dimension) is required to match.
+ * The routine averages the predictions over all critics. Any one dimensional tensors are expanded to two dimensional
+ * tensors by adding a singleton batch dimension as slowest dimension. For multi-dimensional tensors, the batch
+ * dimension (which is assumed to be the slowest dimension) is required to match.
  *
  * @param[in] name The name of system instance to use, as defined during system creation.
  * @param[in] state A pointer to a memory buffer containing state data.
@@ -551,8 +553,9 @@ torchfort_result_t torchfort_rl_on_policy_evaluate_F(const char* name, void* sta
  * The terminal state flag \f$d\f$ (\p final_state) specifies whether \f$s\f$ is the final state of the episode.
  * Note that value estimates \f$q\f$ as well was log-probabilities are also stored but the user does not need to
  * pass those manually, those values are computed internally from the current policy and stored with the other values.
- * Any one dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension as 
- * slowest dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
+ * Any one dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension as
+ * slowest dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension)
+ * is required to match.
  *
  * @param[in] name The name of system instance to use, as defined during system creation.
  * @param[in] state A pointer to a memory buffer containing state data.

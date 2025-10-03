@@ -881,8 +881,8 @@ module torchfort
   end interface torchfort_rl_off_policy_predict_explore
 
   interface torchfort_rl_off_policy_predict
-     module procedure torchfort_rl_off_policy_predict_float_1d_1d_dev
-     module procedure torchfort_rl_off_policy_predict_float_2d_2d_dev
+     module procedure torchfort_rl_off_policy_predict_float_1d_1d
+     module procedure torchfort_rl_off_policy_predict_float_2d_2d
      module procedure torchfort_rl_off_policy_predict_float_4d_4d
      module procedure torchfort_rl_off_policy_predict_float_4d_2d
 #ifdef _CUDA

@@ -255,59 +255,81 @@ The block in the configuration file defining algorithm properties takes the foll
       
 The following table lists the available algorithm types:
 
-+----------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
-| Algorithm Type | Description                                                                                                                                   |
-+================+===============================================================================================================================================+
-| ``ddpg``       | Deterministic Policy Gradient. See `DDPG documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/ddpg.html>`_ for details |
-+----------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
-| ``td3``        | Twin Delayed DDPG. See `TD3 documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/td3.html>`_ for details               |
-+----------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
-| ``sac``        | Soft Actor Critic. See `SAC documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/sac.html>`_ for details               |
-+----------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Algorithm Type | Description                                                                                                                                              |
++================+==========================================================================================================================================================+
+| ``ddpg``       | Deterministic Policy Gradient. See `DDPG documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/ddpg.html>`_ for details            |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``td3``        | Twin Delayed DDPG. See `TD3 documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/td3.html>`_ for details                          |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``sac``        | Soft Actor Critic. See `SAC documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/sac.html>`_ for details                          |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``ppo``        | Proximal Policy Optimization. See `PPO documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/ppo.html>`_ for details               |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 The following table lists the available options by algorithm type:
 
-+----------------+----------------------------+------------+-------------------------------------------------------------------------------------------+
-| Algorithm Type | Option                     | Data Type  | Description                                                                               |
-+================+============================+============+===========================================================================================+
-| ``ddpg``       | ``batch_size``             | integer    | batch size used in training                                                               |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep``                  | integer    | number of steps for N-step training                                                       |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep_reward_reduction`` | string     | reduction mode for N-step training (see below)                                            |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``gamma``                  | float      | discount factor                                                                           |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``rho``                    | boolean    | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
-+----------------+----------------------------+------------+-------------------------------------------------------------------------------------------+
-| ``td3``        | ``batch_size``             | integer    | batch size used in training                                                               |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep``                  | integer    | number of steps for N-step training                                                       |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep_reward_reduction`` | string     | reduction mode for N-step training (see below)                                            |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``gamma``                  | float      | discount factor                                                                           |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``rho``                    | float      | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``num_critics``            | integer    | number of critic networks used                                                            |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``policy_lag``             | integer    | update frequency for the policy in units of critic updates                                |
-+----------------+----------------------------+------------+-------------------------------------------------------------------------------------------+
-| ``sac``        | ``batch_size``             | integer    | batch size used in training                                                               |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep``                  | integer    | number of steps for N-step training                                                       |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep_reward_reduction`` | string     | reduction mode for N-step training (see below)                                            |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``gamma``                  | float      | discount factor                                                                           |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``alpha``                  | float      | entropy regularization coefficient                                                        |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``rho``                    | boolean    | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``policy_lag``             | integer    | update frequency for the policy in units of value updates                                 |
-+----------------+----------------------------+------------+-------------------------------------------------------------------------------------------+
++----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
+| Algorithm Name | Kind        | Option                       | Data Type  | Description                                                                               |
++================+=============+==============================+============+===========================================================================================+
+| ``ddpg``       | off policy  | ``batch_size``               | integer    | batch size used in training                                                               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                       |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training (see below)                                            |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                           |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``rho``                      | boolean    | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
++----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
+| ``td3``        | off policy  | ``batch_size``               | integer    | batch size used in training                                                               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                       |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training (see below)                                            |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                           |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``rho``                      | float      | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``num_critics``              | integer    | number of critic networks used                                                            |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``policy_lag``               | integer    | update frequency for the policy in units of critic updates                                |
++----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
+| ``sac``        | off policy  | ``batch_size``               | integer    | batch size used in training                                                               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                       |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training (see below)                                            |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                           |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``alpha``                    | float      | entropy regularization coefficient                                                        |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``rho``                      | boolean    | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``policy_lag``               | integer    | update frequency for the policy in units of value updates                                 |
++----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
+| ``ppo``        | on policy   | ``batch_size``               | integer    | batch size used in training                                                               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``gae_lambda``               | float      | discount factor for General Advantage Estimator                                           |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``epsilon``                  | float      | clip ratio, policy discrepancy regularization                                             |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                           |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``clip_q``                   | float      | clip range for value function estimate (denoted by `clip_vf` in Stable Baselines)         |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``target_kl_divergence``     | float      | target KL divergence for KL regularization                                                |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``entropy_loss_coefficient`` | float      | entropy loss coefficient: weight for entropy component of the loss function               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``value_loss_coefficient``   | float      | value loss coefficient: weight for value estimate component of the loss function          |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``max_grad_norm``            | float      | maximum gradient norm for gradient clipping                                               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``normalize_advantage``      | boolean    | if set to true, advantage values are normalized over all buffer entries                   |
++----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
 
 The parameter ``nstep_reward_reduction`` defines how the reward is accumulated over N-step rollouts. The options are summarized in a table below (:math:`N` is the value from parameter ``nstep`` described above):
 
@@ -325,7 +347,7 @@ Here, the value of :math:`N^\ast` depends on whether reduction with or without s
 
 In this case, it is useful to use the modes with the additional suffix ``_no_skip``. In this case, :math:`N^{\ast}` in the formulas will be equal to the minimum of :math:`N` and the number of steps needed to reach the end of the trajectory. The regular and no-skip modes are both useful in different occasions, so it is important to be clear about how the reward structure has to be designed in order to achieve the desired goals.
 
-Replay Buffer Properties
+Replay and Rollout Buffer Properties
 ~~~~~~~~~~~~~~~~~~~~~~~~
 The block in the configuration file defining algorithm properties takes the following structure:
 
@@ -344,15 +366,45 @@ Currently, only type ``uniform`` is supported. The following table lists the ava
 | ``uniform``               | ``min_size``    | integer         | Minimum number of samples before buffer is ready for training    |
 +                           +-----------------+-----------------+------------------------------------------------------------------+
 |                           | ``max_size``    | integer         | Maximum capacity                                                 |
++                           +-----------------+-----------------+------------------------------------------------------------------+
+|                           | ``n_envs``      | integer         | Number of environments                                           |
 +---------------------------+-----------------+-----------------+------------------------------------------------------------------+
 
-Action Properties
-~~~~~~~~~~~~~~~~~
-The block in the configuration file defining action properties takes the following structure:
+Note that the effective sizes for each environment is :math:`\mathrm{min\_size} / \mathrm{n\_envs}` and :math:`\mathrm{max\_size} / \mathrm{n\_envs}`.
+You need to ensure that you can store at least one sample for each environment. However, for better algorithm performance, it is highly advised to provide buffers
+which can store longer trajectories.
+
+For on-policy algorithms, the block looks as follows:
 
 .. code-block:: yaml
 
-  action:
+  rollout_buffer:
+    type: <rollout_buffer_type>
+    parameters:
+      <option> = <value>
+
+Currently, only type ``gae_lambda`` (General Advantage Estimator) is supported. The following table lists the available options:
+
++---------------------------+-----------------+-----------------+------------------------------------------------------------------+
+| Replay Buffer Type        | Option          | Data Type       | Description                                                      |
++===========================+=================+=================+==================================================================+
+| ``gae_lambda``            | ``size``        | integer         | Total number of samples before buffer is ready for training      |
++                           +-----------------+-----------------+------------------------------------------------------------------+
+|                           | ``n_envs``      | integer         | Number of environments                                           |
++---------------------------+-----------------+-----------------+------------------------------------------------------------------+
+
+As in the case of the replay buffer, the effective sizes for each environment is :math:`\mathrm{size} / \mathrm{n\_envs}`.
+Once the buffer is full (number of samples pushed to the buffer is equal to the buffer size), the general advantage is estimated
+by integrating the reward over the trajectories for each environment, applying discount factor `gae_lambda` specified during system construction.
+Training can therefore only start when the buffer is completely full and the advantage estimates are computed.
+
+Actor Properties
+~~~~~~~~~~~~~~~~~
+The block in the configuration file defining actor properties takes the following structure:
+
+.. code-block:: yaml
+
+  actor:
     type: <action_type>
     parameters:
       <option> = <value>
@@ -360,7 +412,7 @@ The block in the configuration file defining action properties takes the followi
 The following table lists the available options for every action type for ``ddpg`` and ``td3`` algorithms:
 
 +----------------------------------------------+-------------------+------------+-------------------------------------------------------------------+
-| Action Type                                  | Option            | Data Type  | Description                                                       |
+| Actor Type                                   | Option            | Data Type  | Description                                                       |
 +==============================================+===================+============+===================================================================+
 | ``space_noise`` or ``parameter_noise``       | ``a_low``         | float      | lower bound for action value                                      |
 +                                              +-------------------+------------+-------------------------------------------------------------------+
@@ -390,6 +442,10 @@ The following table lists the available options for every action type for ``ddpg
 +                                              +-------------------+------------+-------------------------------------------------------------------+
 |                                              | ``adaptive``      | bool       | flag to specify whether the standard deviation should be adaptive |
 +----------------------------------------------+-------------------+------------+-------------------------------------------------------------------+
+| ``gaussian_ac``                              | ``a_low``         | float      | lower bound for action value                                      |
++                                              +-------------------+------------+-------------------------------------------------------------------+
+|                                              | ``a_high``        | float      | upper bound for action value                                      |
++----------------------------------------------+-------------------+------------+-------------------------------------------------------------------+
 
 The meaning for most of these parameters should be evident from looking at the details of the implementations for the various RL algorithms linked above. 
 However, some parameters require a more detailed explanation: in general, the suffix ``_ou`` refers to stateful noise of Ornstein-Uhlenbeck type with zero drift. This noise type is often used if correlation between time steps is desired and thus popular in reinforcement learning. Check out the `wikipedia page <https://en.wikipedia.org/wiki/Ornstein–Uhlenbeck_process>`_ for details.
@@ -418,7 +474,8 @@ and analogous for parameter noise.
 
 Whichever noise type and parameters are the best highly depends on the behavior of the environment and therefore we cannot give a general recommendation.
 
-For algorithm type ``sac``, only action bounds are supported as the noise is built into the algorithm and cannot be customized.
+For algorithm type ``sac``, only action bounds are supported as the noise is built into the algorithm and cannot be customized. 
+For algorithm type ``ppo``, ``gaussian_ac`` is the only supported actor type.
 
 Policy and Critic Properties
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -436,7 +493,72 @@ The block in the configuration file defining model properties for actor/policy a
     parameters:
       <option> = <value>
 
-Refer to the :ref:`model_properties-ref` for available model types and options.
+In case of PPO, the policy and critic model are the same. Therefore, the block configuration looks as follows:
+
+.. code-block:: yaml
+
+  actor_critic_model:
+    type: <actor_critic_model_type>
+    parameters:
+      <option> = <value>
+
+The following table lists the available policy and critic model types for the different training algorithms.
+
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+| Model Type         | Description                                    | Allowed for Algorithms | Type                                           |
++====================+================================================+========================+================================================+
+| ``torchscript``    | Load a model from an exported TorchScript file | All                    | policy_model, critic_model, actor_critic_model |
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+| ``mlp``            | Use built-in MLP model                         | DDPG, TD3              | policy_model                                   |
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+| ``criticmlp``      | Use built-in critic MLP model                  | DDPG, TD3, SAC         | critic_model                                   |
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+| ``sacmlp``         | Use built-in soft actor critic MLP model       | SAC                    | policy_model                                   |
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+| ``actorcriticmlp`` | Use built-in actor-critic MLP model            | PPO                    | actor_critic_model                             |
++--------------------+------------------------------------------------+------------------------+------------------------------------------------+
+
+The following table lists the available options for each model type:
+
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Model Type         | Option                     | Data Type        | Description                                                                                                                                                                                        |
++====================+============================+==================+====================================================================================================================================================================================================+
+| ``torchscript``    | ``filename``               | string           | path to TorchScript exported model file                                                                                                                                                            |
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``mlp``            | ``layer_sizes``            | list of integers | sequence of input/output sizes for linear layers e.g., ``[16, 32, 4]`` will create two linear layers with input/output of 16/32 for the first layer and 32/4 for the second layer.                 |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``dropout``                | float            | probability of an element to be zeroed in dropout layers (default = ``0.0``)                                                                                                                       |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``flatten_non_batch_dims`` | bool             | if set, input tensors are reshaped from ``[batch_size, ...]`` to ``[batch_size, -1]`` before passing to first linear layer (default = ``true``)                                                    |
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``criticmlp``      | ``layer_sizes``            | list of integers | sequence of input/output sizes for linear layers e.g., ``[16, 32, 4]`` will create two linear layers with input/output of 16/32 for the first layer and 32/4 for the second layer.                 |
+|                    |                            |                  | the first element of the list has to be the size of state dimension + action dimension. The final layer size has to be 1.                                                                          |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``dropout``                | float            | probability of an element to be zeroed in dropout layers (default = ``0.0``)                                                                                                                       |
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``sacmlp``         | ``layer_sizes``            | list of integers | sequence of input/output sizes for linear layers e.g., ``[16, 32, 4]`` will create two linear layers with input/output of 16/32 for the first layer and 32/4 for the second layer.                 |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``dropout``                | float            | probability of an element to be zeroed in dropout layers (default = ``0.0``)                                                                                                                       |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``state_dependent_sigma``  | bool             | if set, the returned variance estimate sigma is a function of the state (default = ``true``)                                                                                                       |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``log_sigma_init``         | float            | initial value for the log sigma (default = ``0.0``)                                                                                                                                                |
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``actorcriticmlp`` | ``encoder_layer_sizes``    | list of integers | sequence of input/output sizes for linear layers of common encoder part e.g., ``[16, 32, 8]`` will create two linear layers with input/output of 16/32 for the first layer                         |
+|                    |                            |                  | and 32/8 for the second layer.                                                                                                                                                                     |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``actor_layer_sizes``      | list of integers | sequence of input/output sizes for linear layers of actor part e.g., ``[4, 2]`` will create two linear layers with input/output of 8/4 for the first layer (matching the encoder output)           |
+|                    |                            |                  | and 4/2 for the second layer.                                                                                                                                                                      |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``value_layer_sizes``      | list of integers | sequence of input/output sizes for linear layers of value part e.g., ``[4, 1]`` will create two linear layers with input/output of 8/4 for the first layer (matching the encoder output)           |
+|                    |                            |                  | and 4/1 for the second layer. The final layer output size has to be 1.                                                                                                                             |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``dropout``                | float            | probability of an element to be zeroed in dropout layers (default = ``0.0``)                                                                                                                       |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``state_dependent_sigma``  | bool             | if set, the returned variance estimate sigma is a function of the state (default = ``true``)                                                                                                       |
++                    +----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                    | ``log_sigma_init``         | float            | initial value for the log sigma (default = ``0.0``)                                                                                                                                                |
++--------------------+----------------------------+------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 .. note::
 
@@ -446,9 +568,15 @@ Refer to the :ref:`model_properties-ref` for available model types and options.
     
     In case of SAC algorithm, make sure that the policy network not only returns the mean actions value tensor but also the log probability sigma tensor. As an example see the policy function implementation of `stable baselines <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/sac/policies.py>`_.
 
+.. note::
+
+    In case of actor-critic models, the policy network is used for both policy and value function. Those models use a common encoder which only takes the state as input but returns a action mean, action log variance (similar to SAC) as well as value estimates.
+
 Learning Rate Schedule Properties
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-For reinforcement learning, TorchFort supports different learning rate schedules for policy and critic. The block configuration looks as follows:
+For reinforcement learning, TorchFort supports different learning rate schedules for policy and critic. 
+
+The block configuration for DDPG and TD3 looks as follows:
 
 .. code-block:: yaml
 
@@ -462,5 +590,27 @@ For reinforcement learning, TorchFort supports different learning rate schedules
     parameters:
       <option> = <value>
 
+Since SAC uses additional parameters for the entropy regularization, the following block configuration can be added:
+
+.. code-block:: yaml
+
+  alpha_lr_scheduler:
+    type: <schedule_type>
+    parameters:
+      <option> = <value>
+
+Since all parameters are shared between policy and critic for actor-critic models, the following block configuration can be used:
+
+.. code-block:: yaml
+
+  lr_scheduler:
+    type: <schedule_type>
+    parameters:
+      <option> = <value>
+
 Refer to the :ref:`lr_schedule_properties-ref` for available scheduler types and options.
 
+General Remarks
+~~~~~~~~~~~~~~~
+
+Example YAML files for training the different algorithms are available in the `tests/rl/configs <<../../tests/rl/configs/>>`_ directory.

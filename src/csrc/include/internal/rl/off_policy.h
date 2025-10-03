@@ -165,8 +165,20 @@ static void predict_explore(const char* name, T* state, size_t state_dim, int64_
       get_tensor<L>(state, state_dim, state_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
   auto action_tensor = get_tensor<L>(action, action_dim, action_shape);
 
+  // expand dims if tensors are 1D
+  if (state_tensor.dim() == 1) {
+    state_tensor = state_tensor.unsqueeze(0);
+  }
+
   // fwd pass
   auto tmpaction = registry[name]->predictExplore(state_tensor).to(action_tensor.dtype());
+
+  // flatten output if necessary
+  if (action_tensor.dim() == 1) {
+    tmpaction = tmpaction.squeeze(0);
+  }
+
+  // copy into output tensor
   action_tensor.copy_(tmpaction);
 
   return;
@@ -191,8 +203,19 @@ static void predict(const char* name, T* state, size_t state_dim, int64_t* state
       get_tensor<L>(state, state_dim, state_shape).to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
   auto action_tensor = get_tensor<L>(action, action_dim, action_shape);
 
+  // expand dims if tensors are 1D
+  if (state_tensor.dim() == 1) {
+    state_tensor = state_tensor.unsqueeze(0);
+  }
+
   // fwd pass
   auto tmpaction = registry[name]->predict(state_tensor).to(action_tensor.dtype());
+
+  // flatten output if necessary
+  if (action_tensor.dim() == 1) {
+    tmpaction = tmpaction.squeeze(0);
+  }
+
   action_tensor.copy_(tmpaction);
 
   return;
@@ -219,6 +242,15 @@ static void policy_evaluate(const char* name, T* state, size_t state_dim, int64_
   auto action_tensor = get_tensor<L>(action, action_dim, action_shape)
                            .to(torch::kFloat32, /* non_blocking = */ false, /* copy = */ true);
   auto reward_tensor = get_tensor<L>(reward, reward_dim, reward_shape);
+
+  // expand inputs if necessary
+  if (state_tensor.dim() == 1) {
+    state_tensor = state_tensor.unsqueeze(0);
+  }
+
+  if (action_tensor.dim() == 1) {
+    action_tensor = action_tensor.unsqueeze(0);
+  }
 
   // fwd pass
   torch::Tensor tmpreward = registry[name]->evaluate(state_tensor, action_tensor).to(reward_tensor.dtype());

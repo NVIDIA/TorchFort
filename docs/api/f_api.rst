@@ -417,8 +417,8 @@ torchfort_rl_off_policy_predict_explore
   For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
   
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
-  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
-  :p T act [out]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
+  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
+  :p T act [out]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
 
@@ -438,8 +438,8 @@ torchfort_rl_off_policy_predict
   For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
   
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
-  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
-  :p T act [out]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
+  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
+  :p T act [out]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
   
@@ -459,8 +459,8 @@ torchfort_rl_off_policy_evaluate
   For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
   
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
-  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
-  :p T act [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
+  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
+  :p T act [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
   :p T reward [out]: One-dimensional array of size (1) or (:code:`batch_size`) which will hold the predicted reward values.
   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
@@ -668,8 +668,8 @@ torchfort_rl_on_policy_predict_explore
   For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
   
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
-  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
-  :p T act [out]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
+  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
+  :p T act [out]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
 
@@ -689,8 +689,8 @@ torchfort_rl_on_policy_predict
   For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
   
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
-  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
-  :p T act [out]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
+  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
+  :p T act [out]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.
   
@@ -710,8 +710,8 @@ torchfort_rl_on_policy_evaluate
   For this operation, :code:`T` can be one of :code:`real(real32)`, :code:`real(real64)`
   
   :p character(:) name [in]: The name of system instance to use, as defined during system creation.
-  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
-  :p T act [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension and flattened on output.
+  :p T state [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the state space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
+  :p T act [in]: Multi-dimensional array of size (...) or (..., :code:`batch_size`), depending on the dimensionality of the action space. One dimensional tensors are expanded to two dimensional tensors by adding a singleton batch dimension. For multi-dimensional tensors, the batch dimension (which is assumed to be the slowest dimension) is required to match.
   :p T reward [out]: One-dimensional array of size (1) or (:code:`batch_size`) which will hold the predicted reward values.
   :p integer(int64) stream[in,optional]: CUDA stream to enqueue the operation. This argument is ignored if the model is on the CPU.
   :r torchfort_result res: :code:`TORCHFORT_RESULT_SUCCESS` on success or error code on failure.

@@ -255,59 +255,81 @@ The block in the configuration file defining algorithm properties takes the foll
       
 The following table lists the available algorithm types:
 
-+----------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
-| Algorithm Type | Description                                                                                                                                   |
-+================+===============================================================================================================================================+
-| ``ddpg``       | Deterministic Policy Gradient. See `DDPG documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/ddpg.html>`_ for details |
-+----------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
-| ``td3``        | Twin Delayed DDPG. See `TD3 documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/td3.html>`_ for details               |
-+----------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
-| ``sac``        | Soft Actor Critic. See `SAC documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/sac.html>`_ for details               |
-+----------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Algorithm Type | Description                                                                                                                                              |
++================+==========================================================================================================================================================+
+| ``ddpg``       | Deterministic Policy Gradient. See `DDPG documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/ddpg.html>`_ for details            |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``td3``        | Twin Delayed DDPG. See `TD3 documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/td3.html>`_ for details                          |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``sac``        | Soft Actor Critic. See `SAC documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/sac.html>`_ for details                          |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``ppo``        | Proximal Policy Optimization. See `PPO documentation by OpenAI <https://spinningup.openai.com/en/latest/algorithms/ppo.html>`_ for details               |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 The following table lists the available options by algorithm type:
 
-+----------------+----------------------------+------------+-------------------------------------------------------------------------------------------+
-| Algorithm Type | Option                     | Data Type  | Description                                                                               |
-+================+============================+============+===========================================================================================+
-| ``ddpg``       | ``batch_size``             | integer    | batch size used in training                                                               |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep``                  | integer    | number of steps for N-step training                                                       |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep_reward_reduction`` | string     | reduction mode for N-step training (see below)                                            |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``gamma``                  | float      | discount factor                                                                           |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``rho``                    | boolean    | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
-+----------------+----------------------------+------------+-------------------------------------------------------------------------------------------+
-| ``td3``        | ``batch_size``             | integer    | batch size used in training                                                               |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep``                  | integer    | number of steps for N-step training                                                       |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep_reward_reduction`` | string     | reduction mode for N-step training (see below)                                            |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``gamma``                  | float      | discount factor                                                                           |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``rho``                    | float      | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``num_critics``            | integer    | number of critic networks used                                                            |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``policy_lag``             | integer    | update frequency for the policy in units of critic updates                                |
-+----------------+----------------------------+------------+-------------------------------------------------------------------------------------------+
-| ``sac``        | ``batch_size``             | integer    | batch size used in training                                                               |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep``                  | integer    | number of steps for N-step training                                                       |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``nstep_reward_reduction`` | string     | reduction mode for N-step training (see below)                                            |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``gamma``                  | float      | discount factor                                                                           |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``alpha``                  | float      | entropy regularization coefficient                                                        |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``rho``                    | boolean    | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
-+                +----------------------------+------------+-------------------------------------------------------------------------------------------+
-|                | ``policy_lag``             | integer    | update frequency for the policy in units of value updates                                 |
-+----------------+----------------------------+------------+-------------------------------------------------------------------------------------------+
++----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
+| Algorithm Name | Kind        | Option                       | Data Type  | Description                                                                               |
++================+=============+==============================+============+===========================================================================================+
+| ``ddpg``       | off policy  | ``batch_size``               | integer    | batch size used in training                                                               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                       |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training (see below)                                            |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                           |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``rho``                      | boolean    | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
++----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
+| ``td3``        | off policy  | ``batch_size``               | integer    | batch size used in training                                                               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                       |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training (see below)                                            |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                           |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``rho``                      | float      | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``num_critics``              | integer    | number of critic networks used                                                            |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``policy_lag``               | integer    | update frequency for the policy in units of critic updates                                |
++----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
+| ``sac``        | off policy  | ``batch_size``               | integer    | batch size used in training                                                               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                       |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training (see below)                                            |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                           |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``alpha``                    | float      | entropy regularization coefficient                                                        |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``rho``                      | boolean    | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``policy_lag``               | integer    | update frequency for the policy in units of value updates                                 |
++----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
+| ``ppo``        | on policy   | ``batch_size``               | integer    | batch size used in training                                                               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``gae_lambda``               | float      | discount factor for General Advantage Estimator                                           |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``epsilon``                  | float      | clip ratio, policy discrepancy regularization                                             |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                           |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``clip_q``                   | float      | clip range for value function estimate (denoted by `clip_vf` in Stable Baselines)         |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``target_kl_divergence``     | float      | target KL divergence for KL regularization                                                |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``entropy_loss_coefficient`` | float      | entropy loss coefficient: weight for entropy component of the loss function               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``value_loss_coefficient``   | float      | value loss coefficient: weight for value estimate component of the loss function          |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``max_grad_norm``            | float      | maximum gradient norm for gradient clipping                                               |
++                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
+|                |             | ``normalize_advantage``      | boolean    | if set to true, advantage values are normalized over all buffer entries                   |
++----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
 
 The parameter ``nstep_reward_reduction`` defines how the reward is accumulated over N-step rollouts. The options are summarized in a table below (:math:`N` is the value from parameter ``nstep`` described above):
 
@@ -325,7 +347,7 @@ Here, the value of :math:`N^\ast` depends on whether reduction with or without s
 
 In this case, it is useful to use the modes with the additional suffix ``_no_skip``. In this case, :math:`N^{\ast}` in the formulas will be equal to the minimum of :math:`N` and the number of steps needed to reach the end of the trajectory. The regular and no-skip modes are both useful in different occasions, so it is important to be clear about how the reward structure has to be designed in order to achieve the desired goals.
 
-Replay Buffer Properties
+Replay and Rollout Buffer Properties
 ~~~~~~~~~~~~~~~~~~~~~~~~
 The block in the configuration file defining algorithm properties takes the following structure:
 
@@ -344,7 +366,37 @@ Currently, only type ``uniform`` is supported. The following table lists the ava
 | ``uniform``               | ``min_size``    | integer         | Minimum number of samples before buffer is ready for training    |
 +                           +-----------------+-----------------+------------------------------------------------------------------+
 |                           | ``max_size``    | integer         | Maximum capacity                                                 |
++                           +-----------------+-----------------+------------------------------------------------------------------+
+|                           | ``n_envs``      | integer         | Number of environments                                           |
 +---------------------------+-----------------+-----------------+------------------------------------------------------------------+
+
+Note that the effective sizes for each environment is :math:`\mathrm{min\_size} / \mathrm{n\_envs}` and :math:`\mathrm{max\_size} / \mathrm{n\_envs}`.
+You need to ensure that you can store at least one sample for each environment. However, for better algorithm performance, it is highly advised to provide buffers
+which can store longer trajectories.
+
+For on-policy algorithms, the block looks as follows:
+
+.. code-block:: yaml
+
+  rollout_buffer:
+    type: <rollout_buffer_type>
+    parameters:
+      <option> = <value>
+
+Currently, only type ``gae_lambda`` (General Advantage Estimator) is supported. The following table lists the available options:
+
++---------------------------+-----------------+-----------------+------------------------------------------------------------------+
+| Replay Buffer Type        | Option          | Data Type       | Description                                                      |
++===========================+=================+=================+==================================================================+
+| ``gae_lambda``            | ``size``        | integer         | Total number of samples before buffer is ready for training      |
++                           +-----------------+-----------------+------------------------------------------------------------------+
+|                           | ``n_envs``      | integer         | Number of environments                                           |
++---------------------------+-----------------+-----------------+------------------------------------------------------------------+
+
+As in the case of the replay buffer, the effective sizes for each environment is :math:`\mathrm{size} / \mathrm{n\_envs}`.
+Once the buffer is full (number of samples pushed to the buffer is equal to the buffer size), the general advantage is estimated
+by integrating the reward over the trajectories for each environment, applying discount factor `gae_lambda` specified during system construction.
+Training can therefore only start when the buffer is completely full and the advantage estimates are computed.
 
 Action Properties
 ~~~~~~~~~~~~~~~~~

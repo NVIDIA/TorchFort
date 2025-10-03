@@ -398,13 +398,13 @@ Once the buffer is full (number of samples pushed to the buffer is equal to the 
 by integrating the reward over the trajectories for each environment, applying discount factor `gae_lambda` specified during system construction.
 Training can therefore only start when the buffer is completely full and the advantage estimates are computed.
 
-Action Properties
+Actor Properties
 ~~~~~~~~~~~~~~~~~
-The block in the configuration file defining action properties takes the following structure:
+The block in the configuration file defining actor properties takes the following structure:
 
 .. code-block:: yaml
 
-  action:
+  actor:
     type: <action_type>
     parameters:
       <option> = <value>
@@ -412,7 +412,7 @@ The block in the configuration file defining action properties takes the followi
 The following table lists the available options for every action type for ``ddpg`` and ``td3`` algorithms:
 
 +----------------------------------------------+-------------------+------------+-------------------------------------------------------------------+
-| Action Type                                  | Option            | Data Type  | Description                                                       |
+| Actor Type                                   | Option            | Data Type  | Description                                                       |
 +==============================================+===================+============+===================================================================+
 | ``space_noise`` or ``parameter_noise``       | ``a_low``         | float      | lower bound for action value                                      |
 +                                              +-------------------+------------+-------------------------------------------------------------------+
@@ -442,6 +442,10 @@ The following table lists the available options for every action type for ``ddpg
 +                                              +-------------------+------------+-------------------------------------------------------------------+
 |                                              | ``adaptive``      | bool       | flag to specify whether the standard deviation should be adaptive |
 +----------------------------------------------+-------------------+------------+-------------------------------------------------------------------+
+| ``gaussian_ac``                              | ``a_low``         | float      | lower bound for action value                                      |
++                                              +-------------------+------------+-------------------------------------------------------------------+
+|                                              | ``a_high``        | float      | upper bound for action value                                      |
++----------------------------------------------+-------------------+------------+-------------------------------------------------------------------+
 
 The meaning for most of these parameters should be evident from looking at the details of the implementations for the various RL algorithms linked above. 
 However, some parameters require a more detailed explanation: in general, the suffix ``_ou`` refers to stateful noise of Ornstein-Uhlenbeck type with zero drift. This noise type is often used if correlation between time steps is desired and thus popular in reinforcement learning. Check out the `wikipedia page <https://en.wikipedia.org/wiki/Ornstein–Uhlenbeck_process>`_ for details.
@@ -470,7 +474,8 @@ and analogous for parameter noise.
 
 Whichever noise type and parameters are the best highly depends on the behavior of the environment and therefore we cannot give a general recommendation.
 
-For algorithm type ``sac``, only action bounds are supported as the noise is built into the algorithm and cannot be customized.
+For algorithm type ``sac``, only action bounds are supported as the noise is built into the algorithm and cannot be customized. 
+For algorithm type ``ppo``, ``gaussian_ac`` is the only supported actor type.
 
 Policy and Critic Properties
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -605,3 +610,7 @@ Since all parameters are shared between policy and critic for actor-critic model
 
 Refer to the :ref:`lr_schedule_properties-ref` for available scheduler types and options.
 
+General Remarks
+~~~~~~~~~~~~~~~
+
+Example YAML files for training the different algorithms are available in the `tests/rl/configs <<../../tests/rl/configs/>>`_ directory.

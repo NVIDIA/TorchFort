@@ -533,7 +533,7 @@ The block configuration for DDPG and TD3 looks as follows:
     parameters:
       <option> = <value>
 
-Since SAC uses additional parameters for the entropy regularization, the follwing block configuration can be added:
+Since SAC uses additional parameters for the entropy regularization, the following block configuration can be added:
 
 .. code-block:: yaml
 

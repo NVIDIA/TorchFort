@@ -114,6 +114,13 @@ endif()
 
 find_package(Torch REQUIRED)
 
+# Generate configuration header
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/include/torchfort_config.h.in
+  ${CMAKE_BINARY_DIR}/include/torchfort_config.h
+  @ONLY
+)
+
 # yaml-cpp
 #find_package(yaml-cpp REQUIRED)
 find_path(YAML_CPP_INCLUDE_DIR REQUIRED
@@ -170,6 +177,7 @@ target_include_directories(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/include
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/include>
+  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
@@ -207,6 +215,12 @@ install(
   EXPORT "${PROJECT_NAME}Targets"
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include
   INCLUDES DESTINATION ${CMAKE_INSTALL_PREFIX}/include
+)
+
+# Install generated configuration header
+install(
+  FILES ${CMAKE_BINARY_DIR}/include/torchfort_config.h
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/include
 )
 
 # Fortran library and module

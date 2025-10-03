@@ -513,7 +513,7 @@ The following table lists the available options for each model type:
 
 .. note::
 
-    In case of actor-critic models, the policy network is used for both policy and value function. Those models use a common encoder which only takes the state as input but returns a action mean, action log_variance (similar to SAC) as well as value estimates.
+    In case of actor-critic models, the policy network is used for both policy and value function. Those models use a common encoder which only takes the state as input but returns a action mean, action log variance (similar to SAC) as well as value estimates.
 
 Learning Rate Schedule Properties
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

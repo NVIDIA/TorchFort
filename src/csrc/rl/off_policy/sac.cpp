@@ -282,9 +282,7 @@ void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
     q_model_target.comm = std::make_shared<Comm>(mpi_comm);
     q_model_target.comm->initialize(model_device_.is_cuda());
   }
-  // alpha
-  alpha_comm_.comm = std::make_shared<Comm>(mpi_comm);
-  alpha_comm_.comm->initialize(model_device_.is_cuda());
+  // we do not need an alpha comm objects since p-model comm is used for that
 
   // move to device before broadcasting
   // policy
@@ -317,7 +315,7 @@ void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
   }
   // alpha
   for (auto& p : alpha_model_->parameters()) {
-    alpha_comm_.comm->broadcast(p, 0);
+    p_model_.comm->broadcast(p, 0);
   }
 
   return;

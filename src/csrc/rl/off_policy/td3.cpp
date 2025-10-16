@@ -452,12 +452,12 @@ torch::Tensor TD3System::predict(torch::Tensor state) {
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_target_.model->to(model_device_);
-  p_model_target_.model->eval();
+  p_model_.model->to(model_device_);
+  p_model_.model->eval();
   state = state.to(model_device_);
 
   // do fwd pass
-  auto action = (p_model_target_.model)->forward(std::vector<torch::Tensor>{state})[0];
+  auto action = (p_model_.model)->forward(std::vector<torch::Tensor>{state})[0];
 
   // clip action
   action = torch::clamp(action, a_low_, a_high_);

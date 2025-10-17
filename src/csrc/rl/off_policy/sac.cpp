@@ -73,6 +73,8 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_
     AlphaModel am;
     am.setup(params.get_param<float>("alpha", 0.)[0]);
     alpha_model_ = std::make_shared<AlphaModel>(am);
+    alpha_model_->to(model_device_);
+    // remaining parameters
     target_entropy_ = params.get_param<float>("target_entropy_", 1.)[0];
     nstep_ = params.get_param<int>("nstep", 1)[0];
     auto redmode = params.get_param<std::string>("nstep_reward_reduction", "sum")[0];
@@ -139,7 +141,9 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_
   if (system_node["critic_model"]) {
     for (int i = 0; i < q_models_.size(); ++i) {
       q_models_[i].model = get_model(system_node["critic_model"]);
+      q_models_[i].model->to(model_device_);
       q_models_target_[i].model = get_model(system_node["critic_model"]);
+      q_models_target_[i].model->to(model_device_);
       // change weights for models
       init_parameters(q_models_[i].model);
       // copy new parameters
@@ -163,6 +167,7 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_
 
     // get basic policy parameters:
     p_model = get_model(policy_node);
+    p_model->to(model_device_);
   } else {
     THROW_INVALID_USAGE("Missing policy_model block in configuration file.");
   }
@@ -277,6 +282,7 @@ void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
     q_model_target.comm = std::make_shared<Comm>(mpi_comm);
     q_model_target.comm->initialize(model_device_.is_cuda());
   }
+  // we do not need an alpha comm objects since p-model comm is used for that
 
   // move to device before broadcasting
   // policy
@@ -288,6 +294,8 @@ void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
   for (auto& q_model_target : q_models_target_) {
     q_model_target.model->to(model_device_);
   }
+  // alpha
+  alpha_model_->to(model_device_);
 
   // Broadcast initial model parameters from rank 0
   // policy
@@ -304,6 +312,10 @@ void SACSystem::initSystemComm(MPI_Comm mpi_comm) {
     for (auto& p : q_model_target.model->parameters()) {
       q_model_target.comm->broadcast(p, 0);
     }
+  }
+  // alpha
+  for (auto& p : alpha_model_->parameters()) {
+    p_model_.comm->broadcast(p, 0);
   }
 
   return;

@@ -49,24 +49,20 @@ class TanhBijector {
 public:
   TanhBijector() {}
 
-  static torch::Tensor forward(torch::Tensor x) {
-    return torch::tanh(x);
-  }
+  static torch::Tensor forward(torch::Tensor x) { return torch::tanh(x); }
 
-  static torch::Tensor atanh(torch::Tensor x) {
-      return 0.5 * (x.log1p() - (-x).log1p());
-  }
+  static torch::Tensor atanh(torch::Tensor x) { return 0.5 * (x.log1p() - (-x).log1p()); }
 
   static torch::Tensor inverse(torch::Tensor y) {
-      auto eps = std::numeric_limits<float>::epsilon();
-      // Clip to avoid NaN
-      auto yclamp = torch::clamp(y, -1.0 + eps, 1.0 - eps);
-      return TanhBijector::atanh(yclamp);
+    auto eps = std::numeric_limits<float>::epsilon();
+    // Clip to avoid NaN
+    auto yclamp = torch::clamp(y, -1.0 + eps, 1.0 - eps);
+    return TanhBijector::atanh(yclamp);
   }
 
-  static torch::Tensor log_prob_correction(torch::Tensor x, float epsilon=1.e-6) {
-      // Squash correction (from original SAC implementation)
-      return torch::log(1.0 - torch::square(torch::tanh(x)) + epsilon);
+  static torch::Tensor log_prob_correction(torch::Tensor x, float epsilon = 1.e-6) {
+    // Squash correction (from original SAC implementation)
+    return torch::log(1.0 - torch::square(torch::tanh(x)) + epsilon);
   }
 };
 

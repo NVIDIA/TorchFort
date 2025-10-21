@@ -77,7 +77,8 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::evaluateAction(torch::T
   torch::Tensor entropy;
   if (squashed_) {
     // we could either use log_prob_correction from TanhBijector on gaussian_action or use action directly
-    auto log_prob_correction = torch::sum(torch::log(1.0 - torch::flatten(torch::square(action), 1) + 1.0e-6), 1, false);
+    auto log_prob_correction =
+        torch::sum(torch::log(1.0 - torch::flatten(torch::square(action), 1) + 1.0e-6), 1, false);
     log_prob = log_prob - log_prob_correction;
     // in this case no analytical form for the entropy exists and we need to estimate it from the log probs directly:
     entropy = -log_prob;
@@ -100,7 +101,8 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::forwardNoise(torch::Ten
   // account for squashing
   if (squashed_) {
     // we need to apply a correction: this is a numerically stable version of log(1-tanh^2(x))
-    auto log_prob_correction = torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
+    auto log_prob_correction =
+        torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
     log_prob = log_prob - log_prob_correction;
     // apply squashing
     action = TanhBijector::forward(action);
@@ -208,7 +210,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::forwar
   // account for squashing
   if (squashed_) {
     // we need to apply a correction: this is a numerically stable version of log(1-tanh^2(x))
-    auto log_prob_correction = torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
+    auto log_prob_correction =
+        torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
     log_prob = log_prob - log_prob_correction;
     // apply squashing
     action = TanhBijector::forward(action);

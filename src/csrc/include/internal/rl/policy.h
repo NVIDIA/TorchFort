@@ -16,6 +16,7 @@
  */
 
 #pragma once
+#include <limits>
 #include <unordered_map>
 
 #include <yaml-cpp/yaml.h>
@@ -57,9 +58,9 @@ public:
   }
 
   static torch::Tensor inverse(torch::Tensor y) {
-      auto eps = torch::finfo(y.dtype()).eps();
+      auto eps = std::numeric_limits<float>::epsilon();
       // Clip to avoid NaN
-      auto yclamp = torch::clamp(y, -1.0 + eps, 1.0 - eps)
+      auto yclamp = torch::clamp(y, -1.0 + eps, 1.0 - eps);
       return TanhBijector::atanh(yclamp);
   }
 

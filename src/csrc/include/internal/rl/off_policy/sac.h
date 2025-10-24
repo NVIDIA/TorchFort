@@ -90,6 +90,7 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   // if we are updating the entropy coefficient, do that first
   torch::Tensor alpha_loss;
   if (alpha_optimizer) {
+     alpha_optimizer->zero_grad();
     // compute target entropy
     float targ_ent;
     if (target_entropy > 0.) {

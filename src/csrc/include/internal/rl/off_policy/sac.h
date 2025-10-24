@@ -90,6 +90,7 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   // if we are updating the entropy coefficient, do that first
   torch::Tensor alpha_loss;
   if (alpha_optimizer) {
+    alpha_optimizer->zero_grad();
     // compute target entropy
     float targ_ent;
     if (target_entropy > 0.) {
@@ -216,13 +217,13 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   torch::Tensor action_old_pred_tensor, action_old_pred_log_prob;
   std::tie(action_old_pred_tensor, action_old_pred_log_prob) = (p_model.model)->forwardNoise(state_old_tensor);
 
-  // just q1 is used
+  // Use all Qs
   // attention: we need to use gradient ASCENT on L here, which means we need to do gradient DESCENT on -L
   torch::Tensor q_tens = torch::squeeze(
       q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0], 1);
-  for (int i = 1; i < q_models_target.size(); ++i) {
+  for (int i = 1; i < q_models.size(); ++i) {
     auto q_tmp_tensor = torch::squeeze(
-        q_models_target[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
+        q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_pred_tensor})[0], 1);
     q_tens = torch::minimum(q_tens, q_tmp_tensor);
   }
   // entropy regularization

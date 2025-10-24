@@ -227,6 +227,7 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     q_tens = torch::minimum(q_tens, q_tmp_tensor);
   // entropy regularization
   q_tens = q_tens - alpha_model->forward(action_old_pred_log_prob);
+  }
 
   // compute loss
   torch::Tensor p_loss_tensor = -torch::mean(q_tens);

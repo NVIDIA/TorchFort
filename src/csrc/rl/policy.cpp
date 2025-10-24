@@ -65,7 +65,7 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::evaluateAction(torch::T
   // we need to undo squashing in some cases
   torch::Tensor gaussian_action;
   if (squashed_) {
-    gaussian_action = torch::atan(action);
+    gaussian_action = TanhBijector::inverse(action);
   } else {
     gaussian_action = action;
   }
@@ -76,7 +76,10 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::evaluateAction(torch::T
   // account for squashing
   torch::Tensor entropy;
   if (squashed_) {
-    log_prob = log_prob - torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, false);
+    // we could either use log_prob_correction from TanhBijector on gaussian_action or use action directly
+    auto log_prob_correction =
+        torch::sum(torch::log(1.0 - torch::flatten(torch::square(action), 1) + 1.0e-6), 1, false);
+    log_prob = log_prob - log_prob_correction;
     // in this case no analytical form for the entropy exists and we need to estimate it from the log probs directly:
     entropy = -log_prob;
   } else {
@@ -97,9 +100,12 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianPolicy::forwardNoise(torch::Ten
 
   // account for squashing
   if (squashed_) {
-    log_prob = log_prob -
-               torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
-    action = torch::tanh(action);
+    // we need to apply a correction: this is a numerically stable version of log(1-tanh^2(x))
+    auto log_prob_correction =
+        torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
+    log_prob = log_prob - log_prob_correction;
+    // apply squashing
+    action = TanhBijector::forward(action);
   }
 
   return std::make_tuple(action, log_prob);
@@ -110,7 +116,7 @@ torch::Tensor GaussianPolicy::forwardDeterministic(torch::Tensor state) {
   auto action = p_mu_log_sigma_->forward(std::vector<torch::Tensor>{state})[0];
 
   if (squashed_) {
-    action = torch::tanh(action);
+    action = TanhBijector::forward(action);
   }
 
   return action;
@@ -163,7 +169,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::evalua
   // we need to undo squashing in some cases
   torch::Tensor gaussian_action;
   if (squashed_) {
-    gaussian_action = torch::atan(action);
+    gaussian_action = TanhBijector::inverse(action);
   } else {
     gaussian_action = action;
   }
@@ -174,7 +180,9 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::evalua
   // account for squashing
   torch::Tensor entropy;
   if (squashed_) {
-    log_prob = log_prob - torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, false);
+    // we could either use log_prob_correction from TanhBijector on gaussian_action or use action directly
+    auto log_prob_correction = torch::sum(torch::log(1. - torch::flatten(torch::square(action), 1) + 1.e-6), 1, false);
+    log_prob = log_prob - log_prob_correction;
     // in this case no analytical form for the entropy exists and we need to estimate it from the log probs directly:
     entropy = -log_prob;
   } else {
@@ -201,9 +209,12 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> GaussianACPolicy::forwar
 
   // account for squashing
   if (squashed_) {
-    log_prob = log_prob -
-               torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
-    action = torch::tanh(action);
+    // we need to apply a correction: this is a numerically stable version of log(1-tanh^2(x))
+    auto log_prob_correction =
+        torch::sum(torch::flatten(2. * (std::log(2.) - action - torch::softplus(-2. * action)), 1), 1, false);
+    log_prob = log_prob - log_prob_correction;
+    // apply squashing
+    action = TanhBijector::forward(action);
   }
 
   // squeeze value
@@ -219,7 +230,7 @@ std::tuple<torch::Tensor, torch::Tensor> GaussianACPolicy::forwardDeterministic(
   auto value = fwd[2];
 
   if (squashed_) {
-    action = torch::tanh(action);
+    action = TanhBijector::forward(action);
   }
 
   // squeeze value

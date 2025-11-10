@@ -45,8 +45,8 @@ template <typename T>
 void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::Tensor action_tensor,
                torch::Tensor q_tensor, torch::Tensor log_p_tensor, torch::Tensor adv_tensor, torch::Tensor ret_tensor,
                const T& epsilon, const T& clip_q, const T& entropy_loss_coeff, const T& q_loss_coeff,
-               const T& max_grad_norm, const T& target_kl_divergence, bool normalize_advantage, T& p_loss_val,
-               T& q_loss_val, T& kl_divergence, T& clip_fraction, T& explained_var) {
+               const T& target_kl_divergence, bool normalize_advantage, T& p_loss_val, T& q_loss_val, T& kl_divergence,
+               T& clip_fraction, T& explained_var) {
 
   // nvtx marker
   torchfort::nvtx::rangePush("torchfort_train_ppo");
@@ -176,11 +176,6 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
           grads.push_back(p.grad());
         }
         pq_model.comm->allreduce(grads, true);
-      }
-
-      // clip
-      if (max_grad_norm > 0.) {
-        torch::nn::utils::clip_grad_norm_(pq_model.model->parameters(), max_grad_norm);
       }
 
       // optimizer step
@@ -325,7 +320,6 @@ private:
   float target_kl_divergence_, current_kl_divergence_, explained_variance_;
   float clip_fraction_;
   float a_low_, a_high_;
-  float max_grad_norm_;
   bool normalize_advantage_;
   ActorNormalizationMode actor_normalization_mode_;
 };

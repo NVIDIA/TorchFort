@@ -326,8 +326,6 @@ The following table lists the available options by algorithm type:
 +                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
 |                |             | ``value_loss_coefficient``   | float      | value loss coefficient: weight for value estimate component of the loss function          |
 +                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``max_grad_norm``            | float      | maximum gradient norm for gradient clipping                                               |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
 |                |             | ``normalize_advantage``      | boolean    | if set to true, advantage values are normalized over all buffer entries                   |
 +----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
 

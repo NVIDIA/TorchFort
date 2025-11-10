@@ -45,8 +45,8 @@ template <typename T>
 void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::Tensor action_tensor,
                torch::Tensor q_tensor, torch::Tensor log_p_tensor, torch::Tensor adv_tensor, torch::Tensor ret_tensor,
                const T& epsilon, const T& clip_q, const T& entropy_loss_coeff, const T& q_loss_coeff,
-               const T& target_kl_divergence, bool normalize_advantage, T& p_loss_val,
-               T& q_loss_val, T& kl_divergence, T& clip_fraction, T& explained_var) {
+               const T& target_kl_divergence, bool normalize_advantage, T& p_loss_val, T& q_loss_val, T& kl_divergence,
+               T& clip_fraction, T& explained_var) {
 
   // nvtx marker
   torchfort::nvtx::rangePush("torchfort_train_ppo");

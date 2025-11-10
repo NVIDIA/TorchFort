@@ -458,8 +458,8 @@ void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
 
   // train step
   train_ppo(pq_model_, s, a, q, logp, adv, ret, epsilon_, clip_q_, entropy_loss_coeff_, value_loss_coeff_,
-            target_kl_divergence_, normalize_advantage_, p_loss_val, q_loss_val, current_kl_divergence_,
-            clip_fraction_, explained_variance_);
+            target_kl_divergence_, normalize_advantage_, p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_,
+            explained_variance_);
 
   // system logging
   if ((system_state_->report_frequency > 0) && (train_step_count_ % system_state_->report_frequency == 0)) {

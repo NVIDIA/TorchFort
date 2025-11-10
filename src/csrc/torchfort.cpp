@@ -99,10 +99,15 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
 
       if (config["optimizer"]["general"]) {
         auto params = get_params(config["optimizer"]["general"]);
-        std::set<std::string> supported_params{"grad_accumulation_steps"};
+        std::set<std::string> supported_params{"grad_accumulation_steps", "max_grad_norm"};
         check_params(supported_params, params.keys());
         try {
           models[name].grad_accumulation_steps = params.get_param<int>("grad_accumulation_steps")[0];
+        } catch (std::out_of_range) {
+          // default
+        }
+        try {
+          models[name].max_grad_norm = params.get_param<float>("max_grad_norm")[0];
         } catch (std::out_of_range) {
           // default
         }

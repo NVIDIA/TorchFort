@@ -43,7 +43,6 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node, int model_
                                            "target_kl_divergence",
                                            "entropy_loss_coefficient",
                                            "value_loss_coefficient",
-                                           "max_grad_norm",
                                            "normalize_advantage"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
@@ -52,7 +51,6 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node, int model_
     target_kl_divergence_ = params.get_param<float>("target_kl_divergence")[0];
     epsilon_ = params.get_param<float>("epsilon", 0.2)[0];
     clip_q_ = params.get_param<float>("clip_q", 0.)[0];
-    max_grad_norm_ = params.get_param<float>("max_grad_norm", 0.5)[0];
     entropy_loss_coeff_ = params.get_param<float>("entropy_loss_coefficient", 0.0)[0];
     value_loss_coeff_ = params.get_param<float>("value_loss_coefficient", 0.5)[0];
     normalize_advantage_ = params.get_param<bool>("normalize_advantage", true)[0];
@@ -131,6 +129,23 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node, int model_
     pq_model_.optimizer = get_optimizer(system_node["optimizer"], pq_model_.model->parameters());
   } else {
     THROW_INVALID_USAGE("Missing optimizer block in configuration file.");
+  }
+
+  if (system_node["optimizer"]["general"]) {
+    auto params = get_params(system_node["optimizer"]["general"]);
+    std::set<std::string> supported_params{"grad_accumulation_steps", "max_grad_norm"};
+    check_params(supported_params, params.keys());
+    try {
+      pq_model_.grad_accumulation_steps = params.get_param<int>("grad_accumulation_steps")[0];
+    } catch (std::out_of_range) {
+      // default
+    }
+
+    try {
+      pq_model_.max_grad_norm = params.get_param<float>("max_grad_norm")[0];
+    } catch (std::out_of_range) {
+      // default
+    }
   }
 
   // get schedulers
@@ -443,7 +458,7 @@ void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
 
   // train step
   train_ppo(pq_model_, s, a, q, logp, adv, ret, epsilon_, clip_q_, entropy_loss_coeff_, value_loss_coeff_,
-            max_grad_norm_, target_kl_divergence_, normalize_advantage_, p_loss_val, q_loss_val, current_kl_divergence_,
+            target_kl_divergence_, normalize_advantage_, p_loss_val, q_loss_val, current_kl_divergence_,
             clip_fraction_, explained_variance_);
 
   // system logging

@@ -14,7 +14,6 @@ algorithm:
     target_kl_divergence: 0.02
     entropy_loss_coefficient: 0.
     value_loss_coefficient: 0.5
-    max_grad_norm: 0.5
     normalize_advantage: True
 
 actor:
@@ -47,6 +46,8 @@ optimizer:
     weight_decay: 0
     eps: 1e-6
     amsgrad: 0
+  general:
+    max_grad_norm: 0.5
 
 lr_scheduler:
   type: linear

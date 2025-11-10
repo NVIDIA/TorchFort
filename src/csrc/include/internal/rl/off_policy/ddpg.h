@@ -109,8 +109,15 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
       q_model.comm->allreduce(grads, true);
     }
 
+    // gradient clipping
+    if (q_model.max_grad_norm > 0.0) {
+      torch::nn::utils::clip_grad_norm_(q_model.model->parameters(), q_model.max_grad_norm);
+    }
+
     // optimizer step
     q_model.optimizer->step();
+
+    // lr scheduler step
     q_model.lr_scheduler->step();
   }
 
@@ -147,8 +154,15 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
       p_model.comm->allreduce(grads, true);
     }
 
+    // gradient clipping
+    if (p_model.max_grad_norm > 0.0) {
+      torch::nn::utils::clip_grad_norm_(p_model.model->parameters(), p_model.max_grad_norm);
+    }
+
     // optimizer step
     p_model.optimizer->step();
+
+    // lr scheduler step
     p_model.lr_scheduler->step();
   }
 

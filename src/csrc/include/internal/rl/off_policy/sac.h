@@ -89,8 +89,13 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
 
   // if we are updating the entropy coefficient, do that first
   torch::Tensor alpha_loss;
+  auto state = p_model.state;
   if (alpha_optimizer) {
-    alpha_optimizer->zero_grad();
+
+    if (state->step_train_current % p_model.grad_accumulation_steps == 0) {
+      alpha_optimizer->zero_grad();
+    }
+
     // compute target entropy
     float targ_ent;
     if (target_entropy > 0.) {
@@ -114,18 +119,26 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     alpha_loss.backward();
 
     // reduce gradients
-    if (p_model.comm) {
-      std::vector<torch::Tensor> grads;
-      grads.reserve(alpha_model->parameters().size());
-      for (const auto& p : alpha_model->parameters()) {
-        grads.push_back(p.grad());
+    if ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0) {
+      if (p_model.comm) {
+        std::vector<torch::Tensor> grads;
+        grads.reserve(alpha_model->parameters().size());
+        for (const auto& p : alpha_model->parameters()) {
+          grads.push_back(p.grad());
+        }
+        p_model.comm->allreduce(grads, true);
       }
-      p_model.comm->allreduce(grads, true);
-    }
 
-    alpha_optimizer->step();
-    if (alpha_lr_scheduler) {
-      alpha_lr_scheduler->step();
+      // I think we do not need grad clipping here
+      // the model is just a scalar and clipping the grad for that might hurt
+
+      // optimizer step
+      alpha_optimizer->step();
+
+      // lr scheduler step
+      if (alpha_lr_scheduler) {
+        alpha_lr_scheduler->step();
+      }
     }
   }
 
@@ -157,7 +170,7 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   torch::Tensor q_old_tensor =
       torch::squeeze(q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
   torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
-  auto state = q_models[0].state;
+  state = q_models[0].state;
   if (state->step_train_current % q_models[0].grad_accumulation_steps == 0) {
     q_models[0].optimizer->zero_grad();
   }
@@ -252,6 +265,8 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
 
     // optimizer step
     p_model.optimizer->step();
+
+    // scheduler step
     p_model.lr_scheduler->step();
   }
 

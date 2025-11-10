@@ -111,6 +111,8 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
 
     // optimizer step
     q_model.optimizer->step();
+
+    // lr scheduler step
     q_model.lr_scheduler->step();
   }
 
@@ -149,6 +151,8 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
 
     // optimizer step
     p_model.optimizer->step();
+
+    // lr scheduler step
     p_model.lr_scheduler->step();
   }
 

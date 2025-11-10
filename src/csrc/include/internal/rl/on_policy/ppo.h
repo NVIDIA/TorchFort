@@ -184,8 +184,9 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
       }
 
       // optimizer step
-      // policy
       pq_model.optimizer->step();
+
+      // lr scheduler step
       pq_model.lr_scheduler->step();
     }
   }

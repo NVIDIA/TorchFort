@@ -189,12 +189,21 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_
 
   if (system_node["optimizer"]["general"]) {
     auto params = get_params(system_node["optimizer"]["general"]);
-    std::set<std::string> supported_params{"grad_accumulation_steps"};
+    std::set<std::string> supported_params{"grad_accumulation_steps", "max_grad_norm"};
     check_params(supported_params, params.keys());
     try {
       p_model_.grad_accumulation_steps = params.get_param<int>("grad_accumulation_steps")[0];
       for (auto& q_model : q_models_) {
         q_model.grad_accumulation_steps = params.get_param<int>("grad_accumulation_steps")[0];
+      }
+    } catch (std::out_of_range) {
+      // default
+    }
+
+    try {
+      p_model_.max_grad_norm = params.get_param<float>("max_grad_norm")[0];
+      for (auto& q_model : q_models_) {
+        q_model.max_grad_norm = params.get_param<float>("max_grad_norm")[0];
       }
     } catch (std::out_of_range) {
       // default

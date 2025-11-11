@@ -46,6 +46,8 @@ optimizer:
     weight_decay: 0
     eps: 1e-6
     amsgrad: 0
+  general:
+    max_grad_norm: 0.5
 
 lr_scheduler:
   type: linear

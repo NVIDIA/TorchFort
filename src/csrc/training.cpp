@@ -149,6 +149,10 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
       models[name].comm->allreduce(*loss_val, true);
     }
 
+    if (models[name].max_grad_norm > 0.0) {
+      torch::nn::utils::clip_grad_norm_(model->parameters(), models[name].max_grad_norm);
+    }
+
     opt->step();
     if (models[name].lr_scheduler) {
       models[name].lr_scheduler->step();

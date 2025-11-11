@@ -178,6 +178,11 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
         pq_model.comm->allreduce(grads, true);
       }
 
+      // clip
+      if (pq_model.max_grad_norm > 0.) {
+        torch::nn::utils::clip_grad_norm_(pq_model.model->parameters(), pq_model.max_grad_norm);
+      }
+
       // optimizer step
       pq_model.optimizer->step();
 

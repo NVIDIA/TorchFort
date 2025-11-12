@@ -178,6 +178,18 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node, int mode
     THROW_INVALID_USAGE("Missing optimizer block in configuration file.");
   }
 
+  if (system_node["optimizer"]["general"]) {
+    auto params = get_params(system_node["optimizer"]["general"]);
+    std::set<std::string> supported_params{"grad_accumulation_steps"};
+    check_params(supported_params, params.keys());
+    try {
+      p_model_.grad_accumulation_steps = params.get_param<int>("grad_accumulation_steps")[0];
+      q_model_.grad_accumulation_steps = params.get_param<int>("grad_accumulation_steps")[0];
+    } catch (std::out_of_range) {
+      // default
+    }
+  }
+
   // get schedulers
   // policy model
   if (system_node["policy_lr_scheduler"]) {

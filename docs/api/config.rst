@@ -106,6 +106,8 @@ The following table lists the available general options:
 +==============================+===========+===============================================================================================================+
 | ``grad_accumulation_steps``  | integer   | number of training steps to accumulate gradients between optimizer steps  (default = ``1``)                   |
 +------------------------------+-----------+---------------------------------------------------------------------------------------------------------------+
+| ``max_grad_norm``            | float     | maximum gradient norm for gradient clipping. A value of 0.0 means clipping is disabled (default = ``0.0``)    |
++------------------------------+-----------+---------------------------------------------------------------------------------------------------------------+
 
 .. _lr_schedule_properties-ref:
 
@@ -325,8 +327,6 @@ The following table lists the available options by algorithm type:
 |                |             | ``entropy_loss_coefficient`` | float      | entropy loss coefficient: weight for entropy component of the loss function               |
 +                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
 |                |             | ``value_loss_coefficient``   | float      | value loss coefficient: weight for value estimate component of the loss function          |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``max_grad_norm``            | float      | maximum gradient norm for gradient clipping                                               |
 +                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
 |                |             | ``normalize_advantage``      | boolean    | if set to true, advantage values are normalized over all buffer entries                   |
 +----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+

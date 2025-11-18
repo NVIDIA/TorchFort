@@ -96,6 +96,7 @@ struct PolicyPack {
   std::shared_ptr<Comm> comm;
   std::shared_ptr<ModelState> state;
   int grad_accumulation_steps = 1;
+  float max_grad_norm = 0.0;
 };
 
 class GaussianPolicy : public Policy, public std::enable_shared_from_this<Policy> {
@@ -157,6 +158,7 @@ struct ACPolicyPack {
   std::shared_ptr<Comm> comm;
   std::shared_ptr<ModelState> state;
   int grad_accumulation_steps = 1;
+  float max_grad_norm = 0.0;
 };
 
 class GaussianACPolicy : public ACPolicy, public std::enable_shared_from_this<ACPolicy> {

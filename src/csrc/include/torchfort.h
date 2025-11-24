@@ -29,8 +29,8 @@ typedef void* cudaStream_t;
 #include "torchfort_rl.h"
 
 #define TORCHFORT_MAJOR 0
-#define TORCHFORT_MINOR 3
-#define TORCHFORT_PATCH 1
+#define TORCHFORT_MINOR 4
+#define TORCHFORT_PATCH 0
 
 #define WANDB_LOG_FUNC(dtype)                                                                                          \
   torchfort_result_t torchfort_wandb_log_##dtype(const char* name, const char* metric_name, int64_t step,              \

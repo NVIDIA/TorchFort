@@ -1,5 +1,7 @@
 general:
   report_frequency: 100
+  enable_cuda_graphs: 1
+  verbose: 1
 
 model:
   type: torchscript

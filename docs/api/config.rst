@@ -31,15 +31,17 @@ The block in the configuration file defining general properties takes the follow
 
 The following table lists the available options:
 
-+-----------------------+-----------+------------------------------------------------------------------------------------------------+
-| Option                | Data Type | Description                                                                                    |
-+=======================+===========+================================================================================================+
-| ``report_frequency``  | integer   | frequency of reported TorchFort training/validation output lines to terminal (default = ``0``) |
-+-----------------------+-----------+------------------------------------------------------------------------------------------------+
-| ``enable_wandb_hook`` | boolean   | flag to control whether wandb hook is active  (default = ``false``)                            |
-+-----------------------+-----------+------------------------------------------------------------------------------------------------+
-| ``verbose``           | boolean   | flag to control verbose output from TorchFort (default = ``false``)                            |
-+-----------------------+-----------+------------------------------------------------------------------------------------------------+
++-------------------------+-----------+------------------------------------------------------------------------------------------------+
+| Option                  | Data Type | Description                                                                                    |
++=========================+===========+================================================================================================+
+| ``report_frequency``    | integer   | frequency of reported TorchFort training/validation output lines to terminal (default = ``0``) |
++-------------------------+-----------+------------------------------------------------------------------------------------------------+
+| ``enable_wandb_hook``   | boolean   | flag to control whether wandb hook is active  (default = ``false``)                            |
++-------------------------+-----------+------------------------------------------------------------------------------------------------+
+| ``verbose``             | boolean   | flag to control verbose output from TorchFort (default = ``false``)                            |
++-------------------------+-----------+------------------------------------------------------------------------------------------------+
+| ``enable_cuda_graphs``  | boolean   | flag to enable CUDA graph capture for inference and training (GPU only, default = ``false``)   |
++-------------------------+-----------+------------------------------------------------------------------------------------------------+
 
 For more information about the wandb hook, see :ref:`wandb_support-ref`.
 

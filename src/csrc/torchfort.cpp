@@ -125,6 +125,21 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
 
     // Setting up general options
     models[name].state = get_state(name, config);
+
+#ifdef ENABLE_GPU
+    // Initialize CUDA graph state if enabled and on GPU
+    if (models[name].state->enable_cuda_graphs && models[name].model->device().is_cuda()) {
+      models[name].cuda_graph_state = std::make_shared<CudaGraphState>();
+      models[name].cuda_graph_state->enable_cuda_graphs = true;
+
+      // Create dedicated capture stream (non-default stream required for graph capture)
+      cudaSetDevice(models[name].model->device().index());
+      cudaStreamCreate(&models[name].cuda_graph_state->capture_stream);
+
+      // Create synchronization event for maintaining stream ordering
+      cudaEventCreate(&models[name].cuda_graph_state->sync_event);
+    }
+#endif
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();

@@ -245,7 +245,6 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
                                              (use_extra_args) ? extra_args_tl : nullptr, 0));
 
     EXPECT_EQ(loss_val, expected_loss_val);
-
   }
 
   for (int i = 0; i < 2; ++i) {

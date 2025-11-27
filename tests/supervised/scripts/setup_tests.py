@@ -36,14 +36,14 @@ class Loss1(torch.nn.Module):
     super(Loss1, self).__init__()
 
   def forward(self, prediction, label):
-    return (torch.sum(prediction) + torch.sum(label)) / (2 * prediction.numel())
+    return (torch.sum(prediction) + torch.sum(label))
 
 class Loss2(torch.nn.Module):
   def __init__(self):
     super(Loss2, self).__init__()
 
   def forward(self, prediction1, prediction2, label1, label2):
-    return (torch.sum(prediction1) + torch.sum(prediction2) + torch.sum(label1) + torch.sum(label2)) / (4 * prediction1.numel())
+    return (torch.sum(prediction1) + torch.sum(prediction2) + torch.sum(label1) + torch.sum(label2))
 
 class Loss2Extra(torch.nn.Module):
   def __init__(self):
@@ -51,7 +51,7 @@ class Loss2Extra(torch.nn.Module):
 
   def forward(self, prediction1, prediction2, label1, label2, extra_args1, extra_args2):
     return (torch.sum(prediction1) + torch.sum(prediction2) + torch.sum(label1) + torch.sum(label2) +
-            torch.sum(extra_args1) + torch.sum(extra_args2)) / (6 * prediction1.numel())
+            torch.sum(extra_args1) + torch.sum(extra_args2))
 
 def main():
   model1 = Net1()

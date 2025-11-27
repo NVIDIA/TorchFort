@@ -178,6 +178,8 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
 
   inputs->reset();
   labels->reset();
+  if (extra_loss_args)
+    extra_loss_args->reset();
 
   torchfort::nvtx::rangePop();
 }

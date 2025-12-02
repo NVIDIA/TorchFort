@@ -125,6 +125,14 @@ torchfort_result_t torchfort_create_model(const char* name, const char* config_f
 
     // Setting up general options
     models[name].state = get_state(name, config);
+
+#ifdef ENABLE_GPU
+    // Initialize graph state if CUDA graphs are enabled
+    if (models[name].state->enable_cuda_graphs && models[name].model->device().is_cuda()) {
+      models[name].graph_state = std::make_shared<ModelGraphState>(
+          models[name].model->device().index());
+    }
+#endif
   } catch (const BaseException& e) {
     std::cerr << e.what();
     return e.getResult();

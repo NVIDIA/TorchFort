@@ -45,6 +45,15 @@ template <typename T> std::vector<T> generate_random(const std::vector<int64_t>&
   return data;
 }
 
+// Generate constant vector data for testing
+template <typename T> std::vector<T> generate_constant(const std::vector<int64_t>& shape, T value) {
+
+  int64_t num_values = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
+  std::vector<T> data(num_values, value);
+
+  return data;
+}
+
 // Generate random names to use as model keys to avoid conflicts between tests
 std::string generate_random_name(int length) {
 

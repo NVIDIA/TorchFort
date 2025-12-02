@@ -220,26 +220,31 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
     }
 
     // Check that external data changes reflect in tensor list
+    float expected_loss_val = 0.0;
     for (int i = 0; i < 2; ++i) {
-      auto tmp = generate_random<float>(shape);
+      auto tmp = generate_constant<float>(shape, 1);
       inputs[i].assign(tmp.begin(), tmp.end());
+      labels[i].assign(tmp.begin(), tmp.end());
+      expected_loss_val += 2 * 1.0f * tmp.size();
+      if (use_extra_args) {
+        extra_args[i].assign(tmp.begin(), tmp.end());
+        expected_loss_val += 1.0f * tmp.size();
+      }
 #ifdef ENABLE_GPU
       if (dev_input != TORCHFORT_DEVICE_CPU) {
         copy_from_host_vector(input_ptrs[i], inputs[i]);
+        copy_from_host_vector(label_ptrs[i], labels[i]);
+        if (use_extra_args) {
+          copy_from_host_vector(extra_args_ptrs[i], extra_args[i]);
+        }
       }
 #endif
     }
 
-    CHECK_TORCHFORT(torchfort_inference_multiarg(model_name.c_str(), inputs_tl, outputs_tl, 0));
+    CHECK_TORCHFORT(torchfort_train_multiarg(model_name.c_str(), inputs_tl, labels_tl, &loss_val,
+                                             (use_extra_args) ? extra_args_tl : nullptr, 0));
 
-    for (int i = 0; i < 2; ++i) {
-#ifdef ENABLE_GPU
-      if (dev_input != TORCHFORT_DEVICE_CPU) {
-        copy_to_host_vector(outputs[i], output_ptrs[i]);
-      }
-#endif
-      EXPECT_EQ(inputs[i], outputs[i]);
-    }
+    EXPECT_EQ(loss_val, expected_loss_val);
   }
 
   for (int i = 0; i < 2; ++i) {

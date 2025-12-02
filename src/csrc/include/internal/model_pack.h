@@ -25,6 +25,9 @@
 #include "internal/distributed.h"
 #include "internal/model_state.h"
 #include "internal/model_wrapper.h"
+#ifdef ENABLE_GPU
+#include "internal/cuda_graphs.h"
+#endif
 
 namespace torchfort {
 
@@ -38,6 +41,11 @@ struct ModelPack {
   std::shared_ptr<ModelState> state;
   int grad_accumulation_steps = 1;
   float max_grad_norm = 0.0;
+
+#ifdef ENABLE_GPU
+  // CUDA graph state (initialized if enable_cuda_graphs is true)
+  std::shared_ptr<ModelGraphState> graph_state;
+#endif
 };
 
 void save_model_pack(const ModelPack& model_pack, const std::string& fname, bool save_optimizer = true);

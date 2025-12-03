@@ -55,7 +55,6 @@ and improve performance for models with many small operations.
 
 - Input tensors must be on GPU and must have consistent data pointers, shapes, and dtypes across all training/inference calls with the captured model.
   If inputs change after graph capture, an error will be thrown.
-- For training, CUDA graph capture is automatically disabled when gradient accumulation (``grad_accumulation_steps > 1``) is active.
 - The optimizer step and learning rate scheduler updates are not captured in the graph.
 - A warmup period of 3 iterations is performed before graph capture to ensure stable execution.
 

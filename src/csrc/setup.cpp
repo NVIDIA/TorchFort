@@ -262,8 +262,7 @@ std::shared_ptr<ModelState> get_state(const char* name, const YAML::Node& state_
 
   if (state_node["general"]) {
     auto params = get_params(state_node["general"]);
-    std::set<std::string> supported_params{"report_frequency", "enable_wandb_hook", "verbose",
-                                           "enable_cuda_graphs"};
+    std::set<std::string> supported_params{"report_frequency", "enable_wandb_hook", "verbose", "enable_cuda_graphs"};
     check_params(supported_params, params.keys());
 
     try {

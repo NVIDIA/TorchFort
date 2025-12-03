@@ -21,9 +21,11 @@
 
 #include <cuda_runtime.h>
 
+#include <cstring>
 #include <sstream>
 #include <vector>
 
+#include <c10/cuda/CUDAGuard.h>
 #include <c10/cuda/CUDAStream.h>
 #include <torch/torch.h>
 
@@ -31,6 +33,16 @@
 #include "internal/exceptions.h"
 
 namespace torchfort {
+
+// Number of warmup iterations before CUDA graph capture
+constexpr int kCudaGraphWarmupIters = 3;
+
+// Action to take for current iteration
+enum class GraphAction {
+  WARMUP,   // Run eager execution, increment warmup count
+  CAPTURE,  // Run eager execution with graph capture
+  REPLAY    // Skip eager execution, replay captured graph
+};
 
 // RAII wrapper for cudaGraph_t
 class CudaGraph {
@@ -98,117 +110,293 @@ public:
   cudaGraphExec_t get() const { return exec_; }
   bool valid() const { return exec_ != nullptr; }
 
-  // Launch the graph on a stream
-  void launch(cudaStream_t stream) {
-    if (exec_) {
-      CHECK_CUDA(cudaGraphLaunch(exec_, stream));
-    }
-  }
-
 private:
   cudaGraphExec_t exec_;
 };
 
-// Input signature for validating consistent inputs
-struct InputSignature {
-  std::vector<void*> ptrs;
-  std::vector<std::vector<int64_t>> shapes;
-  std::vector<c10::ScalarType> dtypes;
-
-  bool operator==(const InputSignature& other) const {
-    return ptrs == other.ptrs && shapes == other.shapes && dtypes == other.dtypes;
-  }
-
-  bool operator!=(const InputSignature& other) const {
-    return !(*this == other);
-  }
-
-  bool empty() const { return ptrs.empty(); }
-};
-
-// Helper to create input signature from tensor list
-inline InputSignature make_input_signature(const std::vector<torch::Tensor>& tensors) {
-  InputSignature sig;
-  sig.ptrs.reserve(tensors.size());
-  sig.shapes.reserve(tensors.size());
-  sig.dtypes.reserve(tensors.size());
-  for (const auto& t : tensors) {
-    sig.ptrs.push_back(t.data_ptr());
-    sig.shapes.push_back(t.sizes().vec());
-    sig.dtypes.push_back(t.scalar_type());
-  }
-  return sig;
-}
-
-// Helper to create input signature from multiple tensor lists (for training)
-inline InputSignature make_input_signature(const std::vector<torch::Tensor>& inputs,
-                                           const std::vector<torch::Tensor>& labels,
-                                           const std::vector<torch::Tensor>& extra_args) {
-  InputSignature sig;
-  size_t total = inputs.size() + labels.size() + extra_args.size();
-  sig.ptrs.reserve(total);
-  sig.shapes.reserve(total);
-  sig.dtypes.reserve(total);
-
-  for (const auto& t : inputs) {
-    sig.ptrs.push_back(t.data_ptr());
-    sig.shapes.push_back(t.sizes().vec());
-    sig.dtypes.push_back(t.scalar_type());
-  }
-  for (const auto& t : labels) {
-    sig.ptrs.push_back(t.data_ptr());
-    sig.shapes.push_back(t.sizes().vec());
-    sig.dtypes.push_back(t.scalar_type());
-  }
-  for (const auto& t : extra_args) {
-    sig.ptrs.push_back(t.data_ptr());
-    sig.shapes.push_back(t.sizes().vec());
-    sig.dtypes.push_back(t.scalar_type());
-  }
-  return sig;
-}
-
-// Validate that current inputs match the captured signature
-inline void validate_input_signature(const InputSignature& expected,
-                                     const InputSignature& actual,
-                                     const char* context) {
-  if (expected != actual) {
-    std::stringstream ss;
-    ss << "CUDA graph input mismatch in " << context << ". "
-       << "When cuda_graphs is enabled, input tensors must have consistent "
-       << "data pointers, shapes, and dtypes across all calls. "
-       << "If you need to change inputs, disable cuda_graphs.";
-    THROW_INVALID_USAGE(ss.str());
-  }
-}
-
 // Graph state for inference
-struct InferenceGraphState {
-  int warmup_count = 0;
-  bool captured = false;
+class InferenceGraphState {
+public:
+  InferenceGraphState(const char* context = "inference") : context_(context) {}
 
-  InputSignature input_signature;
-  CudaGraph graph;
-  CudaGraphExec graph_exec;
-  std::vector<torch::Tensor> static_outputs;
+  // Determine action for this iteration - validates inputs if captured, stores signature if ready to capture
+  // Returns the action to take. Call begin_capture() after this if action == CAPTURE.
+  GraphAction prepare(const std::vector<torch::Tensor>& inputs) {
+    InputSignature current_sig = make_input_signature(inputs);
+
+    if (captured_) {
+      validate_inputs(current_sig);
+      return GraphAction::REPLAY;
+    }
+
+    if (warmup_count_ == kCudaGraphWarmupIters) {
+      input_signature_ = std::move(current_sig);
+      return GraphAction::CAPTURE;
+    }
+
+    return GraphAction::WARMUP;
+  }
+
+  // Begin graph capture - call this after prepare() returns CAPTURE and after any pre-capture work
+  void begin_capture(cudaStream_t capture_stream,
+                     cudaStream_t user_stream,
+                     c10::cuda::OptionalCUDAStreamGuard& guard,
+                     int device_index) {
+    CHECK_CUDA(cudaStreamSynchronize(user_stream));
+    auto capture_c10_stream = c10::cuda::getStreamFromExternal(capture_stream, device_index);
+    guard.reset_stream(capture_c10_stream);
+    CHECK_CUDA(cudaStreamBeginCapture(capture_stream, cudaStreamCaptureModeGlobal));
+  }
+
+  // Finalize after forward pass - handles capture end or warmup increment
+  void finalize(GraphAction action,
+                cudaStream_t capture_stream,
+                cudaStream_t user_stream,
+                c10::cuda::OptionalCUDAStreamGuard& guard,
+                int device_index,
+                const std::vector<torch::Tensor>& outputs) {
+    if (action == GraphAction::CAPTURE) {
+      end_capture(capture_stream, user_stream, guard, device_index);
+      static_outputs_ = outputs;
+    } else if (action == GraphAction::WARMUP) {
+      warmup_count_++;
+    }
+  }
+
+  // Launch captured graph on the given stream
+  void launch(cudaStream_t stream) {
+    CHECK_CUDA(cudaGraphLaunch(graph_exec_.get(), stream));
+  }
+
+  // Get static outputs (valid after CAPTURE or REPLAY)
+  const std::vector<torch::Tensor>& get_outputs() const { return static_outputs_; }
+
+  bool is_captured() const { return captured_; }
+
+private:
+  // Input signature for validating consistent inputs
+  struct InputSignature {
+    std::vector<void*> ptrs;
+    std::vector<std::vector<int64_t>> shapes;
+    std::vector<c10::ScalarType> dtypes;
+
+    bool operator!=(const InputSignature& other) const {
+      return ptrs != other.ptrs || shapes != other.shapes || dtypes != other.dtypes;
+    }
+  };
+
+  static InputSignature make_input_signature(const std::vector<torch::Tensor>& tensors) {
+    InputSignature sig;
+    sig.ptrs.reserve(tensors.size());
+    sig.shapes.reserve(tensors.size());
+    sig.dtypes.reserve(tensors.size());
+    for (const auto& t : tensors) {
+      sig.ptrs.push_back(t.data_ptr());
+      sig.shapes.push_back(t.sizes().vec());
+      sig.dtypes.push_back(t.scalar_type());
+    }
+    return sig;
+  }
+
+  void validate_inputs(const InputSignature& current_sig) const {
+    if (input_signature_ != current_sig) {
+      std::stringstream ss;
+      ss << "CUDA graph input mismatch in " << context_ << ". "
+         << "When enable_cuda_graphs is set, input tensors must have consistent "
+         << "data pointers, shapes, and dtypes across all calls. "
+         << "If you need to change inputs, disable enable_cuda_graphs.";
+      THROW_INVALID_USAGE(ss.str());
+    }
+  }
+
+  void end_capture(cudaStream_t capture_stream,
+                   cudaStream_t user_stream,
+                   c10::cuda::OptionalCUDAStreamGuard& guard,
+                   int device_index) {
+    CHECK_CUDA(cudaStreamEndCapture(capture_stream, &graph_.get()));
+    instantiate_graph();
+    captured_ = true;
+    auto user_c10_stream = c10::cuda::getStreamFromExternal(user_stream, device_index);
+    guard.reset_stream(user_c10_stream);
+  }
+
+  void instantiate_graph() {
+    cudaGraphNode_t error_node;
+    char log_buffer[1024];
+    cudaError_t result = cudaGraphInstantiate(&graph_exec_.get(), graph_.get(),
+                                               &error_node, log_buffer, sizeof(log_buffer));
+    if (result != cudaSuccess) {
+      std::stringstream ss;
+      ss << "CUDA graph instantiation failed in " << context_ << ": "
+         << cudaGetErrorString(result);
+      if (std::strlen(log_buffer) > 0) {
+        ss << " Log: " << log_buffer;
+      }
+      THROW_INTERNAL_ERROR(ss.str());
+    }
+  }
+
+  const char* context_;
+  int warmup_count_ = 0;
+  bool captured_ = false;
+  InputSignature input_signature_;
+  CudaGraph graph_;
+  CudaGraphExec graph_exec_;
+  std::vector<torch::Tensor> static_outputs_;
 };
 
 // Graph state for training (single graph for forward + loss + backward)
-struct TrainingGraphState {
-  int warmup_count = 0;
-  bool captured = false;
+class TrainingGraphState {
+public:
+  TrainingGraphState(const char* context = "training") : context_(context) {}
 
-  InputSignature input_signature;
-  CudaGraph graph;
-  CudaGraphExec graph_exec;
-  torch::Tensor static_loss;
+  // Determine action for this iteration - validates inputs if captured, stores signature if ready to capture
+  // Returns the action to take. Call begin_capture() after this if action == CAPTURE.
+  GraphAction prepare(const std::vector<torch::Tensor>& inputs,
+                      const std::vector<torch::Tensor>& labels,
+                      const std::vector<torch::Tensor>& extra_args) {
+    InputSignature current_sig = make_input_signature(inputs, labels, extra_args);
+
+    if (captured_) {
+      validate_inputs(current_sig);
+      return GraphAction::REPLAY;
+    }
+
+    if (warmup_count_ == kCudaGraphWarmupIters) {
+      input_signature_ = std::move(current_sig);
+      return GraphAction::CAPTURE;
+    }
+
+    return GraphAction::WARMUP;
+  }
+
+  // Begin graph capture - call this after prepare() returns CAPTURE and after any pre-capture work
+  void begin_capture(cudaStream_t capture_stream,
+                     cudaStream_t user_stream,
+                     c10::cuda::OptionalCUDAStreamGuard& guard,
+                     int device_index) {
+    CHECK_CUDA(cudaStreamSynchronize(user_stream));
+    auto capture_c10_stream = c10::cuda::getStreamFromExternal(capture_stream, device_index);
+    guard.reset_stream(capture_c10_stream);
+    CHECK_CUDA(cudaStreamBeginCapture(capture_stream, cudaStreamCaptureModeGlobal));
+  }
+
+  // Finalize after forward+loss+backward pass - handles capture end or warmup increment
+  void finalize(GraphAction action,
+                cudaStream_t capture_stream,
+                cudaStream_t user_stream,
+                c10::cuda::OptionalCUDAStreamGuard& guard,
+                int device_index,
+                const torch::Tensor& loss) {
+    if (action == GraphAction::CAPTURE) {
+      end_capture(capture_stream, user_stream, guard, device_index);
+      static_loss_ = loss;
+    } else if (action == GraphAction::WARMUP) {
+      warmup_count_++;
+    }
+  }
+
+  // Launch captured graph on the given stream
+  void launch(cudaStream_t stream) {
+    CHECK_CUDA(cudaGraphLaunch(graph_exec_.get(), stream));
+  }
+
+  // Get static loss (valid after CAPTURE or REPLAY)
+  const torch::Tensor& get_loss() const { return static_loss_; }
+
+  bool is_captured() const { return captured_; }
+
+private:
+  // Input signature for validating consistent inputs
+  struct InputSignature {
+    std::vector<void*> ptrs;
+    std::vector<std::vector<int64_t>> shapes;
+    std::vector<c10::ScalarType> dtypes;
+
+    bool operator!=(const InputSignature& other) const {
+      return ptrs != other.ptrs || shapes != other.shapes || dtypes != other.dtypes;
+    }
+  };
+
+  static InputSignature make_input_signature(const std::vector<torch::Tensor>& inputs,
+                                             const std::vector<torch::Tensor>& labels,
+                                             const std::vector<torch::Tensor>& extra_args) {
+    InputSignature sig;
+    size_t total = inputs.size() + labels.size() + extra_args.size();
+    sig.ptrs.reserve(total);
+    sig.shapes.reserve(total);
+    sig.dtypes.reserve(total);
+
+    for (const auto& t : inputs) {
+      sig.ptrs.push_back(t.data_ptr());
+      sig.shapes.push_back(t.sizes().vec());
+      sig.dtypes.push_back(t.scalar_type());
+    }
+    for (const auto& t : labels) {
+      sig.ptrs.push_back(t.data_ptr());
+      sig.shapes.push_back(t.sizes().vec());
+      sig.dtypes.push_back(t.scalar_type());
+    }
+    for (const auto& t : extra_args) {
+      sig.ptrs.push_back(t.data_ptr());
+      sig.shapes.push_back(t.sizes().vec());
+      sig.dtypes.push_back(t.scalar_type());
+    }
+    return sig;
+  }
+
+  void validate_inputs(const InputSignature& current_sig) const {
+    if (input_signature_ != current_sig) {
+      std::stringstream ss;
+      ss << "CUDA graph input mismatch in " << context_ << ". "
+         << "When enable_cuda_graphs is set, input tensors must have consistent "
+         << "data pointers, shapes, and dtypes across all calls. "
+         << "If you need to change inputs, disable enable_cuda_graphs.";
+      THROW_INVALID_USAGE(ss.str());
+    }
+  }
+
+  void end_capture(cudaStream_t capture_stream,
+                   cudaStream_t user_stream,
+                   c10::cuda::OptionalCUDAStreamGuard& guard,
+                   int device_index) {
+    CHECK_CUDA(cudaStreamEndCapture(capture_stream, &graph_.get()));
+    instantiate_graph();
+    captured_ = true;
+    auto user_c10_stream = c10::cuda::getStreamFromExternal(user_stream, device_index);
+    guard.reset_stream(user_c10_stream);
+  }
+
+  void instantiate_graph() {
+    cudaGraphNode_t error_node;
+    char log_buffer[1024];
+    cudaError_t result = cudaGraphInstantiate(&graph_exec_.get(), graph_.get(),
+                                               &error_node, log_buffer, sizeof(log_buffer));
+    if (result != cudaSuccess) {
+      std::stringstream ss;
+      ss << "CUDA graph instantiation failed in " << context_ << ": "
+         << cudaGetErrorString(result);
+      if (std::strlen(log_buffer) > 0) {
+        ss << " Log: " << log_buffer;
+      }
+      THROW_INTERNAL_ERROR(ss.str());
+    }
+  }
+
+  const char* context_;
+  int warmup_count_ = 0;
+  bool captured_ = false;
+  InputSignature input_signature_;
+  CudaGraph graph_;
+  CudaGraphExec graph_exec_;
+  torch::Tensor static_loss_;
 };
 
 // Graph state for a model, including the capture stream
 class ModelGraphState {
 public:
-  InferenceGraphState inference;
-  TrainingGraphState training;
+  InferenceGraphState inference{"inference"};
+  TrainingGraphState training{"training"};
 
   ModelGraphState(int device_index = 0)
       : capture_stream_(nullptr), device_index_(device_index) {
@@ -229,11 +417,6 @@ public:
 
   cudaStream_t capture_stream() const { return capture_stream_; }
   int device_index() const { return device_index_; }
-
-  // Get c10 stream wrapper for the capture stream (for PyTorch integration)
-  c10::cuda::CUDAStream get_capture_cuda_stream() const {
-    return c10::cuda::getStreamFromExternal(capture_stream_, device_index_);
-  }
 
 private:
   cudaStream_t capture_stream_;

@@ -40,26 +40,6 @@ namespace torchfort {
 // Declaration of external global variables
 extern std::unordered_map<std::string, ModelPack> models;
 
-#ifdef ENABLE_GPU
-// Number of warmup iterations before CUDA graph capture
-constexpr int kCudaGraphWarmupIters = 3;
-
-// Helper to instantiate a CUDA graph from a captured graph
-void instantiate_graph(CudaGraph& graph, CudaGraphExec& exec) {
-  cudaGraphNode_t error_node;
-  char log_buffer[1024];
-  cudaError_t result = cudaGraphInstantiate(&exec.get(), graph.get(), &error_node, log_buffer, sizeof(log_buffer));
-  if (result != cudaSuccess) {
-    std::stringstream ss;
-    ss << "CUDA graph instantiation failed: " << cudaGetErrorString(result);
-    if (strlen(log_buffer) > 0) {
-      ss << " Log: " << log_buffer;
-    }
-    THROW_INTERNAL_ERROR(ss.str());
-  }
-}
-#endif
-
 void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfort_tensor_list_t outputs_in,
                         cudaStream_t ext_stream = 0) {
   torchfort::nvtx::rangePush("torchfort_inference");
@@ -92,69 +72,33 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
   std::vector<torch::Tensor> results;
 
 #ifdef ENABLE_GPU
-  // CUDA graph handling
-  bool capturing = false;
+  GraphAction action = GraphAction::WARMUP;
   InferenceGraphState* graph_state = nullptr;
-  cudaStream_t capture_stream = nullptr;
 
   if (models[name].state->enable_cuda_graphs && model->device().is_cuda() && models[name].graph_state) {
-
     graph_state = &models[name].graph_state->inference;
-    capture_stream = models[name].graph_state->capture_stream();
+    action = graph_state->prepare(inputs->tensors);
 
-    // Create input signature for validation
-    InputSignature current_sig = make_input_signature(inputs->tensors);
-
-    if (graph_state->captured) {
-
-      validate_input_signature(graph_state->input_signature, current_sig, "inference");
-
-    } else if (graph_state->warmup_count == kCudaGraphWarmupIters) {
-
-      // Store input signature used during capture
-      graph_state->input_signature = current_sig;
-
-      // Synchronize user stream before capture
-      CHECK_CUDA(cudaStreamSynchronize(user_stream));
-
-      // Switch PyTorch to use our capture stream
-      auto capture_c10_stream = models[name].graph_state->get_capture_cuda_stream();
-      guard.reset_stream(capture_c10_stream);
-
-      // Begin capture
-      CHECK_CUDA(cudaStreamBeginCapture(capture_stream, cudaStreamCaptureModeGlobal));
-      capturing = true;
+    if (action == GraphAction::CAPTURE) {
+      graph_state->begin_capture(models[name].graph_state->capture_stream(), ext_stream, guard, model->device().index());
     }
   }
 #endif
 
   // Forward pass
 #ifdef ENABLE_GPU
-  if (!graph_state || !graph_state->captured) {
+  if (action != GraphAction::REPLAY) {
 #endif
     results = model->forward(inputs->tensors);
 #ifdef ENABLE_GPU
-    if (graph_state) graph_state->warmup_count++;
   }
 
   if (graph_state) {
+    graph_state->finalize(action, models[name].graph_state->capture_stream(), ext_stream, guard, model->device().index(), results);
 
-    if (capturing) {
-      // End capture and instantiate the graph
-      CHECK_CUDA(cudaStreamEndCapture(capture_stream, &graph_state->graph.get()));
-      instantiate_graph(graph_state->graph, graph_state->graph_exec);
-      graph_state->static_outputs = results;
-      graph_state->captured = true;
-
-      // Switch back to user stream for replay and subsequent operations
-      auto user_c10_stream = c10::cuda::getStreamFromExternal(user_stream, model->device().index());
-      guard.reset_stream(user_c10_stream);
-    }
-
-    // Replay graph
-    if (graph_state->captured) {
-      graph_state->graph_exec.launch(user_stream);
-      results = graph_state->static_outputs;
+    if (action == GraphAction::CAPTURE || action == GraphAction::REPLAY) {
+      graph_state->launch(ext_stream);
+      results = graph_state->get_outputs();
     }
   }
 #endif
@@ -213,40 +157,22 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   torch::Tensor loss;
 
 #ifdef ENABLE_GPU
-  // CUDA graph handling
-  bool capturing = false;
+  GraphAction action = GraphAction::WARMUP;
   TrainingGraphState* graph_state = nullptr;
-  cudaStream_t capture_stream = nullptr;
 
+  // Note: CUDA graph capture for training is disabled if gradient accumulation is active
   if (state->enable_cuda_graphs && model->device().is_cuda() && models[name].graph_state &&
       models[name].grad_accumulation_steps == 1) {
-
-    // Note: CUDA graph capture for training is disabled if gradient accumulation is active
-
     graph_state = &models[name].graph_state->training;
-    capture_stream = models[name].graph_state->capture_stream();
-
-    // Create input signature for validation
     std::vector<torch::Tensor> extra_args_vec = extra_loss_args ? extra_loss_args->tensors : std::vector<torch::Tensor>();
-    InputSignature current_sig = make_input_signature(inputs->tensors, labels->tensors, extra_args_vec);
-
-    if (graph_state->captured) {
-
-      validate_input_signature(graph_state->input_signature, current_sig, "training");
-
-    } else if (graph_state->warmup_count == kCudaGraphWarmupIters) {
-
-      // Store input signature used during capture
-      graph_state->input_signature = current_sig;
-      capturing = true;
-    }
+    action = graph_state->prepare(inputs->tensors, labels->tensors, extra_args_vec);
   }
 #endif
 
   if (state->step_train_current % models[name].grad_accumulation_steps == 0) {
 #ifdef ENABLE_GPU
-    // Only explicitly call zero_grad for non-replay steps
-    if (!graph_state || !graph_state->captured) {
+    // zero_grad is only needed for non-replay steps
+    if (action != GraphAction::REPLAY) {
 #endif
       opt->zero_grad(/*set_to_none=*/true);
 #ifdef ENABLE_GPU
@@ -255,48 +181,28 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   }
 
 #ifdef ENABLE_GPU
-  if (capturing) {
-    // Synchronize user stream before capture
-    CHECK_CUDA(cudaStreamSynchronize(user_stream));
-
-    // Switch PyTorch to use our capture stream
-    auto capture_c10_stream = models[name].graph_state->get_capture_cuda_stream();
-    guard.reset_stream(capture_c10_stream);
-
-    // Begin capture on our non-blocking stream
-    CHECK_CUDA(cudaStreamBeginCapture(capture_stream, cudaStreamCaptureModeGlobal));
+  if (action == GraphAction::CAPTURE) {
+    graph_state->begin_capture(models[name].graph_state->capture_stream(), ext_stream, guard, model->device().index());
   }
 #endif
 
   // Forward + loss + backward
 #ifdef ENABLE_GPU
-  if (!graph_state || !graph_state->captured) {
+  if (action != GraphAction::REPLAY) {
 #endif
     auto fwd_results = model->forward(inputs->tensors);
     loss = models[name].loss->forward(fwd_results, labels->tensors,
                                       (extra_loss_args) ? extra_loss_args->tensors : std::vector<torch::Tensor>());
     loss.backward();
 #ifdef ENABLE_GPU
-    if (graph_state) graph_state->warmup_count++;
   }
 
   if (graph_state) {
-    if (capturing) {
-      // End graph capture and instantiate
-      CHECK_CUDA(cudaStreamEndCapture(capture_stream, &graph_state->graph.get()));
-      instantiate_graph(graph_state->graph, graph_state->graph_exec);
-      graph_state->static_loss = loss;
-      graph_state->captured = true;
+    graph_state->finalize(action, models[name].graph_state->capture_stream(), ext_stream, guard, model->device().index(), loss);
 
-      // Switch back to user stream for replay and subsequent operations
-      auto user_c10_stream = c10::cuda::getStreamFromExternal(user_stream, model->device().index());
-      guard.reset_stream(user_c10_stream);
-    }
-
-    // Replay graph
-    if (graph_state->captured) {
-      graph_state->graph_exec.launch(user_stream);
-      loss = graph_state->static_loss;
+    if (action == GraphAction::CAPTURE || action == GraphAction::REPLAY) {
+      graph_state->launch(ext_stream);
+      loss = graph_state->get_loss();
     }
   }
 #endif

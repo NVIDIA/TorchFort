@@ -32,9 +32,7 @@
 #include "internal/nvtx.h"
 #include "internal/tensor_list.h"
 #include "internal/utils.h"
-#ifdef ENABLE_GPU
 #include "internal/cuda_graphs.h"
-#endif
 
 namespace torchfort {
 // Declaration of external global variables
@@ -71,8 +69,9 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
 
   std::vector<torch::Tensor> results;
 
-#ifdef ENABLE_GPU
   GraphAction action = GraphAction::WARMUP;
+
+#ifdef ENABLE_GPU
   InferenceGraphState* graph_state = nullptr;
 
   if (models[name].state->enable_cuda_graphs && model->device().is_cuda() && models[name].graph_state) {
@@ -86,13 +85,11 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
 #endif
 
   // Forward pass
-#ifdef ENABLE_GPU
   if (action != GraphAction::REPLAY) {
-#endif
     results = model->forward(inputs->tensors);
-#ifdef ENABLE_GPU
   }
 
+#ifdef ENABLE_GPU
   if (graph_state) {
     graph_state->finalize(action, models[name].graph_state->capture_stream(), ext_stream, guard, model->device().index(), results);
 
@@ -156,13 +153,12 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
 
   torch::Tensor loss;
 
-#ifdef ENABLE_GPU
   GraphAction action = GraphAction::WARMUP;
+
+#ifdef ENABLE_GPU
   TrainingGraphState* graph_state = nullptr;
 
-  // Note: CUDA graph capture for training is disabled if gradient accumulation is active
-  if (state->enable_cuda_graphs && model->device().is_cuda() && models[name].graph_state &&
-      models[name].grad_accumulation_steps == 1) {
+  if (state->enable_cuda_graphs && model->device().is_cuda() && models[name].graph_state) {
     graph_state = &models[name].graph_state->training;
     std::vector<torch::Tensor> extra_args_vec = extra_loss_args ? extra_loss_args->tensors : std::vector<torch::Tensor>();
     action = graph_state->prepare(inputs->tensors, labels->tensors, extra_args_vec);
@@ -170,14 +166,19 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
 #endif
 
   if (state->step_train_current % models[name].grad_accumulation_steps == 0) {
+    // Only run zero_grad on non-replay steps or if gradient accumulation is active
+    if (action != GraphAction::REPLAY || models[name].grad_accumulation_steps > 1) {
+      if (models[name].grad_accumulation_steps > 1) {
 #ifdef ENABLE_GPU
-    // zero_grad is only needed for non-replay steps
-    if (action != GraphAction::REPLAY) {
+        // With graphs and grad accumulation active, gradients must be persistent (set_to_none = false)
+        opt->zero_grad(/*set_to_none=*/(graph_state == nullptr));
+#else
+        opt->zero_grad(/*set_to_none=*/true);
 #endif
-      opt->zero_grad(/*set_to_none=*/true);
-#ifdef ENABLE_GPU
+      } else {
+        opt->zero_grad(/*set_to_none=*/true);
+      }
     }
-#endif
   }
 
 #ifdef ENABLE_GPU
@@ -187,16 +188,14 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
 #endif
 
   // Forward + loss + backward
-#ifdef ENABLE_GPU
   if (action != GraphAction::REPLAY) {
-#endif
     auto fwd_results = model->forward(inputs->tensors);
     loss = models[name].loss->forward(fwd_results, labels->tensors,
                                       (extra_loss_args) ? extra_loss_args->tensors : std::vector<torch::Tensor>());
     loss.backward();
-#ifdef ENABLE_GPU
   }
 
+#ifdef ENABLE_GPU
   if (graph_state) {
     graph_state->finalize(action, models[name].graph_state->capture_stream(), ext_stream, guard, model->device().index(), loss);
 

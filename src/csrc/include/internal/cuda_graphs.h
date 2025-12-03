@@ -18,15 +18,15 @@
 #pragma once
 
 #ifdef ENABLE_GPU
-
 #include <cuda_runtime.h>
+#include <c10/cuda/CUDAGuard.h>
+#include <c10/cuda/CUDAStream.h>
+#endif
 
 #include <cstring>
 #include <sstream>
 #include <vector>
 
-#include <c10/cuda/CUDAGuard.h>
-#include <c10/cuda/CUDAStream.h>
 #include <torch/torch.h>
 
 #include "internal/defines.h"
@@ -34,15 +34,17 @@
 
 namespace torchfort {
 
-// Number of warmup iterations before CUDA graph capture
-constexpr int kCudaGraphWarmupIters = 3;
-
 // Action to take for current iteration
 enum class GraphAction {
   WARMUP,   // Run eager execution, increment warmup count
   CAPTURE,  // Run eager execution with graph capture
   REPLAY    // Skip eager execution, replay captured graph
 };
+
+#ifdef ENABLE_GPU
+
+// Number of warmup iterations before CUDA graph capture
+constexpr int kCudaGraphWarmupIters = 3;
 
 // RAII wrapper for cudaGraph_t
 class CudaGraph {
@@ -423,7 +425,8 @@ private:
   int device_index_;
 };
 
+#endif
+
 } // namespace torchfort
 
-#endif // ENABLE_GPU
 

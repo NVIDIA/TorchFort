@@ -56,11 +56,9 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
   auto model = models[name].model;
 
 #if ENABLE_GPU
-  c10::cuda::OptionalCUDAStreamGuard guard;
-  if (model->device().is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model->device().index());
-    guard.reset_stream(stream);
-  }
+  c10::cuda::OptionalCUDAStreamGuard stream_guard;
+  c10::cuda::OptionalCUDAGuard cuda_guard;
+  set_device_and_stream(stream_guard, cuda_guard, model->device(), ext_stream);
 #endif
 
   inputs->to(model->device());
@@ -104,11 +102,9 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   auto model = models[name].model;
 
 #ifdef ENABLE_GPU
-  c10::cuda::OptionalCUDAStreamGuard guard;
-  if (model->device().is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model->device().index());
-    guard.reset_stream(stream);
-  }
+  c10::cuda::OptionalCUDAStreamGuard stream_guard;
+  c10::cuda::OptionalCUDAGuard cuda_guard;
+  set_device_and_stream(stream_guard, cuda_guard, model->device(), ext_stream);
 #endif
 
   inputs->to(model->device());

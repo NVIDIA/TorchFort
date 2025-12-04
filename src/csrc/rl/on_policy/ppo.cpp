@@ -188,11 +188,11 @@ torch::Device PPOSystem::rbDevice() const { return rb_device_; }
 void PPOSystem::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // system
-  system_comm_ = std::make_shared<Comm>(mpi_comm);
-  system_comm_->initialize(model_device_.is_cuda());
+  system_comm_ = std::make_shared<Comm>(mpi_comm, model_device_);
+  system_comm_->initialize();
   // policy
-  pq_model_.comm = std::make_shared<Comm>(mpi_comm);
-  pq_model_.comm->initialize(model_device_.is_cuda());
+  pq_model_.comm = std::make_shared<Comm>(mpi_comm, model_device_);
+  pq_model_.comm->initialize();
 
   // move to device before broadcasting
   pq_model_.model->to(model_device_);

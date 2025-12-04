@@ -20,6 +20,7 @@
 #include <nccl.h>
 
 #include <c10/cuda/CUDAStream.h>
+#include <c10/cuda/CUDAGuard.h>
 #endif
 #include <torch/torch.h>
 
@@ -73,12 +74,15 @@ static ncclComm_t ncclCommFromMPIComm(MPI_Comm mpi_comm) {
 }
 #endif
 
-void Comm::initialize(bool initialize_nccl) {
+void Comm::initialize() {
   CHECK_MPI(MPI_Comm_rank(mpi_comm, &rank));
   CHECK_MPI(MPI_Comm_size(mpi_comm, &size));
 
 #ifdef ENABLE_GPU
-  if (initialize_nccl) {
+  // Initialize NCCL if device if GPU
+  if (device.is_cuda()) {
+    c10::cuda::CUDAGuard guard(device);
+
     nccl_comm = ncclCommFromMPIComm(mpi_comm);
 
     int greatest_priority;
@@ -94,13 +98,17 @@ void Comm::initialize(bool initialize_nccl) {
 
 void Comm::finalize() {
 #ifdef ENABLE_GPU
-  if (nccl_comm)
+  if (nccl_comm) {
+    c10::cuda::CUDAGuard guard(device);
     CHECK_NCCL(ncclCommDestroy(nccl_comm));
-  if (stream)
     CHECK_CUDA(cudaStreamDestroy(stream));
-  if (event)
     CHECK_CUDA(cudaEventDestroy(event));
+    nccl_comm = nullptr;
+    stream = nullptr;
+    event = nullptr;
+  }
 #endif
+  initialized = false;
 }
 
 void Comm::allreduce(torch::Tensor& tensor, bool average) const {
@@ -116,6 +124,14 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
 
 #ifdef ENABLE_GPU
   if (tensor.device().type() == torch::kCUDA) {
+    if (tensor.device() != device) {
+      std::stringstream ss;
+      ss << "allreduce called with tensor on device " << tensor.device() << " but the comm was initialized on device " << device << ".";
+      THROW_INVALID_USAGE(ss.str());
+    }
+
+    c10::cuda::CUDAGuard guard(device);
+
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
     CHECK_CUDA(cudaEventRecord(event, torch_stream));
     CHECK_CUDA(cudaStreamWaitEvent(stream, event));
@@ -157,6 +173,8 @@ void Comm::allreduce(std::vector<torch::Tensor>& tensors, bool average) const {
 
 #ifdef ENABLE_GPU
   if (tensors[0].device().type() == torch::kCUDA) {
+    c10::cuda::CUDAGuard guard(device);
+
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
     CHECK_CUDA(cudaEventRecord(event, torch_stream));
     CHECK_CUDA(cudaStreamWaitEvent(stream, event));
@@ -173,6 +191,8 @@ void Comm::allreduce(std::vector<torch::Tensor>& tensors, bool average) const {
 
 #ifdef ENABLE_GPU
   if (tensors[0].device().type() == torch::kCUDA) {
+    c10::cuda::CUDAGuard guard(device);
+
     CHECK_NCCL(ncclGroupEnd());
     auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
     CHECK_CUDA(cudaEventRecord(event, stream));
@@ -201,6 +221,14 @@ void Comm::broadcast(torch::Tensor& tensor, int root) const {
   auto count = torch::numel(tensor);
 #ifdef ENABLE_GPU
   if (tensor.device().type() == torch::kCUDA) {
+    if (tensor.device() != device) {
+      std::stringstream ss;
+      ss << "broadcast called with tensor on device " << tensor.device() << " but the comm was initialized on device " << device << ".";
+      THROW_INVALID_USAGE(ss.str());
+    }
+
+    c10::cuda::CUDAGuard guard(device);
+
     // Use NCCL for GPU tensors
     ncclDataType_t nccl_dtype;
     if (torch::is_complex(tensor)) {
@@ -210,7 +238,7 @@ void Comm::broadcast(torch::Tensor& tensor, int root) const {
       nccl_dtype = get_nccl_dtype(tensor);
     }
 
-    auto torch_stream = c10::cuda::getCurrentCUDAStream(tensor.device().index()).stream();
+    auto torch_stream = c10::cuda::getCurrentCUDAStream().stream();
     CHECK_CUDA(cudaEventRecord(event, torch_stream));
     CHECK_CUDA(cudaStreamWaitEvent(stream, event));
 

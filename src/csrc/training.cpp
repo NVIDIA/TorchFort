@@ -210,9 +210,6 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   }
 #endif
 
-  // Extract loss value
-  *loss_val = loss.item<float>();
-
   // Optimizer step and related operations
   if ((state->step_train_current + 1) % models[name].grad_accumulation_steps == 0) {
     // allreduce (average) gradients (if running distributed)
@@ -223,9 +220,6 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
         grads.push_back(p.grad());
       }
       models[name].comm->allreduce(grads, true);
-
-      // average returned loss value
-      models[name].comm->allreduce(*loss_val, true);
     }
 
     if (models[name].max_grad_norm > 0.0) {
@@ -236,6 +230,13 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
     if (models[name].lr_scheduler) {
       models[name].lr_scheduler->step();
     }
+  }
+
+  // Extract loss value
+  *loss_val = loss.item<float>();
+  if (models[name].comm) {
+    // average returned loss value (if running distributed)
+    models[name].comm->allreduce(*loss_val, true);
   }
 
   state->step_train++;

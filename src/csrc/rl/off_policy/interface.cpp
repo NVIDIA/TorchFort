@@ -180,14 +180,10 @@ torchfort_result_t torchfort_rl_off_policy_train_step(const char* name, float* p
   auto model_device = rl::off_policy::registry[name]->modelDevice();
   auto rb_device = rl::off_policy::registry[name]->rbDevice();
 #ifdef ENABLE_GPU
-  c10::cuda::OptionalCUDAStreamGuard guard;
-  if (model_device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
-    guard.reset_stream(stream);
-  } else if (rb_device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
-    guard.reset_stream(stream);
-  }
+  c10::cuda::OptionalCUDAStreamGuard stream_guard;
+  c10::cuda::OptionalCUDAGuard cuda_guard;
+  set_device_and_stream(stream_guard, cuda_guard, model_device, ext_stream);
+  set_device_and_stream(stream_guard, cuda_guard, rb_device, ext_stream);
 #endif
 
   try {

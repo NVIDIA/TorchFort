@@ -81,41 +81,7 @@ jobs:
     - name: "Run tests"
       if: ${{ matrix.run_tests }}
       run: |
-        docker run --rm torchfort bash -c "
-          cd /opt/torchfort/bin/tests/general
-          python scripts/setup_tests.py
-          ./test_losses
-        "
-        docker run --rm torchfort bash -c "
-          cd /opt/torchfort/bin/tests/supervised
-          python scripts/setup_tests.py
-          ./test_checkpoint
-        "
-        docker run --rm torchfort bash -c "
-          cd /opt/torchfort/bin/tests/supervised
-          python scripts/setup_tests.py
-          ./test_training
-        "
-        docker run --rm torchfort bash -c "
-          cd /opt/torchfort/bin/tests/rl
-          ./test_distributions
-        "
-        docker run --rm torchfort bash -c "
-          cd /opt/torchfort/bin/tests/rl
-          ./test_replay_buffer
-        "
-        docker run --rm torchfort bash -c "
-          cd /opt/torchfort/bin/tests/rl
-          ./test_rollout_buffer
-        "
-        docker run --rm torchfort bash -c "
-          cd /opt/torchfort/bin/tests/rl
-          ./test_off_policy --gtest_filter=*L0*
-        "
-        docker run --rm torchfort bash -c "
-          cd /opt/torchfort/bin/tests/rl
-          ./test_on_policy --gtest_filter=*L0*
-        "
+        docker run -v ${PWD}/.github/scripts:/scripts -w /scripts --rm torchfort ./run_ci_tests.sh
 
   result-comment:
     needs: build

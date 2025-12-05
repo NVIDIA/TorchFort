@@ -9,6 +9,7 @@ cd /opt/torchfort/bin/tests/supervised
 python scripts/setup_tests.py
 ./test_checkpoint
 ./test_training
+mpirun -np 2 --allow-run-as-root ./test_distributed_training
 
 cd /opt/torchfort/bin/tests/rl
 ./test_distributions

@@ -140,8 +140,8 @@ torchfort_result_t torchfort_create_distributed_model(const char* name, const ch
     torchfort_create_model(name, config_fname, device);
 
     // Set up distributed communicator
-    models[name].comm = std::shared_ptr<Comm>(new Comm(mpi_comm));
-    models[name].comm->initialize(models[name].model->device().is_cuda());
+    models[name].comm = std::make_shared<Comm>(mpi_comm, get_device(device));
+    models[name].comm->initialize();
 
     // Broadcast initial model parameters from rank 0
     for (auto& p : models[name].model->parameters()) {

@@ -28,7 +28,7 @@
 namespace torchfort {
 
 struct Comm {
-  void initialize(bool initialize_nccl = false);
+  void initialize();
   void finalize();
   void allreduce(torch::Tensor& tensor, bool average = false) const;
   void allreduce(std::vector<torch::Tensor>& tensors, bool average = false) const;
@@ -38,6 +38,7 @@ struct Comm {
 
   int rank;
   int size;
+  torch::Device device;
   MPI_Comm mpi_comm;
 #ifdef ENABLE_GPU
   ncclComm_t nccl_comm = nullptr;
@@ -46,7 +47,7 @@ struct Comm {
 #endif
   bool initialized = false;
 
-  Comm(MPI_Comm mpi_comm) : mpi_comm(mpi_comm){};
+  Comm(MPI_Comm mpi_comm, torch::Device device) : mpi_comm(mpi_comm), device(device){};
 };
 
 } // namespace torchfort

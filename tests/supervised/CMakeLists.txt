@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 set(test_targets
   test_checkpoint
   test_training
+  test_distributed_training
   )
 
 add_executable(test_checkpoint)
@@ -15,6 +16,12 @@ add_executable(test_training)
 target_sources(test_training
   PRIVATE
   test_training.cpp
+  )
+
+add_executable(test_distributed_training)
+target_sources(test_distributed_training
+  PRIVATE
+  test_distributed_training.cpp
   )
 
 find_package(Python 3.6 COMPONENTS Interpreter Development REQUIRED)

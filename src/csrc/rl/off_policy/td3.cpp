@@ -274,21 +274,21 @@ int TD3System::getRank() const {
 void TD3System::initSystemComm(MPI_Comm mpi_comm) {
   // Set up distributed communicators for all models
   // system
-  system_comm_ = std::make_shared<Comm>(mpi_comm);
-  system_comm_->initialize(model_device_.is_cuda());
+  system_comm_ = std::make_shared<Comm>(mpi_comm, model_device_);
+  system_comm_->initialize();
   // policy
-  p_model_.comm = std::make_shared<Comm>(mpi_comm);
-  p_model_.comm->initialize(model_device_.is_cuda());
-  p_model_target_.comm = std::make_shared<Comm>(mpi_comm);
-  p_model_target_.comm->initialize(model_device_.is_cuda());
+  p_model_.comm = std::make_shared<Comm>(mpi_comm, model_device_);
+  p_model_.comm->initialize();
+  p_model_target_.comm = std::make_shared<Comm>(mpi_comm, model_device_);
+  p_model_target_.comm->initialize();
   // critic
   for (auto& q_model : q_models_) {
-    q_model.comm = std::make_shared<Comm>(mpi_comm);
-    q_model.comm->initialize(model_device_.is_cuda());
+    q_model.comm = std::make_shared<Comm>(mpi_comm, model_device_);
+    q_model.comm->initialize();
   }
   for (auto& q_model_target : q_models_target_) {
-    q_model_target.comm = std::make_shared<Comm>(mpi_comm);
-    q_model_target.comm->initialize(model_device_.is_cuda());
+    q_model_target.comm = std::make_shared<Comm>(mpi_comm, model_device_);
+    q_model_target.comm->initialize();
   }
 
   // move to device before broadcasting

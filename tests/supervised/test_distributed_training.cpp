@@ -31,8 +31,9 @@
 
 #include "test_utils.h"
 
-void training_test_distributed(const std::string& model_config, std::vector<int> dev_model, std::vector<int> dev_input, std::vector<int64_t> shape,
-                               bool should_fail_create, bool should_fail_train, bool should_fail_inference, bool check_result) {
+void training_test_distributed(const std::string& model_config, std::vector<int> dev_model, std::vector<int> dev_input,
+                               std::vector<int64_t> shape, bool should_fail_create, bool should_fail_train,
+                               bool should_fail_inference, bool check_result) {
 
   std::string model_name = generate_random_name(10);
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
@@ -42,7 +43,7 @@ void training_test_distributed(const std::string& model_config, std::vector<int>
 
   // Skip tests if not running with 2 ranks
   if (size != 2) {
-     GTEST_SKIP() << "This test requires 2 ranks to run. Skipping.";
+    GTEST_SKIP() << "This test requires 2 ranks to run. Skipping.";
   }
 
 #ifdef ENABLE_GPU
@@ -54,7 +55,8 @@ void training_test_distributed(const std::string& model_config, std::vector<int>
 #endif
 
   try {
-    CHECK_TORCHFORT(torchfort_create_distributed_model(model_name.c_str(), model_config.c_str(), mpi_comm, dev_model[rank]));
+    CHECK_TORCHFORT(
+        torchfort_create_distributed_model(model_name.c_str(), model_config.c_str(), mpi_comm, dev_model[rank]));
     if (should_fail_create) {
       FAIL() << "This test should fail create call, but did not.";
     }
@@ -138,27 +140,34 @@ void training_test_distributed(const std::string& model_config, std::vector<int>
   free_data_ptr(output_ptr, dev_input[rank]);
 }
 
-
 TEST(TorchFort, TrainTestDistributedMLPCPUCPU) {
-  training_test_distributed("configs/mlp2.yaml", {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU}, {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU}, {10, 2, 5}, false, false, false,
-                            false);
+  training_test_distributed("configs/mlp2.yaml", {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU},
+                            {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU}, {10, 2, 5}, false, false, false, false);
 }
 
 #ifdef ENABLE_GPU
 TEST(TorchFort, TrainTestDistributedMLPGPUCPU) {
-  training_test_distributed("configs/mlp2.yaml", {0, 1}, {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU}, {10, 2, 5}, false, false, false, false);
+  training_test_distributed("configs/mlp2.yaml", {0, 1}, {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU}, {10, 2, 5},
+                            false, false, false, false);
 }
 TEST(TorchFort, TrainTestDistributedMLPGPUReverseCPU) {
-  training_test_distributed("configs/mlp2.yaml", {1, 0}, {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU}, {10, 2, 5}, false, false, false, false);
+  training_test_distributed("configs/mlp2.yaml", {1, 0}, {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU}, {10, 2, 5},
+                            false, false, false, false);
 }
 TEST(TorchFort, TrainTestDistributedMLPCPUGPU) {
-  training_test_distributed("configs/mlp2.yaml", {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU}, {0, 1}, {10, 2, 5}, false, false, false, false);
+  training_test_distributed("configs/mlp2.yaml", {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU}, {0, 1}, {10, 2, 5},
+                            false, false, false, false);
 }
 TEST(TorchFort, TrainTestDistributedMLPCPUGPUReverse) {
-  training_test_distributed("configs/mlp2.yaml", {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU}, {1, 0}, {10, 2, 5}, false, false, false, false);
+  training_test_distributed("configs/mlp2.yaml", {TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU}, {1, 0}, {10, 2, 5},
+                            false, false, false, false);
 }
-TEST(TorchFort, TrainTestDistributedMLPGPUGPU) { training_test_distributed("configs/mlp2.yaml", {0, 1}, {0, 1}, {10, 10}, false, false, false, false); }
-TEST(TorchFort, TrainTestDistributedMLPGPUGPUReverse) { training_test_distributed("configs/mlp2.yaml", {0, 1}, {1, 0}, {10, 10}, false, false, false, false); }
+TEST(TorchFort, TrainTestDistributedMLPGPUGPU) {
+  training_test_distributed("configs/mlp2.yaml", {0, 1}, {0, 1}, {10, 10}, false, false, false, false);
+}
+TEST(TorchFort, TrainTestDistributedMLPGPUGPUReverse) {
+  training_test_distributed("configs/mlp2.yaml", {0, 1}, {1, 0}, {10, 10}, false, false, false, false);
+}
 #endif
 
 // Testing expected error cases
@@ -166,7 +175,6 @@ TEST(TorchFort, TrainTestDistributedMLPGPUGPUReverse) { training_test_distribute
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   MPI_Init(&argc, &argv);
-
 
   int result = RUN_ALL_TESTS();
   MPI_Finalize();

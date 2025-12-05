@@ -19,8 +19,8 @@
 #ifdef ENABLE_GPU
 #include <nccl.h>
 
-#include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAGuard.h>
+#include <c10/cuda/CUDAStream.h>
 #endif
 #include <torch/torch.h>
 
@@ -126,7 +126,8 @@ void Comm::allreduce(torch::Tensor& tensor, bool average) const {
   if (tensor.device().type() == torch::kCUDA) {
     if (tensor.device() != device) {
       std::stringstream ss;
-      ss << "allreduce called with tensor on device " << tensor.device() << " but the comm was initialized on device " << device << ".";
+      ss << "allreduce called with tensor on device " << tensor.device() << " but the comm was initialized on device "
+         << device << ".";
       THROW_INVALID_USAGE(ss.str());
     }
 
@@ -223,7 +224,8 @@ void Comm::broadcast(torch::Tensor& tensor, int root) const {
   if (tensor.device().type() == torch::kCUDA) {
     if (tensor.device() != device) {
       std::stringstream ss;
-      ss << "broadcast called with tensor on device " << tensor.device() << " but the comm was initialized on device " << device << ".";
+      ss << "broadcast called with tensor on device " << tensor.device() << " but the comm was initialized on device "
+         << device << ".";
       THROW_INVALID_USAGE(ss.str());
     }
 

@@ -32,19 +32,29 @@
 #include "test_utils.h"
 
 void training_test(const std::string& model_config, int dev_model, int dev_input, std::vector<int64_t> shape,
-                   bool should_fail_create, bool should_fail_train, bool should_fail_inference, bool check_result) {
+                   bool should_fail_create, bool should_fail_train, bool should_fail_inference, bool check_result,
+                   int dev_stream=-1) {
 
   std::string model_name = generate_random_name(10);
 
 #ifdef ENABLE_GPU
-  if (dev_model == 1 || dev_input == 1) {
+  if (dev_model == 1 || dev_input == 1 || dev_stream == 1) {
     int ngpu;
-    cudaGetDeviceCount(&ngpu);
+    CHECK_CUDA(cudaGetDeviceCount(&ngpu));
     if (ngpu < 2) {
       GTEST_SKIP() << "This test requires at least 2 GPUs. Skipping.";
     }
   }
 #endif
+
+  cudaStream_t stream = nullptr;
+#ifdef ENABLE_GPU
+  if (dev_stream != -1) {
+    CHECK_CUDA(cudaSetDevice(dev_stream));
+    CHECK_CUDA(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking));
+  }
+#endif
+
 
 #ifdef ENABLE_GPU
   if (dev_input != TORCHFORT_DEVICE_CPU) {
@@ -76,9 +86,15 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
   float* label_ptr = get_data_ptr(label, dev_input);
   float* output_ptr = get_data_ptr(output, dev_input);
 
+#ifdef ENABLE_GPU
+  if (stream) {
+    CHECK_CUDA(cudaStreamSynchronize(stream));
+  }
+#endif
+
   try {
     CHECK_TORCHFORT(torchfort_train(model_name.c_str(), input_ptr, shape.size(), shape.data(), label_ptr, shape.size(),
-                                    shape.data(), &loss_val, TORCHFORT_FLOAT, 0));
+                                    shape.data(), &loss_val, TORCHFORT_FLOAT, stream));
     if (should_fail_train) {
       FAIL() << "This test should fail train call, but did not.";
     }
@@ -99,9 +115,15 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
 
   if (!check_current_device(dev_input)) FAIL() << "GPU device switched by torchfort_train.";
 
+#ifdef ENABLE_GPU
+  if (stream) {
+    CHECK_CUDA(cudaStreamSynchronize(stream));
+  }
+#endif
+
   try {
     CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(), output_ptr,
-                                        shape.size(), shape.data(), TORCHFORT_FLOAT, 0));
+                                        shape.size(), shape.data(), TORCHFORT_FLOAT, stream));
     if (should_fail_inference) {
       FAIL() << "This test should fail inference call, but did not.";
     }
@@ -121,6 +143,12 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
   }
 
   if (!check_current_device(dev_input)) FAIL() << "GPU device switched by torchfort_inference.";
+
+#ifdef ENABLE_GPU
+  if (stream) {
+    CHECK_CUDA(cudaStreamSynchronize(stream));
+  }
+#endif
 
 #ifdef ENABLE_GPU
   if (dev_input != TORCHFORT_DEVICE_CPU) {
@@ -431,6 +459,7 @@ TEST(TorchFort, TrainTestMLPCPUGPU) {
   training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, 0, {10, 2, 5}, false, false, false, false);
 }
 TEST(TorchFort, TrainTestMLPGPUGPU) { training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, false, false, false); }
+TEST(TorchFort, TrainTestMLPGPUGPUStream) { training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, false, false, false, 0); }
 
 TEST(TorchFort, TrainTestMLPGPU1CPU) {
   training_test("configs/mlp2.yaml", 1, TORCHFORT_DEVICE_CPU, {10, 2, 5}, false, false, false, false);
@@ -510,6 +539,10 @@ TEST(TorchFort, TrainTestMLPCPUCPUNoFlattenDimError) {
 TEST(TorchFort, TrainTestMLPCPUCPU1DDimError) {
   training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU, {10}, false, true, true, false);
 }
+
+#ifdef ENABLE_GPU
+TEST(TorchFort, TrainTestMLPGPUGPUStreamWrongDeviceError) { training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, true, true, false, 1); }
+#endif
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

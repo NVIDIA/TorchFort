@@ -139,6 +139,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAK
 
 target_sources(${PROJECT_NAME}
   PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/cuda_wrap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/distributed.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/logging.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/model_state.cpp

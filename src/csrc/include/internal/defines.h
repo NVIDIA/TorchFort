@@ -23,6 +23,7 @@
 
 #include "internal/base_loss.h"
 #include "internal/base_model.h"
+#include "internal/cuda_wrap.h"
 #include "internal/exceptions.h"
 #include "internal/utils.h"
 
@@ -41,6 +42,17 @@
     cudaError_t err = call;                                                                                            \
     if (cudaSuccess != err) {                                                                                          \
       throw torchfort::CudaError(__FILE__, __LINE__, cudaGetErrorString(err));                                         \
+    }                                                                                                                  \
+  } while (false)
+
+#define CHECK_CUDA_DRV(call)                                                                                           \
+  do {                                                                                                                 \
+    if (!cuFnTable.initialized) {initCuFunctionTable();}                                                               \
+    CUresult err = cuFnTable.pfn_##call;                                                                               \
+    if (CUDA_SUCCESS != err) {                                                                                         \
+      const char* error_str;                                                                                           \
+      cuFnTable.pfn_cuGetErrorString(err, &error_str);                                                                 \
+      throw torchfort::CudaError(__FILE__, __LINE__, error_str);                                                       \
     }                                                                                                                  \
   } while (false)
 
@@ -71,6 +83,12 @@
       exit(EXIT_FAILURE);                                                                                              \
     }                                                                                                                  \
   } while (false)
+
+#define IS_CUDA_DRV_FUNC_AVAILABLE(symbol)                                                                             \
+  ([&]() { if (!cuFnTable.initialized) {initCuFunctionTable();}                                                        \
+    return cuFnTable.pfn_##symbol != nullptr;                                                                          \
+  })()
+
 
 #define BEGIN_MODEL_REGISTRY                                                                                           \
   static std::unordered_map<std::string, std::function<std::shared_ptr<BaseModel>()>> model_registry {

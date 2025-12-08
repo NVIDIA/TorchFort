@@ -74,7 +74,8 @@ void training_test_distributed(const std::string& model_config, std::vector<int>
     }
   }
 
-  if (!check_current_device(dev_input[rank])) FAIL() << "GPU device switched by torchfort_create_distributed_model.";
+  if (!check_current_device(dev_input[rank]))
+    FAIL() << "GPU device switched by torchfort_create_distributed_model.";
 
   auto input = generate_random<float>(shape);
   auto label = generate_random<float>(shape);
@@ -106,7 +107,8 @@ void training_test_distributed(const std::string& model_config, std::vector<int>
     }
   }
 
-  if (!check_current_device(dev_input[rank])) FAIL() << "GPU device switched by torchfort_train.";
+  if (!check_current_device(dev_input[rank]))
+    FAIL() << "GPU device switched by torchfort_train.";
 
   try {
     CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(), output_ptr,
@@ -129,7 +131,8 @@ void training_test_distributed(const std::string& model_config, std::vector<int>
     }
   }
 
-  if (!check_current_device(dev_input[rank])) FAIL() << "GPU device switched by torchfort_inference.";
+  if (!check_current_device(dev_input[rank]))
+    FAIL() << "GPU device switched by torchfort_inference.";
 
 #ifdef ENABLE_GPU
   if (dev_input[rank] != TORCHFORT_DEVICE_CPU) {

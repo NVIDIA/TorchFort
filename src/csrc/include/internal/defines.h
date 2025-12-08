@@ -47,7 +47,9 @@
 
 #define CHECK_CUDA_DRV(call)                                                                                           \
   do {                                                                                                                 \
-    if (!cuFnTable.initialized) {initCuFunctionTable();}                                                               \
+    if (!cuFnTable.initialized) {                                                                                      \
+      initCuFunctionTable();                                                                                           \
+    }                                                                                                                  \
     CUresult err = cuFnTable.pfn_##call;                                                                               \
     if (CUDA_SUCCESS != err) {                                                                                         \
       const char* error_str;                                                                                           \
@@ -85,10 +87,12 @@
   } while (false)
 
 #define IS_CUDA_DRV_FUNC_AVAILABLE(symbol)                                                                             \
-  ([&]() { if (!cuFnTable.initialized) {initCuFunctionTable();}                                                        \
+  ([&]() {                                                                                                             \
+    if (!cuFnTable.initialized) {                                                                                      \
+      initCuFunctionTable();                                                                                           \
+    }                                                                                                                  \
     return cuFnTable.pfn_##symbol != nullptr;                                                                          \
   })()
-
 
 #define BEGIN_MODEL_REGISTRY                                                                                           \
   static std::unordered_map<std::string, std::function<std::shared_ptr<BaseModel>()>> model_registry {

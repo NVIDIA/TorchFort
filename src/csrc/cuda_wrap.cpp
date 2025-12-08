@@ -22,32 +22,32 @@
 #include "internal/defines.h"
 
 #if CUDART_VERSION >= 13000
-#define LOAD_SYM(symbol, version, optional)                                                                   \
-  do {                                                                                                        \
-    cudaDriverEntryPointQueryResult driverStatus = cudaDriverEntryPointSymbolNotFound;                        \
+#define LOAD_SYM(symbol, version, optional)                                                                            \
+  do {                                                                                                                 \
+    cudaDriverEntryPointQueryResult driverStatus = cudaDriverEntryPointSymbolNotFound;                                 \
     cudaError_t err = cudaGetDriverEntryPointByVersion(#symbol, (void**)(&cuFnTable.pfn_##symbol), version,   \
-                                                       cudaEnableDefault, &driverStatus));                    \
-    if ((driverStatus != cudaDriverEntryPointSuccess || err != cudaSuccess) && !optional) {                   \
-      THROW_CUDA_ERROR("cudaGetDriverEntryPointByVersion failed.");                                           \
-    }                                                                                                         \
+                                                       cudaEnableDefault, &driverStatus));                             \
+    if ((driverStatus != cudaDriverEntryPointSuccess || err != cudaSuccess) && !optional) {                            \
+      THROW_CUDA_ERROR("cudaGetDriverEntryPointByVersion failed.");                                                    \
+    }                                                                                                                  \
   } while (false)
 #elif CUDART_VERSION >= 12000
-#define LOAD_SYM(symbol, version, optional)                                                                   \
-  do {                                                                                                        \
-    cudaDriverEntryPointQueryResult driverStatus = cudaDriverEntryPointSymbolNotFound;                        \
-    cudaError_t err = cudaGetDriverEntryPoint(#symbol, (void**)(&cuFnTable.pfn_##symbol), cudaEnableDefault,  \
-                                              &driverStatus);                                                 \
-    if ((driverStatus != cudaDriverEntryPointSuccess || err != cudaSuccess) && !optional) {                   \
-      THROW_CUDA_ERROR("cudaGetDriverEntryPoint failed.");                                                    \
-    }                                                                                                         \
+#define LOAD_SYM(symbol, version, optional)                                                                            \
+  do {                                                                                                                 \
+    cudaDriverEntryPointQueryResult driverStatus = cudaDriverEntryPointSymbolNotFound;                                 \
+    cudaError_t err =                                                                                                  \
+        cudaGetDriverEntryPoint(#symbol, (void**)(&cuFnTable.pfn_##symbol), cudaEnableDefault, &driverStatus);         \
+    if ((driverStatus != cudaDriverEntryPointSuccess || err != cudaSuccess) && !optional) {                            \
+      THROW_CUDA_ERROR("cudaGetDriverEntryPoint failed.");                                                             \
+    }                                                                                                                  \
   } while (false)
 #else
-#define LOAD_SYM(symbol, version, optional)                                                                   \
-  do {                                                                                                        \
-    cudaError_t err = cudaGetDriverEntryPoint(#symbol, (void**)(&cuFnTable.pfn_##symbol), cudaEnableDefault); \
-    if (err != cudaSuccess && !optional) {                                                                    \
-      THROW_CUDA_ERROR("cudaGetDriverEntryPoint failed.");                                                    \
-    }                                                                                                         \
+#define LOAD_SYM(symbol, version, optional)                                                                            \
+  do {                                                                                                                 \
+    cudaError_t err = cudaGetDriverEntryPoint(#symbol, (void**)(&cuFnTable.pfn_##symbol), cudaEnableDefault);          \
+    if (err != cudaSuccess && !optional) {                                                                             \
+      THROW_CUDA_ERROR("cudaGetDriverEntryPoint failed.");                                                             \
+    }                                                                                                                  \
   } while (false)
 #endif
 

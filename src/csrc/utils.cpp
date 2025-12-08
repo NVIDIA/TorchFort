@@ -130,7 +130,8 @@ int getStreamDevice(cudaStream_t stream) {
   return (int)device;
 }
 
-void set_device_and_stream(c10::cuda::OptionalCUDAStreamGuard& stream_guard, c10::cuda::OptionalCUDAGuard& cuda_guard, torch::Device device, cudaStream_t ext_stream) {
+void set_device_and_stream(c10::cuda::OptionalCUDAStreamGuard& stream_guard, c10::cuda::OptionalCUDAGuard& cuda_guard,
+                           torch::Device device, cudaStream_t ext_stream) {
   if (device.is_cuda()) {
     cuda_guard.set_device(device);
     if (ext_stream) {
@@ -138,7 +139,8 @@ void set_device_and_stream(c10::cuda::OptionalCUDAStreamGuard& stream_guard, c10
       ext_stream_device = getStreamDevice(ext_stream);
       if (ext_stream_device != device.index()) {
         std::stringstream ss;
-        ss << "The provided external stream is on device " << get_device(ext_stream_device) << " but the model is on device " << device << ".";
+        ss << "The provided external stream is on device " << get_device(ext_stream_device)
+           << " but the model is on device " << device << ".";
         THROW_INVALID_USAGE(ss.str());
       }
       stream_guard.reset_stream(c10::cuda::getStreamFromExternal(ext_stream, device.index()));

@@ -33,7 +33,7 @@
 
 void training_test(const std::string& model_config, int dev_model, int dev_input, std::vector<int64_t> shape,
                    bool should_fail_create, bool should_fail_train, bool should_fail_inference, bool check_result,
-                   int dev_stream=-1) {
+                   int dev_stream = -1) {
 
   std::string model_name = generate_random_name(10);
 
@@ -74,7 +74,8 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
     }
   }
 
-  if (!check_current_device(dev_input)) FAIL() << "GPU device switched by torchfort_create_model.";
+  if (!check_current_device(dev_input))
+    FAIL() << "GPU device switched by torchfort_create_model.";
 
   auto input = generate_random<float>(shape);
   auto label = generate_random<float>(shape);
@@ -112,7 +113,8 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
     }
   }
 
-  if (!check_current_device(dev_input)) FAIL() << "GPU device switched by torchfort_train.";
+  if (!check_current_device(dev_input))
+    FAIL() << "GPU device switched by torchfort_train.";
 
 #ifdef ENABLE_GPU
   if (stream) {
@@ -141,7 +143,8 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
     }
   }
 
-  if (!check_current_device(dev_input)) FAIL() << "GPU device switched by torchfort_inference.";
+  if (!check_current_device(dev_input))
+    FAIL() << "GPU device switched by torchfort_inference.";
 
 #ifdef ENABLE_GPU
   if (stream) {
@@ -193,7 +196,8 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
 
   CHECK_TORCHFORT(torchfort_create_model(model_name.c_str(), model_config.c_str(), dev_model));
 
-  if (!check_current_device(dev_input)) FAIL() << "GPU device switched by torchfort_create_model.";
+  if (!check_current_device(dev_input))
+    FAIL() << "GPU device switched by torchfort_create_model.";
 
   std::vector<int64_t> shape = {10, 10};
   std::vector<std::vector<float>> inputs(2), labels(2), outputs(2);
@@ -231,7 +235,8 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
         torchfort_tensor_list_add_tensor(outputs_tl, output_ptrs[i], shape.size(), shape.data(), TORCHFORT_FLOAT));
   }
 
-  if (!check_current_device(dev_input)) FAIL() << "GPU device switched by torchfort_tensor_list_add_tensor.";
+  if (!check_current_device(dev_input))
+    FAIL() << "GPU device switched by torchfort_tensor_list_add_tensor.";
 
   torchfort_tensor_list_t extra_args_tl;
   std::vector<float*> extra_args_ptrs(2);
@@ -243,8 +248,6 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
                                                        TORCHFORT_FLOAT));
     }
   }
-
-
 
   try {
     CHECK_TORCHFORT(torchfort_train_multiarg(model_name.c_str(), inputs_tl, labels_tl, &loss_val,
@@ -260,7 +263,8 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
     }
   }
 
-  if (!check_current_device(dev_input)) FAIL() << "GPU device switched by torchfort_train_multiarg.";
+  if (!check_current_device(dev_input))
+    FAIL() << "GPU device switched by torchfort_train_multiarg.";
 
   try {
     CHECK_TORCHFORT(torchfort_inference_multiarg(model_name.c_str(), inputs_tl, outputs_tl, 0));
@@ -275,7 +279,8 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
     }
   }
 
-  if (!check_current_device(dev_input)) FAIL() << "GPU device switched by torchfort_inference_multiarg.";
+  if (!check_current_device(dev_input))
+    FAIL() << "GPU device switched by torchfort_inference_multiarg.";
 
   // Check inference output
   if (check_result) {
@@ -464,7 +469,9 @@ TEST(TorchFort, TrainTestMLPCPUGPU) {
   training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, 0, {10, 2, 5}, false, false, false, false);
 }
 TEST(TorchFort, TrainTestMLPGPUGPU) { training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, false, false, false); }
-TEST(TorchFort, TrainTestMLPGPUGPUStream) { training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, false, false, false, 0); }
+TEST(TorchFort, TrainTestMLPGPUGPUStream) {
+  training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, false, false, false, 0);
+}
 
 TEST(TorchFort, TrainTestMLPGPU1CPU) {
   training_test("configs/mlp2.yaml", 1, TORCHFORT_DEVICE_CPU, {10, 2, 5}, false, false, false, false);
@@ -472,8 +479,12 @@ TEST(TorchFort, TrainTestMLPGPU1CPU) {
 TEST(TorchFort, TrainTestMLPCPUGPU1) {
   training_test("configs/mlp2.yaml", TORCHFORT_DEVICE_CPU, 1, {10, 2, 5}, false, false, false, false);
 }
-TEST(TorchFort, TrainTestMLPGPU0GPU1) { training_test("configs/mlp2.yaml", 0, 1, {10, 10}, false, false, false, false); }
-TEST(TorchFort, TrainTestMLPGPU1GPU0) { training_test("configs/mlp2.yaml", 1, 0, {10, 10}, false, false, false, false); }
+TEST(TorchFort, TrainTestMLPGPU0GPU1) {
+  training_test("configs/mlp2.yaml", 0, 1, {10, 10}, false, false, false, false);
+}
+TEST(TorchFort, TrainTestMLPGPU1GPU0) {
+  training_test("configs/mlp2.yaml", 1, 0, {10, 10}, false, false, false, false);
+}
 TEST(TorchFort, TrainTestTorchScriptCPUGPU) {
   training_test("configs/torchscript.yaml", TORCHFORT_DEVICE_CPU, 0, {10, 2, 10}, false, false, false, true);
 }
@@ -546,7 +557,9 @@ TEST(TorchFort, TrainTestMLPCPUCPU1DDimError) {
 }
 
 #ifdef ENABLE_GPU
-TEST(TorchFort, TrainTestMLPGPUGPUStreamWrongDeviceError) { training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, true, true, false, 1); }
+TEST(TorchFort, TrainTestMLPGPUGPUStreamWrongDeviceError) {
+  training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, true, true, false, 1);
+}
 #endif
 
 int main(int argc, char* argv[]) {

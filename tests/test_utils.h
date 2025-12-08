@@ -105,3 +105,13 @@ template <typename T> void copy_from_host_vector(T* data_ptr, std::vector<T>& da
   CHECK_CUDA(cudaMemcpy(data_ptr, data.data(), data.size() * sizeof(T(0)), cudaMemcpyHostToDevice));
 }
 #endif
+
+bool check_current_device(int expected_device) {
+#ifdef ENABLE_GPU
+  int device;
+  CHECK_CUDA(cudaGetDevice(&device));
+
+  return expected_device == TORCHFORT_DEVICE_CPU || device == expected_device;
+#endif
+  return true;
+}

@@ -22,6 +22,10 @@
 #include <vector>
 
 #include <c10/core/TensorOptions.h>
+#ifdef ENABLE_GPU
+#include <c10/cuda/CUDAGuard.h>
+#include <c10/cuda/CUDAStream.h>
+#endif
 #include <torch/torch.h>
 
 #ifdef ENABLE_GPU
@@ -114,4 +118,9 @@ std::string print_tensor_shape(torch::Tensor tensor);
 // Helper function to get the lrs
 std::vector<double> get_current_lrs(const char* name);
 
+#ifdef ENABLE_GPU
+// Helper function to set the device and stream with device checks
+void set_device_and_stream(c10::cuda::OptionalCUDAStreamGuard& stream_guard, c10::cuda::OptionalCUDAGuard& cuda_guard,
+                           torch::Device device, cudaStream_t ext_stream);
+#endif
 } // namespace torchfort

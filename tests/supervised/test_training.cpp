@@ -55,7 +55,6 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
   }
 #endif
 
-
 #ifdef ENABLE_GPU
   if (dev_input != TORCHFORT_DEVICE_CPU) {
     CHECK_CUDA(cudaSetDevice(dev_input));
@@ -163,6 +162,12 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
   free_data_ptr(input_ptr, dev_input);
   free_data_ptr(label_ptr, dev_input);
   free_data_ptr(output_ptr, dev_input);
+
+#ifdef ENABLE_GPU
+  if (stream) {
+    CHECK_CUDA(cudaStreamDestroy(stream));
+  }
+#endif
 }
 
 void training_test_multiarg(const std::string& model_config, int dev_model, int dev_input, bool use_extra_args,

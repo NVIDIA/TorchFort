@@ -20,7 +20,15 @@
 #include <string>
 #include <vector>
 
+#ifdef ENABLE_GPU
+#include <c10/cuda/CUDAGuard.h>
+#include <c10/cuda/CUDAStream.h>
+#endif
 #include <torch/torch.h>
+
+#ifdef ENABLE_GPU
+#include <cuda_runtime.h>
+#endif
 
 #include "internal/defines.h"
 #include "internal/model_pack.h"
@@ -101,5 +109,44 @@ std::vector<double> get_current_lrs(const char* name) {
   }
   return learnings_rates;
 }
+
+#ifdef ENABLE_GPU
+int getStreamDevice(cudaStream_t stream) {
+  CUdevice device;
+
+#if CUDART_VERSION >= 12080
+  if (IS_CUDA_DRV_FUNC_AVAILABLE(cuStreamGetDevice)) {
+    CHECK_CUDA_DRV(cuStreamGetDevice((CUstream)stream, &device));
+    return (int)device;
+  }
+#endif
+
+  CUcontext streamCtx, savedCtx;
+  CHECK_CUDA_DRV(cuCtxGetCurrent(&savedCtx));
+  CHECK_CUDA_DRV(cuStreamGetCtx((CUstream)stream, &streamCtx));
+  CHECK_CUDA_DRV(cuCtxSetCurrent(streamCtx));
+  CHECK_CUDA_DRV(cuCtxGetDevice(&device));
+  CHECK_CUDA_DRV(cuCtxSetCurrent(savedCtx));
+  return (int)device;
+}
+
+void set_device_and_stream(c10::cuda::OptionalCUDAStreamGuard& stream_guard, c10::cuda::OptionalCUDAGuard& cuda_guard,
+                           torch::Device device, cudaStream_t ext_stream) {
+  if (device.is_cuda()) {
+    cuda_guard.set_device(device);
+    if (ext_stream) {
+      int ext_stream_device;
+      ext_stream_device = getStreamDevice(ext_stream);
+      if (ext_stream_device != device.index()) {
+        std::stringstream ss;
+        ss << "The provided external stream is on device " << get_device(ext_stream_device)
+           << " but the model is on device " << device << ".";
+        THROW_INVALID_USAGE(ss.str());
+      }
+      stream_guard.reset_stream(c10::cuda::getStreamFromExternal(ext_stream, device.index()));
+    }
+  }
+}
+#endif
 
 } // namespace torchfort

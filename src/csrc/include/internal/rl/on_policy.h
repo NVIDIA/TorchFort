@@ -30,6 +30,7 @@
 
 #include "internal/defines.h"
 #include "internal/logging.h"
+#include "internal/utils.h"
 
 namespace torchfort {
 
@@ -94,14 +95,10 @@ static void update_rollout_buffer(const char* name, T* state, size_t state_dim, 
   auto model_device = registry[name]->modelDevice();
   auto rb_device = registry[name]->rbDevice();
 #ifdef ENABLE_GPU
-  c10::cuda::OptionalCUDAStreamGuard guard;
-  if (model_device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
-    guard.reset_stream(stream);
-  } else if (rb_device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
-    guard.reset_stream(stream);
-  }
+  c10::cuda::OptionalCUDAStreamGuard stream_guard;
+  c10::cuda::OptionalCUDAGuard cuda_guard;
+  set_device_and_stream(stream_guard, cuda_guard, model_device, ext_stream);
+  set_device_and_stream(stream_guard, cuda_guard, rb_device, ext_stream);
 #endif
 
   // get tensors and copy:
@@ -127,14 +124,10 @@ static void update_rollout_buffer(const char* name, T* state, size_t state_dim, 
   auto model_device = registry[name]->modelDevice();
   auto rb_device = registry[name]->rbDevice();
 #ifdef ENABLE_GPU
-  c10::cuda::OptionalCUDAStreamGuard guard;
-  if (model_device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
-    guard.reset_stream(stream);
-  } else if (rb_device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, rb_device.index());
-    guard.reset_stream(stream);
-  }
+  c10::cuda::OptionalCUDAStreamGuard stream_guard;
+  c10::cuda::OptionalCUDAGuard cuda_guard;
+  set_device_and_stream(stream_guard, cuda_guard, model_device, ext_stream);
+  set_device_and_stream(stream_guard, cuda_guard, rb_device, ext_stream);
 #endif
 
   // get tensors and copy:
@@ -157,12 +150,10 @@ static void predict_explore(const char* name, T* state, size_t state_dim, int64_
 
 #ifdef ENABLE_GPU
   // device and stream handling
-  c10::cuda::OptionalCUDAStreamGuard guard;
   auto model_device = registry[name]->modelDevice();
-  if (model_device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
-    guard.reset_stream(stream);
-  }
+  c10::cuda::OptionalCUDAStreamGuard stream_guard;
+  c10::cuda::OptionalCUDAGuard cuda_guard;
+  set_device_and_stream(stream_guard, cuda_guard, model_device, ext_stream);
 #endif
 
   // create tensors
@@ -194,12 +185,10 @@ static void predict(const char* name, T* state, size_t state_dim, int64_t* state
 
 #ifdef ENABLE_GPU
   // device and stream handling
-  c10::cuda::OptionalCUDAStreamGuard guard;
+  c10::cuda::OptionalCUDAStreamGuard stream_guard;
+  c10::cuda::OptionalCUDAGuard cuda_guard;
   auto model_device = registry[name]->modelDevice();
-  if (model_device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
-    guard.reset_stream(stream);
-  }
+  set_device_and_stream(stream_guard, cuda_guard, model_device, ext_stream);
 #endif
 
   // create tensors
@@ -232,12 +221,10 @@ static void policy_evaluate(const char* name, T* state, size_t state_dim, int64_
 
 #ifdef ENABLE_GPU
   // device and stream handling
-  c10::cuda::OptionalCUDAStreamGuard guard;
   auto model_device = registry[name]->modelDevice();
-  if (model_device.is_cuda()) {
-    auto stream = c10::cuda::getStreamFromExternal(ext_stream, model_device.index());
-    guard.reset_stream(stream);
-  }
+  c10::cuda::OptionalCUDAStreamGuard stream_guard;
+  c10::cuda::OptionalCUDAGuard cuda_guard;
+  set_device_and_stream(stream_guard, cuda_guard, model_device, ext_stream);
 #endif
 
   // create tensors

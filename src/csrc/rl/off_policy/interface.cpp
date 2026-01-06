@@ -183,7 +183,6 @@ torchfort_result_t torchfort_rl_off_policy_train_step(const char* name, float* p
   c10::cuda::OptionalCUDAStreamGuard stream_guard;
   c10::cuda::OptionalCUDAGuard cuda_guard;
   set_device_and_stream(stream_guard, cuda_guard, model_device, ext_stream);
-  set_device_and_stream(stream_guard, cuda_guard, rb_device, ext_stream);
 #endif
 
   try {

@@ -138,8 +138,7 @@ public:
   }
 
   // Begin graph capture - call this after prepare() returns CAPTURE and after any pre-capture work
-  void begin_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard,
-                     torch::Device device) {
+  void begin_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard, torch::Device device) {
 
     c10::cuda::CUDAGuard cuda_guard(device);
 
@@ -153,9 +152,8 @@ public:
   }
 
   // Finalize after forward pass - handles capture end or warmup increment
-  void finalize(GraphAction action, cudaStream_t user_stream,
-                c10::cuda::OptionalCUDAStreamGuard& stream_guard, torch::Device device,
-                const std::vector<torch::Tensor>& outputs) {
+  void finalize(GraphAction action, cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard,
+                torch::Device device, const std::vector<torch::Tensor>& outputs) {
     if (action == GraphAction::CAPTURE) {
       end_capture(user_stream, stream_guard, device);
       static_outputs_ = outputs;
@@ -208,8 +206,7 @@ private:
     }
   }
 
-  void end_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard,
-                   torch::Device device) {
+  void end_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard, torch::Device device) {
     c10::cuda::CUDAGuard cuda_guard(device);
     CHECK_CUDA(cudaStreamEndCapture(capture_stream_, &graph_.get()));
     instantiate_graph();
@@ -270,8 +267,7 @@ public:
   }
 
   // Begin graph capture - call this after prepare() returns CAPTURE and after any pre-capture work
-  void begin_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard,
-                     torch::Device device) {
+  void begin_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard, torch::Device device) {
     c10::cuda::CUDAGuard cuda_guard(device);
 
     // Create a non-blocking stream for graph capture
@@ -284,8 +280,8 @@ public:
   }
 
   // Finalize after forward+loss+backward pass - handles capture end or warmup increment
-  void finalize(GraphAction action, cudaStream_t user_stream,
-                c10::cuda::OptionalCUDAStreamGuard& stream_guard, torch::Device device, const torch::Tensor& loss) {
+  void finalize(GraphAction action, cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard,
+                torch::Device device, const torch::Tensor& loss) {
     if (action == GraphAction::CAPTURE) {
       end_capture(user_stream, stream_guard, device);
       static_loss_ = loss;
@@ -352,8 +348,7 @@ private:
     }
   }
 
-  void end_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard,
-                   torch::Device device) {
+  void end_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard, torch::Device device) {
     c10::cuda::CUDAGuard cuda_guard(device);
     CHECK_CUDA(cudaStreamEndCapture(capture_stream_, &graph_.get()));
     instantiate_graph();

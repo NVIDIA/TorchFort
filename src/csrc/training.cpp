@@ -79,8 +79,7 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
     action = graph_state->prepare(inputs->tensors);
 
     if (action == GraphAction::CAPTURE) {
-      graph_state->begin_capture(models[name].graph_state->capture_stream(), ext_stream, guard,
-                                 model->device().index());
+      graph_state->begin_capture(ext_stream, stream_guard, model->device());
     }
   }
 #endif
@@ -92,8 +91,7 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
 
 #ifdef ENABLE_GPU
   if (graph_state) {
-    graph_state->finalize(action, models[name].graph_state->capture_stream(), ext_stream, guard,
-                          model->device().index(), results);
+    graph_state->finalize(action, ext_stream, stream_guard, model->device(), results);
 
     if (action == GraphAction::CAPTURE || action == GraphAction::REPLAY) {
       graph_state->launch(ext_stream);
@@ -186,7 +184,7 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
 
 #ifdef ENABLE_GPU
   if (action == GraphAction::CAPTURE) {
-    graph_state->begin_capture(models[name].graph_state->capture_stream(), ext_stream, guard, model->device().index());
+    graph_state->begin_capture(ext_stream, stream_guard, model->device());
   }
 #endif
 
@@ -200,8 +198,7 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
 
 #ifdef ENABLE_GPU
   if (graph_state) {
-    graph_state->finalize(action, models[name].graph_state->capture_stream(), ext_stream, guard,
-                          model->device().index(), loss);
+    graph_state->finalize(action, ext_stream, stream_guard, model->device(), loss);
 
     if (action == GraphAction::CAPTURE || action == GraphAction::REPLAY) {
       graph_state->launch(ext_stream);

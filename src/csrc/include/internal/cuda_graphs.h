@@ -138,20 +138,26 @@ public:
   }
 
   // Begin graph capture - call this after prepare() returns CAPTURE and after any pre-capture work
-  void begin_capture(cudaStream_t capture_stream, cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& guard,
-                     int device_index) {
+  void begin_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard,
+                     torch::Device device) {
+
+    c10::cuda::CUDAGuard cuda_guard(device);
+
+    // Create a non-blocking stream for graph capture
+    CHECK_CUDA(cudaStreamCreateWithFlags(&capture_stream_, cudaStreamNonBlocking));
+
     CHECK_CUDA(cudaStreamSynchronize(user_stream));
-    auto capture_c10_stream = c10::cuda::getStreamFromExternal(capture_stream, device_index);
-    guard.reset_stream(capture_c10_stream);
-    CHECK_CUDA(cudaStreamBeginCapture(capture_stream, cudaStreamCaptureModeGlobal));
+    auto capture_c10_stream = c10::cuda::getStreamFromExternal(capture_stream_, device.index());
+    stream_guard.reset_stream(capture_c10_stream);
+    CHECK_CUDA(cudaStreamBeginCapture(capture_stream_, cudaStreamCaptureModeGlobal));
   }
 
   // Finalize after forward pass - handles capture end or warmup increment
-  void finalize(GraphAction action, cudaStream_t capture_stream, cudaStream_t user_stream,
-                c10::cuda::OptionalCUDAStreamGuard& guard, int device_index,
+  void finalize(GraphAction action, cudaStream_t user_stream,
+                c10::cuda::OptionalCUDAStreamGuard& stream_guard, torch::Device device,
                 const std::vector<torch::Tensor>& outputs) {
     if (action == GraphAction::CAPTURE) {
-      end_capture(capture_stream, user_stream, guard, device_index);
+      end_capture(user_stream, stream_guard, device);
       static_outputs_ = outputs;
     } else if (action == GraphAction::WARMUP) {
       warmup_count_++;
@@ -202,13 +208,16 @@ private:
     }
   }
 
-  void end_capture(cudaStream_t capture_stream, cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& guard,
-                   int device_index) {
-    CHECK_CUDA(cudaStreamEndCapture(capture_stream, &graph_.get()));
+  void end_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard,
+                   torch::Device device) {
+    c10::cuda::CUDAGuard cuda_guard(device);
+    CHECK_CUDA(cudaStreamEndCapture(capture_stream_, &graph_.get()));
     instantiate_graph();
     captured_ = true;
-    auto user_c10_stream = c10::cuda::getStreamFromExternal(user_stream, device_index);
-    guard.reset_stream(user_c10_stream);
+    auto user_c10_stream = c10::cuda::getStreamFromExternal(user_stream, device.index());
+    stream_guard.reset_stream(user_c10_stream);
+
+    CHECK_CUDA(cudaStreamDestroy(capture_stream_));
   }
 
   void instantiate_graph() {
@@ -233,6 +242,7 @@ private:
   CudaGraph graph_;
   CudaGraphExec graph_exec_;
   std::vector<torch::Tensor> static_outputs_;
+  cudaStream_t capture_stream_ = nullptr;
 };
 
 // Graph state for training (single graph for forward + loss + backward)
@@ -260,19 +270,24 @@ public:
   }
 
   // Begin graph capture - call this after prepare() returns CAPTURE and after any pre-capture work
-  void begin_capture(cudaStream_t capture_stream, cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& guard,
-                     int device_index) {
+  void begin_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard,
+                     torch::Device device) {
+    c10::cuda::CUDAGuard cuda_guard(device);
+
+    // Create a non-blocking stream for graph capture
+    CHECK_CUDA(cudaStreamCreateWithFlags(&capture_stream_, cudaStreamNonBlocking));
+
     CHECK_CUDA(cudaStreamSynchronize(user_stream));
-    auto capture_c10_stream = c10::cuda::getStreamFromExternal(capture_stream, device_index);
-    guard.reset_stream(capture_c10_stream);
-    CHECK_CUDA(cudaStreamBeginCapture(capture_stream, cudaStreamCaptureModeGlobal));
+    auto capture_c10_stream = c10::cuda::getStreamFromExternal(capture_stream_, device.index());
+    stream_guard.reset_stream(capture_c10_stream);
+    CHECK_CUDA(cudaStreamBeginCapture(capture_stream_, cudaStreamCaptureModeGlobal));
   }
 
   // Finalize after forward+loss+backward pass - handles capture end or warmup increment
-  void finalize(GraphAction action, cudaStream_t capture_stream, cudaStream_t user_stream,
-                c10::cuda::OptionalCUDAStreamGuard& guard, int device_index, const torch::Tensor& loss) {
+  void finalize(GraphAction action, cudaStream_t user_stream,
+                c10::cuda::OptionalCUDAStreamGuard& stream_guard, torch::Device device, const torch::Tensor& loss) {
     if (action == GraphAction::CAPTURE) {
-      end_capture(capture_stream, user_stream, guard, device_index);
+      end_capture(user_stream, stream_guard, device);
       static_loss_ = loss;
     } else if (action == GraphAction::WARMUP) {
       warmup_count_++;
@@ -337,13 +352,16 @@ private:
     }
   }
 
-  void end_capture(cudaStream_t capture_stream, cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& guard,
-                   int device_index) {
-    CHECK_CUDA(cudaStreamEndCapture(capture_stream, &graph_.get()));
+  void end_capture(cudaStream_t user_stream, c10::cuda::OptionalCUDAStreamGuard& stream_guard,
+                   torch::Device device) {
+    c10::cuda::CUDAGuard cuda_guard(device);
+    CHECK_CUDA(cudaStreamEndCapture(capture_stream_, &graph_.get()));
     instantiate_graph();
     captured_ = true;
-    auto user_c10_stream = c10::cuda::getStreamFromExternal(user_stream, device_index);
-    guard.reset_stream(user_c10_stream);
+    auto user_c10_stream = c10::cuda::getStreamFromExternal(user_stream, device.index());
+    stream_guard.reset_stream(user_c10_stream);
+
+    CHECK_CUDA(cudaStreamDestroy(capture_stream_));
   }
 
   void instantiate_graph() {
@@ -368,6 +386,7 @@ private:
   CudaGraph graph_;
   CudaGraphExec graph_exec_;
   torch::Tensor static_loss_;
+  cudaStream_t capture_stream_ = nullptr;
 };
 
 // Graph state for a model, including the capture stream
@@ -376,28 +395,8 @@ public:
   InferenceGraphState inference{"inference"};
   TrainingGraphState training{"training"};
 
-  ModelGraphState(int device_index = 0) : capture_stream_(nullptr), device_index_(device_index) {
-    // Create a non-blocking stream for graph capture
-    CHECK_CUDA(cudaSetDevice(device_index_));
-    CHECK_CUDA(cudaStreamCreateWithFlags(&capture_stream_, cudaStreamNonBlocking));
-  }
-
-  ~ModelGraphState() {
-    if (capture_stream_) {
-      cudaStreamDestroy(capture_stream_);
-    }
-  }
-
   // Non-copyable
-  ModelGraphState(const ModelGraphState&) = delete;
   ModelGraphState& operator=(const ModelGraphState&) = delete;
-
-  cudaStream_t capture_stream() const { return capture_stream_; }
-  int device_index() const { return device_index_; }
-
-private:
-  cudaStream_t capture_stream_;
-  int device_index_;
 };
 
 #endif

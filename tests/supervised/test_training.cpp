@@ -33,7 +33,7 @@
 
 void training_test(const std::string& model_config, int dev_model, int dev_input, std::vector<int64_t> shape,
                    bool should_fail_create, bool should_fail_train, bool should_fail_inference, bool check_result,
-                   int dev_stream = -1) {
+                   int n_train_steps = 1, int n_inference_steps = 1, int dev_stream = -1) {
 
   std::string model_name = generate_random_name(10);
 
@@ -93,8 +93,20 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
 #endif
 
   try {
-    CHECK_TORCHFORT(torchfort_train(model_name.c_str(), input_ptr, shape.size(), shape.data(), label_ptr, shape.size(),
-                                    shape.data(), &loss_val, TORCHFORT_FLOAT, stream));
+    for (int i = 0; i < n_train_steps; ++i) {
+      auto tmp_input = generate_random<float>(shape);
+      auto tmp_label = generate_random<float>(shape);
+      std::copy(tmp_input.begin(), tmp_input.end(), input.begin());
+      std::copy(tmp_label.begin(), tmp_label.end(), label.begin());
+#ifdef ENABLE_GPU
+      if (dev_input != TORCHFORT_DEVICE_CPU) {
+        copy_from_host_vector(input_ptr, input);
+        copy_from_host_vector(label_ptr, label);
+      }
+#endif
+      CHECK_TORCHFORT(torchfort_train(model_name.c_str(), input_ptr, shape.size(), shape.data(), label_ptr, shape.size(),
+                                      shape.data(), &loss_val, TORCHFORT_FLOAT, stream));
+    }
     if (should_fail_train) {
       FAIL() << "This test should fail train call, but did not.";
     }
@@ -123,8 +135,17 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
 #endif
 
   try {
-    CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(), output_ptr,
-                                        shape.size(), shape.data(), TORCHFORT_FLOAT, stream));
+    for (int i = 0; i < n_inference_steps; ++i) {
+      auto tmp_input = generate_random<float>(shape);
+      std::copy(tmp_input.begin(), tmp_input.end(), input.begin());
+#ifdef ENABLE_GPU
+      if (dev_input != TORCHFORT_DEVICE_CPU) {
+        copy_from_host_vector(input_ptr, input);
+      }
+#endif
+      CHECK_TORCHFORT(torchfort_inference(model_name.c_str(), input_ptr, shape.size(), shape.data(), output_ptr,
+                                          shape.size(), shape.data(), TORCHFORT_FLOAT, stream));
+    }
     if (should_fail_inference) {
       FAIL() << "This test should fail inference call, but did not.";
     }
@@ -136,7 +157,7 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
     }
   } catch (const c10::Error& e) {
     std::cout << e.what() << std::endl;
-    if (should_fail_train) {
+    if (should_fail_inference) {
       // pass
     } else {
       FAIL();
@@ -175,7 +196,7 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
 
 void training_test_multiarg(const std::string& model_config, int dev_model, int dev_input, bool use_extra_args,
                             bool should_fail_create, bool should_fail_train, bool should_fail_inference,
-                            bool check_result) {
+                            bool check_result, int n_train_steps = 1, int n_inference_steps = 1) {
 #ifdef ENABLE_GPU
   if (dev_model == 1 || dev_input == 1) {
     int ngpu;
@@ -250,8 +271,29 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
   }
 
   try {
-    CHECK_TORCHFORT(torchfort_train_multiarg(model_name.c_str(), inputs_tl, labels_tl, &loss_val,
-                                             (use_extra_args) ? extra_args_tl : nullptr, 0));
+    for (int i = 0; i < n_train_steps; ++i) {
+      for (int i = 0; i < 2; ++i) {
+        auto tmp_input = generate_random<float>(shape);
+        std::copy(tmp_input.begin(), tmp_input.end(), inputs[i].begin());
+        auto tmp_label = generate_random<float>(shape);
+        std::copy(tmp_label.begin(), tmp_label.end(), labels[i].begin());
+        if (use_extra_args) {
+          auto tmp_extra_args = generate_random<float>(shape);
+          std::copy(tmp_extra_args.begin(), tmp_extra_args.end(), extra_args[i].begin());
+        }
+#ifdef ENABLE_GPU
+        if (dev_input != TORCHFORT_DEVICE_CPU) {
+          copy_from_host_vector(input_ptrs[i], inputs[i]);
+          copy_from_host_vector(label_ptrs[i], labels[i]);
+          if (use_extra_args) {
+            copy_from_host_vector(extra_args_ptrs[i], extra_args[i]);
+          }
+        }
+#endif
+      }
+      CHECK_TORCHFORT(torchfort_train_multiarg(model_name.c_str(), inputs_tl, labels_tl, &loss_val,
+                                               (use_extra_args) ? extra_args_tl : nullptr, 0));
+    }
     if (should_fail_train) {
       FAIL() << "This test should fail train call, but did not.";
     }
@@ -267,7 +309,18 @@ void training_test_multiarg(const std::string& model_config, int dev_model, int 
     FAIL() << "GPU device switched by torchfort_train_multiarg.";
 
   try {
-    CHECK_TORCHFORT(torchfort_inference_multiarg(model_name.c_str(), inputs_tl, outputs_tl, 0));
+    for (int i = 0; i < n_inference_steps; ++i) {
+      for (int i = 0; i < 2; ++i) {
+        auto tmp_input = generate_random<float>(shape);
+        std::copy(tmp_input.begin(), tmp_input.end(), inputs[i].begin());
+#ifdef ENABLE_GPU
+        if (dev_input != TORCHFORT_DEVICE_CPU) {
+          copy_from_host_vector(input_ptrs[i], inputs[i]);
+        }
+#endif
+      }
+      CHECK_TORCHFORT(torchfort_inference_multiarg(model_name.c_str(), inputs_tl, outputs_tl, 0));
+    }
     if (should_fail_inference) {
       FAIL() << "This test should fail inference call, but did not.";
     }
@@ -494,6 +547,12 @@ TEST(TorchFort, TrainTestTorchScriptGPUCPU) {
 TEST(TorchFort, TrainTestTorchScriptGPUGPU) {
   training_test("configs/torchscript.yaml", 0, 0, {10, 2, 10}, false, false, false, true);
 }
+TEST(TorchFort, TrainTestTorchScriptCPUGPUGraphs) {
+  training_test("configs/torchscript_graphs.yaml", TORCHFORT_DEVICE_CPU, 0, {10, 2, 10}, false, false, false, true, 5, 5);
+}
+TEST(TorchFort, TrainTestTorchScriptGPUGPUGraphs) {
+  training_test("configs/torchscript_graphs.yaml", 0, 0, {10, 2, 10}, false, false, false, true, 5, 5);
+}
 TEST(TorchFort, TrainTestTorchScriptMultiArgCPUGPU) {
   training_test_multiarg("configs/torchscript_multiarg.yaml", TORCHFORT_DEVICE_CPU, 0, false, false, false, false,
                          true);
@@ -504,6 +563,12 @@ TEST(TorchFort, TrainTestTorchScriptMultiArgGPUCPU) {
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgGPUGPU) {
   training_test_multiarg("configs/torchscript_multiarg.yaml", 0, 0, false, false, false, false, true);
+}
+TEST(TorchFort, TrainTestTorchScriptMultiArgCPUGPUGraphs) {
+  training_test_multiarg("configs/torchscript_multiarg_graphs.yaml", TORCHFORT_DEVICE_CPU, 0, false, false, false, false, true, 5, 5);
+}
+TEST(TorchFort, TrainTestTorchScriptMultiArgGPUGPUGraphs) {
+  training_test_multiarg("configs/torchscript_multiarg_graphs.yaml", 0, 0, false, false, false, false, true, 5, 5);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgCPUGPU1) {
   training_test_multiarg("configs/torchscript_multiarg.yaml", TORCHFORT_DEVICE_CPU, 1, false, false, false, false,
@@ -529,6 +594,12 @@ TEST(TorchFort, TrainTestTorchScriptMultiArgExtraGPUCPU) {
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgExtraGPUGPU) {
   training_test_multiarg("configs/torchscript_multiarg_extra.yaml", 0, 0, true, false, false, false, true);
+}
+TEST(TorchFort, TrainTestTorchScriptMultiArgExtraCPUGPUGraphs) {
+  training_test_multiarg("configs/torchscript_multiarg_extra_graphs.yaml", TORCHFORT_DEVICE_CPU, 0, true, false, false, false, true, 5, 5);
+}
+TEST(TorchFort, TrainTestTorchScriptMultiArgExtraGPUGPUGraphs) {
+  training_test_multiarg("configs/torchscript_multiarg_extra_graphs.yaml", 0, 0, true, false, false, false, true, 5, 5);
 }
 #endif
 
@@ -558,7 +629,7 @@ TEST(TorchFort, TrainTestMLPCPUCPU1DDimError) {
 
 #ifdef ENABLE_GPU
 TEST(TorchFort, TrainTestMLPGPUGPUStreamWrongDeviceError) {
-  training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, true, true, false, 1);
+  training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, true, true, false, 1, 1, 1);
 }
 #endif
 

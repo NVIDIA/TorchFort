@@ -264,7 +264,13 @@ std::shared_ptr<ModelState> get_state(const char* name, const YAML::Node& state_
     auto params = get_params(state_node["general"]);
     std::set<std::string> supported_params{"report_frequency", "enable_wandb_hook", "verbose"};
     check_params(supported_params, params.keys());
-    state->report_frequency = params.get_param<int>("report_frequency")[0];
+
+    try {
+      state->report_frequency = params.get_param<int>("report_frequency")[0];
+    } catch (std::out_of_range) {
+      state->report_frequency = 0;
+    }
+
     try {
       state->enable_wandb_hook = params.get_param<bool>("enable_wandb_hook")[0];
 

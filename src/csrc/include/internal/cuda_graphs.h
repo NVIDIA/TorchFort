@@ -196,7 +196,9 @@ private:
       sig.ptrs.push_back(t.data_ptr());
       sig.shapes.push_back(t.sizes().vec());
       sig.dtypes.push_back(t.scalar_type());
-      if (!t.device().is_cuda()) {
+      // A user can pass an "empty" GPU tensor as an argument, which will have a nullptr address and
+      // not be associated with device. Skip those inputs in the device check.
+      if (t.data_ptr() && !t.device().is_cuda()) {
         THROW_INVALID_USAGE("Model inputs must be on GPU when enable_cuda_graphs is true.");
       }
     }
@@ -336,7 +338,9 @@ private:
       sig.ptrs.push_back(t.data_ptr());
       sig.shapes.push_back(t.sizes().vec());
       sig.dtypes.push_back(t.scalar_type());
-      if (!t.device().is_cuda()) {
+      // A user can pass an "empty" GPU tensor as an argument, which will have a nullptr address and
+      // not be associated with device. Skip those inputs in the device check.
+      if (t.data_ptr() && !t.device().is_cuda()) {
         THROW_INVALID_USAGE("Model inputs must be on GPU when enable_cuda_graphs is true.");
       }
     }
@@ -344,7 +348,7 @@ private:
       sig.ptrs.push_back(t.data_ptr());
       sig.shapes.push_back(t.sizes().vec());
       sig.dtypes.push_back(t.scalar_type());
-      if (!t.device().is_cuda()) {
+      if (t.data_ptr() && !t.device().is_cuda()) {
         THROW_INVALID_USAGE("Model labels must be on GPU when enable_cuda_graphs is true.");
       }
     }
@@ -352,7 +356,7 @@ private:
       sig.ptrs.push_back(t.data_ptr());
       sig.shapes.push_back(t.sizes().vec());
       sig.dtypes.push_back(t.scalar_type());
-      if (!t.device().is_cuda()) {
+      if (t.data_ptr() && !t.device().is_cuda()) {
         THROW_INVALID_USAGE("Model extra args must be on GPU when enable_cuda_graphs is true.");
       }
     }

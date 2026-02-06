@@ -166,7 +166,12 @@ public:
   void launch(cudaStream_t stream) { CHECK_CUDA(cudaGraphLaunch(graph_exec_.get(), stream)); }
 
   // Get static outputs (valid after CAPTURE or REPLAY)
-  const std::vector<torch::Tensor>& get_outputs() const { return static_outputs_; }
+  const std::vector<torch::Tensor>& get_outputs() const {
+    if (!captured_) {
+      THROW_INTERNAL_ERROR("Attempting to get static outputs before graph has been captured.");
+    }
+    return static_outputs_;
+  }
 
   bool is_captured() const { return captured_; }
 
@@ -297,7 +302,12 @@ public:
   void launch(cudaStream_t stream) { CHECK_CUDA(cudaGraphLaunch(graph_exec_.get(), stream)); }
 
   // Get static loss (valid after CAPTURE or REPLAY)
-  const torch::Tensor& get_loss() const { return static_loss_; }
+  const torch::Tensor& get_loss() const {
+    if (!captured_) {
+      THROW_INTERNAL_ERROR("Attempting to get static loss before graph has been captured.");
+    }
+    return static_loss_;
+  }
 
   bool is_captured() const { return captured_; }
 

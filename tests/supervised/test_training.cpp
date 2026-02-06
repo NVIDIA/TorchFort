@@ -104,8 +104,8 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
         copy_from_host_vector(label_ptr, label);
       }
 #endif
-      CHECK_TORCHFORT(torchfort_train(model_name.c_str(), input_ptr, shape.size(), shape.data(), label_ptr, shape.size(),
-                                      shape.data(), &loss_val, TORCHFORT_FLOAT, stream));
+      CHECK_TORCHFORT(torchfort_train(model_name.c_str(), input_ptr, shape.size(), shape.data(), label_ptr,
+                                      shape.size(), shape.data(), &loss_val, TORCHFORT_FLOAT, stream));
     }
     if (should_fail_train) {
       FAIL() << "This test should fail train call, but did not.";
@@ -588,7 +588,6 @@ void training_test_multiarg_graphs_errors(int dev_input, bool use_extra_args) {
     }
   }
 
-
   torchfort_tensor_list_t inputs_tl, labels_tl, outputs_tl;
   torchfort_tensor_list_t inputs2_tl, labels2_tl, outputs2_tl;
   CHECK_TORCHFORT(torchfort_tensor_list_create(&inputs_tl));
@@ -764,7 +763,8 @@ TEST(TorchFort, TrainTestTorchScriptGPUGPU) {
   training_test("configs/torchscript.yaml", 0, 0, {10, 2, 10}, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptGPUCPUGraphs) {
-  training_test("configs/torchscript_graphs.yaml", 0, TORCHFORT_DEVICE_CPU, {10, 2, 10}, false, true, true, false, 5, 5);
+  training_test("configs/torchscript_graphs.yaml", 0, TORCHFORT_DEVICE_CPU, {10, 2, 10}, false, true, true, false, 5,
+                5);
 }
 TEST(TorchFort, TrainTestTorchScriptGPUGPUGraphs) {
   training_test("configs/torchscript_graphs.yaml", 0, 0, {10, 2, 10}, false, false, false, true, 5, 5);
@@ -781,7 +781,8 @@ TEST(TorchFort, TrainTestTorchScriptMultiArgGPUGPU) {
   training_test_multiarg("configs/torchscript_multiarg.yaml", 0, 0, false, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgGPUCPUGraphs) {
-  training_test_multiarg("configs/torchscript_multiarg_graphs.yaml", 0, TORCHFORT_DEVICE_CPU, false, false, true, true, false, 5, 5);
+  training_test_multiarg("configs/torchscript_multiarg_graphs.yaml", 0, TORCHFORT_DEVICE_CPU, false, false, true, true,
+                         false, 5, 5);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgGPUGPUGraphs) {
   training_test_multiarg("configs/torchscript_multiarg_graphs.yaml", 0, 0, false, false, false, false, true, 5, 5);
@@ -812,7 +813,8 @@ TEST(TorchFort, TrainTestTorchScriptMultiArgExtraGPUGPU) {
   training_test_multiarg("configs/torchscript_multiarg_extra.yaml", 0, 0, true, false, false, false, true);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgExtraGPUCPUGraphs) {
-  training_test_multiarg("configs/torchscript_multiarg_extra_graphs.yaml", 0, TORCHFORT_DEVICE_CPU, true, false, true, true, false, 5, 5);
+  training_test_multiarg("configs/torchscript_multiarg_extra_graphs.yaml", 0, TORCHFORT_DEVICE_CPU, true, false, true,
+                         true, false, 5, 5);
 }
 TEST(TorchFort, TrainTestTorchScriptMultiArgExtraGPUGPUGraphs) {
   training_test_multiarg("configs/torchscript_multiarg_extra_graphs.yaml", 0, 0, true, false, false, false, true, 5, 5);
@@ -847,15 +849,9 @@ TEST(TorchFort, TrainTestMLPCPUCPU1DDimError) {
 TEST(TorchFort, TrainTestMLPGPUGPUStreamWrongDeviceError) {
   training_test("configs/mlp2.yaml", 0, 0, {10, 10}, false, true, true, false, 1, 1, 1);
 }
-TEST(TorchFort, TrainTestTorchScriptGraphsErrors) {
-  training_test_graphs_errors(0);
-}
-TEST(TorchFort, TrainTestTorchScriptMultiArgGraphsErrors) {
-  training_test_multiarg_graphs_errors(0, false);
-}
-TEST(TorchFort, TrainTestTorchScriptMultiArgExtraGraphsErrors) {
-  training_test_multiarg_graphs_errors(0, true);
-}
+TEST(TorchFort, TrainTestTorchScriptGraphsErrors) { training_test_graphs_errors(0); }
+TEST(TorchFort, TrainTestTorchScriptMultiArgGraphsErrors) { training_test_multiarg_graphs_errors(0, false); }
+TEST(TorchFort, TrainTestTorchScriptMultiArgExtraGraphsErrors) { training_test_multiarg_graphs_errors(0, true); }
 #endif
 
 int main(int argc, char* argv[]) {

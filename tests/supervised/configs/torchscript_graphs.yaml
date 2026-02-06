@@ -1,0 +1,13 @@
+general:
+  enable_cuda_graphs: 1
+
+model:
+  type: torchscript
+  parameters:
+    filename: "model.pt"
+
+loss:
+  type: MSE
+
+optimizer:
+  type: adam

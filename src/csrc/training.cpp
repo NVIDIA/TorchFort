@@ -63,8 +63,6 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
   set_device_and_stream(stream_guard, cuda_guard, model->device(), ext_stream);
 #endif
 
-  inputs->to(model->device());
-
   model->eval();
 
   std::vector<torch::Tensor> results;
@@ -78,9 +76,16 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
     graph_state = &models[name].graph_state->inference;
     action = graph_state->prepare(inputs->tensors);
 
+    // Move inputs to model device after prepare() to catch CPU inputs
+    inputs->to(model->device());
+
     if (action == GraphAction::CAPTURE) {
       graph_state->begin_capture(ext_stream, stream_guard, model->device());
     }
+  } else {
+#endif
+    inputs->to(model->device());
+#ifdef ENABLE_GPU
   }
 #endif
 
@@ -142,11 +147,6 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   set_device_and_stream(stream_guard, cuda_guard, model->device(), ext_stream);
 #endif
 
-  inputs->to(model->device());
-  labels->to(model->device());
-  if (extra_loss_args)
-    extra_loss_args->to(model->device());
-
   model->train();
   auto opt = models[name].optimizer;
   auto state = models[name].state;
@@ -163,6 +163,18 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
     std::vector<torch::Tensor> extra_args_vec =
         extra_loss_args ? extra_loss_args->tensors : std::vector<torch::Tensor>();
     action = graph_state->prepare(inputs->tensors, labels->tensors, extra_args_vec);
+    // Move inputs to model device after prepare() to catch CPU inputs
+    inputs->to(model->device());
+    labels->to(model->device());
+    if (extra_loss_args)
+      extra_loss_args->to(model->device());
+  } else {
+#endif
+    inputs->to(model->device());
+    labels->to(model->device());
+    if (extra_loss_args)
+      extra_loss_args->to(model->device());
+#ifdef ENABLE_GPU
   }
 #endif
 

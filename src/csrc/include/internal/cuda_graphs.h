@@ -191,6 +191,9 @@ private:
       sig.ptrs.push_back(t.data_ptr());
       sig.shapes.push_back(t.sizes().vec());
       sig.dtypes.push_back(t.scalar_type());
+      if (!t.device().is_cuda()) {
+        THROW_INVALID_USAGE("Model inputs must be on GPU when enable_cuda_graphs is true.");
+      }
     }
     return sig;
   }
@@ -323,16 +326,25 @@ private:
       sig.ptrs.push_back(t.data_ptr());
       sig.shapes.push_back(t.sizes().vec());
       sig.dtypes.push_back(t.scalar_type());
+      if (!t.device().is_cuda()) {
+        THROW_INVALID_USAGE("Model inputs must be on GPU when enable_cuda_graphs is true.");
+      }
     }
     for (const auto& t : labels) {
       sig.ptrs.push_back(t.data_ptr());
       sig.shapes.push_back(t.sizes().vec());
       sig.dtypes.push_back(t.scalar_type());
+      if (!t.device().is_cuda()) {
+        THROW_INVALID_USAGE("Model labels must be on GPU when enable_cuda_graphs is true.");
+      }
     }
     for (const auto& t : extra_args) {
       sig.ptrs.push_back(t.data_ptr());
       sig.shapes.push_back(t.sizes().vec());
       sig.dtypes.push_back(t.scalar_type());
+      if (!t.device().is_cuda()) {
+        THROW_INVALID_USAGE("Model extra args must be on GPU when enable_cuda_graphs is true.");
+      }
     }
     return sig;
   }

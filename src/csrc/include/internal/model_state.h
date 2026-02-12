@@ -36,6 +36,9 @@ struct ModelState {
   bool verbose;
   std::filesystem::path report_file;
 
+  // CUDA graph settings
+  bool enable_cuda_graphs = false;
+
   void save(const std::string& fname);
   void load(const std::string& fname);
 };

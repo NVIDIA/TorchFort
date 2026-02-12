@@ -26,8 +26,10 @@
 #endif
 #include <torch/torch.h>
 
+#include "internal/cuda_graphs.h"
 #include "internal/defines.h"
 #include "internal/logging.h"
+#include "internal/model_pack.h"
 #include "internal/nvtx.h"
 #include "internal/tensor_list.h"
 #include "internal/utils.h"
@@ -55,18 +57,56 @@ void inference_multiarg(const char* name, torchfort_tensor_list_t inputs_in, tor
 
   auto model = models[name].model;
 
-#if ENABLE_GPU
+#ifdef ENABLE_GPU
   c10::cuda::OptionalCUDAStreamGuard stream_guard;
   c10::cuda::OptionalCUDAGuard cuda_guard;
   set_device_and_stream(stream_guard, cuda_guard, model->device(), ext_stream);
 #endif
 
-  inputs->to(model->device());
-
   model->eval();
-  auto results = model->forward(inputs->tensors);
 
-  for (int i = 0; i < results.size(); ++i) {
+  std::vector<torch::Tensor> results;
+
+  GraphAction action = GraphAction::WARMUP;
+
+#ifdef ENABLE_GPU
+  InferenceGraphState* graph_state = nullptr;
+
+  if (models[name].state->enable_cuda_graphs && model->device().is_cuda() && models[name].graph_state) {
+    graph_state = &models[name].graph_state->inference;
+    action = graph_state->prepare(inputs->tensors);
+
+    // Move inputs to model device after prepare() to catch CPU inputs
+    inputs->to(model->device());
+
+    if (action == GraphAction::CAPTURE) {
+      graph_state->begin_capture(ext_stream, stream_guard, model->device());
+    }
+  } else {
+#endif
+    inputs->to(model->device());
+#ifdef ENABLE_GPU
+  }
+#endif
+
+  // Forward pass
+  if (action != GraphAction::REPLAY) {
+    results = model->forward(inputs->tensors);
+  }
+
+#ifdef ENABLE_GPU
+  if (graph_state) {
+    graph_state->finalize(action, ext_stream, stream_guard, model->device(), results);
+
+    if (action == GraphAction::CAPTURE || action == GraphAction::REPLAY) {
+      graph_state->launch(ext_stream);
+      results = graph_state->get_outputs();
+    }
+  }
+#endif
+
+  // Copy results to output tensors
+  for (size_t i = 0; i < results.size(); ++i) {
     outputs->tensors[i].copy_(results[i].reshape(outputs->tensors[i].sizes()));
   }
   models[name].state->step_inference++;
@@ -107,30 +147,79 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
   set_device_and_stream(stream_guard, cuda_guard, model->device(), ext_stream);
 #endif
 
-  inputs->to(model->device());
-  labels->to(model->device());
-  if (extra_loss_args)
-    extra_loss_args->to(model->device());
-
   model->train();
   auto opt = models[name].optimizer;
   auto state = models[name].state;
 
-  // fwd pass
-  auto results = model->forward(inputs->tensors);
-  auto loss = models[name].loss->forward(results, labels->tensors,
-                                         (extra_loss_args) ? extra_loss_args->tensors : std::vector<torch::Tensor>());
+  torch::Tensor loss;
 
-  // extract loss
-  *loss_val = loss.item<float>();
+  GraphAction action = GraphAction::WARMUP;
 
-  // bwd pass
+#ifdef ENABLE_GPU
+  TrainingGraphState* graph_state = nullptr;
+
+  if (state->enable_cuda_graphs && model->device().is_cuda() && models[name].graph_state) {
+    graph_state = &models[name].graph_state->training;
+    std::vector<torch::Tensor> extra_args_vec =
+        extra_loss_args ? extra_loss_args->tensors : std::vector<torch::Tensor>();
+    action = graph_state->prepare(inputs->tensors, labels->tensors, extra_args_vec);
+    // Move inputs to model device after prepare() to catch CPU inputs
+    inputs->to(model->device());
+    labels->to(model->device());
+    if (extra_loss_args)
+      extra_loss_args->to(model->device());
+  } else {
+#endif
+    inputs->to(model->device());
+    labels->to(model->device());
+    if (extra_loss_args)
+      extra_loss_args->to(model->device());
+#ifdef ENABLE_GPU
+  }
+#endif
+
   if (state->step_train_current % models[name].grad_accumulation_steps == 0) {
-    opt->zero_grad();
+    // Only run zero_grad on non-replay steps or if gradient accumulation is active
+    if (action != GraphAction::REPLAY || models[name].grad_accumulation_steps > 1) {
+      if (models[name].grad_accumulation_steps > 1) {
+#ifdef ENABLE_GPU
+        // With graphs and grad accumulation active, gradients must be persistent (set_to_none = false)
+        opt->zero_grad(/*set_to_none=*/(graph_state == nullptr));
+#else
+        opt->zero_grad(/*set_to_none=*/true);
+#endif
+      } else {
+        opt->zero_grad(/*set_to_none=*/true);
+      }
+    }
   }
 
-  loss.backward();
+#ifdef ENABLE_GPU
+  if (action == GraphAction::CAPTURE) {
+    graph_state->begin_capture(ext_stream, stream_guard, model->device());
+  }
+#endif
 
+  // Forward + loss + backward
+  if (action != GraphAction::REPLAY) {
+    auto fwd_results = model->forward(inputs->tensors);
+    loss = models[name].loss->forward(fwd_results, labels->tensors,
+                                      (extra_loss_args) ? extra_loss_args->tensors : std::vector<torch::Tensor>());
+    loss.backward();
+  }
+
+#ifdef ENABLE_GPU
+  if (graph_state) {
+    graph_state->finalize(action, ext_stream, stream_guard, model->device(), loss);
+
+    if (action == GraphAction::CAPTURE || action == GraphAction::REPLAY) {
+      graph_state->launch(ext_stream);
+      loss = graph_state->get_loss();
+    }
+  }
+#endif
+
+  // Optimizer step and related operations
   if ((state->step_train_current + 1) % models[name].grad_accumulation_steps == 0) {
     // allreduce (average) gradients (if running distributed)
     if (models[name].comm) {
@@ -140,9 +229,6 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
         grads.push_back(p.grad());
       }
       models[name].comm->allreduce(grads, true);
-
-      // average returned loss value
-      models[name].comm->allreduce(*loss_val, true);
     }
 
     if (models[name].max_grad_norm > 0.0) {
@@ -153,6 +239,13 @@ void train_multiarg(const char* name, torchfort_tensor_list_t inputs_in, torchfo
     if (models[name].lr_scheduler) {
       models[name].lr_scheduler->step();
     }
+  }
+
+  // Extract loss value
+  *loss_val = loss.item<float>();
+  if (models[name].comm) {
+    // average returned loss value (if running distributed)
+    models[name].comm->allreduce(*loss_val, true);
   }
 
   state->step_train++;

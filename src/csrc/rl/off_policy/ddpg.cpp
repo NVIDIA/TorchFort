@@ -35,8 +35,8 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node, int mode
   auto algo_node = system_node["algorithm"];
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
-    std::set<std::string> supported_params{"batch_size", "nstep", "nstep_reward_reduction",
-                                           "gamma",      "rho",   "normalize_states", "normalize_rewards"};
+    std::set<std::string> supported_params{
+        "batch_size", "nstep", "nstep_reward_reduction", "gamma", "rho", "normalize_states", "normalize_rewards"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     gamma_ = params.get_param<float>("gamma")[0];

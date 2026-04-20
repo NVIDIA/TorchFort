@@ -324,8 +324,7 @@ TEST(NormalizeReturns, MaintainsAdvantageReturnRelationship) {
     max_violation = std::max(max_violation, violation);
   }
 
-  EXPECT_NEAR(max_violation, 0.f, 1e-5f)
-      << "A = R - V must hold after normalizeReturns (both scaled by same factor)";
+  EXPECT_NEAR(max_violation, 0.f, 1e-5f) << "A = R - V must hold after normalizeReturns (both scaled by same factor)";
 }
 
 // ---- NormalizeReturns: unit std, nonzero mean ----------------------------
@@ -366,14 +365,12 @@ TEST(NormalizeReturns, UnitStdPreservedMean) {
 
   // std should be ~1 (scale normalization)
   float out_std = all_ret.std().item<float>();
-  EXPECT_NEAR(out_std, 1.0f, 0.2f)
-      << "Normalized returns should have std ~1";
+  EXPECT_NEAR(out_std, 1.0f, 0.2f) << "Normalized returns should have std ~1";
 
   // mean should NOT be zero (scale_only: mean is preserved)
   // The test buffer uses positive rewards (dist uniform in [1,5]) so returns > 0
   float out_mean = all_ret.mean().item<float>();
-  EXPECT_GT(out_mean, 0.1f)
-      << "Normalized returns should have nonzero mean (scale_only preserves mean)";
+  EXPECT_GT(out_mean, 0.1f) << "Normalized returns should have nonzero mean (scale_only preserves mean)";
 }
 
 // ---- NormalizeReturns + NormalizeAdvantages: correct combined effect ------
@@ -401,8 +398,8 @@ TEST(NormalizeReturns, OrderWithAdvantageNormalization) {
   torch::Tensor last_val, last_done;
   std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, n_env);
 
-  rbuff->normalizeReturns(nullptr, ret_normalizer);   // step 1: scale R and A by return std
-  rbuff->normalizeAdvantages(nullptr);                 // step 2: zero-center and unit-std A
+  rbuff->normalizeReturns(nullptr, ret_normalizer); // step 1: scale R and A by return std
+  rbuff->normalizeAdvantages(nullptr);              // step 2: zero-center and unit-std A
 
   // collect normalized returns and advantages
   std::vector<torch::Tensor> ret_vec, adv_vec;
@@ -417,16 +414,13 @@ TEST(NormalizeReturns, OrderWithAdvantageNormalization) {
   auto all_adv = torch::cat(adv_vec, 0).flatten().to(torch::kFloat32);
 
   // returns: unit std, nonzero mean
-  EXPECT_NEAR(all_ret.std().item<float>(), 1.0f, 0.2f)
-      << "Returns should have std ~1 after normalizeReturns";
+  EXPECT_NEAR(all_ret.std().item<float>(), 1.0f, 0.2f) << "Returns should have std ~1 after normalizeReturns";
   EXPECT_GT(all_ret.mean().item<float>(), 0.1f)
       << "Returns should have nonzero mean after normalizeReturns (scale_only)";
 
   // advantages: unit std, zero mean
-  EXPECT_NEAR(all_adv.std().item<float>(), 1.0f, 0.1f)
-      << "Advantages should have std ~1 after normalizeAdvantages";
-  EXPECT_NEAR(all_adv.mean().item<float>(), 0.0f, 0.1f)
-      << "Advantages should have zero mean after normalizeAdvantages";
+  EXPECT_NEAR(all_adv.std().item<float>(), 1.0f, 0.1f) << "Advantages should have std ~1 after normalizeAdvantages";
+  EXPECT_NEAR(all_adv.mean().item<float>(), 0.0f, 0.1f) << "Advantages should have zero mean after normalizeAdvantages";
 }
 
 int main(int argc, char* argv[]) {

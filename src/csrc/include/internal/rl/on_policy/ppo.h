@@ -300,8 +300,8 @@ private:
   float a_low_, a_high_;
   bool normalize_advantage_;
   bool normalize_returns_;
-  bool advantage_normalized_;  // tracks whether advantages have been normalized for the current rollout
-  bool returns_normalized_;    // tracks whether returns have been normalized for the current rollout
+  bool advantage_normalized_; // tracks whether advantages have been normalized for the current rollout
+  bool returns_normalized_;   // tracks whether returns have been normalized for the current rollout
   ActorNormalizationMode actor_normalization_mode_;
 };
 

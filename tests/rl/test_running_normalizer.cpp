@@ -361,7 +361,7 @@ TEST(RunningNormalizerScaleOnly, LargeScaleRewards) {
 
   // Rewards ~ N(mean=100, std=20): large positive values typical of dense reward tasks
   const float reward_mean = 100.0f;
-  const float reward_std  = 20.0f;
+  const float reward_std = 20.0f;
 
   rl::RunningNormalizer normalizer(1e-8f, /* scale_only = */ true);
   for (int i = 0; i < 500; ++i) {
@@ -376,8 +376,7 @@ TEST(RunningNormalizerScaleOnly, LargeScaleRewards) {
 
   // std should be ~1 (scale normalization worked)
   float out_std = normalized.std().item<float>();
-  EXPECT_NEAR(out_std, 1.0f, 0.05f)
-      << "Large-scale rewards should be scaled to unit std";
+  EXPECT_NEAR(out_std, 1.0f, 0.05f) << "Large-scale rewards should be scaled to unit std";
 
   // mean should be ~reward_mean / reward_std = 5.0 (mean is preserved, not removed)
   float out_mean = normalized.mean().item<float>();
@@ -386,8 +385,7 @@ TEST(RunningNormalizerScaleOnly, LargeScaleRewards) {
       << "Large-scale rewards: mean should be preserved as ~mean/std after scale normalization";
 
   // all values should still be positive (since mean >> std, all rewards are positive)
-  EXPECT_TRUE((normalized > 0).all().item<bool>())
-      << "All rewards should remain positive after scale normalization";
+  EXPECT_TRUE((normalized > 0).all().item<bool>()) << "All rewards should remain positive after scale normalization";
 }
 
 int main(int argc, char* argv[]) {

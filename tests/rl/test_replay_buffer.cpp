@@ -313,12 +313,12 @@ TEST(RewardNormalization, UnitStdPreservedMean) {
 
   // Rewards ~ N(mean=5, std=2): a typical dense-reward task distribution
   const float true_mean = 5.0f;
-  const float true_std  = 2.0f;
-  const int   n_envs    = 1;
-  const int   buffer_size = 512;
+  const float true_std = 2.0f;
+  const int n_envs = 1;
+  const int buffer_size = 512;
 
-  auto rbuff = std::make_shared<rl::UniformReplayBuffer>(
-      buffer_size, buffer_size, n_envs, 0.99f, 1, rl::RewardReductionMode::Sum, -1);
+  auto rbuff = std::make_shared<rl::UniformReplayBuffer>(buffer_size, buffer_size, n_envs, 0.99f, 1,
+                                                         rl::RewardReductionMode::Sum, -1);
 
   rl::RunningNormalizer reward_normalizer(1e-8f, /* scale_only = */ true);
 
@@ -329,7 +329,7 @@ TEST(RewardNormalization, UnitStdPreservedMean) {
     auto action = torch::zeros({n_envs, 2}, torch::kFloat32);
     auto next_state = state + 0.01f;
     auto reward = torch::randn({n_envs}, torch::kFloat32) * true_std + true_mean;
-    auto done   = torch::zeros({n_envs}, torch::kFloat32);
+    auto done = torch::zeros({n_envs}, torch::kFloat32);
 
     // mirror the system's updateReplayBuffer call
     reward_normalizer.update(reward.unsqueeze(1));
@@ -346,8 +346,7 @@ TEST(RewardNormalization, UnitStdPreservedMean) {
   auto r_norm = reward_normalizer.normalize(r.unsqueeze(1)).squeeze(1);
 
   // std of normalized rewards should be ~1
-  EXPECT_NEAR(r_norm.std().item<float>(), 1.0f, 0.15f)
-      << "Normalized rewards should have std ~1";
+  EXPECT_NEAR(r_norm.std().item<float>(), 1.0f, 0.15f) << "Normalized rewards should have std ~1";
 
   // mean should be ~true_mean / true_std = 2.5 (not ~0)
   float expected_mean = true_mean / true_std;
@@ -363,11 +362,11 @@ TEST(RewardNormalization, SignPreservation) {
   torch::NoGradGuard no_grad;
 
   // Rewards ~ Uniform(1, 5): always positive
-  const int n_envs    = 1;
+  const int n_envs = 1;
   const int buffer_size = 256;
 
-  auto rbuff = std::make_shared<rl::UniformReplayBuffer>(
-      buffer_size, buffer_size, n_envs, 0.99f, 1, rl::RewardReductionMode::Sum, -1);
+  auto rbuff = std::make_shared<rl::UniformReplayBuffer>(buffer_size, buffer_size, n_envs, 0.99f, 1,
+                                                         rl::RewardReductionMode::Sum, -1);
 
   rl::RunningNormalizer reward_normalizer(1e-8f, /* scale_only = */ true);
 
@@ -377,7 +376,7 @@ TEST(RewardNormalization, SignPreservation) {
     auto next_state = state + 0.01f;
     // strictly positive rewards in [1, 5]
     auto reward = torch::rand({n_envs}, torch::kFloat32) * 4.0f + 1.0f;
-    auto done   = torch::zeros({n_envs}, torch::kFloat32);
+    auto done = torch::zeros({n_envs}, torch::kFloat32);
 
     reward_normalizer.update(reward.unsqueeze(1));
     rbuff->update(state, action, next_state, reward, done);
@@ -401,12 +400,12 @@ TEST(RewardNormalization, LargeScaleNormalizedToUnitStd) {
   torch::NoGradGuard no_grad;
 
   const float true_mean = 100.0f;
-  const float true_std  = 20.0f;
-  const int   n_envs    = 1;
-  const int   buffer_size = 512;
+  const float true_std = 20.0f;
+  const int n_envs = 1;
+  const int buffer_size = 512;
 
-  auto rbuff = std::make_shared<rl::UniformReplayBuffer>(
-      buffer_size, buffer_size, n_envs, 0.99f, 1, rl::RewardReductionMode::Sum, -1);
+  auto rbuff = std::make_shared<rl::UniformReplayBuffer>(buffer_size, buffer_size, n_envs, 0.99f, 1,
+                                                         rl::RewardReductionMode::Sum, -1);
 
   rl::RunningNormalizer reward_normalizer(1e-8f, /* scale_only = */ true);
 
@@ -415,7 +414,7 @@ TEST(RewardNormalization, LargeScaleNormalizedToUnitStd) {
     auto action = torch::zeros({n_envs, 2}, torch::kFloat32);
     auto next_state = state + 0.01f;
     auto reward = torch::randn({n_envs}, torch::kFloat32) * true_std + true_mean;
-    auto done   = torch::zeros({n_envs}, torch::kFloat32);
+    auto done = torch::zeros({n_envs}, torch::kFloat32);
 
     reward_normalizer.update(reward.unsqueeze(1));
     rbuff->update(state, action, next_state, reward, done);
@@ -427,8 +426,7 @@ TEST(RewardNormalization, LargeScaleNormalizedToUnitStd) {
   auto r_norm = reward_normalizer.normalize(r.unsqueeze(1)).squeeze(1);
 
   // std should be close to 1 regardless of the original reward scale
-  EXPECT_NEAR(r_norm.std().item<float>(), 1.0f, 0.15f)
-      << "Large-scale rewards must be normalized to unit std";
+  EXPECT_NEAR(r_norm.std().item<float>(), 1.0f, 0.15f) << "Large-scale rewards must be normalized to unit std";
 
   // mean should be ~true_mean/true_std = 5, not 0 and not 100
   float expected_mean = true_mean / true_std;

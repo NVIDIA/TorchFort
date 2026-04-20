@@ -43,9 +43,13 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node, int model_
                                            "target_kl_divergence",
                                            "entropy_loss_coefficient",
                                            "value_loss_coefficient",
-                                           "normalize_advantage"};
+                                           "normalize_advantage",
+                                           "normalize_state"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
+    if (params.get_param<bool>("normalize_state", false)[0]) {
+      state_normalizer_ = std::make_unique<RunningNormalizer>();
+    }
     gamma_ = params.get_param<float>("gamma")[0];
     gae_lambda_ = params.get_param<float>("gae_lambda")[0];
     target_kl_divergence_ = params.get_param<float>("target_kl_divergence")[0];
@@ -250,6 +254,12 @@ void PPOSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
     system_state_->save(state_path.native());
   }
 
+  // state normalizer
+  if (state_normalizer_) {
+    auto normalizer_path = root_dir / "state_normalizer.pt";
+    state_normalizer_->save(normalizer_path.native());
+  }
+
   // lastly, save the replay buffer:
   {
     auto buffer_path = root_dir / "rollout_buffer";
@@ -300,6 +310,19 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     system_state_->load(state_path.native());
   }
 
+  // state normalizer
+  if (state_normalizer_) {
+    auto normalizer_path = root_dir / "state_normalizer.pt";
+    if (!std::filesystem::exists(normalizer_path)) {
+      torchfort::logging::print(
+          "PPO: state normalizer is enabled but no saved state was found in the checkpoint. "
+          "Starting with empty statistics.",
+          torchfort::logging::warn);
+    } else {
+      state_normalizer_->load(normalizer_path.native());
+    }
+  }
+
   // lastly, load the rollout buffer:
   {
     auto buffer_path = root_dir / "rollout_buffer";
@@ -341,8 +364,10 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor stens, torch::Tensor atens, to
   }
 
   // compute q:
+  if (state_normalizer_) state_normalizer_->update(stens);
   torch::Tensor ad = as.to(model_device_);
   torch::Tensor sd = stens.to(model_device_);
+  if (state_normalizer_ && state_normalizer_->isInitialized()) sd = state_normalizer_->normalize(sd);
   torch::Tensor log_p_tensor, entropy_tensor, value;
   std::tie(log_p_tensor, entropy_tensor, value) = (pq_model_.model)->evaluateAction(sd, ad);
 
@@ -380,6 +405,7 @@ torch::Tensor PPOSystem::predict(torch::Tensor state) {
   pq_model_.model->to(model_device_);
   pq_model_.model->eval();
   state = state.to(model_device_);
+  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
 
   // do fwd pass
   torch::Tensor action, value;
@@ -406,6 +432,7 @@ torch::Tensor PPOSystem::predictExplore(torch::Tensor state) {
   pq_model_.model->to(model_device_);
   pq_model_.model->eval();
   state = state.to(model_device_);
+  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
 
   // do fwd pass
   torch::Tensor action, log_probs, value;
@@ -432,6 +459,7 @@ torch::Tensor PPOSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   pq_model_.model->to(model_device_);
   pq_model_.model->eval();
   state = state.to(model_device_);
+  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
 
   // do fwd pass
   torch::Tensor action_tmp, value;
@@ -459,6 +487,12 @@ void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     logp = logp.to(model_device_);
     adv = adv.to(model_device_);
     ret = ret.to(model_device_);
+
+    // sync and apply state normalization
+    if (state_normalizer_) {
+      state_normalizer_->sync(pq_model_.comm);
+      s = state_normalizer_->normalize(s);
+    }
   }
 
   // train step

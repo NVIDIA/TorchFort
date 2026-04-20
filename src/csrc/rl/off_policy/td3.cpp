@@ -35,7 +35,7 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node, int model_
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
     std::set<std::string> supported_params{"batch_size", "num_critics", "policy_lag", "nstep", "nstep_reward_reduction",
-                                           "gamma",      "rho"};
+                                           "gamma",      "rho",         "normalize_state"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     num_critics_ = params.get_param<int>("num_critics", 2)[0];
@@ -43,6 +43,9 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node, int model_
     gamma_ = params.get_param<float>("gamma")[0];
     rho_ = params.get_param<float>("rho")[0];
     nstep_ = params.get_param<int>("nstep", 1)[0];
+    if (params.get_param<bool>("normalize_state", false)[0]) {
+      state_normalizer_ = std::make_unique<RunningNormalizer>();
+    }
     auto redmode = params.get_param<std::string>("nstep_reward_reduction", "sum")[0];
     if (redmode == "sum") {
       nstep_reward_reduction_ = RewardReductionMode::Sum;
@@ -387,6 +390,12 @@ void TD3System::saveCheckpoint(const std::string& checkpoint_dir) const {
     system_state_->save(state_path.native());
   }
 
+  // state normalizer
+  if (state_normalizer_) {
+    auto normalizer_path = root_dir / "state_normalizer.pt";
+    state_normalizer_->save(normalizer_path.native());
+  }
+
   // lastly, save the replay buffer:
   {
     auto buffer_path = root_dir / "replay_buffer";
@@ -428,6 +437,19 @@ void TD3System::loadCheckpoint(const std::string& checkpoint_dir) {
     system_state_->load(state_path.native());
   }
 
+  // state normalizer
+  if (state_normalizer_) {
+    auto normalizer_path = root_dir / "state_normalizer.pt";
+    if (!std::filesystem::exists(normalizer_path)) {
+      torchfort::logging::print(
+          "TD3: state normalizer is enabled but no saved state was found in the checkpoint. "
+          "Starting with empty statistics.",
+          torchfort::logging::warn);
+    } else {
+      state_normalizer_->load(normalizer_path.native());
+    }
+  }
+
   // lastly, load the replay buffer:
   {
     auto buffer_path = root_dir / "replay_buffer";
@@ -441,6 +463,7 @@ void TD3System::loadCheckpoint(const std::string& checkpoint_dir) {
 // we should pass a tuple (s, a, s', r, d)
 void TD3System::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r,
                                    torch::Tensor d) {
+  if (state_normalizer_) state_normalizer_->update(s);
   replay_buffer_->update(s, a, sp, r, d);
 }
 
@@ -500,6 +523,7 @@ torch::Tensor TD3System::predict(torch::Tensor state) {
   p_model_.model->to(model_device_);
   p_model_.model->eval();
   state = state.to(model_device_);
+  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
 
   // do fwd pass
   auto action = (p_model_.model)->forward(std::vector<torch::Tensor>{state})[0];
@@ -518,6 +542,7 @@ torch::Tensor TD3System::predictExplore(torch::Tensor state) {
   p_model_.model->to(model_device_);
   p_model_.model->eval();
   state = state.to(model_device_);
+  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
 
   // do fwd pass
   auto action = (*noise_actor_exploration_)(p_model_, state);
@@ -537,6 +562,7 @@ torch::Tensor TD3System::evaluate(torch::Tensor state, torch::Tensor action) {
   q_models_[0].model->eval();
   state = state.to(model_device_);
   action = action.to(model_device_);
+  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
 
   // do fwd pass
   torch::Tensor reward = (q_models_[0].model)->forward(std::vector<torch::Tensor>{state, action})[0];
@@ -567,6 +593,13 @@ void TD3System::trainStep(float& p_loss_val, float& q_loss_val) {
     sp = sp.to(model_device_);
     r = r.to(model_device_);
     d = d.to(model_device_);
+
+    // sync and apply state normalization
+    if (state_normalizer_) {
+      state_normalizer_->sync(p_model_.comm);
+      s = state_normalizer_->normalize(s);
+      sp = state_normalizer_->normalize(sp);
+    }
 
     // get a new action by predicting one with target network
     ap = predictWithNoiseTrain_(sp);

@@ -46,7 +46,7 @@ template <typename T>
 void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::Tensor action_tensor,
                torch::Tensor q_tensor, torch::Tensor log_p_tensor, torch::Tensor adv_tensor, torch::Tensor ret_tensor,
                const T& epsilon, const T& clip_q, const T& entropy_loss_coeff, const T& q_loss_coeff,
-               const T& target_kl_divergence, bool normalize_advantage, T& p_loss_val, T& q_loss_val, T& kl_divergence,
+               const T& target_kl_divergence, T& p_loss_val, T& q_loss_val, T& kl_divergence,
                T& clip_fraction, T& explained_var) {
 
   // nvtx marker
@@ -65,40 +65,6 @@ void train_ppo(const ACPolicyPack& pq_model, torch::Tensor state_tensor, torch::
   assert(log_p_tensor.dim() == 1);
   assert(adv_tensor.dim() == 1);
   assert(ret_tensor.dim() == 1);
-
-  // normalize advantages if requested
-  if (normalize_advantage && (batch_size > 1)) {
-    // make sure we are not going to compute gradients
-    torch::NoGradGuard no_grad;
-
-    // compute mean
-    torch::Tensor adv_mean = torch::sum(adv_tensor);
-    auto options = torch::TensorOptions().dtype(torch::kLong).device(adv_mean.device());
-    torch::Tensor adv_count = torch::tensor({torch::numel(adv_tensor)}, options);
-
-    // average mean across all nodes
-    if (pq_model.comm) {
-      std::vector<torch::Tensor> means = {adv_mean, adv_count};
-      pq_model.comm->allreduce(means, false);
-      adv_mean = means[0];
-      adv_count = means[1];
-    }
-    adv_mean = adv_mean / adv_count;
-
-    // compute std
-    torch::Tensor adv_std = torch::sum(torch::square(adv_tensor - adv_mean));
-
-    // average std across all nodes
-    if (pq_model.comm) {
-      std::vector<torch::Tensor> stds = {adv_std};
-      pq_model.comm->allreduce(stds, false);
-      adv_std = stds[0];
-    }
-    adv_std = torch::sqrt(adv_std / (adv_count - 1));
-
-    // update advantage tensor
-    adv_tensor = (adv_tensor - adv_mean) / (adv_std + 1.e-8);
-  }
 
   // set models to train
   pq_model.model->train();
@@ -330,6 +296,7 @@ private:
   float clip_fraction_;
   float a_low_, a_high_;
   bool normalize_advantage_;
+  bool advantage_normalized_; // tracks whether advantages have been normalized for the current rollout
   ActorNormalizationMode actor_normalization_mode_;
 };
 

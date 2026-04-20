@@ -23,6 +23,7 @@
 #include <torch/torch.h>
 
 #include "internal/defines.h"
+#include "internal/distributed.h"
 #include "internal/rl/rl.h"
 
 namespace torchfort {
@@ -177,6 +178,47 @@ public:
     finalized_ = true;
 
     return;
+  }
+
+  // Normalize all stored advantages to zero mean and unit variance over the full rollout.
+  // In distributed mode, statistics are combined across ranks via allreduce so that all
+  // ranks use the same normalization. Call this once after finalize() and before sampling.
+  void normalizeAdvantages(std::shared_ptr<Comm> comm) {
+    if (!finalized_) {
+      throw std::runtime_error(
+          "GAELambdaRolloutBuffer::normalizeAdvantages: buffer must be finalized before normalizing advantages.");
+    }
+
+    torch::NoGradGuard no_grad;
+
+    // stack all per-step advantages into [size_, n_envs_] and flatten to 1D
+    auto all_adv = torch::stack(advantages_, 0).flatten().to(torch::kFloat32);
+
+    // compute global sum and count for the mean
+    auto adv_sum = torch::sum(all_adv);
+    auto count_tensor = torch::tensor({static_cast<float>(all_adv.numel())}).to(all_adv.device());
+
+    if (comm) {
+      std::vector<torch::Tensor> stats = {adv_sum, count_tensor};
+      comm->allreduce(stats, false);
+      adv_sum = stats[0];
+      count_tensor = stats[1];
+    }
+    auto adv_mean = adv_sum / count_tensor;
+
+    // compute global sum of squared deviations for the std
+    auto adv_sq = torch::sum(torch::square(all_adv - adv_mean));
+    if (comm) {
+      std::vector<torch::Tensor> sq_stats = {adv_sq};
+      comm->allreduce(sq_stats, false);
+      adv_sq = sq_stats[0];
+    }
+    auto adv_std = torch::sqrt(adv_sq / (count_tensor - 1.) + 1e-8);
+
+    // normalize all stored advantages in-place
+    for (auto& adv : advantages_) {
+      adv = (adv - adv_mean) / adv_std;
+    }
   }
 
   std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>

@@ -27,12 +27,12 @@ using namespace torchfort;
 // reliably caught.
 static const int N_FEATURES = 4;
 static const std::vector<float> TRUE_MEAN = {3.0f, -2.0f, 0.5f, 10.0f};
-static const std::vector<float> TRUE_STD  = {1.5f,  0.5f, 3.0f,  0.2f};
+static const std::vector<float> TRUE_STD = {1.5f, 0.5f, 3.0f, 0.2f};
 
 // Helper: build a [batch_size, N_FEATURES] tensor sampled from the ground-truth distribution.
 static torch::Tensor make_batch(int batch_size) {
   auto mean = torch::tensor(TRUE_MEAN);
-  auto std  = torch::tensor(TRUE_STD);
+  auto std = torch::tensor(TRUE_STD);
   return torch::randn({batch_size, N_FEATURES}) * std.unsqueeze(0) + mean.unsqueeze(0);
 }
 
@@ -47,7 +47,7 @@ TEST(RunningNormalizer, StatsAccuracy) {
   rl::RunningNormalizer normalizer;
 
   const int batch_size = 100;
-  const int n_batches  = 500; // 50000 samples total
+  const int n_batches = 500; // 50000 samples total
 
   for (int i = 0; i < n_batches; ++i) {
     normalizer.update(make_batch(batch_size));
@@ -63,7 +63,7 @@ TEST(RunningNormalizer, StatsAccuracy) {
   // Strategy: normalize(true_mean_tensor) should yield ~0, and
   //           normalize(true_mean_tensor + true_std_tensor) should yield ~1.
   auto mean_tensor = torch::tensor(TRUE_MEAN).unsqueeze(0); // [1, 4]
-  auto std_tensor  = torch::tensor(TRUE_STD).unsqueeze(0);
+  auto std_tensor = torch::tensor(TRUE_STD).unsqueeze(0);
 
   auto normalized_mean = normalizer.normalize(mean_tensor);
   auto normalized_mean_plus_std = normalizer.normalize(mean_tensor + std_tensor);
@@ -92,7 +92,7 @@ TEST(RunningNormalizer, NormalizedOutputDistribution) {
 
   // Warm up the normalizer with 50000 samples
   const int warmup_batches = 500;
-  const int batch_size     = 100;
+  const int batch_size = 100;
   for (int i = 0; i < warmup_batches; ++i) {
     normalizer.update(make_batch(batch_size));
   }
@@ -100,20 +100,18 @@ TEST(RunningNormalizer, NormalizedOutputDistribution) {
   // Normalize a fresh large batch (10000 samples) and measure output stats
   const int test_size = 10000;
   auto test_batch = make_batch(test_size);
-  auto normalized  = normalizer.normalize(test_batch);
+  auto normalized = normalizer.normalize(test_batch);
 
   // Per-feature mean should be ~0
   auto out_mean = normalized.mean(0); // [N_FEATURES]
   for (int f = 0; f < N_FEATURES; ++f) {
-    EXPECT_NEAR(out_mean[f].item<float>(), 0.0f, 0.05f)
-        << "Feature " << f << ": normalized output mean should be ~0";
+    EXPECT_NEAR(out_mean[f].item<float>(), 0.0f, 0.05f) << "Feature " << f << ": normalized output mean should be ~0";
   }
 
   // Per-feature std should be ~1
   auto out_std = normalized.std(0); // [N_FEATURES], unbiased
   for (int f = 0; f < N_FEATURES; ++f) {
-    EXPECT_NEAR(out_std[f].item<float>(), 1.0f, 0.05f)
-        << "Feature " << f << ": normalized output std should be ~1";
+    EXPECT_NEAR(out_std[f].item<float>(), 1.0f, 0.05f) << "Feature " << f << ": normalized output std should be ~1";
   }
 }
 
@@ -126,7 +124,7 @@ TEST(RunningNormalizer, IncrementalVsBatch) {
 
   // Build a fixed dataset once
   const int total_samples = 10000;
-  const int small_batch   = 10;
+  const int small_batch = 10;
   auto full_data = make_batch(total_samples); // [10000, 4]
 
   // Normalizer A: one large update
@@ -141,7 +139,7 @@ TEST(RunningNormalizer, IncrementalVsBatch) {
 
   // Both should produce identical normalized output for the same input
   auto probe = make_batch(32);
-  auto out_batch       = norm_batch.normalize(probe);
+  auto out_batch = norm_batch.normalize(probe);
   auto out_incremental = norm_incremental.normalize(probe);
 
   // Element-wise match to float32 precision
@@ -162,8 +160,7 @@ TEST(RunningNormalizer, EarlyReturnBeforeInitialized) {
   auto output = normalizer.normalize(input);
 
   // Should be the exact same tensor (no-op)
-  EXPECT_TRUE(torch::equal(input, output))
-      << "normalize() should return input unchanged before stats are initialized";
+  EXPECT_TRUE(torch::equal(input, output)) << "normalize() should return input unchanged before stats are initialized";
 }
 
 // ---- Test 5: checkpoint round-trip ---------------------------------------
@@ -188,7 +185,7 @@ TEST(RunningNormalizer, CheckpointRoundTrip) {
 
   auto probe = make_batch(16);
   auto out_original = normalizer.normalize(probe);
-  auto out_loaded   = loaded.normalize(probe);
+  auto out_loaded = loaded.normalize(probe);
 
   EXPECT_TRUE(torch::allclose(out_original, out_loaded, /*rtol=*/1e-5, /*atol=*/1e-6))
       << "Loaded normalizer should produce identical output to original";
@@ -209,7 +206,7 @@ TEST(RunningNormalizerScaleOnly, MeanPreserved) {
   rl::RunningNormalizer normalizer(1e-8f, /* scale_only = */ true);
 
   const int batch_size = 100;
-  const int n_batches  = 500; // 50000 samples
+  const int n_batches = 500; // 50000 samples
 
   for (int i = 0; i < n_batches; ++i) {
     normalizer.update(make_batch(batch_size));
@@ -218,10 +215,10 @@ TEST(RunningNormalizerScaleOnly, MeanPreserved) {
   // Normalize a fresh large batch and check output statistics
   const int test_size = 10000;
   auto test_batch = make_batch(test_size);
-  auto normalized  = normalizer.normalize(test_batch);
+  auto normalized = normalizer.normalize(test_batch);
 
   auto out_mean = normalized.mean(0); // [N_FEATURES]
-  auto out_std  = normalized.std(0);
+  auto out_std = normalized.std(0);
 
   for (int f = 0; f < N_FEATURES; ++f) {
     float expected_mean = TRUE_MEAN[f] / TRUE_STD[f];
@@ -230,8 +227,7 @@ TEST(RunningNormalizerScaleOnly, MeanPreserved) {
         << "Feature " << f << ": scale_only output mean should be ~true_mean/true_std, not 0";
 
     // output std should still be ~1 (variance is still normalized)
-    EXPECT_NEAR(out_std[f].item<float>(), 1.0f, 0.05f)
-        << "Feature " << f << ": scale_only output std should be ~1";
+    EXPECT_NEAR(out_std[f].item<float>(), 1.0f, 0.05f) << "Feature " << f << ": scale_only output std should be ~1";
   }
 }
 
@@ -246,7 +242,7 @@ TEST(RunningNormalizerScaleOnly, SameStdDifferentMean) {
   rl::RunningNormalizer scale_norm(1e-8f, /* scale_only = */ true);
 
   const int batch_size = 100;
-  const int n_batches  = 500;
+  const int n_batches = 500;
 
   for (int i = 0; i < n_batches; ++i) {
     auto batch = make_batch(batch_size);
@@ -259,18 +255,17 @@ TEST(RunningNormalizerScaleOnly, SameStdDifferentMean) {
   torch::manual_seed(9999);
   auto test_batch = make_batch(test_size);
 
-  auto out_full  = full_norm.normalize(test_batch);
+  auto out_full = full_norm.normalize(test_batch);
   auto out_scale = scale_norm.normalize(test_batch);
 
-  auto full_mean  = out_full.mean(0);
+  auto full_mean = out_full.mean(0);
   auto scale_mean = out_scale.mean(0);
-  auto full_std   = out_full.std(0);
-  auto scale_std  = out_scale.std(0);
+  auto full_std = out_full.std(0);
+  auto scale_std = out_scale.std(0);
 
   for (int f = 0; f < N_FEATURES; ++f) {
     // full mode: mean ~0
-    EXPECT_NEAR(full_mean[f].item<float>(), 0.0f, 0.05f)
-        << "Feature " << f << ": full mode mean should be ~0";
+    EXPECT_NEAR(full_mean[f].item<float>(), 0.0f, 0.05f) << "Feature " << f << ": full mode mean should be ~0";
 
     // scale_only mode: mean nonzero (only zero if true mean happens to be 0)
     // Here all TRUE_MEAN values are nonzero, so the output mean must differ from 0
@@ -278,10 +273,8 @@ TEST(RunningNormalizerScaleOnly, SameStdDifferentMean) {
         << "Feature " << f << ": scale_only mode mean should be nonzero";
 
     // both modes: std ~1
-    EXPECT_NEAR(full_std[f].item<float>(),  1.0f, 0.05f)
-        << "Feature " << f << ": full mode std should be ~1";
-    EXPECT_NEAR(scale_std[f].item<float>(), 1.0f, 0.05f)
-        << "Feature " << f << ": scale_only mode std should be ~1";
+    EXPECT_NEAR(full_std[f].item<float>(), 1.0f, 0.05f) << "Feature " << f << ": full mode std should be ~1";
+    EXPECT_NEAR(scale_std[f].item<float>(), 1.0f, 0.05f) << "Feature " << f << ": scale_only mode std should be ~1";
   }
 }
 
@@ -306,7 +299,7 @@ TEST(RunningNormalizerScaleOnly, CheckpointPreservesMode) {
 
   auto probe = make_batch(16);
   auto out_original = normalizer.normalize(probe);
-  auto out_loaded   = loaded.normalize(probe);
+  auto out_loaded = loaded.normalize(probe);
 
   // Outputs must match exactly (scale_only mode was restored from checkpoint)
   EXPECT_TRUE(torch::allclose(out_original, out_loaded, /*rtol=*/1e-5, /*atol=*/1e-6))

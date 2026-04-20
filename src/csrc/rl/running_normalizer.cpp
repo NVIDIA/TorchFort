@@ -51,7 +51,8 @@ void RunningNormalizer::update(torch::Tensor x) {
 }
 
 torch::Tensor RunningNormalizer::normalize(torch::Tensor x) const {
-  if (count_ < 2) return x;
+  if (count_ < 2)
+    return x;
 
   torch::NoGradGuard no_grad;
 
@@ -74,7 +75,8 @@ torch::Tensor RunningNormalizer::normalize(torch::Tensor x) const {
 }
 
 void RunningNormalizer::sync(std::shared_ptr<Comm> comm) {
-  if (!comm || count_ == 0) return;
+  if (!comm || count_ == 0)
+    return;
 
   torch::NoGradGuard no_grad;
 

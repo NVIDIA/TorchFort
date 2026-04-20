@@ -25,6 +25,7 @@
 #include "internal/defines.h"
 #include "internal/distributed.h"
 #include "internal/rl/rl.h"
+#include "internal/rl/running_normalizer.h"
 
 namespace torchfort {
 
@@ -218,6 +219,42 @@ public:
     // normalize all stored advantages in-place
     for (auto& adv : advantages_) {
       adv = (adv - adv_mean) / adv_std;
+    }
+  }
+
+  // Scale returns and advantages by the running std of returns (no mean subtraction).
+  // Updates the provided return_normalizer with this rollout's returns, syncs statistics
+  // across MPI ranks, then divides both returns_ and advantages_ by the same return std.
+  // This ensures the value function regression target and the policy gradient use a
+  // consistent scale. Call this before normalizeAdvantages() if both are enabled.
+  void normalizeReturns(std::shared_ptr<Comm> comm, RunningNormalizer& return_normalizer) {
+    if (!finalized_) {
+      throw std::runtime_error(
+          "GAELambdaRolloutBuffer::normalizeReturns: buffer must be finalized before normalizing returns.");
+    }
+
+    torch::NoGradGuard no_grad;
+
+    // flatten all returns to [size_ * n_envs_, 1]: single scalar feature per sample
+    auto all_ret = torch::stack(returns_, 0).reshape({-1, 1}).to(torch::kFloat32);
+
+    // update running variance with this rollout's returns, then sync across ranks
+    return_normalizer.update(all_ret);
+    return_normalizer.sync(comm);
+
+    // apply scale-only normalization: R_norm = R / std(R)
+    // the same std is applied to advantages: A_scaled = A / std(R),
+    // preserving the relationship A = R - V when both are on the same scale
+    auto all_ret_norm = return_normalizer.normalize(all_ret);
+    auto all_adv = torch::stack(advantages_, 0).reshape({-1, 1}).to(torch::kFloat32);
+    auto all_adv_scaled = return_normalizer.normalize(all_adv);
+
+    // write normalized values back to per-step tensors
+    auto ret_reshaped = all_ret_norm.reshape({static_cast<int64_t>(size_), static_cast<int64_t>(n_envs_)});
+    auto adv_reshaped = all_adv_scaled.reshape({static_cast<int64_t>(size_), static_cast<int64_t>(n_envs_)});
+    for (size_t step = 0; step < size_; ++step) {
+      returns_[step] = ret_reshaped[step];
+      advantages_[step] = adv_reshaped[step];
     }
   }
 

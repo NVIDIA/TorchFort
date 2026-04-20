@@ -287,6 +287,9 @@ private:
   // state normalizer (optional, null if disabled)
   std::unique_ptr<RunningNormalizer> state_normalizer_;
 
+  // return normalizer (optional, null if disabled); scale_only=true so mean is preserved
+  std::unique_ptr<RunningNormalizer> return_normalizer_;
+
   // some parameters
   int batch_size_;
   float epsilon_, clip_q_;
@@ -296,7 +299,9 @@ private:
   float clip_fraction_;
   float a_low_, a_high_;
   bool normalize_advantage_;
-  bool advantage_normalized_; // tracks whether advantages have been normalized for the current rollout
+  bool normalize_returns_;
+  bool advantage_normalized_;  // tracks whether advantages have been normalized for the current rollout
+  bool returns_normalized_;    // tracks whether returns have been normalized for the current rollout
   ActorNormalizationMode actor_normalization_mode_;
 };
 

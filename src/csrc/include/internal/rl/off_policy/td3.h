@@ -342,6 +342,9 @@ private:
   // state normalizer (optional, null if disabled)
   std::unique_ptr<RunningNormalizer> state_normalizer_;
 
+  // reward normalizer (optional, null if disabled); scale_only=true so mean is preserved
+  std::unique_ptr<RunningNormalizer> reward_normalizer_;
+
   // some parameters
   int batch_size_;
   int num_critics_;

@@ -44,10 +44,11 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node, int model_
                                            "entropy_loss_coefficient",
                                            "value_loss_coefficient",
                                            "normalize_advantage",
-                                           "normalize_state"};
+                                           "normalize_returns",
+                                           "normalize_states"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
-    if (params.get_param<bool>("normalize_state", false)[0]) {
+    if (params.get_param<bool>("normalize_states", false)[0]) {
       state_normalizer_ = std::make_unique<RunningNormalizer>();
     }
     gamma_ = params.get_param<float>("gamma")[0];
@@ -63,7 +64,12 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node, int model_
     entropy_loss_coeff_ = params.get_param<float>("entropy_loss_coefficient", 0.0)[0];
     value_loss_coeff_ = params.get_param<float>("value_loss_coefficient", 0.5)[0];
     normalize_advantage_ = params.get_param<bool>("normalize_advantage", true)[0];
+    normalize_returns_ = params.get_param<bool>("normalize_returns", false)[0];
+    if (normalize_returns_) {
+      return_normalizer_ = std::make_unique<RunningNormalizer>(1e-8f, /* scale_only = */ true);
+    }
     advantage_normalized_ = false;
+    returns_normalized_ = false;
   } else {
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
   }
@@ -261,6 +267,12 @@ void PPOSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
     state_normalizer_->save(normalizer_path.native());
   }
 
+  // return normalizer
+  if (return_normalizer_) {
+    auto normalizer_path = root_dir / "return_normalizer.pt";
+    return_normalizer_->save(normalizer_path.native());
+  }
+
   // lastly, save the replay buffer:
   {
     auto buffer_path = root_dir / "rollout_buffer";
@@ -323,6 +335,18 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     }
   }
 
+  // return normalizer
+  if (return_normalizer_) {
+    auto normalizer_path = root_dir / "return_normalizer.pt";
+    if (!std::filesystem::exists(normalizer_path)) {
+      torchfort::logging::print("PPO: return normalizer is enabled but no saved state was found in the checkpoint. "
+                                "Starting with empty statistics.",
+                                torchfort::logging::warn);
+    } else {
+      return_normalizer_->load(normalizer_path.native());
+    }
+  }
+
   // lastly, load the rollout buffer:
   {
     auto buffer_path = root_dir / "rollout_buffer";
@@ -376,16 +400,26 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor stens, torch::Tensor atens, to
   // the replay buffer only stores scaled actions!
   rollout_buffer_->update(stens, as, rtens, value, log_p_tensor, etens);
 
-  // normalize advantages once over the full rollout as soon as it is finalized,
-  // before any mini-batch sampling starts
-  if (normalize_advantage_ && rollout_buffer_->isReady() && !advantage_normalized_) {
-    rollout_buffer_->normalizeAdvantages(pq_model_.comm);
-    advantage_normalized_ = true;
+  // once per rollout, after finalization and before any mini-batch sampling:
+  // 1. normalize returns (scale R and A by running return std, preserving mean)
+  // 2. normalize advantages (zero-center and unit-std A on top of the return scale)
+  // order matters: return normalization must happen first so advantage normalization
+  // operates on the already-return-scaled advantages
+  if (rollout_buffer_->isReady()) {
+    if (return_normalizer_ && !returns_normalized_) {
+      rollout_buffer_->normalizeReturns(pq_model_.comm, *return_normalizer_);
+      returns_normalized_ = true;
+    }
+    if (normalize_advantage_ && !advantage_normalized_) {
+      rollout_buffer_->normalizeAdvantages(pq_model_.comm);
+      advantage_normalized_ = true;
+    }
   }
 }
 
 void PPOSystem::resetRolloutBuffer() {
   rollout_buffer_->reset();
+  returns_normalized_ = false;
   advantage_normalized_ = false;
 }
 

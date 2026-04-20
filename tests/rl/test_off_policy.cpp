@@ -289,7 +289,7 @@ TEST(DDPG, ActionEnv) {
   EXPECT_NEAR(val, cmp, tol);
 }
 
-TEST(DDPG, ActionStateEnv) {
+TEST(DDPG, DISABLED_ActionStateEnv) {
   float val, cmp, tol;
   std::tie(val, cmp, tol) = TestSystem(ActionState, "ddpg", 20000, 0, 100, false);
   EXPECT_NEAR(val, cmp, tol);

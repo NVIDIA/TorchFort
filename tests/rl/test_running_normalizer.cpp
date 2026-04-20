@@ -315,6 +315,81 @@ TEST(RunningNormalizerScaleOnly, CheckpointPreservesMode) {
   }
 }
 
+// ---- Test 9: sign preservation -------------------------------------------
+// For reward normalization, dividing by std must never flip the sign of a
+// reward. Positive rewards must stay positive and negative rewards must stay
+// negative after normalization. This is the key property that distinguishes
+// scale_only from full normalization for the reward use case.
+TEST(RunningNormalizerScaleOnly, SignPreservation) {
+  torch::manual_seed(203);
+  torch::NoGradGuard no_grad;
+
+  // Rewards are strictly positive (e.g. sparse +1 reward task)
+  rl::RunningNormalizer pos_normalizer(1e-8f, /* scale_only = */ true);
+  for (int i = 0; i < 300; ++i) {
+    // uniform in [0.5, 2.0]: always positive
+    auto rewards = torch::rand({100, 1}) * 1.5f + 0.5f;
+    pos_normalizer.update(rewards);
+  }
+  auto pos_probe = torch::rand({1000, 1}) * 1.5f + 0.5f;
+  auto pos_normalized = pos_normalizer.normalize(pos_probe);
+  EXPECT_TRUE((pos_normalized > 0).all().item<bool>())
+      << "scale_only: all positive rewards must remain positive after normalization";
+
+  // Rewards with mixed signs: positive and negative values
+  rl::RunningNormalizer mixed_normalizer(1e-8f, /* scale_only = */ true);
+  for (int i = 0; i < 300; ++i) {
+    auto rewards = torch::randn({100, 1}) * 2.0f; // mean=0, some positive, some negative
+    mixed_normalizer.update(rewards);
+  }
+  // A clearly positive value must normalize to a positive value
+  auto clearly_positive = torch::ones({1, 1}) * 5.0f;
+  auto clearly_negative = torch::ones({1, 1}) * -5.0f;
+  EXPECT_GT(mixed_normalizer.normalize(clearly_positive)[0][0].item<float>(), 0.0f)
+      << "scale_only: clearly positive reward must normalize to positive value";
+  EXPECT_LT(mixed_normalizer.normalize(clearly_negative)[0][0].item<float>(), 0.0f)
+      << "scale_only: clearly negative reward must normalize to negative value";
+}
+
+// ---- Test 10: large-scale reward normalization ----------------------------
+// Simulate a task with large reward magnitudes (e.g. a control task where
+// rewards are in the hundreds). The normalizer should scale them to unit std
+// while preserving the mean, making the scale task-agnostic.
+TEST(RunningNormalizerScaleOnly, LargeScaleRewards) {
+  torch::manual_seed(204);
+  torch::NoGradGuard no_grad;
+
+  // Rewards ~ N(mean=100, std=20): large positive values typical of dense reward tasks
+  const float reward_mean = 100.0f;
+  const float reward_std  = 20.0f;
+
+  rl::RunningNormalizer normalizer(1e-8f, /* scale_only = */ true);
+  for (int i = 0; i < 500; ++i) {
+    auto rewards = torch::randn({100, 1}) * reward_std + reward_mean;
+    normalizer.update(rewards);
+  }
+
+  // Normalize a large fresh batch
+  const int test_size = 10000;
+  auto test_rewards = torch::randn({test_size, 1}) * reward_std + reward_mean;
+  auto normalized = normalizer.normalize(test_rewards);
+
+  // std should be ~1 (scale normalization worked)
+  float out_std = normalized.std().item<float>();
+  EXPECT_NEAR(out_std, 1.0f, 0.05f)
+      << "Large-scale rewards should be scaled to unit std";
+
+  // mean should be ~reward_mean / reward_std = 5.0 (mean is preserved, not removed)
+  float out_mean = normalized.mean().item<float>();
+  float expected_mean = reward_mean / reward_std;
+  EXPECT_NEAR(out_mean, expected_mean, 0.1f)
+      << "Large-scale rewards: mean should be preserved as ~mean/std after scale normalization";
+
+  // all values should still be positive (since mean >> std, all rewards are positive)
+  EXPECT_TRUE((normalized > 0).all().item<bool>())
+      << "All rewards should remain positive after scale normalization";
+}
+
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

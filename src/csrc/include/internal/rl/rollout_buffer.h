@@ -71,6 +71,8 @@ public:
   virtual ExtendedBufferEntry getFull(int) = 0;
   virtual bool isReady() const = 0;
   virtual void reset() = 0;
+  virtual void normalizeReturns(std::shared_ptr<Comm> comm, RunningNormalizer& return_normalizer) = 0;
+  virtual void normalizeAdvantages(std::shared_ptr<Comm> comm) = 0;
   virtual void setSeed(unsigned int seed) = 0;
   virtual void printInfo() const = 0;
   virtual void save(const std::string& fname) const = 0;

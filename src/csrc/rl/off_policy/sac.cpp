@@ -75,7 +75,7 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_
     alpha_model_ = std::make_shared<AlphaModel>(am);
     alpha_model_->to(model_device_);
     // remaining parameters
-    target_entropy_ = params.get_param<float>("target_entropy_", 1.)[0];
+    target_entropy_ = params.get_param<float>("target_entropy", 1.)[0];
     nstep_ = params.get_param<int>("nstep", 1)[0];
     auto redmode = params.get_param<std::string>("nstep_reward_reduction", "sum")[0];
     if (redmode == "sum") {
@@ -85,7 +85,7 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_
     } else if (redmode == "weighted_mean") {
       nstep_reward_reduction_ = RewardReductionMode::WeightedMean;
     } else {
-      std::invalid_argument("Unknown nstep_reward_reduction specified");
+      THROW_INVALID_USAGE("Unknown nstep_reward_reduction specified: " + redmode);
     }
   } else {
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
@@ -214,6 +214,16 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_
   if (system_node["alpha_optimizer"]) {
     // register alpha as a new parameter
     alpha_optimizer_ = get_optimizer(system_node["alpha_optimizer"], alpha_model_->parameters());
+    // if alpha was initialized to 0, alpha_coeff_ is false and AlphaModel::forward returns 0
+    // unconditionally, meaning the optimizer has no effect on training — enable it and warn
+    if (!alpha_model_->alpha_coeff_) {
+      alpha_model_->alpha_coeff_ = true;
+      torchfort::logging::print(
+          "SAC: alpha_optimizer is configured but alpha was set to 0. Enabling entropy regularization "
+          "with the initial value alpha = 0.01 (log_alpha = log(0.01)). Set a nonzero alpha in the "
+          "config to suppress this warning and control the initial value.",
+          torchfort::logging::warn);
+    }
   } else {
     alpha_optimizer_ = nullptr;
   }
@@ -606,13 +616,13 @@ torch::Tensor SACSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  q_models_target_[0].model->to(model_device_);
-  q_models_target_[0].model->eval();
+  q_models_[0].model->to(model_device_);
+  q_models_[0].model->eval();
   state = state.to(model_device_);
   action = action.to(model_device_);
 
   // do fwd pass
-  torch::Tensor reward = (q_models_target_[0].model)->forward(std::vector<torch::Tensor>{state, action})[0];
+  torch::Tensor reward = (q_models_[0].model)->forward(std::vector<torch::Tensor>{state, action})[0];
 
   // squeeze
   reward = torch::squeeze(reward, 1);

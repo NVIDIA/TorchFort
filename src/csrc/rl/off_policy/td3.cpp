@@ -57,7 +57,7 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node, int model_
     } else if (redmode == "weighted_mean_no_skip") {
       nstep_reward_reduction_ = RewardReductionMode::WeightedMeanNoSkip;
     } else {
-      std::invalid_argument("Unknown nstep_reward_reduction specified");
+      THROW_INVALID_USAGE("Unknown nstep_reward_reduction specified: " + redmode);
     }
   } else {
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
@@ -79,7 +79,19 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node, int model_
       float mu = 0.f;
       bool adaptive = params.get_param<bool>("adaptive", false)[0];
 
-      // we need to set up the noise actor type:
+      // Two separate noise actors are constructed from these parameters:
+      //
+      // noise_actor_train_ (sigma_train, clip): used exclusively for TARGET POLICY SMOOTHING,
+      //   i.e. adding clipped noise to the target actor's actions when computing Bellman targets:
+      //   y = r + gamma * min(Q1_targ, Q2_targ)(s', clip(mu_targ(s') + eps, a_low, a_high))
+      //   where eps ~ clip(N(0, sigma_train), -clip, clip).
+      //   This regularizes the Q-value estimate against narrow peaks. The TD3 paper recommends
+      //   sigma_train=0.2 and clip=0.5 (as fractions of the action range).
+      //   NOTE: despite the name "train", this has nothing to do with the policy gradient update.
+      //
+      // noise_actor_exploration_ (sigma_explore): used during environment rollout collection,
+      //   i.e. the noise added to the live policy when gathering experience. The TD3 paper
+      //   recommends sigma_explore=0.1.
       if (noise_actor_type == "space_noise") {
         noise_actor_train_ = std::make_shared<ActionNoise<float>>(mu, sigma_train, clip, adaptive);
         noise_actor_exploration_ = std::make_shared<ActionNoise<float>>(mu, sigma_explore, 0.f, adaptive);
@@ -88,6 +100,11 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node, int model_
         float xi = params.get_param<float>("xi", 0.)[0];
         noise_actor_train_ = std::make_shared<ActionNoiseOU<float>>(mu, sigma_train, clip, dt, xi, adaptive);
         noise_actor_exploration_ = std::make_shared<ActionNoiseOU<float>>(mu, sigma_explore, 0.f, dt, xi, adaptive);
+        torchfort::logging::print(
+            "TD3: OU noise is used for target policy smoothing. OU noise is temporally correlated and violates "
+            "the i.i.d. assumption required by TD3 target policy smoothing. This can bias Q-value targets across "
+            "training steps. Consider using space_noise (i.i.d. Gaussian) for the training noise instead.",
+            torchfort::logging::warn);
       } else if (noise_actor_type == "parameter_noise") {
         noise_actor_train_ = std::make_shared<ParameterNoise<float>>(mu, sigma_train, clip, adaptive);
         noise_actor_exploration_ = std::make_shared<ParameterNoise<float>>(mu, sigma_explore, 0.f, adaptive);
@@ -96,6 +113,11 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node, int model_
         float xi = params.get_param<float>("xi", 0.)[0];
         noise_actor_train_ = std::make_shared<ParameterNoiseOU<float>>(mu, sigma_train, clip, dt, xi, adaptive);
         noise_actor_exploration_ = std::make_shared<ParameterNoiseOU<float>>(mu, sigma_explore, 0.f, dt, xi, adaptive);
+        torchfort::logging::print(
+            "TD3: OU noise is used for target policy smoothing. OU noise is temporally correlated and violates "
+            "the i.i.d. assumption required by TD3 target policy smoothing. This can bias Q-value targets across "
+            "training steps. Consider using parameter_noise (i.i.d. Gaussian) for the training noise instead.",
+            torchfort::logging::warn);
       } else {
         THROW_INVALID_USAGE(noise_actor_type);
       }
@@ -511,13 +533,13 @@ torch::Tensor TD3System::evaluate(torch::Tensor state, torch::Tensor action) {
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  q_models_target_[0].model->to(model_device_);
-  q_models_target_[0].model->eval();
+  q_models_[0].model->to(model_device_);
+  q_models_[0].model->eval();
   state = state.to(model_device_);
   action = action.to(model_device_);
 
   // do fwd pass
-  torch::Tensor reward = (q_models_target_[0].model)->forward(std::vector<torch::Tensor>{state, action})[0];
+  torch::Tensor reward = (q_models_[0].model)->forward(std::vector<torch::Tensor>{state, action})[0];
 
   // squeeze
   reward = torch::squeeze(reward, 1);

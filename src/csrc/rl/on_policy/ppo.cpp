@@ -51,6 +51,11 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node, int model_
     target_kl_divergence_ = params.get_param<float>("target_kl_divergence")[0];
     epsilon_ = params.get_param<float>("epsilon", 0.2)[0];
     clip_q_ = params.get_param<float>("clip_q", 0.)[0];
+    // entropy regularization coefficient; 0 disables it (default).
+    // A value of 0.01 is a common starting point, especially for discrete action spaces
+    // where the policy can otherwise collapse to a single action early in training.
+    // For continuous action spaces the Gaussian policy spreads naturally via log_sigma,
+    // so 0 is often sufficient there.
     entropy_loss_coeff_ = params.get_param<float>("entropy_loss_coefficient", 0.0)[0];
     value_loss_coeff_ = params.get_param<float>("value_loss_coefficient", 0.5)[0];
     normalize_advantage_ = params.get_param<bool>("normalize_advantage", true)[0];
@@ -170,8 +175,8 @@ void PPOSystem::printInfo() const {
   std::cout << "batch_size = " << batch_size_ << std::endl;
   std::cout << "epsilon = " << epsilon_ << std::endl;
   std::cout << "clip_q = " << clip_q_ << std::endl;
-  std::cout << "entropy_loss_coefficient" << entropy_loss_coeff_ << std::endl;
-  std::cout << "value_loss_coefficient" << value_loss_coeff_ << std::endl;
+  std::cout << "entropy_loss_coefficient = " << entropy_loss_coeff_ << std::endl;
+  std::cout << "value_loss_coefficient = " << value_loss_coeff_ << std::endl;
   std::cout << "normalize_advantage = " << normalize_advantage_ << std::endl;
   std::cout << "a_low = " << a_low_ << std::endl;
   std::cout << "a_high = " << a_high_ << std::endl;

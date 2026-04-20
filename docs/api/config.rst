@@ -271,65 +271,95 @@ The following table lists the available algorithm types:
 
 The following table lists the available options by algorithm type:
 
-+----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
-| Algorithm Name | Kind        | Option                       | Data Type  | Description                                                                               |
-+================+=============+==============================+============+===========================================================================================+
-| ``ddpg``       | off policy  | ``batch_size``               | integer    | batch size used in training                                                               |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                       |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training (see below)                                            |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``gamma``                    | float      | discount factor                                                                           |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``rho``                      | boolean    | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
-+----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
-| ``td3``        | off policy  | ``batch_size``               | integer    | batch size used in training                                                               |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                       |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training (see below)                                            |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``gamma``                    | float      | discount factor                                                                           |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``rho``                      | float      | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``num_critics``              | integer    | number of critic networks used                                                            |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``policy_lag``               | integer    | update frequency for the policy in units of critic updates                                |
-+----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
-| ``sac``        | off policy  | ``batch_size``               | integer    | batch size used in training                                                               |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                       |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training (see below)                                            |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``gamma``                    | float      | discount factor                                                                           |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``alpha``                    | float      | entropy regularization coefficient                                                        |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``rho``                      | boolean    | weight average factor for target weights (in some frameworks called rho = 1-tau)          |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``policy_lag``               | integer    | update frequency for the policy in units of value updates                                 |
-+----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
-| ``ppo``        | on policy   | ``batch_size``               | integer    | batch size used in training                                                               |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``gae_lambda``               | float      | discount factor for General Advantage Estimator                                           |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``epsilon``                  | float      | clip ratio, policy discrepancy regularization                                             |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``gamma``                    | float      | discount factor                                                                           |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``clip_q``                   | float      | clip range for value function estimate (denoted by `clip_vf` in Stable Baselines)         |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``target_kl_divergence``     | float      | target KL divergence for KL regularization                                                |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``entropy_loss_coefficient`` | float      | entropy loss coefficient: weight for entropy component of the loss function               |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``value_loss_coefficient``   | float      | value loss coefficient: weight for value estimate component of the loss function          |
-+                +             +------------------------------+------------+-------------------------------------------------------------------------------------------+
-|                |             | ``normalize_advantage``      | boolean    | if set to true, advantage values are normalized over all buffer entries                   |
-+----------------+-------------+------------------------------+------------+-------------------------------------------------------------------------------------------+
++----------------+-------------+------------------------------+------------+--------------------------------------------------------------------------------------------------+
+| Algorithm Name | Kind        | Option                       | Data Type  | Description                                                                                      |
++================+=============+==============================+============+==================================================================================================+
+| ``ddpg``       | off policy  | ``batch_size``               | integer    | batch size used in training                                                                      |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                              |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training (see below)                                                   |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                                  |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``rho``                      | float      | weight average factor for target weights (in some frameworks called rho = 1-tau)                 |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``normalize_states``         | boolean    | enable online per-feature normalization of observations to zero mean and unit variance           |
+|                |             |                              |            | using a running Welford estimator (default = ``false``)                                          |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``normalize_rewards``        | boolean    | enable running std normalization of rewards (scale only, mean preserved) (default = ``false``)   |
++----------------+-------------+------------------------------+------------+--------------------------------------------------------------------------------------------------+
+| ``td3``        | off policy  | ``batch_size``               | integer    | batch size used in training                                                                      |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                              |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training (see below)                                                   |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                                  |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``rho``                      | float      | weight average factor for target weights (in some frameworks called rho = 1-tau)                 |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``num_critics``              | integer    | number of critic networks used                                                                   |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``policy_lag``               | integer    | update frequency for the policy in units of critic updates                                       |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``normalize_states``         | boolean    | enable online per-feature normalization of observations to zero mean and unit variance           |
+|                |             |                              |            | using a running Welford estimator (default = ``false``)                                          |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``normalize_rewards``        | boolean    | enable running std normalization of rewards (scale only, mean preserved) (default = ``false``)   |
++----------------+-------------+------------------------------+------------+--------------------------------------------------------------------------------------------------+
+| ``sac``        | off policy  | ``batch_size``               | integer    | batch size used in training                                                                      |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``nstep``                    | integer    | number of steps for N-step training                                                              |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``nstep_reward_reduction``   | string     | reduction mode for N-step training. Note: only ``sum``, ``mean``, and ``weighted_mean`` are      |
+|                |             |                              |            | supported for SAC; the ``_no_skip`` variants are not available                                   |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                                  |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``rho``                      | float      | weight average factor for target weights (in some frameworks called rho = 1-tau)                 |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``num_critics``              | integer    | number of critic networks used (default = ``2``)                                                 |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``alpha``                    | float      | initial entropy regularization coefficient (default = ``0.0``, i.e. disabled)                   |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``target_entropy``           | float      | target entropy for automatic alpha tuning; positive values trigger the heuristic                 |
+|                |             |                              |            | ``-action_dim`` (default = ``1.0``, i.e. use heuristic)                                          |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``normalize_states``         | boolean    | enable online per-feature normalization of observations to zero mean and unit variance           |
+|                |             |                              |            | using a running Welford estimator (default = ``false``)                                          |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``normalize_rewards``        | boolean    | enable running std normalization of rewards (scale only, mean preserved) (default = ``false``).  |
+|                |             |                              |            | **Strongly recommended** when using ``alpha_optimizer``: reward normalization keeps Q-values     |
+|                |             |                              |            | on a consistent scale, making the automatic entropy tuning robust across tasks with different    |
+|                |             |                              |            | reward magnitudes.                                                                               |
++----------------+-------------+------------------------------+------------+--------------------------------------------------------------------------------------------------+
+| ``ppo``        | on policy   | ``batch_size``               | integer    | batch size used in training                                                                      |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``gae_lambda``               | float      | discount factor for General Advantage Estimator                                                  |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``epsilon``                  | float      | clip ratio, policy discrepancy regularization                                                    |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``gamma``                    | float      | discount factor                                                                                  |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``clip_q``                   | float      | clip range for value function estimate (denoted by ``clip_vf`` in Stable Baselines)              |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``target_kl_divergence``     | float      | target KL divergence for early stopping of gradient steps                                        |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``entropy_loss_coefficient`` | float      | entropy loss coefficient: weight for entropy component of the loss function                      |
+|                |             |                              |            | (default = ``0.0``; a value of ``0.01`` is a common starting point for discrete action spaces)  |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``value_loss_coefficient``   | float      | value loss coefficient: weight for value estimate component of the loss function                 |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``normalize_advantage``      | boolean    | normalize advantage values over the full rollout before mini-batch training (default = ``true``) |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``normalize_states``         | boolean    | enable online per-feature normalization of observations to zero mean and unit variance           |
+|                |             |                              |            | using a running Welford estimator (default = ``false``)                                          |
++                +             +------------------------------+------------+--------------------------------------------------------------------------------------------------+
+|                |             | ``normalize_returns``        | boolean    | enable running std normalization of GAE returns (scale only, mean preserved). Also scales        |
+|                |             |                              |            | advantages by the same factor for consistency. Applied before ``normalize_advantage``            |
+|                |             |                              |            | (default = ``false``)                                                                            |
++----------------+-------------+------------------------------+------------+--------------------------------------------------------------------------------------------------+
 
 The parameter ``nstep_reward_reduction`` defines how the reward is accumulated over N-step rollouts. The options are summarized in a table below (:math:`N` is the value from parameter ``nstep`` described above):
 
@@ -411,71 +441,83 @@ The block in the configuration file defining actor properties takes the followin
 
 The following table lists the available options for every action type for ``ddpg`` and ``td3`` algorithms:
 
-+----------------------------------------------+-------------------+------------+-------------------------------------------------------------------+
-| Actor Type                                   | Option            | Data Type  | Description                                                       |
-+==============================================+===================+============+===================================================================+
-| ``space_noise`` or ``parameter_noise``       | ``a_low``         | float      | lower bound for action value                                      |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``a_high``        | float      | upper bound for action value                                      |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``clip``          | float      | clip value for training noise                                     |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``sigma_train``   | float      | standard deviation for gaussian training noise                    |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``sigma_explore`` | float      | standard deviation for gaussian exploration noise                 |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``adaptive``      | bool       | flag to specify whether the standard deviation should be adaptive |
-+----------------------------------------------+-------------------+------------+-------------------------------------------------------------------+
-| ``space_noise_ou`` or ``parameter_noise_ou`` | ``a_low``         | float      | lower bound for action value                                      |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``a_high``        | float      | upper bound for action value                                      |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``clip``          | float      | clip value for training noise                                     |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``sigma_train``   | float      | standard deviation for Ornstein-Uhlenbeck training noise          |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``sigma_explore`` | float      | standard deviation for Ornstein-Uhlenbeck exploration noise       |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``xi``            | float      | mean reversion parameter for Ornstein-Uhlenbeck noise             |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``dt``            | float      | time-step parameter for Ornstein-Uhlenbeck noise                  |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``adaptive``      | bool       | flag to specify whether the standard deviation should be adaptive |
-+----------------------------------------------+-------------------+------------+-------------------------------------------------------------------+
-| ``gaussian_ac``                              | ``a_low``         | float      | lower bound for action value                                      |
-+                                              +-------------------+------------+-------------------------------------------------------------------+
-|                                              | ``a_high``        | float      | upper bound for action value                                      |
-+----------------------------------------------+-------------------+------------+-------------------------------------------------------------------+
++----------------------------------------------+-------------------+------------+------------------------------------------------------------------------------------------------------+
+| Actor Type                                   | Option            | Data Type  | Description                                                                                          |
++==============================================+===================+============+======================================================================================================+
+| ``space_noise`` or ``parameter_noise``       | ``a_low``         | float      | lower bound for action value                                                                         |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``a_high``        | float      | upper bound for action value                                                                         |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``clip``          | float      | clip magnitude for target policy smoothing noise, i.e. :math:`\varepsilon \sim                       |
+|                                              |                   |            | \mathrm{clip}(\mathcal{N}(0,\sigma_\mathrm{train}), -\mathrm{clip}, \mathrm{clip})`.                 |
+|                                              |                   |            | TD3 paper recommends ``0.5``                                                                         |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``sigma_train``   | float      | standard deviation for **target policy smoothing** noise (TD3 only): noise added to the target      |
+|                                              |                   |            | actor when computing Bellman targets, not during rollout collection. TD3 paper recommends ``0.2``.   |
+|                                              |                   |            | For DDPG, this parameter is unused as DDPG does not use target policy smoothing.                     |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``sigma_explore`` | float      | standard deviation for exploration noise added to the live policy during rollout collection.         |
+|                                              |                   |            | TD3 paper recommends ``0.1``                                                                         |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``adaptive``      | bool       | flag to specify whether the standard deviation should be adaptive                                    |
++----------------------------------------------+-------------------+------------+------------------------------------------------------------------------------------------------------+
+| ``space_noise_ou`` or ``parameter_noise_ou`` | ``a_low``         | float      | lower bound for action value                                                                         |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``a_high``        | float      | upper bound for action value                                                                         |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``clip``          | float      | clip magnitude for target policy smoothing noise (see above)                                         |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``sigma_train``   | float      | standard deviation for Ornstein-Uhlenbeck target policy smoothing noise (see above).                 |
+|                                              |                   |            | **Warning (TD3 only):** OU noise is temporally correlated and violates the i.i.d. assumption         |
+|                                              |                   |            | required by TD3 target policy smoothing. Prefer ``space_noise`` for this purpose.                   |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``sigma_explore`` | float      | standard deviation for Ornstein-Uhlenbeck exploration noise during rollout collection                |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``xi``            | float      | mean reversion parameter for Ornstein-Uhlenbeck noise                                               |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``dt``            | float      | time-step parameter for Ornstein-Uhlenbeck noise                                                     |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``adaptive``      | bool       | flag to specify whether the standard deviation should be adaptive                                    |
++----------------------------------------------+-------------------+------------+------------------------------------------------------------------------------------------------------+
+| ``gaussian_ac`` or ``squashed_gaussian_ac``  | ``a_low``         | float      | lower bound for action value                                                                         |
++                                              +-------------------+------------+------------------------------------------------------------------------------------------------------+
+|                                              | ``a_high``        | float      | upper bound for action value                                                                         |
++----------------------------------------------+-------------------+------------+------------------------------------------------------------------------------------------------------+
 
-The meaning for most of these parameters should be evident from looking at the details of the implementations for the various RL algorithms linked above. 
+The meaning for most of these parameters should be evident from looking at the details of the implementations for the various RL algorithms linked above.
 However, some parameters require a more detailed explanation: in general, the suffix ``_ou`` refers to stateful noise of Ornstein-Uhlenbeck type with zero drift. This noise type is often used if correlation between time steps is desired and thus popular in reinforcement learning. Check out the `wikipedia page <https://en.wikipedia.org/wiki/Ornstein–Uhlenbeck_process>`_ for details.
 
-The prefix ``space`` refers to applying the noise to the predicted ation directly. For example, if :math:`p` is our (deterministic) policy function, an exploration action using space noise type is obtained by computing 
+The prefix ``space`` refers to applying the noise to the predicted action directly. For example, if :math:`p` is our (deterministic) policy function, an exploration action using space noise type is obtained by computing
 
 .. math::
 
-    \tilde{a} = \mathrm{clip}(p(\theta, s) + \mathcal{N}(0,\sigma_\mathrm{explore}), a_\mathrm{low}, a_\mathrm{high}) 
-    
-for any input state :math:`s` and policy weights :math:`\theta`. In case of parameter noise, the noise will be applied to each weight of :math:`p` instead. Hence, the noised action is computed  via
+    \tilde{a} = \mathrm{clip}(p(\theta, s) + \mathcal{N}(0,\sigma_\mathrm{explore}), a_\mathrm{low}, a_\mathrm{high})
+
+for any input state :math:`s` and policy weights :math:`\theta`. In case of parameter noise, the noise will be applied to each weight of :math:`p` instead. Hence, the noised action is computed via
 
 .. math::
 
-    \tilde{a} = \mathrm{clip}(p(\theta + \mathcal{N}(0,\sigma_\mathrm{explore}), s), a_\mathrm{low}, a_\mathrm{high}) 
-    
+    \tilde{a} = \mathrm{clip}(p(\theta + \mathcal{N}(0,\sigma_\mathrm{explore}), s), a_\mathrm{low}, a_\mathrm{high})
+
 The parameter ``adaptive`` specifies whether the noise variance :math:`\sigma` should be taken relative to the magnitude of the action magnitudes or weight magnitudes for space and parameter noise respectively. In terms of the former, this would mean that
 
 .. math::
-    
+
     a &= p(\theta, s)
-    
-    \tilde{a} &= \mathrm{clip}(a + \sigma_\mathrm{explore}\,\mathcal{N}(0,\|a\|), a_\mathrm{low}, a_\mathrm{high}) 
+
+    \tilde{a} &= \mathrm{clip}(a + \sigma_\mathrm{explore}\,\mathcal{N}(0,\|a\|), a_\mathrm{low}, a_\mathrm{high})
 
 and analogous for parameter noise.
 
 Whichever noise type and parameters are the best highly depends on the behavior of the environment and therefore we cannot give a general recommendation.
 
-For algorithm type ``sac``, only action bounds are supported as the noise is built into the algorithm and cannot be customized. 
-For algorithm type ``ppo``, ``gaussian_ac`` is the only supported actor type.
+.. note::
+
+    **TD3 target policy smoothing:** ``sigma_train`` and ``clip`` control the noise added to the *target* actor when computing Bellman targets — this is TD3's target policy smoothing regularization, not noise applied during rollout collection. These two roles (target smoothing vs. exploration) are intentionally separate and should be tuned independently. For DDPG, ``sigma_train`` has no effect as DDPG does not use target policy smoothing.
+
+For algorithm type ``sac``, only action bounds are required as the stochastic policy with squashed Gaussian noise is built into the algorithm. The actor type for SAC is always ``gaussian`` (squashed Gaussian policy) and cannot be customized.
+
+For algorithm type ``ppo``, two actor types are supported: ``gaussian_ac`` uses a standard Gaussian policy with action clipping, while ``squashed_gaussian_ac`` uses a squashed (tanh-bounded) Gaussian policy with action scaling — the latter is recommended when the action space requires strict bounds.
 
 Policy and Critic Properties
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -590,7 +632,31 @@ The block configuration for DDPG and TD3 looks as follows:
     parameters:
       <option> = <value>
 
-Since SAC uses additional parameters for the entropy regularization, the following block configuration can be added:
+SAC Automatic Entropy Tuning
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SAC supports automatic tuning of the entropy regularization coefficient :math:`\alpha`. To enable it,
+add an ``alpha_optimizer`` block using the same format as the main optimizer block:
+
+.. code-block:: yaml
+
+  alpha_optimizer:
+    type: <optimizer_type>
+    parameters:
+      <option> = <value>
+
+When ``alpha_optimizer`` is present, :math:`\alpha` becomes a trainable scalar parameter updated to
+drive the policy entropy toward ``target_entropy``. The initial value of :math:`\alpha` is set by the
+``alpha`` parameter in the algorithm block (default ``0.0``; if left at ``0.0`` a reasonable default
+of ``0.01`` is used and a warning is emitted). See :ref:`optimizer_properties-ref` for available
+optimizer types and options.
+
+.. note::
+
+    Reward normalization (``normalize_rewards: true``) is strongly recommended when using
+    ``alpha_optimizer``, as it keeps Q-values on a consistent scale and makes the automatic entropy
+    tuning robust across tasks with different reward magnitudes.
+
+An optional learning rate scheduler for :math:`\alpha` can also be configured:
 
 .. code-block:: yaml
 

@@ -35,8 +35,8 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node, int mode
   auto algo_node = system_node["algorithm"];
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
-    std::set<std::string> supported_params{"batch_size", "nstep", "nstep_reward_reduction", "gamma", "rho",
-                                           "normalize_state"};
+    std::set<std::string> supported_params{"batch_size", "nstep", "nstep_reward_reduction",
+                                           "gamma",      "rho",   "normalize_state"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     gamma_ = params.get_param<float>("gamma")[0];
@@ -370,10 +370,9 @@ void DDPGSystem::loadCheckpoint(const std::string& checkpoint_dir) {
   if (state_normalizer_) {
     auto normalizer_path = root_dir / "state_normalizer.pt";
     if (!std::filesystem::exists(normalizer_path)) {
-      torchfort::logging::print(
-          "DDPG: state normalizer is enabled but no saved state was found in the checkpoint. "
-          "Starting with empty statistics.",
-          torchfort::logging::warn);
+      torchfort::logging::print("DDPG: state normalizer is enabled but no saved state was found in the checkpoint. "
+                                "Starting with empty statistics.",
+                                torchfort::logging::warn);
     } else {
       state_normalizer_->load(normalizer_path.native());
     }
@@ -392,7 +391,8 @@ void DDPGSystem::loadCheckpoint(const std::string& checkpoint_dir) {
 // we should pass a tuple (s, a, s', r, d)
 void DDPGSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r,
                                     torch::Tensor d) {
-  if (state_normalizer_) state_normalizer_->update(s);
+  if (state_normalizer_)
+    state_normalizer_->update(s);
   replay_buffer_->update(s, a, sp, r, d);
 }
 
@@ -452,7 +452,8 @@ torch::Tensor DDPGSystem::predict(torch::Tensor state) {
   p_model_.model->to(model_device_);
   p_model_.model->eval();
   state = state.to(model_device_);
-  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
+  if (state_normalizer_ && state_normalizer_->isInitialized())
+    state = state_normalizer_->normalize(state);
 
   // do fwd pass
   auto action = (p_model_.model)->forward(std::vector<torch::Tensor>{state})[0];
@@ -471,7 +472,8 @@ torch::Tensor DDPGSystem::predictExplore(torch::Tensor state) {
   p_model_.model->to(model_device_);
   p_model_.model->eval();
   state = state.to(model_device_);
-  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
+  if (state_normalizer_ && state_normalizer_->isInitialized())
+    state = state_normalizer_->normalize(state);
 
   // do fwd pass
   auto action = (*noise_actor_exploration_)(p_model_, state);
@@ -491,7 +493,8 @@ torch::Tensor DDPGSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   q_model_.model->eval();
   state = state.to(model_device_);
   action = action.to(model_device_);
-  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
+  if (state_normalizer_ && state_normalizer_->isInitialized())
+    state = state_normalizer_->normalize(state);
 
   // do fwd pass
   torch::Tensor reward = (q_model_.model)->forward(std::vector<torch::Tensor>{state, action})[0];

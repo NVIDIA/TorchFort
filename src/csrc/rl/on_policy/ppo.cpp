@@ -315,10 +315,9 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
   if (state_normalizer_) {
     auto normalizer_path = root_dir / "state_normalizer.pt";
     if (!std::filesystem::exists(normalizer_path)) {
-      torchfort::logging::print(
-          "PPO: state normalizer is enabled but no saved state was found in the checkpoint. "
-          "Starting with empty statistics.",
-          torchfort::logging::warn);
+      torchfort::logging::print("PPO: state normalizer is enabled but no saved state was found in the checkpoint. "
+                                "Starting with empty statistics.",
+                                torchfort::logging::warn);
     } else {
       state_normalizer_->load(normalizer_path.native());
     }
@@ -365,10 +364,12 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor stens, torch::Tensor atens, to
   }
 
   // compute q:
-  if (state_normalizer_) state_normalizer_->update(stens);
+  if (state_normalizer_)
+    state_normalizer_->update(stens);
   torch::Tensor ad = as.to(model_device_);
   torch::Tensor sd = stens.to(model_device_);
-  if (state_normalizer_ && state_normalizer_->isInitialized()) sd = state_normalizer_->normalize(sd);
+  if (state_normalizer_ && state_normalizer_->isInitialized())
+    sd = state_normalizer_->normalize(sd);
   torch::Tensor log_p_tensor, entropy_tensor, value;
   std::tie(log_p_tensor, entropy_tensor, value) = (pq_model_.model)->evaluateAction(sd, ad);
 
@@ -416,7 +417,8 @@ torch::Tensor PPOSystem::predict(torch::Tensor state) {
   pq_model_.model->to(model_device_);
   pq_model_.model->eval();
   state = state.to(model_device_);
-  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
+  if (state_normalizer_ && state_normalizer_->isInitialized())
+    state = state_normalizer_->normalize(state);
 
   // do fwd pass
   torch::Tensor action, value;
@@ -443,7 +445,8 @@ torch::Tensor PPOSystem::predictExplore(torch::Tensor state) {
   pq_model_.model->to(model_device_);
   pq_model_.model->eval();
   state = state.to(model_device_);
-  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
+  if (state_normalizer_ && state_normalizer_->isInitialized())
+    state = state_normalizer_->normalize(state);
 
   // do fwd pass
   torch::Tensor action, log_probs, value;
@@ -470,7 +473,8 @@ torch::Tensor PPOSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   pq_model_.model->to(model_device_);
   pq_model_.model->eval();
   state = state.to(model_device_);
-  if (state_normalizer_ && state_normalizer_->isInitialized()) state = state_normalizer_->normalize(state);
+  if (state_normalizer_ && state_normalizer_->isInitialized())
+    state = state_normalizer_->normalize(state);
 
   // do fwd pass
   torch::Tensor action_tmp, value;
@@ -508,8 +512,7 @@ void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
 
   // train step
   train_ppo(pq_model_, s, a, q, logp, adv, ret, epsilon_, clip_q_, entropy_loss_coeff_, value_loss_coeff_,
-            target_kl_divergence_, p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_,
-            explained_variance_);
+            target_kl_divergence_, p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_, explained_variance_);
 
   // system logging
   if ((system_state_->report_frequency > 0) && (train_step_count_ % system_state_->report_frequency == 0)) {

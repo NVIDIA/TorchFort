@@ -258,6 +258,13 @@ public:
       returns_[step] = ret_reshaped[step];
       advantages_[step] = adv_reshaped[step];
     }
+
+    // also scale the stored value estimates (q) by the same std so that A = R - V
+    // holds in normalized space: A_norm = R_norm - V_norm = (R - V) / std
+    for (auto& entry : buffer_) {
+      auto& q = std::get<3>(entry);
+      q = return_normalizer.normalize(q.reshape({-1, 1})).reshape(q.sizes());
+    }
   }
 
   std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>

@@ -99,10 +99,10 @@ void training_test_distributed(const std::string& model_config, std::vector<int>
       FAIL();
     }
   } catch (const c10::Error& e) {
-    std::cout << e.what() << std::endl;
     if (should_fail_train) {
       // pass
     } else {
+      std::cout << e.what() << std::endl;
       FAIL();
     }
   }
@@ -123,10 +123,10 @@ void training_test_distributed(const std::string& model_config, std::vector<int>
       FAIL();
     }
   } catch (const c10::Error& e) {
-    std::cout << e.what() << std::endl;
-    if (should_fail_train) {
+    if (should_fail_inference) {
       // pass
     } else {
+      std::cout << e.what() << std::endl;
       FAIL();
     }
   }

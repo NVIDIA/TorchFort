@@ -30,6 +30,8 @@ namespace torchfort {
 namespace rl {
 
 using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>;
+using SampleResult = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
+                                torch::Tensor, torch::Tensor>;
 
 enum RewardReductionMode { Sum = 1, Mean = 2, WeightedMean = 3, SumNoSkip = 4, MeanNoSkip = 5, WeightedMeanNoSkip = 6 };
 
@@ -55,8 +57,11 @@ public:
 
   // virtual functions
   virtual void update(torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor) = 0;
-  // sample element randomly
-  virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(int) = 0;
+  // sample elements: returns (s, a, s', r, d, is_weights, indices)
+  // is_weights are all-ones and indices are all-zeros for uniform sampling
+  virtual SampleResult sample(int) = 0;
+  // update priorities based on per-sample TD errors; no-op for uniform sampling
+  virtual void update_priorities(torch::Tensor /* indices */, torch::Tensor /* td_errors */) {}
   // get specific element
   virtual BufferEntry get(int) = 0;
   // helper functions
@@ -134,7 +139,7 @@ public:
     }
   }
 
-  std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> sample(int batch_size) {
+  SampleResult sample(int batch_size) {
 
     // add no grad guard
     torch::NoGradGuard no_grad;
@@ -227,7 +232,11 @@ public:
     rtens = torch::stack(rtens_list, 0).clone();
     dtens = torch::stack(dtens_list, 0).clone();
 
-    return std::make_tuple(stens, atens, sptens, rtens, dtens);
+    // uniform buffer: unit IS weights, zero indices (ignored by no-op update_priorities)
+    auto is_weights = torch::ones(batch_size, torch::TensorOptions().dtype(torch::kFloat32).device(device_));
+    auto indices = torch::zeros(batch_size, torch::TensorOptions().dtype(torch::kLong).device(device_));
+
+    return std::make_tuple(stens, atens, sptens, rtens, dtens, is_weights, indices);
   }
 
   BufferEntry get(int index) {

@@ -700,12 +700,12 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   train_step_count_++;
 
   // we need these
-  torch::Tensor s, a, ap, sp, r, d;
+  torch::Tensor s, a, ap, sp, r, d, is_weights, sample_indices;
   {
     torch::NoGradGuard no_grad;
 
     // get a sample from the replay buffer
-    std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_);
+    std::tie(s, a, sp, r, d, is_weights, sample_indices) = replay_buffer_->sample(batch_size_);
 
     // upload to device
     s = s.to(model_device_);
@@ -713,6 +713,7 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     sp = sp.to(model_device_);
     r = r.to(model_device_);
     d = d.to(model_device_);
+    is_weights = is_weights.to(model_device_);
 
     // sync and apply state normalization
     if (state_normalizer_) {
@@ -729,8 +730,13 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   }
 
   // train step
-  train_sac(p_model_, q_models_, q_models_target_, s, sp, a, r, d, alpha_model_, alpha_optimizer_, alpha_lr_scheduler_,
-            target_entropy_, static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_val);
+  torch::Tensor td_errors;
+  train_sac(p_model_, q_models_, q_models_target_, s, sp, a, r, d, is_weights, alpha_model_, alpha_optimizer_,
+            alpha_lr_scheduler_, target_entropy_, static_cast<float>(std::pow(gamma_, nstep_)), rho_, td_errors,
+            p_loss_val, q_loss_val);
+
+  // update priorities (no-op for uniform buffer)
+  replay_buffer_->update_priorities(sample_indices, td_errors);
 }
 
 } // namespace off_policy

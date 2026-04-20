@@ -533,12 +533,12 @@ void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   train_step_count_++;
 
   // get samples from replay buffer
-  torch::Tensor s, a, ap, sp, r, d;
+  torch::Tensor s, a, ap, sp, r, d, is_weights, sample_indices;
   {
     torch::NoGradGuard no_grad;
 
     // get a sample from the replay buffer
-    std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_);
+    std::tie(s, a, sp, r, d, is_weights, sample_indices) = replay_buffer_->sample(batch_size_);
 
     // upload to device
     s = s.to(model_device_);
@@ -546,6 +546,7 @@ void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     sp = sp.to(model_device_);
     r = r.to(model_device_);
     d = d.to(model_device_);
+    is_weights = is_weights.to(model_device_);
 
     // sync and apply state normalization
     if (state_normalizer_) {
@@ -565,8 +566,12 @@ void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   }
 
   // train step
-  train_ddpg(p_model_, p_model_target_, q_model_, q_model_target_, s, sp, a, ap, r, d,
-             static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_val);
+  torch::Tensor td_errors;
+  train_ddpg(p_model_, p_model_target_, q_model_, q_model_target_, s, sp, a, ap, r, d, is_weights,
+             static_cast<float>(std::pow(gamma_, nstep_)), rho_, td_errors, p_loss_val, q_loss_val);
+
+  // update priorities (no-op for uniform buffer)
+  replay_buffer_->update_priorities(sample_indices, td_errors);
 }
 
 } // namespace off_policy

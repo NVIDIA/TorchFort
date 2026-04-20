@@ -103,8 +103,8 @@ TEST_P(ReplayBuffer, ShapeConsistency) {
   auto rbuff = getTestReplayBuffer(buffer_size, n_envs, 0.95, 1);
 
   // sample
-  torch::Tensor stens, atens, sptens, rtens, dtens;
-  std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
+  torch::Tensor stens, atens, sptens, rtens, dtens, is_weights, sample_indices;
+  std::tie(stens, atens, sptens, rtens, dtens, is_weights, sample_indices) = rbuff->sample(batch_size);
 
   // check shapes
   EXPECT_EQ(stens.dim(), 2);
@@ -112,15 +112,25 @@ TEST_P(ReplayBuffer, ShapeConsistency) {
   EXPECT_EQ(sptens.dim(), 2);
   EXPECT_EQ(rtens.dim(), 1);
   EXPECT_EQ(dtens.dim(), 1);
+  EXPECT_EQ(is_weights.dim(), 1);
+  EXPECT_EQ(sample_indices.dim(), 1);
 
   EXPECT_EQ(stens.size(0), batch_size);
   EXPECT_EQ(atens.size(0), batch_size);
   EXPECT_EQ(sptens.size(0), batch_size);
   EXPECT_EQ(rtens.size(0), batch_size);
   EXPECT_EQ(dtens.size(0), batch_size);
+  EXPECT_EQ(is_weights.size(0), batch_size);
+  EXPECT_EQ(sample_indices.size(0), batch_size);
 
   EXPECT_EQ(stens.size(1), 1);
   EXPECT_EQ(atens.size(1), 1);
+
+  // uniform buffer: weights must be all-ones, dtype float; indices dtype long
+  EXPECT_EQ(is_weights.scalar_type(), torch::kFloat32);
+  EXPECT_EQ(sample_indices.scalar_type(), torch::kLong);
+  EXPECT_FLOAT_EQ(is_weights.min().item<float>(), 1.f);
+  EXPECT_FLOAT_EQ(is_weights.max().item<float>(), 1.f);
 }
 
 // check if entries are consistent
@@ -138,11 +148,11 @@ TEST_P(ReplayBuffer, EntryConsistency) {
   auto rbuff = getTestReplayBuffer(buffer_size, n_envs, 0.95, 1);
 
   // sample
-  torch::Tensor stens, atens, sptens, rtens, dtens;
+  torch::Tensor stens, atens, sptens, rtens, dtens, is_weights, sample_indices;
   float state_diff = 0;
   float reward_diff = 0.;
   for (unsigned int i = 0; i < 4; ++i) {
-    std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
+    std::tie(stens, atens, sptens, rtens, dtens, is_weights, sample_indices) = rbuff->sample(batch_size);
 
     // compute differences:
     state_diff += torch::sum(torch::abs(stens + atens - sptens)).item<float>();
@@ -202,10 +212,10 @@ TEST_P(ReplayBuffer, NStepConsistency) {
   auto rbuff = getTestReplayBuffer(buffer_size, n_envs, gamma, nstep);
 
   // sample a batch
-  torch::Tensor stens, atens, sptens, rtens, dtens;
+  torch::Tensor stens, atens, sptens, rtens, dtens, is_weights, sample_indices;
   float state_diff = 0;
   float reward_diff = 0.;
-  std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
+  std::tie(stens, atens, sptens, rtens, dtens, is_weights, sample_indices) = rbuff->sample(batch_size);
 
   // iterate over samples in batch
   torch::Tensor stemp, atemp, sptemp, sstens, rtemp, dtemp, spfin;
@@ -339,8 +349,8 @@ TEST(RewardNormalization, UnitStdPreservedMean) {
 
   // Sample a batch and normalize rewards as trainStep does
   const int batch_size = 256;
-  torch::Tensor s, a, sp, r, d;
-  std::tie(s, a, sp, r, d) = rbuff->sample(batch_size);
+  torch::Tensor s, a, sp, r, d, is_weights, sample_indices;
+  std::tie(s, a, sp, r, d, is_weights, sample_indices) = rbuff->sample(batch_size);
 
   // mirror the system's trainStep normalization
   auto r_norm = reward_normalizer.normalize(r.unsqueeze(1)).squeeze(1);
@@ -383,8 +393,8 @@ TEST(RewardNormalization, SignPreservation) {
     state = next_state;
   }
 
-  torch::Tensor s, a, sp, r, d;
-  std::tie(s, a, sp, r, d) = rbuff->sample(buffer_size);
+  torch::Tensor s, a, sp, r, d, is_weights, sample_indices;
+  std::tie(s, a, sp, r, d, is_weights, sample_indices) = rbuff->sample(buffer_size);
   auto r_norm = reward_normalizer.normalize(r.unsqueeze(1)).squeeze(1);
 
   // all normalized rewards must remain positive
@@ -421,8 +431,8 @@ TEST(RewardNormalization, LargeScaleNormalizedToUnitStd) {
     state = next_state;
   }
 
-  torch::Tensor s, a, sp, r, d;
-  std::tie(s, a, sp, r, d) = rbuff->sample(buffer_size);
+  torch::Tensor s, a, sp, r, d, is_weights, sample_indices;
+  std::tie(s, a, sp, r, d, is_weights, sample_indices) = rbuff->sample(buffer_size);
   auto r_norm = reward_normalizer.normalize(r.unsqueeze(1)).squeeze(1);
 
   // std should be close to 1 regardless of the original reward scale

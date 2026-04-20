@@ -36,14 +36,17 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node, int mode
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
     std::set<std::string> supported_params{"batch_size", "nstep", "nstep_reward_reduction",
-                                           "gamma",      "rho",   "normalize_state"};
+                                           "gamma",      "rho",   "normalize_states", "normalize_rewards"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     gamma_ = params.get_param<float>("gamma")[0];
     rho_ = params.get_param<float>("rho")[0];
     nstep_ = params.get_param<int>("nstep", 1)[0];
-    if (params.get_param<bool>("normalize_state", false)[0]) {
+    if (params.get_param<bool>("normalize_states", false)[0]) {
       state_normalizer_ = std::make_unique<RunningNormalizer>();
+    }
+    if (params.get_param<bool>("normalize_rewards", false)[0]) {
+      reward_normalizer_ = std::make_unique<RunningNormalizer>(1e-8f, /* scale_only = */ true);
     }
     auto redmode = params.get_param<std::string>("nstep_reward_reduction", "sum")[0];
     if (redmode == "sum") {
@@ -334,6 +337,12 @@ void DDPGSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
     state_normalizer_->save(normalizer_path.native());
   }
 
+  // reward normalizer
+  if (reward_normalizer_) {
+    auto normalizer_path = root_dir / "reward_normalizer.pt";
+    reward_normalizer_->save(normalizer_path.native());
+  }
+
   // lastly, save the replay buffer:
   {
     auto buffer_path = root_dir / "replay_buffer";
@@ -378,6 +387,18 @@ void DDPGSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     }
   }
 
+  // reward normalizer
+  if (reward_normalizer_) {
+    auto normalizer_path = root_dir / "reward_normalizer.pt";
+    if (!std::filesystem::exists(normalizer_path)) {
+      torchfort::logging::print("DDPG: reward normalizer is enabled but no saved state was found in the checkpoint. "
+                                "Starting with empty statistics.",
+                                torchfort::logging::warn);
+    } else {
+      reward_normalizer_->load(normalizer_path.native());
+    }
+  }
+
   // lastly, load the replay buffer:
   {
     auto buffer_path = root_dir / "replay_buffer";
@@ -393,6 +414,8 @@ void DDPGSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Ten
                                     torch::Tensor d) {
   if (state_normalizer_)
     state_normalizer_->update(s);
+  if (reward_normalizer_)
+    reward_normalizer_->update(r.unsqueeze(1));
   replay_buffer_->update(s, a, sp, r, d);
 }
 
@@ -529,6 +552,12 @@ void DDPGSystem::trainStep(float& p_loss_val, float& q_loss_val) {
       state_normalizer_->sync(p_model_.comm);
       s = state_normalizer_->normalize(s);
       sp = state_normalizer_->normalize(sp);
+    }
+
+    // sync and apply reward normalization
+    if (reward_normalizer_) {
+      reward_normalizer_->sync(p_model_.comm);
+      r = reward_normalizer_->normalize(r.unsqueeze(1)).squeeze(1);
     }
 
     // get a new action by predicting one with target network

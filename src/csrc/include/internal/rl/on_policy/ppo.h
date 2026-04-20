@@ -32,6 +32,7 @@
 #include "internal/rl/on_policy.h"
 #include "internal/rl/policy.h"
 #include "internal/rl/rollout_buffer.h"
+#include "internal/rl/running_normalizer.h"
 #include "internal/rl/utils.h"
 
 namespace torchfort {
@@ -316,6 +317,9 @@ private:
 
   // system comm
   std::shared_ptr<Comm> system_comm_;
+
+  // state normalizer (optional, null if disabled)
+  std::unique_ptr<RunningNormalizer> state_normalizer_;
 
   // some parameters
   int batch_size_;

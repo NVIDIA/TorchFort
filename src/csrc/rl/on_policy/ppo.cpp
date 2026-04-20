@@ -63,6 +63,7 @@ PPOSystem::PPOSystem(const char* name, const YAML::Node& system_node, int model_
     entropy_loss_coeff_ = params.get_param<float>("entropy_loss_coefficient", 0.0)[0];
     value_loss_coeff_ = params.get_param<float>("value_loss_coefficient", 0.5)[0];
     normalize_advantage_ = params.get_param<bool>("normalize_advantage", true)[0];
+    advantage_normalized_ = false;
   } else {
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
   }
@@ -373,9 +374,19 @@ void PPOSystem::updateRolloutBuffer(torch::Tensor stens, torch::Tensor atens, to
 
   // the replay buffer only stores scaled actions!
   rollout_buffer_->update(stens, as, rtens, value, log_p_tensor, etens);
+
+  // normalize advantages once over the full rollout as soon as it is finalized,
+  // before any mini-batch sampling starts
+  if (normalize_advantage_ && rollout_buffer_->isReady() && !advantage_normalized_) {
+    rollout_buffer_->normalizeAdvantages(pq_model_.comm);
+    advantage_normalized_ = true;
+  }
 }
 
-void PPOSystem::resetRolloutBuffer() { rollout_buffer_->reset(); }
+void PPOSystem::resetRolloutBuffer() {
+  rollout_buffer_->reset();
+  advantage_normalized_ = false;
+}
 
 void PPOSystem::setSeed(unsigned int seed) { rollout_buffer_->setSeed(seed); }
 
@@ -497,7 +508,7 @@ void PPOSystem::trainStep(float& p_loss_val, float& q_loss_val) {
 
   // train step
   train_ppo(pq_model_, s, a, q, logp, adv, ret, epsilon_, clip_q_, entropy_loss_coeff_, value_loss_coeff_,
-            target_kl_divergence_, normalize_advantage_, p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_,
+            target_kl_divergence_, p_loss_val, q_loss_val, current_kl_divergence_, clip_fraction_,
             explained_variance_);
 
   // system logging

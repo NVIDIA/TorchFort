@@ -288,11 +288,21 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   }
 
   // save loss val
-  p_loss_val = p_loss_tensor.item<T>();
+  torch::Tensor p_loss_mean_tensor = p_loss_tensor;
+  if (p_model.comm) {
+    torch::NoGradGuard no_grad;
+    std::vector<torch::Tensor> p_loss_mean = {p_loss_tensor};
+    p_model.comm->allreduce(p_loss_mean, true);
+    p_loss_mean_tensor = p_loss_mean[0];
+  }
+  p_loss_val = p_loss_mean_tensor.item<T>();
 
-  // do polyak averaging: only if we also trained the policy
-  for (int i = 0; i < q_models_target.size(); ++i) {
-    polyak_update<T>(q_models_target[i].model, q_models[i].model, rho);
+  // do polyak averaging: only perform if the optimizer stepped (i.e. gradient accumulation is complete)
+  state = p_model.state;
+  if ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0) {
+    for (int i = 0; i < q_models_target.size(); ++i) {
+      polyak_update<T>(q_models_target[i].model, q_models[i].model, rho);
+    }
   }
 
   // print some info

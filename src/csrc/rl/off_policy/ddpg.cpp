@@ -55,7 +55,7 @@ DDPGSystem::DDPGSystem(const char* name, const YAML::Node& system_node, int mode
     } else if (redmode == "weighted_mean_no_skip") {
       nstep_reward_reduction_ = RewardReductionMode::WeightedMeanNoSkip;
     } else {
-      std::invalid_argument("Unknown nstep_reward_reduction specified");
+      THROW_INVALID_USAGE("Unknown nstep_reward_reduction specified: " + redmode);
     }
   } else {
     THROW_INVALID_USAGE("Missing parameters section in algorithm section in configuration file.");
@@ -425,12 +425,12 @@ torch::Tensor DDPGSystem::predict(torch::Tensor state) {
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  p_model_target_.model->to(model_device_);
-  p_model_target_.model->eval();
+  p_model_.model->to(model_device_);
+  p_model_.model->eval();
   state = state.to(model_device_);
 
   // do fwd pass
-  auto action = (p_model_target_.model)->forward(std::vector<torch::Tensor>{state})[0];
+  auto action = (p_model_.model)->forward(std::vector<torch::Tensor>{state})[0];
 
   // clip action
   action = torch::clamp(action, a_low_, a_high_);
@@ -461,13 +461,13 @@ torch::Tensor DDPGSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   torch::NoGradGuard no_grad;
 
   // prepare inputs
-  q_model_target_.model->to(model_device_);
-  q_model_target_.model->eval();
+  q_model_.model->to(model_device_);
+  q_model_.model->eval();
   state = state.to(model_device_);
   action = action.to(model_device_);
 
   // do fwd pass
-  torch::Tensor reward = (q_model_target_.model)->forward(std::vector<torch::Tensor>{state, action})[0];
+  torch::Tensor reward = (q_model_.model)->forward(std::vector<torch::Tensor>{state, action})[0];
 
   // squeeze
   reward = torch::squeeze(reward, 1);

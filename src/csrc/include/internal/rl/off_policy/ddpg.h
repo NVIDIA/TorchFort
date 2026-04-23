@@ -122,7 +122,14 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
   }
 
   // save loss values
-  q_loss_val = q_loss_tensor.item<T>();
+  torch::Tensor q_loss_mean_tensor = q_loss_tensor;
+  if (q_model.comm) {
+    torch::NoGradGuard no_grad;
+    std::vector<torch::Tensor> q_loss_mean = {q_loss_tensor};
+    q_model.comm->allreduce(q_loss_mean, true);
+    q_loss_mean_tensor = q_loss_mean[0];
+  }
+  q_loss_val = q_loss_mean_tensor.item<T>();
 
   // policy function
   // freeze the q1model
@@ -170,11 +177,21 @@ void train_ddpg(const ModelPack& p_model, const ModelPack& p_model_target, const
   set_grad_state(q_model.model, true);
 
   // save loss val
-  p_loss_val = p_loss_tensor.item<T>();
+  torch::Tensor p_loss_mean_tensor = p_loss_tensor;
+  if (p_model.comm) {
+    torch::NoGradGuard no_grad;
+    std::vector<torch::Tensor> p_loss_mean = {p_loss_tensor};
+    p_model.comm->allreduce(p_loss_mean, true);
+    p_loss_mean_tensor = p_loss_mean[0];
+  }
+  p_loss_val = p_loss_mean_tensor.item<T>();
 
-  // do polyak averaging:
-  polyak_update<T>(q_model_target.model, q_model.model, rho);
-  polyak_update<T>(p_model_target.model, p_model.model, rho);
+  // do polyak averaging: only perform if the optimizer stepped (i.e. gradient accumulation is complete)
+  state = p_model.state;
+  if ((state->step_train_current + 1) % p_model.grad_accumulation_steps == 0) {
+    polyak_update<T>(q_model_target.model, q_model.model, rho);
+    polyak_update<T>(p_model_target.model, p_model.model, rho);
+  }
 
   // print some info
   // value functions

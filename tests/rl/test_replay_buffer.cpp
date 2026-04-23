@@ -16,6 +16,7 @@
  */
 
 #include "internal/rl/replay_buffer.h"
+#include "internal/rl/running_normalizer.h"
 #include <gtest/gtest.h>
 #include <torch/torch.h>
 
@@ -295,6 +296,143 @@ TEST_P(ReplayBuffer, SaveRestore) {
 }
 
 INSTANTIATE_TEST_SUITE_P(MultiEnv, ReplayBuffer, testing::Range(1, 3), testing::PrintToStringParamName());
+
+// =========================================================================
+// Reward normalization tests
+// Simulate the workflow used by DDPG/TD3/SAC: update the reward normalizer
+// with each incoming reward batch (as in updateReplayBuffer), then normalize
+// rewards sampled from the buffer (as in trainStep).
+// =========================================================================
+
+// ---- RewardNormalization: unit std, nonzero mean -------------------------
+// After the normalizer has seen enough rewards, normalizing a sampled reward
+// batch should yield unit std but preserve the mean (scale_only=true).
+TEST(RewardNormalization, UnitStdPreservedMean) {
+  torch::manual_seed(300);
+  torch::NoGradGuard no_grad;
+
+  // Rewards ~ N(mean=5, std=2): a typical dense-reward task distribution
+  const float true_mean = 5.0f;
+  const float true_std = 2.0f;
+  const int n_envs = 1;
+  const int buffer_size = 512;
+
+  auto rbuff = std::make_shared<rl::UniformReplayBuffer>(buffer_size, buffer_size, n_envs, 0.99f, 1,
+                                                         rl::RewardReductionMode::Sum, -1);
+
+  rl::RunningNormalizer reward_normalizer(1e-8f, /* scale_only = */ true);
+
+  // Fill the buffer, updating the normalizer with each reward batch exactly
+  // as DDPGSystem::updateReplayBuffer does
+  torch::Tensor state = torch::zeros({n_envs, 4}, torch::kFloat32);
+  for (int i = 0; i < buffer_size; ++i) {
+    auto action = torch::zeros({n_envs, 2}, torch::kFloat32);
+    auto next_state = state + 0.01f;
+    auto reward = torch::randn({n_envs}, torch::kFloat32) * true_std + true_mean;
+    auto done = torch::zeros({n_envs}, torch::kFloat32);
+
+    // mirror the system's updateReplayBuffer call
+    reward_normalizer.update(reward.unsqueeze(1));
+    rbuff->update(state, action, next_state, reward, done);
+    state = next_state;
+  }
+
+  // Sample a batch and normalize rewards as trainStep does
+  const int batch_size = 256;
+  torch::Tensor s, a, sp, r, d;
+  std::tie(s, a, sp, r, d) = rbuff->sample(batch_size);
+
+  // mirror the system's trainStep normalization
+  auto r_norm = reward_normalizer.normalize(r.unsqueeze(1)).squeeze(1);
+
+  // std of normalized rewards should be ~1
+  EXPECT_NEAR(r_norm.std().item<float>(), 1.0f, 0.15f) << "Normalized rewards should have std ~1";
+
+  // mean should be ~true_mean / true_std = 2.5 (not ~0)
+  float expected_mean = true_mean / true_std;
+  EXPECT_NEAR(r_norm.mean().item<float>(), expected_mean, 0.3f)
+      << "Normalized rewards should preserve mean as ~true_mean/true_std";
+}
+
+// ---- RewardNormalization: sign preservation ------------------------------
+// Rewards from a strictly positive distribution must remain positive after
+// normalization. This is the key correctness requirement for scale_only mode.
+TEST(RewardNormalization, SignPreservation) {
+  torch::manual_seed(301);
+  torch::NoGradGuard no_grad;
+
+  // Rewards ~ Uniform(1, 5): always positive
+  const int n_envs = 1;
+  const int buffer_size = 256;
+
+  auto rbuff = std::make_shared<rl::UniformReplayBuffer>(buffer_size, buffer_size, n_envs, 0.99f, 1,
+                                                         rl::RewardReductionMode::Sum, -1);
+
+  rl::RunningNormalizer reward_normalizer(1e-8f, /* scale_only = */ true);
+
+  torch::Tensor state = torch::zeros({n_envs, 4}, torch::kFloat32);
+  for (int i = 0; i < buffer_size; ++i) {
+    auto action = torch::zeros({n_envs, 2}, torch::kFloat32);
+    auto next_state = state + 0.01f;
+    // strictly positive rewards in [1, 5]
+    auto reward = torch::rand({n_envs}, torch::kFloat32) * 4.0f + 1.0f;
+    auto done = torch::zeros({n_envs}, torch::kFloat32);
+
+    reward_normalizer.update(reward.unsqueeze(1));
+    rbuff->update(state, action, next_state, reward, done);
+    state = next_state;
+  }
+
+  torch::Tensor s, a, sp, r, d;
+  std::tie(s, a, sp, r, d) = rbuff->sample(buffer_size);
+  auto r_norm = reward_normalizer.normalize(r.unsqueeze(1)).squeeze(1);
+
+  // all normalized rewards must remain positive
+  EXPECT_TRUE((r_norm > 0).all().item<bool>())
+      << "All positive rewards must remain positive after scale_only normalization";
+}
+
+// ---- RewardNormalization: large-scale rewards normalized to unit range ----
+// Rewards with large magnitude (e.g. N(100, 20)) should be brought to unit
+// std. Without normalization these would dominate the Bellman target.
+TEST(RewardNormalization, LargeScaleNormalizedToUnitStd) {
+  torch::manual_seed(302);
+  torch::NoGradGuard no_grad;
+
+  const float true_mean = 100.0f;
+  const float true_std = 20.0f;
+  const int n_envs = 1;
+  const int buffer_size = 512;
+
+  auto rbuff = std::make_shared<rl::UniformReplayBuffer>(buffer_size, buffer_size, n_envs, 0.99f, 1,
+                                                         rl::RewardReductionMode::Sum, -1);
+
+  rl::RunningNormalizer reward_normalizer(1e-8f, /* scale_only = */ true);
+
+  torch::Tensor state = torch::zeros({n_envs, 4}, torch::kFloat32);
+  for (int i = 0; i < buffer_size; ++i) {
+    auto action = torch::zeros({n_envs, 2}, torch::kFloat32);
+    auto next_state = state + 0.01f;
+    auto reward = torch::randn({n_envs}, torch::kFloat32) * true_std + true_mean;
+    auto done = torch::zeros({n_envs}, torch::kFloat32);
+
+    reward_normalizer.update(reward.unsqueeze(1));
+    rbuff->update(state, action, next_state, reward, done);
+    state = next_state;
+  }
+
+  torch::Tensor s, a, sp, r, d;
+  std::tie(s, a, sp, r, d) = rbuff->sample(buffer_size);
+  auto r_norm = reward_normalizer.normalize(r.unsqueeze(1)).squeeze(1);
+
+  // std should be close to 1 regardless of the original reward scale
+  EXPECT_NEAR(r_norm.std().item<float>(), 1.0f, 0.15f) << "Large-scale rewards must be normalized to unit std";
+
+  // mean should be ~true_mean/true_std = 5, not 0 and not 100
+  float expected_mean = true_mean / true_std;
+  EXPECT_NEAR(r_norm.mean().item<float>(), expected_mean, 0.5f)
+      << "Mean should be preserved as ~true_mean/true_std, not removed";
+}
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

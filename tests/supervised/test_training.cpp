@@ -117,10 +117,10 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
       FAIL();
     }
   } catch (const c10::Error& e) {
-    std::cout << e.what() << std::endl;
     if (should_fail_train) {
       // pass
     } else {
+      std::cout << e.what() << std::endl;
       FAIL();
     }
   }
@@ -156,10 +156,10 @@ void training_test(const std::string& model_config, int dev_model, int dev_input
       FAIL();
     }
   } catch (const c10::Error& e) {
-    std::cout << e.what() << std::endl;
     if (should_fail_inference) {
       // pass
     } else {
+      std::cout << e.what() << std::endl;
       FAIL();
     }
   }

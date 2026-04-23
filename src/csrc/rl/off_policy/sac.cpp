@@ -62,13 +62,20 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_
   auto algo_node = system_node["algorithm"];
   if (algo_node["parameters"]) {
     auto params = get_params(algo_node["parameters"]);
-    std::set<std::string> supported_params{"batch_size", "num_critics", "nstep", "nstep_reward_reduction",
-                                           "gamma",      "rho",         "alpha", "target_entropy"};
+    std::set<std::string> supported_params{
+        "batch_size", "num_critics", "nstep",          "nstep_reward_reduction", "gamma",
+        "rho",        "alpha",       "target_entropy", "normalize_states",       "normalize_rewards"};
     check_params(supported_params, params.keys());
     batch_size_ = params.get_param<int>("batch_size")[0];
     num_critics_ = params.get_param<int>("num_critics", 2)[0];
     gamma_ = params.get_param<float>("gamma")[0];
     rho_ = params.get_param<float>("rho")[0];
+    if (params.get_param<bool>("normalize_states", false)[0]) {
+      state_normalizer_ = std::make_unique<RunningNormalizer>();
+    }
+    if (params.get_param<bool>("normalize_rewards", false)[0]) {
+      reward_normalizer_ = std::make_unique<RunningNormalizer>(1e-8f, /* scale_only = */ true);
+    }
     // alpha needs special care
     AlphaModel am;
     am.setup(params.get_param<float>("alpha", 0.)[0]);
@@ -211,6 +218,18 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_
   }
 
   // in this case we want to optimize the entropy coefficient
+  // NOTE on normalization interactions:
+  // The automatic alpha tuning adjusts alpha so that the policy entropy matches H_target = -action_dim.
+  // This balance depends on Q-values being on a consistent scale, since the policy gradient mixes
+  // Q(s,a) with alpha * log_pi. Therefore:
+  //   - normalize_rewards is strongly recommended when using alpha_optimizer: it keeps Q-values
+  //     on a consistent scale regardless of reward magnitude, making the default H_target heuristic
+  //     robust across tasks. Without it, tasks with large rewards require a proportionally large alpha
+  //     to have any effect, and vice versa.
+  //   - normalize_states interacts more mildly, but loading a checkpoint where the state normalizer
+  //     has no saved statistics (e.g. enabling normalization mid-training) will cause the policy
+  //     entropy over normalized states to differ significantly from the pre-training value, forcing
+  //     alpha to re-adapt. This transient disruption is more severe in SAC than in DDPG/TD3.
   if (system_node["alpha_optimizer"]) {
     // register alpha as a new parameter
     alpha_optimizer_ = get_optimizer(system_node["alpha_optimizer"], alpha_model_->parameters());
@@ -433,6 +452,18 @@ void SACSystem::saveCheckpoint(const std::string& checkpoint_dir) const {
     system_state_->save(state_path.native());
   }
 
+  // state normalizer
+  if (state_normalizer_) {
+    auto normalizer_path = root_dir / "state_normalizer.pt";
+    state_normalizer_->save(normalizer_path.native());
+  }
+
+  // reward normalizer
+  if (reward_normalizer_) {
+    auto normalizer_path = root_dir / "reward_normalizer.pt";
+    reward_normalizer_->save(normalizer_path.native());
+  }
+
   // lastly, save the replay buffer:
   {
     auto buffer_path = root_dir / "replay_buffer";
@@ -525,6 +556,30 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     system_state_->load(state_path.native());
   }
 
+  // state normalizer
+  if (state_normalizer_) {
+    auto normalizer_path = root_dir / "state_normalizer.pt";
+    if (!std::filesystem::exists(normalizer_path)) {
+      torchfort::logging::print("SAC: state normalizer is enabled but no saved state was found in the checkpoint. "
+                                "Starting with empty statistics.",
+                                torchfort::logging::warn);
+    } else {
+      state_normalizer_->load(normalizer_path.native());
+    }
+  }
+
+  // reward normalizer
+  if (reward_normalizer_) {
+    auto normalizer_path = root_dir / "reward_normalizer.pt";
+    if (!std::filesystem::exists(normalizer_path)) {
+      torchfort::logging::print("SAC: reward normalizer is enabled but no saved state was found in the checkpoint. "
+                                "Starting with empty statistics.",
+                                torchfort::logging::warn);
+    } else {
+      reward_normalizer_->load(normalizer_path.native());
+    }
+  }
+
   // lastly, load the replay buffer:
   {
     auto buffer_path = root_dir / "replay_buffer";
@@ -538,6 +593,10 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
 // we should pass a tuple (s, a, s', r, d)
 void SACSystem::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r,
                                    torch::Tensor d) {
+  if (state_normalizer_)
+    state_normalizer_->update(s);
+  if (reward_normalizer_)
+    reward_normalizer_->update(r.unsqueeze(1));
   // note that we have to rescale the action: [a_low, a_high] -> [-1, 1],
   // but the replay buffer only stores scaled actions!
   replay_buffer_->update(s, a, sp, r, d);
@@ -582,6 +641,8 @@ torch::Tensor SACSystem::predict(torch::Tensor state) {
   p_model_.model->to(model_device_);
   p_model_.model->eval();
   state = state.to(model_device_);
+  if (state_normalizer_ && state_normalizer_->isInitialized())
+    state = state_normalizer_->normalize(state);
 
   // do fwd pass
   auto action = (p_model_.model)->forwardDeterministic(state);
@@ -600,6 +661,8 @@ torch::Tensor SACSystem::predictExplore(torch::Tensor state) {
   p_model_.model->to(model_device_);
   p_model_.model->eval();
   state = state.to(model_device_);
+  if (state_normalizer_ && state_normalizer_->isInitialized())
+    state = state_normalizer_->normalize(state);
 
   // do fwd pass
   torch::Tensor action, log_probs;
@@ -620,6 +683,8 @@ torch::Tensor SACSystem::evaluate(torch::Tensor state, torch::Tensor action) {
   q_models_[0].model->eval();
   state = state.to(model_device_);
   action = action.to(model_device_);
+  if (state_normalizer_ && state_normalizer_->isInitialized())
+    state = state_normalizer_->normalize(state);
 
   // do fwd pass
   torch::Tensor reward = (q_models_[0].model)->forward(std::vector<torch::Tensor>{state, action})[0];
@@ -648,6 +713,19 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     sp = sp.to(model_device_);
     r = r.to(model_device_);
     d = d.to(model_device_);
+
+    // sync and apply state normalization
+    if (state_normalizer_) {
+      state_normalizer_->sync(p_model_.comm);
+      s = state_normalizer_->normalize(s);
+      sp = state_normalizer_->normalize(sp);
+    }
+
+    // sync and apply reward normalization
+    if (reward_normalizer_) {
+      reward_normalizer_->sync(p_model_.comm);
+      r = reward_normalizer_->normalize(r.unsqueeze(1)).squeeze(1);
+    }
   }
 
   // train step

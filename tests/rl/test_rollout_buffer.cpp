@@ -16,6 +16,7 @@
  */
 
 #include "internal/rl/rollout_buffer.h"
+#include "internal/rl/running_normalizer.h"
 #include <gtest/gtest.h>
 #include <torch/torch.h>
 
@@ -287,6 +288,140 @@ TEST_P(RolloutBuffer, SaveRestore) {
 }
 
 INSTANTIATE_TEST_SUITE_P(MultiEnv, RolloutBuffer, testing::Range(1, 3), testing::PrintToStringParamName());
+
+// =========================================================================
+// normalizeReturns tests
+// These tests use n_env=1 for simplicity; the multi-env path is covered by
+// the parameterized suite above for the base buffer operations.
+// =========================================================================
+
+// ---- NormalizeReturns: A = R - V relationship is preserved ---------------
+// normalizeReturns scales both returns and advantages by the same factor, so
+// the relationship A = R - V must still hold exactly after normalization.
+TEST(NormalizeReturns, MaintainsAdvantageReturnRelationship) {
+  torch::manual_seed(42);
+  torch::NoGradGuard no_grad;
+
+  const int buffer_size = 16;
+  const int n_env = 1;
+
+  std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
+  torch::Tensor last_val, last_done;
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, n_env);
+
+  // apply return normalization
+  rl::RunningNormalizer normalizer(1e-8f, /* scale_only = */ true);
+  rbuff->normalizeReturns(nullptr, normalizer);
+
+  // verify A = R - V still holds for every entry
+  float max_violation = 0.f;
+  int n_steps = buffer_size / n_env;
+  for (int i = 0; i < n_steps; ++i) {
+    torch::Tensor s, a, r, q, log_p, adv, ret, d;
+    std::tie(s, a, r, q, log_p, adv, ret, d) = rbuff->getFull(i);
+    // ret = adv + q  =>  adv - (ret - q) should be ~0
+    float violation = torch::sum(torch::abs(adv - (ret - q))).item<float>();
+    max_violation = std::max(max_violation, violation);
+  }
+
+  EXPECT_NEAR(max_violation, 0.f, 1e-5f) << "A = R - V must hold after normalizeReturns (both scaled by same factor)";
+}
+
+// ---- NormalizeReturns: unit std, nonzero mean ----------------------------
+// After normalization the collection of all returns should have std ~1 but
+// mean should NOT be zero (scale_only preserves the mean).
+TEST(NormalizeReturns, UnitStdPreservedMean) {
+  torch::manual_seed(43);
+  torch::NoGradGuard no_grad;
+
+  // Use a larger buffer to get a stable std estimate
+  const int buffer_size = 128;
+  const int n_env = 1;
+
+  // Warm up the normalizer over several rollouts so it has stable stats
+  rl::RunningNormalizer normalizer(1e-8f, /* scale_only = */ true);
+  for (int rollout = 0; rollout < 20; ++rollout) {
+    std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
+    torch::Tensor last_val, last_done;
+    std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, n_env);
+    rbuff->normalizeReturns(nullptr, normalizer);
+  }
+
+  // Final rollout: check statistics of normalized returns
+  std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
+  torch::Tensor last_val, last_done;
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, n_env);
+  rbuff->normalizeReturns(nullptr, normalizer);
+
+  // collect all normalized returns
+  std::vector<torch::Tensor> ret_vec;
+  int n_steps = buffer_size / n_env;
+  for (int i = 0; i < n_steps; ++i) {
+    torch::Tensor s, a, r, q, log_p, adv, ret, d;
+    std::tie(s, a, r, q, log_p, adv, ret, d) = rbuff->getFull(i);
+    ret_vec.push_back(ret);
+  }
+  auto all_ret = torch::cat(ret_vec, 0).flatten().to(torch::kFloat32);
+
+  // std should be ~1 (scale normalization)
+  float out_std = all_ret.std().item<float>();
+  EXPECT_NEAR(out_std, 1.0f, 0.2f) << "Normalized returns should have std ~1";
+
+  // mean should NOT be zero (scale_only: mean is preserved)
+  // The test buffer uses positive rewards (dist uniform in [1,5]) so returns > 0
+  float out_mean = all_ret.mean().item<float>();
+  EXPECT_GT(out_mean, 0.1f) << "Normalized returns should have nonzero mean (scale_only preserves mean)";
+}
+
+// ---- NormalizeReturns + NormalizeAdvantages: correct combined effect ------
+// When both are applied in order (returns first, advantages second), the
+// end state should be: returns have unit std + nonzero mean, advantages
+// have unit std + zero mean.
+TEST(NormalizeReturns, OrderWithAdvantageNormalization) {
+  torch::manual_seed(44);
+  torch::NoGradGuard no_grad;
+
+  const int buffer_size = 64;
+  const int n_env = 1;
+
+  // Warm up the return normalizer
+  rl::RunningNormalizer ret_normalizer(1e-8f, /* scale_only = */ true);
+  for (int rollout = 0; rollout < 10; ++rollout) {
+    std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
+    torch::Tensor last_val, last_done;
+    std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, n_env);
+    rbuff->normalizeReturns(nullptr, ret_normalizer);
+  }
+
+  // Final rollout: apply both normalizations in the correct order
+  std::shared_ptr<rl::GAELambdaRolloutBuffer> rbuff;
+  torch::Tensor last_val, last_done;
+  std::tie(rbuff, last_val, last_done) = getTestRolloutBuffer(buffer_size, n_env);
+
+  rbuff->normalizeReturns(nullptr, ret_normalizer); // step 1: scale R and A by return std
+  rbuff->normalizeAdvantages(nullptr);              // step 2: zero-center and unit-std A
+
+  // collect normalized returns and advantages
+  std::vector<torch::Tensor> ret_vec, adv_vec;
+  int n_steps = buffer_size / n_env;
+  for (int i = 0; i < n_steps; ++i) {
+    torch::Tensor s, a, r, q, log_p, adv, ret, d;
+    std::tie(s, a, r, q, log_p, adv, ret, d) = rbuff->getFull(i);
+    ret_vec.push_back(ret);
+    adv_vec.push_back(adv);
+  }
+  auto all_ret = torch::cat(ret_vec, 0).flatten().to(torch::kFloat32);
+  auto all_adv = torch::cat(adv_vec, 0).flatten().to(torch::kFloat32);
+
+  // returns: unit std, nonzero mean
+  EXPECT_NEAR(all_ret.std().item<float>(), 1.0f, 0.2f) << "Returns should have std ~1 after normalizeReturns";
+  EXPECT_GT(all_ret.mean().item<float>(), 0.1f)
+      << "Returns should have nonzero mean after normalizeReturns (scale_only)";
+
+  // advantages: unit std, zero mean
+  EXPECT_NEAR(all_adv.std().item<float>(), 1.0f, 0.1f) << "Advantages should have std ~1 after normalizeAdvantages";
+  EXPECT_NEAR(all_adv.mean().item<float>(), 0.0f, 0.1f) << "Advantages should have zero mean after normalizeAdvantages";
+}
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

@@ -288,6 +288,12 @@ TEST(DDPG, ActionEnv) {
   std::tie(val, cmp, tol) = TestSystem(Action, "ddpg", 20000, 1000, 100, false);
   EXPECT_NEAR(val, cmp, tol);
 }
+
+TEST(DDPG, DISABLED_ActionStateEnv) {
+  float val, cmp, tol;
+  std::tie(val, cmp, tol) = TestSystem(ActionState, "ddpg", 20000, 0, 100, false);
+  EXPECT_NEAR(val, cmp, tol);
+}
 // Action State Env does not work with DDPG, most likely due to some known DDPG issue
 // where training can get stuck in a wrong optimum
 

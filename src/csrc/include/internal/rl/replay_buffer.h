@@ -548,8 +548,10 @@ public:
   void update_priorities(torch::Tensor indices, torch::Tensor td_errors) override {
     torch::NoGradGuard no_grad;
 
-    auto idx_acc = indices.to(torch::kCPU).accessor<int64_t, 1>();
-    auto td_acc  = td_errors.to(torch::kCPU).accessor<float, 1>();
+    auto indices_cpu = indices.to(torch::kCPU).contiguous();
+    auto td_errors_cpu = td_errors.to(torch::kCPU).contiguous();
+    auto idx_acc = indices_cpu.accessor<int64_t, 1>();
+    auto td_acc  = td_errors_cpu.accessor<float, 1>();
 
     for (int64_t i = 0; i < idx_acc.size(0); ++i) {
       size_t pos    = static_cast<size_t>(idx_acc[i]);

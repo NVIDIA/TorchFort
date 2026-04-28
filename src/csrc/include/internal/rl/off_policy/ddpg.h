@@ -32,6 +32,7 @@
 #include "internal/rl/noise_actor.h"
 #include "internal/rl/off_policy.h"
 #include "internal/rl/replay_buffer.h"
+#include "internal/rl/running_normalizer.h"
 #include "internal/rl/utils.h"
 
 namespace torchfort {
@@ -304,6 +305,12 @@ private:
   // noise actors
   std::shared_ptr<NoiseActor> noise_actor_train_;
   std::shared_ptr<NoiseActor> noise_actor_exploration_;
+
+  // state normalizer (optional, null if disabled)
+  std::unique_ptr<RunningNormalizer> state_normalizer_;
+
+  // reward normalizer (optional, null if disabled); scale_only=true so mean is preserved
+  std::unique_ptr<RunningNormalizer> reward_normalizer_;
 
   // some parameters
   int batch_size_;

@@ -23,7 +23,9 @@
 #include <torch/torch.h>
 
 #include "internal/defines.h"
+#include "internal/distributed.h"
 #include "internal/rl/rl.h"
+#include "internal/rl/running_normalizer.h"
 
 namespace torchfort {
 
@@ -69,6 +71,8 @@ public:
   virtual ExtendedBufferEntry getFull(int) = 0;
   virtual bool isReady() const = 0;
   virtual void reset() = 0;
+  virtual void normalizeReturns(std::shared_ptr<Comm> comm, RunningNormalizer& return_normalizer) = 0;
+  virtual void normalizeAdvantages(std::shared_ptr<Comm> comm) = 0;
   virtual void setSeed(unsigned int seed) = 0;
   virtual void printInfo() const = 0;
   virtual void save(const std::string& fname) const = 0;
@@ -177,6 +181,90 @@ public:
     finalized_ = true;
 
     return;
+  }
+
+  // Normalize all stored advantages to zero mean and unit variance over the full rollout.
+  // In distributed mode, statistics are combined across ranks via allreduce so that all
+  // ranks use the same normalization. Call this once after finalize() and before sampling.
+  void normalizeAdvantages(std::shared_ptr<Comm> comm) {
+    if (!finalized_) {
+      throw std::runtime_error(
+          "GAELambdaRolloutBuffer::normalizeAdvantages: buffer must be finalized before normalizing advantages.");
+    }
+
+    torch::NoGradGuard no_grad;
+
+    // stack all per-step advantages into [size_, n_envs_] and flatten to 1D
+    auto all_adv = torch::stack(advantages_, 0).flatten().to(torch::kFloat32);
+
+    // compute global sum and count for the mean
+    auto adv_sum = torch::sum(all_adv);
+    auto count_tensor = torch::tensor({static_cast<float>(all_adv.numel())}).to(all_adv.device());
+
+    if (comm) {
+      std::vector<torch::Tensor> stats = {adv_sum, count_tensor};
+      comm->allreduce(stats, false);
+      adv_sum = stats[0];
+      count_tensor = stats[1];
+    }
+    auto adv_mean = adv_sum / count_tensor;
+
+    // compute global sum of squared deviations for the std
+    auto adv_sq = torch::sum(torch::square(all_adv - adv_mean));
+    if (comm) {
+      std::vector<torch::Tensor> sq_stats = {adv_sq};
+      comm->allreduce(sq_stats, false);
+      adv_sq = sq_stats[0];
+    }
+    auto adv_std = torch::sqrt(adv_sq / (count_tensor - 1.) + 1e-8);
+
+    // normalize all stored advantages in-place
+    for (auto& adv : advantages_) {
+      adv = (adv - adv_mean) / adv_std;
+    }
+  }
+
+  // Scale returns and advantages by the running std of returns (no mean subtraction).
+  // Updates the provided return_normalizer with this rollout's returns, syncs statistics
+  // across MPI ranks, then divides both returns_ and advantages_ by the same return std.
+  // This ensures the value function regression target and the policy gradient use a
+  // consistent scale. Call this before normalizeAdvantages() if both are enabled.
+  void normalizeReturns(std::shared_ptr<Comm> comm, RunningNormalizer& return_normalizer) {
+    if (!finalized_) {
+      throw std::runtime_error(
+          "GAELambdaRolloutBuffer::normalizeReturns: buffer must be finalized before normalizing returns.");
+    }
+
+    torch::NoGradGuard no_grad;
+
+    // flatten all returns to [size_ * n_envs_, 1]: single scalar feature per sample
+    auto all_ret = torch::stack(returns_, 0).reshape({-1, 1}).to(torch::kFloat32);
+
+    // update running variance with this rollout's returns, then sync across ranks
+    return_normalizer.update(all_ret);
+    return_normalizer.sync(comm);
+
+    // apply scale-only normalization: R_norm = R / std(R)
+    // the same std is applied to advantages: A_scaled = A / std(R),
+    // preserving the relationship A = R - V when both are on the same scale
+    auto all_ret_norm = return_normalizer.normalize(all_ret);
+    auto all_adv = torch::stack(advantages_, 0).reshape({-1, 1}).to(torch::kFloat32);
+    auto all_adv_scaled = return_normalizer.normalize(all_adv);
+
+    // write normalized values back to per-step tensors
+    auto ret_reshaped = all_ret_norm.reshape({static_cast<int64_t>(size_), static_cast<int64_t>(n_envs_)});
+    auto adv_reshaped = all_adv_scaled.reshape({static_cast<int64_t>(size_), static_cast<int64_t>(n_envs_)});
+    for (size_t step = 0; step < size_; ++step) {
+      returns_[step] = ret_reshaped[step];
+      advantages_[step] = adv_reshaped[step];
+    }
+
+    // also scale the stored value estimates (q) by the same std so that A = R - V
+    // holds in normalized space: A_norm = R_norm - V_norm = (R - V) / std
+    for (auto& entry : buffer_) {
+      auto& q = std::get<3>(entry);
+      q = return_normalizer.normalize(q.reshape({-1, 1})).reshape(q.sizes());
+    }
   }
 
   std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>

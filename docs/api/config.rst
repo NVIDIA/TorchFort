@@ -403,7 +403,7 @@ The block in the configuration file defining algorithm properties takes the foll
     parameters:
       <option> = <value>
       
-Currently, only type ``uniform`` is supported. The following table lists the available options:
+Currently, types ``uniform`` and ``prioritized`` are supported. The following table lists the available options:
 
 +---------------------------+-----------------+-----------------+------------------------------------------------------------------+
 | Replay Buffer Type        | Option          | Data Type       | Description                                                      |
@@ -414,10 +414,31 @@ Currently, only type ``uniform`` is supported. The following table lists the ava
 +                           +-----------------+-----------------+------------------------------------------------------------------+
 |                           | ``n_envs``      | integer         | Number of environments                                           |
 +---------------------------+-----------------+-----------------+------------------------------------------------------------------+
+| ``prioritized``           | ``min_size``    | integer         | Minimum number of samples before buffer is ready for training    |
++                           +-----------------+-----------------+------------------------------------------------------------------+
+|                           | ``max_size``    | integer         | Maximum capacity                                                 |
++                           +-----------------+-----------------+------------------------------------------------------------------+
+|                           | ``n_envs``      | integer         | Number of environments                                           |
++                           +-----------------+-----------------+------------------------------------------------------------------+
+|                           | ``alpha``       | float           | Prioritization exponent; 0=uniform, 1=full (default 0.6)         |
++                           +-----------------+-----------------+------------------------------------------------------------------+
+|                           | ``beta0``       | float           | Initial importance-sampling weight exponent (default 0.4)        |
++                           +-----------------+-----------------+------------------------------------------------------------------+
+|                           | ``beta_max``    | float           | Final importance-sampling weight exponent (default 1.0)          |
++                           +-----------------+-----------------+------------------------------------------------------------------+
+|                           | ``beta_steps``  | integer         | Steps to anneal beta from beta0 to beta_max (default 100000)     |
++---------------------------+-----------------+-----------------+------------------------------------------------------------------+
 
 Note that the effective sizes for each environment is :math:`\mathrm{min\_size} / \mathrm{n\_envs}` and :math:`\mathrm{max\_size} / \mathrm{n\_envs}`.
 You need to ensure that you can store at least one sample for each environment. However, for better algorithm performance, it is highly advised to provide buffers
 which can store longer trajectories.
+
+The ``prioritized`` buffer implements Prioritized Experience Replay (`Schaul et al., 2016 <https://arxiv.org/abs/1511.05952>`_), sampling
+transitions in proportion to their last observed temporal-difference (TD) error rather than uniformly. The degree of prioritization is controlled
+by ``alpha`` (with ``alpha = 0`` recovering uniform sampling), and the resulting sampling bias is corrected by importance-sampling weights whose
+exponent ``beta`` is annealed linearly from ``beta0`` to ``beta_max`` over ``beta_steps`` sampling steps. All off-policy algorithms (``DDPG``,
+``TD3``, ``SAC``) transparently apply these importance-sampling weights to their losses and feed the per-sample TD errors back to update the
+priorities; no changes to the algorithm configuration are required to switch between ``uniform`` and ``prioritized`` buffers.
 
 For on-policy algorithms, the block looks as follows:
 

@@ -342,11 +342,12 @@ torchfort_result_t torchfort_rl_off_policy_load_checkpoint(const char* name, con
 /**
  * @brief Restores only the network weights of a reinforcement learning system from a checkpoint.
  * @details In contrast to \p torchfort_rl_off_policy_load_checkpoint, this method only restores the weights of the
- * online policy and critic networks from the checkpoint produced by \p torchfort_rl_off_policy_save_checkpoint. The
+ * online policy and critic networks from the checkpoint produced by \p torchfort_rl_off_policy_save_checkpoint. For
+ * algorithms that use target networks (e.g. DDPG and TD3), the corresponding target networks are also restored, by
+ * re-initializing them from the loaded online networks so that they start consistent with the restored weights. The
  * optimizers, LR schedulers, replay buffer, normalizer statistics and step counters are left in their freshly created
- * state, and the target networks are re-initialized from the loaded online networks. This is intended for fine-tuning
- * or transfer-learning workflows, where a pretrained model is used as the starting point for a new training run (e.g.
- * with a modified reward function or new environment data).
+ * state. This is intended for fine-tuning or transfer-learning workflows, where a pretrained model is used as the
+ * starting point for a new training run (e.g. with a modified reward function or new environment data).
  *
  * @param[in] name The name of a system instance to restore the weights for, as defined during system creation.
  * @param[in] checkpoint_dir A filesystem path to a directory which contains the checkpoint data to load.

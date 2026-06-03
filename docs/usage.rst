@@ -373,8 +373,9 @@ For this purpose, only the network weights can be restored from a checkpoint:
     istat = torchfort_rl_off_policy_load_model(system_name, directory_name);
 
 This loads only the weights of the online policy and critic networks from the checkpoint directory created by ``torchfort_rl_off_policy_save_checkpoint``.
-The optimizers, learning-rate schedulers, replay buffer, normalizer statistics and step counters remain in their freshly created state, and the target
-networks are re-initialized from the loaded online networks. Training then proceeds from the pretrained weights with a clean training history, so that newly
+For algorithms that use target networks (e.g. DDPG and TD3), the corresponding target networks are also restored, by re-initializing them from the loaded
+online networks so that they start consistent with the restored weights. The optimizers, learning-rate schedulers, replay buffer, normalizer statistics and
+step counters remain in their freshly created state. Training then proceeds from the pretrained weights with a clean training history, so that newly
 collected transitions (e.g. generated under the modified reward function) are not mixed with stale experience. The system must be created beforehand with
 ``torchfort_rl_off_policy_create_system`` using a network architecture matching the saved checkpoint.
 

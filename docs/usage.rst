@@ -351,5 +351,33 @@ This function is only required if RL training from the checkpoint should be resu
   
     istat = torchfort_load_model(model_name, policy_model_file);
     
-can be used instead. The model instance should be created beforehand using the methods described in the :ref:`supervised_learning-ref` section. 
+can be used instead. The model instance should be created beforehand using the methods described in the :ref:`supervised_learning-ref` section.
+
+Fine-Tuning / Transfer Learning
+-------------------------------
+
+Sometimes a previously trained system should be used as the *starting point* for a new training run, rather than fully resumed. A typical example is
+refining a policy with new environment data or a modified reward function. In this case restoring the full checkpoint is undesirable, because it would
+also restore the stale replay buffer, the optimizer momenta, the learning-rate schedule position and the training step counters of the previous run.
+
+For this purpose, only the network weights can be restored from a checkpoint:
+
+.. tabs::
+
+  .. code-tab:: fortran
+
+    istat = torchfort_rl_off_policy_load_model(system_name, directory_name)
+
+  .. code-tab:: c++
+
+    istat = torchfort_rl_off_policy_load_model(system_name, directory_name);
+
+This loads only the weights of the online policy and critic networks from the checkpoint directory created by ``torchfort_rl_off_policy_save_checkpoint``.
+The optimizers, learning-rate schedulers, replay buffer, normalizer statistics and step counters remain in their freshly created state, and the target
+networks are re-initialized from the loaded online networks. Training then proceeds from the pretrained weights with a clean training history, so that newly
+collected transitions (e.g. generated under the modified reward function) are not mixed with stale experience. The system must be created beforehand with
+``torchfort_rl_off_policy_create_system`` using a network architecture matching the saved checkpoint.
+
+On-policy systems provide the equivalent function ``torchfort_rl_on_policy_load_model``, which restores only the actor-critic network weights and leaves the
+optimizer, learning-rate scheduler, rollout buffer, normalizer statistics and step counters in their freshly created state.
 

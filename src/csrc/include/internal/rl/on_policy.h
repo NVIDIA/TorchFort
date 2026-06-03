@@ -69,6 +69,9 @@ public:
   virtual void initSystemComm(MPI_Comm mpi_comm) = 0;
   virtual void saveCheckpoint(const std::string& checkpoint_dir) const = 0;
   virtual void loadCheckpoint(const std::string& checkpoint_dir) = 0;
+  // load only the network weights (e.g. for fine-tuning), leaving optimizers,
+  // LR schedulers, rollout buffer and step counters in their freshly created state
+  virtual void loadModel(const std::string& checkpoint_dir) = 0;
   virtual torch::Device modelDevice() const = 0;
   virtual torch::Device rbDevice() const = 0;
 

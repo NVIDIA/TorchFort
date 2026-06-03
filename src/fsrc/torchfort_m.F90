@@ -280,6 +280,14 @@ module torchfort
       integer(c_int) :: res
     end function torchfort_rl_off_policy_load_checkpoint_c
 
+    function torchfort_rl_off_policy_load_model_c(mname, checkpoint_dir) result(res) &
+      bind(C, name="torchfort_rl_off_policy_load_model")
+      import
+      type(*) :: mname(*)
+      type(*) :: checkpoint_dir(*)
+      integer(c_int) :: res
+    end function torchfort_rl_off_policy_load_model_c
+
     ! training
     function torchfort_rl_off_policy_update_replay_buffer_c(mname, &
                                                             state_old, state_new, state_dim, state_shape, &
@@ -449,6 +457,14 @@ module torchfort
       type(*) :: checkpoint_dir(*)
       integer(c_int) :: res
     end function torchfort_rl_on_policy_load_checkpoint_c
+
+    function torchfort_rl_on_policy_load_model_c(mname, checkpoint_dir) result(res) &
+      bind(C, name="torchfort_rl_on_policy_load_model")
+      import
+      type(*) :: mname(*)
+      type(*) :: checkpoint_dir(*)
+      integer(c_int) :: res
+    end function torchfort_rl_on_policy_load_model_c
 
     ! training
     function torchfort_rl_on_policy_update_rollout_buffer_c(mname, &
@@ -7394,6 +7410,14 @@ contains
                                                     [trim(checkpoint_dir) // C_NULL_CHAR])
   end function torchfort_rl_off_policy_load_checkpoint
 
+  function torchfort_rl_off_policy_load_model(mname, checkpoint_dir) result(res)
+    character(len=*) :: mname
+    character(len=*) :: checkpoint_dir
+    integer(c_int) :: res
+    res = torchfort_rl_off_policy_load_model_c([trim(mname) // C_NULL_CHAR], &
+                                               [trim(checkpoint_dir) // C_NULL_CHAR])
+  end function torchfort_rl_off_policy_load_model
+
   ! Training routines
   function torchfort_rl_off_policy_update_replay_buffer_float_1d_1d(mname, state_old, act_old, state_new, &
                                                                     reward, final_state, stream) result(res)
@@ -8714,6 +8738,14 @@ contains
     res = torchfort_rl_on_policy_load_checkpoint_c([trim(mname) // C_NULL_CHAR], &
                                                     [trim(checkpoint_dir) // C_NULL_CHAR])
   end function torchfort_rl_on_policy_load_checkpoint
+
+  function torchfort_rl_on_policy_load_model(mname, checkpoint_dir) result(res)
+    character(len=*) :: mname
+    character(len=*) :: checkpoint_dir
+    integer(c_int) :: res
+    res = torchfort_rl_on_policy_load_model_c([trim(mname) // C_NULL_CHAR], &
+                                              [trim(checkpoint_dir) // C_NULL_CHAR])
+  end function torchfort_rl_on_policy_load_model
 
   ! Training routines
   ! single env tollout buffer updates

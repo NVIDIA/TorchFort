@@ -481,6 +481,40 @@ void TD3System::loadCheckpoint(const std::string& checkpoint_dir) {
   }
 }
 
+// loading only the network weights (e.g. for fine-tuning / transfer learning):
+// this restores the online policy and critic weights from a checkpoint directory, but
+// leaves optimizers, LR schedulers, replay buffer, normalizers and step counters untouched.
+void TD3System::loadModel(const std::string& checkpoint_dir) {
+  using namespace torchfort;
+  std::filesystem::path root_dir(checkpoint_dir);
+
+  // load only the model weights (model.pt) of a model pack, reconnecting the optimizer
+  // to the (possibly newly allocated) model parameters afterwards.
+  auto load_weights = [](auto& model_pack, const std::filesystem::path& dir) {
+    auto model_path = dir / "model.pt";
+    if (!std::filesystem::exists(model_path)) {
+      THROW_INVALID_USAGE("Could not find " + model_path.native() + ".");
+    }
+    model_pack.model->load(model_path.native());
+    if (model_pack.optimizer) {
+      reset_optimizer_parameters(model_pack.optimizer, model_pack.model->parameters());
+    }
+  };
+
+  // online policy and critics
+  load_weights(p_model_, root_dir / "policy");
+  for (int i = 0; i < q_models_.size(); ++i) {
+    load_weights(q_models_[i], root_dir / ("critic_" + std::to_string(i)));
+  }
+
+  // initialize the target networks from the freshly loaded online networks; the saved
+  // target weights are an artifact of the previous run and are intentionally ignored.
+  copy_parameters(p_model_target_.model, p_model_.model);
+  for (int i = 0; i < q_models_target_.size(); ++i) {
+    copy_parameters(q_models_target_[i].model, q_models_[i].model);
+  }
+}
+
 // we should pass a tuple (s, a, s', r, d)
 void TD3System::updateReplayBuffer(torch::Tensor s, torch::Tensor a, torch::Tensor sp, torch::Tensor r,
                                    torch::Tensor d) {

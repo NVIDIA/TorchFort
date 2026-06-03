@@ -26,6 +26,8 @@
 #include <sstream>
 #include <yaml-cpp/yaml.h>
 
+#include "test_utils.h"
+
 struct CoutRedirect {
   CoutRedirect(std::streambuf* new_buffer) : old(std::cout.rdbuf(new_buffer)) {}
 
@@ -38,7 +40,7 @@ private:
 // Function to modify TD3 config and write to temporary file
 std::string createModifiedTD3Config(int state_size, int action_size) {
   // Read the original TD3 config
-  std::string config_path = "configs/td3.yaml";
+  std::string config_path = get_config_path("td3.yaml");
   YAML::Node config = YAML::LoadFile(config_path);
 
   // Modify the policy model layer sizes
@@ -78,7 +80,7 @@ std::string createModifiedTD3Config(int state_size, int action_size) {
 // Function to modify PPO config and write to temporary file
 std::string createModifiedPPOConfig(int state_size, int action_size) {
   // Read the original TD3 config
-  std::string config_path = "configs/ppo.yaml";
+  std::string config_path = get_config_path("ppo.yaml");
   YAML::Node config = YAML::LoadFile(config_path);
 
   // Modify the policy model layer sizes

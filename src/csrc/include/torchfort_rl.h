@@ -339,6 +339,22 @@ torchfort_result_t torchfort_rl_off_policy_save_checkpoint(const char* name, con
  */
 torchfort_result_t torchfort_rl_off_policy_load_checkpoint(const char* name, const char* checkpoint_dir);
 
+/**
+ * @brief Restores only the network weights of a reinforcement learning system from a checkpoint.
+ * @details In contrast to \p torchfort_rl_off_policy_load_checkpoint, this method only restores the weights of the
+ * online policy and critic networks from the checkpoint produced by \p torchfort_rl_off_policy_save_checkpoint. The
+ * optimizers, LR schedulers, replay buffer, normalizer statistics and step counters are left in their freshly created
+ * state, and the target networks are re-initialized from the loaded online networks. This is intended for fine-tuning
+ * or transfer-learning workflows, where a pretrained model is used as the starting point for a new training run (e.g.
+ * with a modified reward function or new environment data).
+ *
+ * @param[in] name The name of a system instance to restore the weights for, as defined during system creation.
+ * @param[in] checkpoint_dir A filesystem path to a directory which contains the checkpoint data to load.
+ *
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_rl_off_policy_load_model(const char* name, const char* checkpoint_dir);
+
 // RL off-policy miscellaneous utility functions
 /**
  * @brief Queries a reinforcement learning system for rediness to start training
@@ -665,6 +681,21 @@ torchfort_result_t torchfort_rl_on_policy_save_checkpoint(const char* name, cons
  * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
  */
 torchfort_result_t torchfort_rl_on_policy_load_checkpoint(const char* name, const char* checkpoint_dir);
+
+/**
+ * @brief Restores only the network weights of a reinforcement learning system from a checkpoint.
+ * @details In contrast to \p torchfort_rl_on_policy_load_checkpoint, this method only restores the weights of the
+ * actor-critic network from the checkpoint produced by \p torchfort_rl_on_policy_save_checkpoint. The optimizer, LR
+ * scheduler, rollout buffer, normalizer statistics and step counters are left in their freshly created state. This is
+ * intended for fine-tuning or transfer-learning workflows, where a pretrained model is used as the starting point for a
+ * new training run (e.g. with a modified reward function or new environment data).
+ *
+ * @param[in] name The name of a system instance to restore the weights for, as defined during system creation.
+ * @param[in] checkpoint_dir A filesystem path to a directory which contains the checkpoint data to load.
+ *
+ * @return \p TORCHFORT_RESULT_SUCCESS on success or error code on failure.
+ */
+torchfort_result_t torchfort_rl_on_policy_load_model(const char* name, const char* checkpoint_dir);
 
 // RL on-policy miscellaneous utility functions
 /**

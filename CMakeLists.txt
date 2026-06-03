@@ -4,10 +4,10 @@ if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
-# https://github.com/NVIDIA/TorchFort/issues/3
+#https: // github.com/NVIDIA/TorchFort/issues/3
 cmake_policy(SET CMP0057 NEW)
 
-# User-defined build options
+#User - defined build options
 set(TORCHFORT_CUDA_CC_LIST "70;80;90" CACHE STRING "List of CUDA compute capabilities to build torchfort for.")
 set(TORCHFORT_NCCL_ROOT CACHE STRING "Path to search for NCCL installation. Default NVIDA HPC SDK provided NCCL version if available.")
 set(TORCHFORT_YAML_CPP_ROOT CACHE STRING "Path to search for yaml-cpp installation.")
@@ -16,7 +16,7 @@ option(TORCHFORT_BUILD_EXAMPLES "Build examples" OFF)
 option(TORCHFORT_BUILD_TESTS "Build tests" OFF)
 option(TORCHFORT_ENABLE_GPU "Enable GPU/CUDA support" ON)
 
-# For backward-compatibility with existing variable
+#For backward - compatibility with existing variable
 if (YAML_CPP_ROOT)
   set(TORCHFORT_YAML_CPP_ROOT ${YAML_CPP_ROOT})
 endif()
@@ -34,13 +34,12 @@ endif()
 project(torchfort LANGUAGES ${LANGS})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
-  # __rdtsc() in torch not supported by nvc++. Use g++ for CXX files.
+#__rdtsc() in torch not supported by nvc++.Use g++ for CXX files.
   message(FATAL_ERROR "TorchFort does not support compilation of C++ files with nvc++. "
                       "Set CMAKE_CXX_COMPILER to g++ to proceed.")
 endif()
 
-
-# unit testing with gtest
+#unit testing with gtest
 if (TORCHFORT_BUILD_TESTS)
   enable_testing()
   include(CTest)
@@ -49,29 +48,29 @@ if (TORCHFORT_BUILD_TESTS)
     googletest
     URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
     )
-  # For Windows: Prevent overriding the parent project's compiler/linker settings
+#For Windows : Prevent overriding the parent project's compiler/linker settings
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
   include(GoogleTest)
 endif()
 
-# MPI
+#MPI
 find_package(MPI REQUIRED)
 
-# CUDA
+#CUDA
 if (TORCHFORT_ENABLE_GPU)
   find_package(CUDAToolkit REQUIRED)
 
-  # HPC SDK
-  # Locate and append NVHPC CMake configuration if available
+#HPC SDK
+#Locate and append NVHPC CMake configuration if available
   find_program(NVHPC_CXX_BIN "nvc++")
   if (NVHPC_CXX_BIN)
     string(REPLACE "compilers/bin/nvc++" "cmake" NVHPC_CMAKE_DIR ${NVHPC_CXX_BIN})
     set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${NVHPC_CMAKE_DIR}")
     find_package(NVHPC COMPONENTS "")
   endif()
-  
-  # Get NCCL library (with optional override)
+
+#Get NCCL library(with optional override)
   if (TORCHFORT_NCCL_ROOT)
     find_path(NCCL_INCLUDE_DIR REQUIRED
       NAMES nccl.h
@@ -103,8 +102,8 @@ if (TORCHFORT_ENABLE_GPU)
 
   message(STATUS "Using NCCL library: ${NCCL_LIBRARY}")
 
-  # PyTorch
-  # Set TORCH_CUDA_ARCH_LIST string to match TORCHFORT_CUDA_CC_LIST
+#PyTorch
+#Set TORCH_CUDA_ARCH_LIST string to match TORCHFORT_CUDA_CC_LIST
   foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
       string(REGEX REPLACE "([0-9])$" ".\\1" CUDA_CC_W_DOT ${CUDA_CC})
     list(APPEND TORCH_CUDA_ARCH_LIST ${CUDA_CC_W_DOT})
@@ -114,15 +113,15 @@ endif()
 
 find_package(Torch REQUIRED)
 
-# Generate configuration header
+#Generate configuration header
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/include/torchfort_config.h.in
   ${CMAKE_BINARY_DIR}/include/torchfort_config.h
   @ONLY
 )
 
-# yaml-cpp
-#find_package(yaml-cpp REQUIRED)
+#yaml - cpp
+#find_package(yaml - cpp REQUIRED)
 find_path(YAML_CPP_INCLUDE_DIR REQUIRED
   NAMES yaml-cpp/yaml.h
   HINTS ${TORCHFORT_YAML_CPP_ROOT}/include
@@ -133,7 +132,7 @@ find_library(YAML_CPP_LIBRARY REQUIRED
 )
 message(STATUS "Using yaml-cpp library: ${YAML_CPP_LIBRARY}")
 
-# C/C++ shared library
+#C / C++ shared library
 add_library(${PROJECT_NAME} SHARED)
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
@@ -220,17 +219,17 @@ install(
   INCLUDES DESTINATION ${CMAKE_INSTALL_PREFIX}/include
 )
 
-# Install generated configuration header
+#Install generated configuration header
 install(
   FILES ${CMAKE_BINARY_DIR}/include/torchfort_config.h
   DESTINATION ${CMAKE_INSTALL_PREFIX}/include
 )
 
-# Fortran library and module
+#Fortran library and module
 if (TORCHFORT_BUILD_FORTRAN)
 
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-    # Creating -gpu argument string for nvfortran GPU compilation
+#Creating - gpu argument string for nvfortran GPU compilation
     foreach(CUDA_CC ${TORCHFORT_CUDA_CC_LIST})
       list(APPEND CUF_GPU_ARG "cc${CUDA_CC}")
     endforeach()
@@ -257,17 +256,17 @@ if (TORCHFORT_BUILD_FORTRAN)
   install(
     TARGETS "${PROJECT_NAME}_fort"
   )
-  # install Fortran module
+#install Fortran module
   install(FILES ${CMAKE_BINARY_DIR}/include/torchfort.mod DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 endif()
 
-# install Python files
+#install Python files
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/python/wandb_helper.py DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/python)
 
-# install docs
+#install docs
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/docs DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-# build examples
+#build examples
 if (TORCHFORT_BUILD_EXAMPLES)
   add_subdirectory(examples/cpp/cart_pole)
   if (TORCHFORT_BUILD_FORTRAN)
@@ -276,7 +275,7 @@ if (TORCHFORT_BUILD_EXAMPLES)
   endif()
 endif()
 
-# build tests
+#build tests
 if (TORCHFORT_BUILD_TESTS)
   add_subdirectory(tests/general)
   add_subdirectory(tests/supervised)

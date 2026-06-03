@@ -36,25 +36,24 @@ std::shared_ptr<ReplayBuffer> get_replay_buffer(const YAML::Node& rb_node, float
   }
   auto params = get_params(rb_node["parameters"]);
 
-  std::set<std::string> supported_params{"type", "max_size", "min_size", "n_envs",
-                                         "alpha", "beta0", "beta_max", "beta_steps"};
+  std::set<std::string> supported_params{"type",  "max_size", "min_size", "n_envs",
+                                         "alpha", "beta0",    "beta_max", "beta_steps"};
   check_params(supported_params, params.keys());
 
   auto max_size = static_cast<size_t>(params.get_param<int>("max_size")[0]);
   auto min_size = static_cast<size_t>(params.get_param<int>("min_size")[0]);
-  auto n_envs   = static_cast<size_t>(params.get_param<int>("n_envs", 1)[0]);
+  auto n_envs = static_cast<size_t>(params.get_param<int>("n_envs", 1)[0]);
 
   if (rb_type == "uniform") {
-    return std::make_shared<UniformReplayBuffer>(max_size, min_size, n_envs, gamma, nstep,
-                                                 nstep_reward_reduction, rb_device);
+    return std::make_shared<UniformReplayBuffer>(max_size, min_size, n_envs, gamma, nstep, nstep_reward_reduction,
+                                                 rb_device);
   } else if (rb_type == "prioritized") {
-    float  alpha      = params.get_param<float>("alpha",    0.6f)[0];
-    float  beta0      = params.get_param<float>("beta0",    0.4f)[0];
-    float  beta_max   = params.get_param<float>("beta_max", 1.0f)[0];
+    float alpha = params.get_param<float>("alpha", 0.6f)[0];
+    float beta0 = params.get_param<float>("beta0", 0.4f)[0];
+    float beta_max = params.get_param<float>("beta_max", 1.0f)[0];
     size_t beta_steps = static_cast<size_t>(params.get_param<int>("beta_steps", 100000)[0]);
-    return std::make_shared<PrioritizedReplayBuffer>(max_size, min_size, n_envs, gamma, nstep,
-                                                     nstep_reward_reduction, alpha, beta0, beta_max,
-                                                     beta_steps, rb_device);
+    return std::make_shared<PrioritizedReplayBuffer>(max_size, min_size, n_envs, gamma, nstep, nstep_reward_reduction,
+                                                     alpha, beta0, beta_max, beta_steps, rb_device);
   } else {
     THROW_INVALID_USAGE("Unknown replay_buffer type: " + rb_type);
   }

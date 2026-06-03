@@ -30,8 +30,8 @@ namespace torchfort {
 namespace rl {
 
 using BufferEntry = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>;
-using SampleResult = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
-                                torch::Tensor, torch::Tensor>;
+using SampleResult =
+    std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>;
 
 enum RewardReductionMode { Sum = 1, Mean = 2, WeightedMean = 3, SumNoSkip = 4, MeanNoSkip = 5, WeightedMeanNoSkip = 6 };
 
@@ -380,9 +380,8 @@ public:
                           size_t beta_steps, int device)
       : ReplayBuffer(max_size, min_size, n_envs, device), gamma_(gamma), nstep_(nstep), alpha_(alpha), beta_(beta0),
         beta_max_(beta_max),
-        beta_increment_(beta_steps > 0 ? (beta_max - beta0) / static_cast<float>(beta_steps) : 0.f),
-        epsilon_(1e-6f), max_priority_(1.f), min_p_alpha_(std::numeric_limits<float>::max()),
-        write_pos_(0), current_size_(0) {
+        beta_increment_(beta_steps > 0 ? (beta_max - beta0) / static_cast<float>(beta_steps) : 0.f), epsilon_(1e-6f),
+        max_priority_(1.f), min_p_alpha_(std::numeric_limits<float>::max()), write_pos_(0), current_size_(0) {
 
     skip_incomplete_steps_ = true;
     if (reward_reduction_mode == RewardReductionMode::MeanNoSkip) {
@@ -410,19 +409,17 @@ public:
     torch::NoGradGuard no_grad;
 
     if ((s.sizes()[0] != n_envs_) || (a.sizes()[0] != n_envs_) || (sp.sizes()[0] != n_envs_)) {
-      throw std::runtime_error(
-          "PrioritizedReplayBuffer::update: leading dimension of s, a, sp must equal n_envs");
+      throw std::runtime_error("PrioritizedReplayBuffer::update: leading dimension of s, a, sp must equal n_envs");
     }
     if ((r.sizes()[0] != n_envs_) || (d.sizes()[0] != n_envs_)) {
-      throw std::runtime_error(
-          "PrioritizedReplayBuffer::update: leading dimension of r, d must equal n_envs");
+      throw std::runtime_error("PrioritizedReplayBuffer::update: leading dimension of r, d must equal n_envs");
     }
 
-    auto sc  = s.to(device_,  s.dtype(),  false, true);
-    auto ac  = a.to(device_,  a.dtype(),  false, true);
+    auto sc = s.to(device_, s.dtype(), false, true);
+    auto ac = a.to(device_, a.dtype(), false, true);
     auto spc = sp.to(device_, sp.dtype(), false, true);
-    auto rc  = r.to(device_,  r.dtype(),  false, true);
-    auto dc  = d.to(device_,  d.dtype(),  false, true);
+    auto rc = r.to(device_, r.dtype(), false, true);
+    auto dc = d.to(device_, d.dtype(), false, true);
 
     // write entry; zero priority until it becomes a valid n-step starting point
     size_t pos = write_pos_;
@@ -446,19 +443,19 @@ public:
   SampleResult sample(int batch_size) override {
     torch::NoGradGuard no_grad;
 
-    auto stens_list  = std::vector<torch::Tensor>(batch_size);
-    auto atens_list  = std::vector<torch::Tensor>(batch_size);
+    auto stens_list = std::vector<torch::Tensor>(batch_size);
+    auto atens_list = std::vector<torch::Tensor>(batch_size);
     auto sptens_list = std::vector<torch::Tensor>(batch_size);
-    auto rtens_list  = std::vector<torch::Tensor>(batch_size);
-    auto dtens_list  = std::vector<torch::Tensor>(batch_size);
-    auto wtens_list  = std::vector<torch::Tensor>(batch_size);
-    auto itens_list  = std::vector<torch::Tensor>(batch_size);
+    auto rtens_list = std::vector<torch::Tensor>(batch_size);
+    auto dtens_list = std::vector<torch::Tensor>(batch_size);
+    auto wtens_list = std::vector<torch::Tensor>(batch_size);
+    auto itens_list = std::vector<torch::Tensor>(batch_size);
 
     // anneal beta towards beta_max_
     beta_ = std::min(beta_max_, beta_ + beta_increment_);
 
-    float total    = treeTotal_();
-    float segment  = total / static_cast<float>(batch_size);
+    float total = treeTotal_();
+    float segment = total / static_cast<float>(batch_size);
     // minimum p^alpha currently in the buffer — normalises IS weights so max weight = 1
     float min_p_alpha = min_p_alpha_;
 
@@ -486,24 +483,24 @@ public:
       // extract (state, action, ...) at (pos, env_idx)
       torch::Tensor stens, atens, sptens, rtens, dtens;
       std::tie(stens, atens, sptens, rtens, dtens) = buffer_[pos];
-      stens_list[s]  = stens.index({env_idx, "..."}).clone();
-      atens_list[s]  = atens.index({env_idx, "..."}).clone();
+      stens_list[s] = stens.index({env_idx, "..."}).clone();
+      atens_list[s] = atens.index({env_idx, "..."}).clone();
       sptens_list[s] = sptens.index({env_idx, "..."}).clone();
-      rtens_list[s]  = rtens.index({env_idx}).clone();
-      dtens_list[s]  = dtens.index({env_idx}).clone();
+      rtens_list[s] = rtens.index({env_idx}).clone();
+      dtens_list[s] = dtens.index({env_idx}).clone();
 
       // n-step rollout — identical logic to UniformReplayBuffer, but uses modular indexing
       float r_norm = 1.f;
-      int   r_count = 1;
-      bool  skip = false;
+      int r_count = 1;
+      bool skip = false;
       torch::Tensor deff = 1.f - dtens_list[s];
       for (int off = 1; off < nstep_; ++off) {
         size_t next_pos = (pos + static_cast<size_t>(off)) % max_size_;
         std::tie(stens, atens, sptens, rtens, dtens) = buffer_[next_pos];
         sptens_list[s] = sptens.index({env_idx, "..."}).clone();
         float gamma_eff = static_cast<float>(std::pow(gamma_, off));
-        rtens_list[s]  = rtens_list[s] + gamma_eff * rtens.index({env_idx});
-        r_norm  += gamma_eff;
+        rtens_list[s] = rtens_list[s] + gamma_eff * rtens.index({env_idx});
+        r_norm += gamma_eff;
         r_count++;
 
         float d_val = dtens.index({env_idx}).item<float>();
@@ -532,7 +529,7 @@ public:
       }
 
       auto float_opts = torch::TensorOptions().dtype(torch::kFloat32).device(device_);
-      auto long_opts  = torch::TensorOptions().dtype(torch::kLong).device(device_);
+      auto long_opts = torch::TensorOptions().dtype(torch::kLong).device(device_);
       wtens_list[s] = torch::tensor(weight, float_opts);
       itens_list[s] = torch::tensor(static_cast<int64_t>(pos), long_opts);
 
@@ -551,23 +548,23 @@ public:
     auto indices_cpu = indices.to(torch::kCPU).contiguous();
     auto td_errors_cpu = td_errors.to(torch::kCPU).contiguous();
     auto idx_acc = indices_cpu.accessor<int64_t, 1>();
-    auto td_acc  = td_errors_cpu.accessor<float, 1>();
+    auto td_acc = td_errors_cpu.accessor<float, 1>();
 
     for (int64_t i = 0; i < idx_acc.size(0); ++i) {
-      size_t pos    = static_cast<size_t>(idx_acc[i]);
-      float raw_p   = std::abs(td_acc[i]) + epsilon_;
+      size_t pos = static_cast<size_t>(idx_acc[i]);
+      float raw_p = std::abs(td_acc[i]) + epsilon_;
       float p_alpha = std::pow(raw_p, alpha_);
       treeUpdate_(pos, p_alpha);
       priorities_[pos] = raw_p;
       max_priority_ = std::max(max_priority_, raw_p);
-      min_p_alpha_  = std::min(min_p_alpha_,  p_alpha);
+      min_p_alpha_ = std::min(min_p_alpha_, p_alpha);
     }
   }
 
   BufferEntry get(int index) override {
     if (index < 0 || static_cast<size_t>(index) >= current_size_) {
-      throw std::runtime_error("PrioritizedReplayBuffer::get: index " + std::to_string(index) +
-                               " out of bounds [0, " + std::to_string(current_size_) + ").");
+      throw std::runtime_error("PrioritizedReplayBuffer::get: index " + std::to_string(index) + " out of bounds [0, " +
+                               std::to_string(current_size_) + ").");
     }
     return buffer_[index];
   }
@@ -576,10 +573,10 @@ public:
 
   void reset() override {
     current_size_ = 0;
-    write_pos_    = 0;
+    write_pos_ = 0;
     max_priority_ = 1.f;
-    min_p_alpha_  = std::numeric_limits<float>::max();
-    std::fill(sum_tree_.begin(),   sum_tree_.end(),   0.f);
+    min_p_alpha_ = std::numeric_limits<float>::max();
+    std::fill(sum_tree_.begin(), sum_tree_.end(), 0.f);
     std::fill(priorities_.begin(), priorities_.end(), 0.f);
   }
 
@@ -616,26 +613,24 @@ public:
     if (!std::filesystem::exists(root_dir)) {
       bool rv = std::filesystem::create_directory(root_dir);
       if (!rv) {
-        throw std::runtime_error("PrioritizedReplayBuffer::save: unable to create directory " +
-                                 root_dir.native() + ".");
+        throw std::runtime_error("PrioritizedReplayBuffer::save: unable to create directory " + root_dir.native() +
+                                 ".");
       }
     }
 
-    torch::save(s_data,  root_dir / "s_data.pt");
-    torch::save(a_data,  root_dir / "a_data.pt");
+    torch::save(s_data, root_dir / "s_data.pt");
+    torch::save(a_data, root_dir / "a_data.pt");
     torch::save(sp_data, root_dir / "sp_data.pt");
-    torch::save(r_data,  root_dir / "r_data.pt");
-    torch::save(d_data,  root_dir / "d_data.pt");
+    torch::save(r_data, root_dir / "r_data.pt");
+    torch::save(d_data, root_dir / "d_data.pt");
 
     // save raw priorities (before alpha) for positions 0..current_size_-1
-    auto prio_tensor = torch::tensor(
-        std::vector<float>(priorities_.begin(), priorities_.begin() + current_size_));
+    auto prio_tensor = torch::tensor(std::vector<float>(priorities_.begin(), priorities_.begin() + current_size_));
     torch::save({prio_tensor}, root_dir / "priorities.pt");
 
     // save scalar state: [write_pos, current_size, beta, max_priority, min_p_alpha]
-    auto state_tensor = torch::tensor(std::vector<float>{static_cast<float>(write_pos_),
-                                                          static_cast<float>(current_size_), beta_,
-                                                          max_priority_, min_p_alpha_});
+    auto state_tensor = torch::tensor(std::vector<float>{
+        static_cast<float>(write_pos_), static_cast<float>(current_size_), beta_, max_priority_, min_p_alpha_});
     torch::save({state_tensor}, root_dir / "per_state.pt");
   }
 
@@ -643,20 +638,20 @@ public:
     std::filesystem::path root_dir(fname);
 
     std::vector<torch::Tensor> s_data, a_data, sp_data, r_data, d_data;
-    torch::load(s_data,  root_dir / "s_data.pt");
-    torch::load(a_data,  root_dir / "a_data.pt");
+    torch::load(s_data, root_dir / "s_data.pt");
+    torch::load(a_data, root_dir / "a_data.pt");
     torch::load(sp_data, root_dir / "sp_data.pt");
-    torch::load(r_data,  root_dir / "r_data.pt");
-    torch::load(d_data,  root_dir / "d_data.pt");
+    torch::load(r_data, root_dir / "r_data.pt");
+    torch::load(d_data, root_dir / "d_data.pt");
 
     // restore scalar state
     std::vector<torch::Tensor> state_vec;
     torch::load(state_vec, root_dir / "per_state.pt");
-    write_pos_    = static_cast<size_t>(state_vec[0][0].item<float>());
+    write_pos_ = static_cast<size_t>(state_vec[0][0].item<float>());
     current_size_ = static_cast<size_t>(state_vec[0][1].item<float>());
-    beta_         = state_vec[0][2].item<float>();
+    beta_ = state_vec[0][2].item<float>();
     max_priority_ = state_vec[0][3].item<float>();
-    min_p_alpha_  = state_vec[0][4].item<float>();
+    min_p_alpha_ = state_vec[0][4].item<float>();
 
     // restore buffer entries at their physical positions
     buffer_.assign(max_size_, BufferEntry{});
@@ -668,7 +663,7 @@ public:
     std::vector<torch::Tensor> prio_vec;
     torch::load(prio_vec, root_dir / "priorities.pt");
     std::fill(priorities_.begin(), priorities_.end(), 0.f);
-    std::fill(sum_tree_.begin(),   sum_tree_.end(),   0.f);
+    std::fill(sum_tree_.begin(), sum_tree_.end(), 0.f);
     for (size_t i = 0; i < current_size_; ++i) {
       float raw_p = prio_vec[0][static_cast<int64_t>(i)].item<float>();
       priorities_[i] = raw_p;
@@ -718,13 +713,13 @@ private:
   size_t write_pos_;
   size_t current_size_;
 
-  float alpha_;           // priority exponent
-  float beta_;            // IS weight exponent (annealed from beta0 toward beta_max_)
+  float alpha_; // priority exponent
+  float beta_;  // IS weight exponent (annealed from beta0 toward beta_max_)
   float beta_max_;
-  float beta_increment_;  // added to beta_ each call to sample()
-  float epsilon_;         // priority floor (prevents zero probability)
-  float max_priority_;    // maximum raw priority seen; assigned to new entries
-  float min_p_alpha_;     // minimum p^alpha currently tracked; used to normalise IS weights
+  float beta_increment_; // added to beta_ each call to sample()
+  float epsilon_;        // priority floor (prevents zero probability)
+  float max_priority_;   // maximum raw priority seen; assigned to new entries
+  float min_p_alpha_;    // minimum p^alpha currently tracked; used to normalise IS weights
 
   std::mt19937_64 rng_;
   float gamma_;

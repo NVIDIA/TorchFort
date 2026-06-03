@@ -451,13 +451,12 @@ TEST(RewardNormalization, LargeScaleNormalizedToUnitStd) {
 class PrioritizedBuffer : public testing::TestWithParam<int> {};
 
 std::shared_ptr<rl::PrioritizedReplayBuffer> getTestPERBuffer(int buffer_size, int n_envs = 1, float gamma = 0.95f,
-                                                               int nstep = 1, float alpha = 0.6f,
-                                                               float beta0 = 0.4f) {
+                                                              int nstep = 1, float alpha = 0.6f, float beta0 = 0.4f) {
   torch::NoGradGuard no_grad;
 
   // beta_steps=0: no annealing, beta stays at beta0 for deterministic tests
   auto rbuff = std::make_shared<rl::PrioritizedReplayBuffer>(buffer_size, buffer_size, n_envs, gamma, nstep,
-                                                              rl::RewardReductionMode::Sum, alpha, beta0, 1.0f, 0, -1);
+                                                             rl::RewardReductionMode::Sum, alpha, beta0, 1.0f, 0, -1);
 
   std::random_device dev;
   std::mt19937 rng(dev());
@@ -465,10 +464,10 @@ std::shared_ptr<rl::PrioritizedReplayBuffer> getTestPERBuffer(int buffer_size, i
 
   torch::Tensor state = torch::zeros({n_envs, 1}, torch::kFloat32);
   for (int i = 0; i < buffer_size; ++i) {
-    auto action  = torch::ones({n_envs, 1}, torch::kFloat32) * static_cast<float>(dist(rng));
+    auto action = torch::ones({n_envs, 1}, torch::kFloat32) * static_cast<float>(dist(rng));
     auto state_p = state + action;
-    auto rtens   = action.index({"...", 0}).clone();
-    auto dtens   = torch::zeros({n_envs}, torch::kFloat32);
+    auto rtens = action.index({"...", 0}).clone();
+    auto dtens = torch::zeros({n_envs}, torch::kFloat32);
     rbuff->update(state, action, state_p, rtens, dtens);
     state.copy_(state_p);
   }
@@ -478,7 +477,7 @@ std::shared_ptr<rl::PrioritizedReplayBuffer> getTestPERBuffer(int buffer_size, i
 // Shape and dtype checks
 TEST_P(PrioritizedBuffer, ShapeConsistency) {
   torch::manual_seed(666);
-  unsigned int n_envs     = GetParam();
+  unsigned int n_envs = GetParam();
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
 
@@ -511,7 +510,7 @@ TEST_P(PrioritizedBuffer, ShapeConsistency) {
 // weights must be exactly 1.0 — uniform sampling as a special case of PER.
 TEST_P(PrioritizedBuffer, InitialWeightsUniform) {
   torch::manual_seed(666);
-  unsigned int n_envs     = GetParam();
+  unsigned int n_envs = GetParam();
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
 
@@ -528,7 +527,7 @@ TEST_P(PrioritizedBuffer, InitialWeightsUniform) {
 // the entry with the lowest priority must achieve the maximum weight of 1.0.
 TEST_P(PrioritizedBuffer, WeightRange) {
   torch::manual_seed(666);
-  unsigned int n_envs     = GetParam();
+  unsigned int n_envs = GetParam();
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
 
@@ -538,8 +537,7 @@ TEST_P(PrioritizedBuffer, WeightRange) {
   std::tie(s, a, sp, r, d, is_weights, indices) = rbuff->sample(batch_size);
 
   // set half the sampled entries to high TD, half to low TD
-  auto td_errors = torch::cat({torch::ones(batch_size / 2) * 10.f,
-                                torch::ones(batch_size / 2) * 0.01f});
+  auto td_errors = torch::cat({torch::ones(batch_size / 2) * 10.f, torch::ones(batch_size / 2) * 0.01f});
   rbuff->update_priorities(indices, td_errors);
 
   // sample again to see updated weights
@@ -555,15 +553,15 @@ TEST_P(PrioritizedBuffer, WeightOrdering) {
   torch::manual_seed(42);
 
   // small buffer so we control exactly which positions exist
-  unsigned int n_envs     = GetParam();
+  unsigned int n_envs = GetParam();
   unsigned int buffer_size = 4;
-  unsigned int batch_size  = 200;
-  float alpha = 1.0f, beta0 = 1.0f;  // full prioritization + full IS for clearest signal
+  unsigned int batch_size = 200;
+  float alpha = 1.0f, beta0 = 1.0f; // full prioritization + full IS for clearest signal
 
   auto rbuff = getTestPERBuffer(buffer_size, n_envs, 0.95f, 1, alpha, beta0);
 
   // directly set known priorities: position 0 → high TD, position 1 → low TD
-  auto known_indices  = torch::tensor({0L, 1L});
+  auto known_indices = torch::tensor({0L, 1L});
   auto known_td_errors = torch::tensor({100.f, 0.001f});
   rbuff->update_priorities(known_indices, known_td_errors);
 
@@ -574,10 +572,16 @@ TEST_P(PrioritizedBuffer, WeightOrdering) {
   float sum_w0 = 0.f, sum_w1 = 0.f;
   int cnt0 = 0, cnt1 = 0;
   auto idx_acc = indices.accessor<int64_t, 1>();
-  auto w_acc   = is_weights.accessor<float, 1>();
+  auto w_acc = is_weights.accessor<float, 1>();
   for (int i = 0; i < batch_size; ++i) {
-    if (idx_acc[i] == 0) { sum_w0 += w_acc[i]; cnt0++; }
-    if (idx_acc[i] == 1) { sum_w1 += w_acc[i]; cnt1++; }
+    if (idx_acc[i] == 0) {
+      sum_w0 += w_acc[i];
+      cnt0++;
+    }
+    if (idx_acc[i] == 1) {
+      sum_w1 += w_acc[i];
+      cnt1++;
+    }
   }
 
   // both positions must appear in a batch of 200 from a buffer of 4
@@ -598,17 +602,17 @@ TEST_P(PrioritizedBuffer, WeightOrdering) {
 TEST_P(PrioritizedBuffer, PriorityBias) {
   torch::manual_seed(42);
 
-  unsigned int n_envs     = GetParam();
+  unsigned int n_envs = GetParam();
   unsigned int buffer_size = 50;
-  unsigned int batch_size  = 2000;
-  float alpha = 1.0f;  // full prioritization for a clear statistical signal
+  unsigned int batch_size = 2000;
+  float alpha = 1.0f; // full prioritization for a clear statistical signal
 
   auto rbuff = getTestPERBuffer(buffer_size, n_envs, 0.95f, 1, alpha, 0.0f);
 
   // positions 0–4: high TD (10.0), positions 5–49: low TD (0.001)
-  auto hi_idx = torch::arange(0, 5,  torch::kLong);
+  auto hi_idx = torch::arange(0, 5, torch::kLong);
   auto lo_idx = torch::arange(5, 50, torch::kLong);
-  rbuff->update_priorities(hi_idx, torch::ones(5)  * 10.f);
+  rbuff->update_priorities(hi_idx, torch::ones(5) * 10.f);
   rbuff->update_priorities(lo_idx, torch::ones(45) * 0.001f);
 
   // sample a large batch and count how often high-priority positions appear
@@ -626,7 +630,7 @@ TEST_P(PrioritizedBuffer, PriorityBias) {
 // Buffer data integrity: s + a = s', r = |a| (set up by getTestPERBuffer)
 TEST_P(PrioritizedBuffer, EntryConsistency) {
   torch::manual_seed(666);
-  unsigned int n_envs     = GetParam();
+  unsigned int n_envs = GetParam();
   unsigned int batch_size = 32;
   unsigned int buffer_size = 4 * batch_size;
 
@@ -636,11 +640,11 @@ TEST_P(PrioritizedBuffer, EntryConsistency) {
   float state_diff = 0.f, reward_diff = 0.f;
   for (int i = 0; i < 4; ++i) {
     std::tie(s, a, sp, r, d, is_weights, indices) = rbuff->sample(batch_size);
-    state_diff  += torch::sum(torch::abs(s + a - sp)).item<float>();
+    state_diff += torch::sum(torch::abs(s + a - sp)).item<float>();
     reward_diff += torch::sum(torch::abs(a.index({"...", 0}) - r)).item<float>();
   }
 
-  EXPECT_FLOAT_EQ(state_diff,  0.f);
+  EXPECT_FLOAT_EQ(state_diff, 0.f);
   EXPECT_FLOAT_EQ(reward_diff, 0.f);
 }
 
@@ -648,7 +652,7 @@ TEST_P(PrioritizedBuffer, EntryConsistency) {
 // IS weights are produced (given the same RNG seed) after a round-trip.
 TEST_P(PrioritizedBuffer, SaveRestore) {
   torch::manual_seed(666);
-  unsigned int n_envs     = GetParam();
+  unsigned int n_envs = GetParam();
   unsigned int buffer_size = 32;
 
   auto rbuff = getTestPERBuffer(buffer_size, n_envs);
@@ -673,7 +677,7 @@ TEST_P(PrioritizedBuffer, SaveRestore) {
   std::tie(s_a, a_a, sp_a, r_a, d_a, w_a, idx_a) = rbuff->sample(16);
 
   // indices and weights must be identical after round-trip
-  EXPECT_FLOAT_EQ(torch::sum(torch::abs(w_b   - w_a)).item<float>(), 0.f);
+  EXPECT_FLOAT_EQ(torch::sum(torch::abs(w_b - w_a)).item<float>(), 0.f);
   EXPECT_FLOAT_EQ(torch::sum(torch::abs((idx_b - idx_a).to(torch::kFloat))).item<float>(), 0.f);
   // buffer data integrity
   EXPECT_FLOAT_EQ(torch::sum(torch::abs(s_b - s_a)).item<float>(), 0.f);

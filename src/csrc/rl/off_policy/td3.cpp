@@ -137,8 +137,8 @@ TD3System::TD3System(const char* name, const YAML::Node& system_node, int model_
   }
 
   if (system_node["replay_buffer"]) {
-    replay_buffer_ = rl::get_replay_buffer(system_node["replay_buffer"], gamma_, nstep_,
-                                           nstep_reward_reduction_, rb_device);
+    replay_buffer_ =
+        rl::get_replay_buffer(system_node["replay_buffer"], gamma_, nstep_, nstep_reward_reduction_, rb_device);
   } else {
     THROW_INVALID_USAGE("Missing replay_buffer section in configuration file.");
   }

@@ -1,0 +1,12 @@
+model:
+  type: torchscript
+  parameters:
+    filename: "model_trainable.pt"
+
+loss:
+  type: MSE
+
+optimizer:
+  type: adam
+  parameters:
+    learning_rate: 1e-2

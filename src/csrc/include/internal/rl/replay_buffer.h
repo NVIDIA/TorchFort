@@ -356,15 +356,25 @@ private:
 // Prioritized Experience Replay buffer (Schaul et al., 2015).
 //
 // Priorities are stored in a sum-tree so that O(log N) sampling and updates
-// are possible.  Each physical buffer slot holds one timestep for all n_envs_
-// environments.  Priorities operate at the step level; the env is chosen
-// uniformly given the step.
+// are possible.  As in the uniform buffer, the per-env step capacity is
+// max_size_ = max_size / n_envs_, and each physical buffer slot holds one
+// timestep for all n_envs_ environments.  Each (step, env) pair is an
+// independently prioritized transition, so the sum-tree has
+// n_leaves_ = max_size_ * n_envs_ == max_size leaves.  A leaf index t maps to
+// step = t / n_envs_ and env = t % n_envs_; this is the index returned by
+// sample() and expected by update_priorities().
 //
-// IS weight formula (normalised to [0,1]):
+// IS weight formula (normalised to (0,1]):
 //   w_i = (min_p_alpha / p_i)^beta
 // where p_i = p_raw^alpha is the value stored in the tree leaf and
-// min_p_alpha is the minimum non-zero p^alpha currently tracked in the buffer.
-// max weight = 1 by construction (achieved by the lowest-priority entry).
+// min_p_alpha is the minimum p^alpha currently tracked in the buffer.  This follows the
+// global-minimum normalization used by Schaul et al. / OpenAI baselines / SB3: every weight lies in
+// (0,1], and a weight equals exactly 1 only for the globally-lowest-priority transition (so a given
+// sampled batch reaches 1 only when it happens to contain that transition).  Do not switch this to a
+// per-batch normalization to force max==1 — that would diverge from the reference implementations.
+// Note: min_p_alpha is a running minimum that only ever decreases (it is not the exact min-tree used
+// by baselines), so it can drift below the true current minimum; this keeps weights in (0,1] but can
+// scale them slightly low over time.
 //
 // When a new entry is written at position write_pos_:
 //   1. Set its tree priority to 0 (not yet a valid n-step starting point).
@@ -397,10 +407,15 @@ public:
       reward_reduction_mode_ = reward_reduction_mode;
     }
 
+    // n_envs handling matches the uniform buffer: the base constructor sets max_size_ to the per-env
+    // step capacity (max_size / n_envs). Each (step, env) pair is an independently prioritized
+    // transition, so the sum-tree has max_size_ * n_envs_ == max_size leaves — matching the number of
+    // transitions the uniform buffer samples over.
+    n_leaves_ = max_size_ * n_envs_;
     buffer_.resize(max_size_);
-    // 1-indexed sum-tree: root at 1, leaves at [max_size_, 2*max_size_ - 1]
-    sum_tree_.assign(2 * max_size_, 0.f);
-    priorities_.assign(max_size_, 0.f);
+    // 1-indexed sum-tree: root at 1, leaves at [n_leaves_, 2*n_leaves_ - 1]
+    sum_tree_.assign(2 * n_leaves_, 0.f);
+    priorities_.assign(n_leaves_, 0.f);
   }
 
   PrioritizedReplayBuffer(const PrioritizedReplayBuffer&) = delete;
@@ -421,21 +436,29 @@ public:
     auto rc = r.to(device_, r.dtype(), false, true);
     auto dc = d.to(device_, d.dtype(), false, true);
 
-    // write entry; zero priority until it becomes a valid n-step starting point
+    // write entry; zero priority for all of its (step, env) transitions until the step becomes a
+    // valid n-step starting point
     size_t pos = write_pos_;
     buffer_[pos] = std::make_tuple(sc, ac, spc, rc, dc);
-    treeUpdate_(pos, 0.f);
-    priorities_[pos] = 0.f;
+    for (size_t e = 0; e < n_envs_; ++e) {
+      size_t t = pos * n_envs_ + e;
+      treeUpdate_(t, 0.f);
+      priorities_[t] = 0.f;
+    }
 
     write_pos_ = (write_pos_ + 1) % max_size_;
     current_size_ = std::min(current_size_ + 1, max_size_);
 
-    // the position that can now start a complete n-step rollout ending at pos
+    // the step that can now start a complete n-step rollout ending at pos; enable all of its
+    // (step, env) transitions with the current maximum priority
     if (current_size_ >= static_cast<size_t>(nstep_)) {
       size_t valid_pos = (pos + max_size_ - nstep_ + 1) % max_size_;
       float p_alpha = std::pow(max_priority_, alpha_);
-      treeUpdate_(valid_pos, p_alpha);
-      priorities_[valid_pos] = max_priority_;
+      for (size_t e = 0; e < n_envs_; ++e) {
+        size_t t = valid_pos * n_envs_ + e;
+        treeUpdate_(t, p_alpha);
+        priorities_[t] = max_priority_;
+      }
       min_p_alpha_ = std::min(min_p_alpha_, p_alpha);
     }
   }
@@ -459,23 +482,23 @@ public:
     // minimum p^alpha currently in the buffer — normalises IS weights so max weight = 1
     float min_p_alpha = min_p_alpha_;
 
-    std::uniform_int_distribution<size_t> env_dist(0, n_envs_ - 1);
-
     int s = 0;
     while (s < batch_size) {
       // stratified sampling: one draw per equal-width segment of the priority sum
       float lo = segment * static_cast<float>(s);
       float hi = segment * static_cast<float>(s + 1);
       std::uniform_real_distribution<float> seg_dist(lo, hi);
-      size_t pos = treeSample_(seg_dist(rng_));
+      size_t t = treeSample_(seg_dist(rng_));
 
       // guard against numerical edge-cases (leaf with zero priority)
-      float p_i = sum_tree_[max_size_ + pos];
+      float p_i = sum_tree_[n_leaves_ + t];
       if (p_i <= 0.f) {
         continue;
       }
 
-      int64_t env_idx = static_cast<int64_t>(env_dist(rng_));
+      // decode the transition leaf into its (step, env) pair
+      size_t pos = t / n_envs_;
+      int64_t env_idx = static_cast<int64_t>(t % n_envs_);
 
       // IS weight: w_i = (min_p_alpha / p_i)^beta  — max weight = 1 by construction
       float weight = std::pow(min_p_alpha / p_i, beta_);
@@ -531,7 +554,7 @@ public:
       auto float_opts = torch::TensorOptions().dtype(torch::kFloat32).device(device_);
       auto long_opts = torch::TensorOptions().dtype(torch::kLong).device(device_);
       wtens_list[s] = torch::tensor(weight, float_opts);
-      itens_list[s] = torch::tensor(static_cast<int64_t>(pos), long_opts);
+      itens_list[s] = torch::tensor(static_cast<int64_t>(t), long_opts);
 
       ++s;
     }
@@ -551,11 +574,11 @@ public:
     auto td_acc = td_errors_cpu.accessor<float, 1>();
 
     for (int64_t i = 0; i < idx_acc.size(0); ++i) {
-      size_t pos = static_cast<size_t>(idx_acc[i]);
+      size_t t = static_cast<size_t>(idx_acc[i]); // transition (step, env) leaf index
       float raw_p = std::abs(td_acc[i]) + epsilon_;
       float p_alpha = std::pow(raw_p, alpha_);
-      treeUpdate_(pos, p_alpha);
-      priorities_[pos] = raw_p;
+      treeUpdate_(t, p_alpha);
+      priorities_[t] = raw_p;
       max_priority_ = std::max(max_priority_, raw_p);
       min_p_alpha_ = std::min(min_p_alpha_, p_alpha);
     }
@@ -624,8 +647,9 @@ public:
     torch::save(r_data, root_dir / "r_data.pt");
     torch::save(d_data, root_dir / "d_data.pt");
 
-    // save raw priorities (before alpha) for positions 0..current_size_-1
-    auto prio_tensor = torch::tensor(std::vector<float>(priorities_.begin(), priorities_.begin() + current_size_));
+    // save raw priorities (before alpha) for all (step, env) transitions of the filled steps
+    size_t n_filled = current_size_ * n_envs_;
+    auto prio_tensor = torch::tensor(std::vector<float>(priorities_.begin(), priorities_.begin() + n_filled));
     torch::save({prio_tensor}, root_dir / "priorities.pt");
 
     // save scalar state: [write_pos, current_size, beta, max_priority, min_p_alpha]
@@ -653,30 +677,31 @@ public:
     max_priority_ = state_vec[0][3].item<float>();
     min_p_alpha_ = state_vec[0][4].item<float>();
 
-    // restore buffer entries at their physical positions
+    // restore buffer entries at their physical (step) positions
     buffer_.assign(max_size_, BufferEntry{});
     for (size_t i = 0; i < s_data.size(); ++i) {
       buffer_[i] = std::make_tuple(s_data[i], a_data[i], sp_data[i], r_data[i], d_data[i]);
     }
 
-    // restore priorities and rebuild sum-tree
+    // restore per-transition priorities and rebuild sum-tree
     std::vector<torch::Tensor> prio_vec;
     torch::load(prio_vec, root_dir / "priorities.pt");
     std::fill(priorities_.begin(), priorities_.end(), 0.f);
     std::fill(sum_tree_.begin(), sum_tree_.end(), 0.f);
-    for (size_t i = 0; i < current_size_; ++i) {
-      float raw_p = prio_vec[0][static_cast<int64_t>(i)].item<float>();
-      priorities_[i] = raw_p;
+    size_t n_filled = current_size_ * n_envs_;
+    for (size_t t = 0; t < n_filled; ++t) {
+      float raw_p = prio_vec[0][static_cast<int64_t>(t)].item<float>();
+      priorities_[t] = raw_p;
       if (raw_p > 0.f) {
-        treeUpdate_(i, std::pow(raw_p, alpha_));
+        treeUpdate_(t, std::pow(raw_p, alpha_));
       }
     }
   }
 
 private:
   // update one leaf and propagate up to root — O(log N)
-  void treeUpdate_(size_t pos, float priority_alpha) {
-    size_t idx = max_size_ + pos;
+  void treeUpdate_(size_t leaf, float priority_alpha) {
+    size_t idx = n_leaves_ + leaf;
     sum_tree_[idx] = priority_alpha;
     while (idx > 1) {
       idx >>= 1;
@@ -689,7 +714,7 @@ private:
     // clamp to avoid floating-point overshoot past the last leaf
     value = std::min(value, treeTotal_() * (1.f - 1e-6f));
     size_t idx = 1;
-    while (idx < max_size_) {
+    while (idx < n_leaves_) {
       size_t left = 2 * idx;
       if (value <= sum_tree_[left]) {
         idx = left;
@@ -698,20 +723,21 @@ private:
         idx = left + 1;
       }
     }
-    return idx - max_size_;
+    return idx - n_leaves_;
   }
 
   float treeTotal_() const { return sum_tree_[1]; }
 
   // circular buffer (vector for O(1) indexed access)
   std::vector<BufferEntry> buffer_;
-  // 1-indexed sum-tree of size 2*max_size_; leaf for position p at index max_size_+p
+  // 1-indexed sum-tree of size 2*n_leaves_; leaf for transition t at index n_leaves_+t
   std::vector<float> sum_tree_;
-  // raw priorities (before alpha exponent), same indexing as buffer_
+  // raw priorities (before alpha exponent), indexed per transition t = step * n_envs_ + env
   std::vector<float> priorities_;
 
   size_t write_pos_;
   size_t current_size_;
+  size_t n_leaves_; // number of sum-tree leaves = max_size_ * n_envs_ (one per (step, env) transition)
 
   float alpha_; // priority exponent
   float beta_;  // IS weight exponent (annealed from beta0 toward beta_max_)

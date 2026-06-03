@@ -309,13 +309,9 @@ TEST(TorchFort, LoadModelMLPGPU0toGPU1) {
 
 TEST(TorchFort, LoadModelTorchScriptGPUtoGPU) { load_model_torchscript_save_restore(0, 0); }
 
-TEST(TorchFort, LoadModelTorchScriptCPUtoGPU) {
-  load_model_torchscript_save_restore(TORCHFORT_DEVICE_CPU, 0);
-}
+TEST(TorchFort, LoadModelTorchScriptCPUtoGPU) { load_model_torchscript_save_restore(TORCHFORT_DEVICE_CPU, 0); }
 
-TEST(TorchFort, LoadModelTorchScriptGPUtoCPU) {
-  load_model_torchscript_save_restore(0, TORCHFORT_DEVICE_CPU);
-}
+TEST(TorchFort, LoadModelTorchScriptGPUtoCPU) { load_model_torchscript_save_restore(0, TORCHFORT_DEVICE_CPU); }
 
 TEST(TorchFort, LoadModelTorchScriptGPU0toGPU1) {
   int ngpu;

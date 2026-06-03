@@ -108,8 +108,8 @@ void checkpoint_roundtrip(const std::string& system) {
   std::filesystem::remove_all(ckpt_dir);
 
   // create and train the source system, filling the replay buffer past its min_size
-  CHECK_TORCHFORT(torchfort_rl_off_policy_create_system(src.c_str(), config.c_str(), TORCHFORT_DEVICE_CPU,
-                                                        TORCHFORT_DEVICE_CPU));
+  CHECK_TORCHFORT(
+      torchfort_rl_off_policy_create_system(src.c_str(), config.c_str(), TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
   train_and_fill(src, /* num_train_steps = */ 5);
 
   // reference deterministic prediction for a fixed evaluation state
@@ -125,8 +125,8 @@ void checkpoint_roundtrip(const std::string& system) {
   CHECK_TORCHFORT(torchfort_rl_off_policy_save_checkpoint(src.c_str(), ckpt_dir.c_str()));
 
   // ---------------- full checkpoint restore ----------------
-  CHECK_TORCHFORT(torchfort_rl_off_policy_create_system(full.c_str(), config.c_str(), TORCHFORT_DEVICE_CPU,
-                                                        TORCHFORT_DEVICE_CPU));
+  CHECK_TORCHFORT(
+      torchfort_rl_off_policy_create_system(full.c_str(), config.c_str(), TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
   // a freshly created system has an empty buffer and is not ready
   bool full_ready_before = true;
   CHECK_TORCHFORT(torchfort_rl_off_policy_is_ready(full.c_str(), full_ready_before));
@@ -229,8 +229,8 @@ void checkpoint_roundtrip_on_policy(const std::string& system) {
   std::filesystem::remove_all(ckpt_dir);
 
   // create the source system and fill its rollout buffer until it is ready
-  CHECK_TORCHFORT(torchfort_rl_on_policy_create_system(src.c_str(), config.c_str(), TORCHFORT_DEVICE_CPU,
-                                                       TORCHFORT_DEVICE_CPU));
+  CHECK_TORCHFORT(
+      torchfort_rl_on_policy_create_system(src.c_str(), config.c_str(), TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
   rollout_until_ready(src);
 
   // reference deterministic prediction for a fixed evaluation state
@@ -246,8 +246,8 @@ void checkpoint_roundtrip_on_policy(const std::string& system) {
   CHECK_TORCHFORT(torchfort_rl_on_policy_save_checkpoint(src.c_str(), ckpt_dir.c_str()));
 
   // ---------------- full checkpoint restore ----------------
-  CHECK_TORCHFORT(torchfort_rl_on_policy_create_system(full.c_str(), config.c_str(), TORCHFORT_DEVICE_CPU,
-                                                       TORCHFORT_DEVICE_CPU));
+  CHECK_TORCHFORT(
+      torchfort_rl_on_policy_create_system(full.c_str(), config.c_str(), TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
   // a freshly created system has an empty rollout buffer and is not ready
   bool full_ready_before = true;
   CHECK_TORCHFORT(torchfort_rl_on_policy_is_ready(full.c_str(), full_ready_before));

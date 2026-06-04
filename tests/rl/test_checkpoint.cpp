@@ -130,8 +130,7 @@ void checkpoint_roundtrip(const std::string& system, int src_device = TORCHFORT_
   CHECK_TORCHFORT(torchfort_rl_off_policy_save_checkpoint(src.c_str(), ckpt_dir.c_str()));
 
   // ---------------- full checkpoint restore ----------------
-  CHECK_TORCHFORT(
-      torchfort_rl_off_policy_create_system(full.c_str(), config.c_str(), restore_device, restore_device));
+  CHECK_TORCHFORT(torchfort_rl_off_policy_create_system(full.c_str(), config.c_str(), restore_device, restore_device));
   // a freshly created system has an empty buffer and is not ready
   bool full_ready_before = true;
   CHECK_TORCHFORT(torchfort_rl_off_policy_is_ready(full.c_str(), full_ready_before));
@@ -161,8 +160,8 @@ void checkpoint_roundtrip(const std::string& system, int src_device = TORCHFORT_
   EXPECT_GT(std::abs(action_full_trained - action_full), 1e-7f);
 
   // ---------------- weights-only restore (load_model) ----------------
-  CHECK_TORCHFORT(torchfort_rl_off_policy_create_system(weights.c_str(), config.c_str(), restore_device,
-                                                        restore_device));
+  CHECK_TORCHFORT(
+      torchfort_rl_off_policy_create_system(weights.c_str(), config.c_str(), restore_device, restore_device));
   // prediction before loading stems from a fresh (independent) initialization and differs from the reference,
   // which makes the post-load match below a meaningful check that loading actually happened
   const float action_fresh = predict_fixed(weights, eval_state);

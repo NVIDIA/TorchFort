@@ -490,7 +490,7 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     if (!std::filesystem::exists(optimizer_path)) {
       THROW_INVALID_USAGE("Could not find " + optimizer_path.native() + ".");
     }
-    torch::load(*(p_model_.optimizer), optimizer_path.native());
+    torch::load(*(p_model_.optimizer), optimizer_path.native(), p_model_.model->device());
 
     auto lr_path = root_dir / "policy" / "lr.pt";
     if (!std::filesystem::exists(lr_path)) {
@@ -536,7 +536,7 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     if (!std::filesystem::exists(optimizer_path)) {
       THROW_INVALID_USAGE("Could not find " + optimizer_path.native() + ".");
     }
-    torch::load(*(alpha_optimizer_), optimizer_path.native());
+    torch::load(*(alpha_optimizer_), optimizer_path.native(), model_device_);
 
     if (alpha_lr_scheduler_) {
       auto lr_path = root_dir / "alpha" / "lr.pt";

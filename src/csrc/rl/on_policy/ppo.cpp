@@ -300,7 +300,7 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     if (!std::filesystem::exists(optimizer_path)) {
       THROW_INVALID_USAGE("Could not find " + optimizer_path.native() + ".");
     }
-    torch::load(*(pq_model_.optimizer), optimizer_path.native());
+    torch::load(*(pq_model_.optimizer), optimizer_path.native(), pq_model_.model->device());
 
     auto lr_path = root_dir / "actor_critic" / "lr.pt";
     if (!std::filesystem::exists(lr_path)) {

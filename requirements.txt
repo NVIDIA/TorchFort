@@ -1,15 +1,15 @@
-#basic packages
-ruamel - yaml
+# basic packages
+ruamel-yaml
 
-#pytorch and some dependencies
-             torch ==
-    2.8.0
+# pytorch and some dependencies
+torch==2.8.0
 
-#training monitoring
-    wandb
+# training monitoring
+wandb
 
-#RL example visualization related
-        pygame moviepy
+# RL example visualization related
+pygame
+moviepy
 
-#Supervised learning example visualization related
-            matplotlib
+# Supervised learning example visualization related
+matplotlib

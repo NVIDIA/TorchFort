@@ -668,8 +668,8 @@ public:
 
     // save scalar state: [write_pos, current_size, beta, max_priority]. min_p_alpha is not stored —
     // the min-tree (and hence the current minimum) is rebuilt from the saved priorities on load.
-    auto state_tensor = torch::tensor(std::vector<float>{static_cast<float>(write_pos_),
-                                                         static_cast<float>(current_size_), beta_, max_priority_});
+    auto state_tensor = torch::tensor(
+        std::vector<float>{static_cast<float>(write_pos_), static_cast<float>(current_size_), beta_, max_priority_});
     torch::save({state_tensor}, root_dir / "per_state.pt");
   }
 

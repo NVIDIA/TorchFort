@@ -17,6 +17,7 @@
 
 #pragma once
 #include <deque>
+#include <limits>
 #include <random>
 #include <tuple>
 
@@ -367,14 +368,16 @@ private:
 // IS weight formula (normalised to (0,1]):
 //   w_i = (min_p_alpha / p_i)^beta
 // where p_i = p_raw^alpha is the value stored in the tree leaf and
-// min_p_alpha is the minimum p^alpha currently tracked in the buffer.  This follows the
-// global-minimum normalization used by Schaul et al. / OpenAI baselines / SB3: every weight lies in
-// (0,1], and a weight equals exactly 1 only for the globally-lowest-priority transition (so a given
-// sampled batch reaches 1 only when it happens to contain that transition).  Do not switch this to a
-// per-batch normalization to force max==1 — that would diverge from the reference implementations.
-// Note: min_p_alpha is a running minimum that only ever decreases (it is not the exact min-tree used
-// by baselines), so it can drift below the true current minimum; this keeps weights in (0,1] but can
-// scale them slightly low over time.
+// min_p_alpha is the minimum p^alpha over the currently-active (positive) transitions.  This follows
+// the global-minimum normalization used by Schaul et al. / OpenAI baselines / SB3: every weight lies
+// in (0,1], and a weight equals exactly 1 only for the globally-lowest-priority transition (so a
+// given sampled batch reaches 1 only when it happens to contain that transition).  Do not switch this
+// to a per-batch normalization to force max==1 — that would diverge from the reference
+// implementations.
+// min_p_alpha is read from a min-tree maintained in lockstep with the sum-tree (inactive/zero leaves
+// are the neutral element +inf), so it always reflects the exact current minimum: when a low-priority
+// transition is re-prioritised or overwritten, the minimum rises again with it rather than staying
+// stuck at a stale floor.
 //
 // When a new entry is written at position write_pos_:
 //   1. Set its tree priority to 0 (not yet a valid n-step starting point).
@@ -391,7 +394,7 @@ public:
       : ReplayBuffer(max_size, min_size, n_envs, device), gamma_(gamma), nstep_(nstep), alpha_(alpha), beta_(beta0),
         beta_max_(beta_max),
         beta_increment_(beta_steps > 0 ? (beta_max - beta0) / static_cast<float>(beta_steps) : 0.f), epsilon_(1e-6f),
-        max_priority_(1.f), min_p_alpha_(std::numeric_limits<float>::max()), write_pos_(0), current_size_(0) {
+        max_priority_(1.f), write_pos_(0), current_size_(0) {
 
     skip_incomplete_steps_ = true;
     if (reward_reduction_mode == RewardReductionMode::MeanNoSkip) {
@@ -415,6 +418,9 @@ public:
     buffer_.resize(max_size_);
     // 1-indexed sum-tree: root at 1, leaves at [n_leaves_, 2*n_leaves_ - 1]
     sum_tree_.assign(2 * n_leaves_, 0.f);
+    // 1-indexed min-tree (same layout) tracking the minimum positive p^alpha; inactive/zero leaves
+    // hold the neutral element (+inf) so they never lower the running minimum.
+    min_tree_.assign(2 * n_leaves_, kMinTreeNeutral_);
     priorities_.assign(n_leaves_, 0.f);
   }
 
@@ -459,7 +465,6 @@ public:
         treeUpdate_(t, p_alpha);
         priorities_[t] = max_priority_;
       }
-      min_p_alpha_ = std::min(min_p_alpha_, p_alpha);
     }
   }
 
@@ -478,9 +483,16 @@ public:
     beta_ = std::min(beta_max_, beta_ + beta_increment_);
 
     float total = treeTotal_();
+    // fail fast rather than spin forever: with no positive-priority leaf every draw lands on a
+    // zero-priority leaf and the sampling loop below can never make progress.
+    if (total <= 0.f) {
+      throw std::runtime_error("PrioritizedReplayBuffer::sample: no transitions with positive priority are "
+                               "available; check isReady() before sampling (need current_size >= nstep).");
+    }
     float segment = total / static_cast<float>(batch_size);
-    // minimum p^alpha currently in the buffer — normalises IS weights so max weight = 1
-    float min_p_alpha = min_p_alpha_;
+    // exact minimum positive p^alpha currently in the buffer (from the min-tree) — normalises IS
+    // weights so the maximum weight is 1
+    float min_p_alpha = treeMin_();
 
     int s = 0;
     while (s < batch_size) {
@@ -580,7 +592,6 @@ public:
       treeUpdate_(t, p_alpha);
       priorities_[t] = raw_p;
       max_priority_ = std::max(max_priority_, raw_p);
-      min_p_alpha_ = std::min(min_p_alpha_, p_alpha);
     }
   }
 
@@ -592,14 +603,17 @@ public:
     return buffer_[index];
   }
 
-  bool isReady() const override { return current_size_ >= min_size_; }
+  // Not ready until min_size steps are stored AND at least one transition has positive priority.
+  // The latter only happens once current_size_ >= nstep_, so this also guards the case min_size <
+  // nstep, where sample() would otherwise see treeTotal_() == 0 and loop forever.
+  bool isReady() const override { return current_size_ >= min_size_ && treeTotal_() > 0.f; }
 
   void reset() override {
     current_size_ = 0;
     write_pos_ = 0;
     max_priority_ = 1.f;
-    min_p_alpha_ = std::numeric_limits<float>::max();
     std::fill(sum_tree_.begin(), sum_tree_.end(), 0.f);
+    std::fill(min_tree_.begin(), min_tree_.end(), kMinTreeNeutral_);
     std::fill(priorities_.begin(), priorities_.end(), 0.f);
   }
 
@@ -652,9 +666,10 @@ public:
     auto prio_tensor = torch::tensor(std::vector<float>(priorities_.begin(), priorities_.begin() + n_filled));
     torch::save({prio_tensor}, root_dir / "priorities.pt");
 
-    // save scalar state: [write_pos, current_size, beta, max_priority, min_p_alpha]
-    auto state_tensor = torch::tensor(std::vector<float>{
-        static_cast<float>(write_pos_), static_cast<float>(current_size_), beta_, max_priority_, min_p_alpha_});
+    // save scalar state: [write_pos, current_size, beta, max_priority]. min_p_alpha is not stored —
+    // the min-tree (and hence the current minimum) is rebuilt from the saved priorities on load.
+    auto state_tensor = torch::tensor(std::vector<float>{static_cast<float>(write_pos_),
+                                                         static_cast<float>(current_size_), beta_, max_priority_});
     torch::save({state_tensor}, root_dir / "per_state.pt");
   }
 
@@ -675,7 +690,6 @@ public:
     current_size_ = static_cast<size_t>(state_vec[0][1].item<float>());
     beta_ = state_vec[0][2].item<float>();
     max_priority_ = state_vec[0][3].item<float>();
-    min_p_alpha_ = state_vec[0][4].item<float>();
 
     // restore buffer entries at their physical (step) positions
     buffer_.assign(max_size_, BufferEntry{});
@@ -688,6 +702,7 @@ public:
     torch::load(prio_vec, root_dir / "priorities.pt");
     std::fill(priorities_.begin(), priorities_.end(), 0.f);
     std::fill(sum_tree_.begin(), sum_tree_.end(), 0.f);
+    std::fill(min_tree_.begin(), min_tree_.end(), kMinTreeNeutral_);
     size_t n_filled = current_size_ * n_envs_;
     for (size_t t = 0; t < n_filled; ++t) {
       float raw_p = prio_vec[0][static_cast<int64_t>(t)].item<float>();
@@ -699,13 +714,17 @@ public:
   }
 
 private:
-  // update one leaf and propagate up to root — O(log N)
+  // update one leaf and propagate up to root in both the sum-tree and the min-tree — O(log N).
+  // Inactive (zero-priority) leaves store the neutral element (+inf) in the min-tree so they never
+  // pull the minimum down; this keeps treeMin_() equal to the exact minimum positive p^alpha.
   void treeUpdate_(size_t leaf, float priority_alpha) {
     size_t idx = n_leaves_ + leaf;
     sum_tree_[idx] = priority_alpha;
+    min_tree_[idx] = (priority_alpha > 0.f) ? priority_alpha : kMinTreeNeutral_;
     while (idx > 1) {
       idx >>= 1;
       sum_tree_[idx] = sum_tree_[2 * idx] + sum_tree_[2 * idx + 1];
+      min_tree_[idx] = std::min(min_tree_[2 * idx], min_tree_[2 * idx + 1]);
     }
   }
 
@@ -728,10 +747,18 @@ private:
 
   float treeTotal_() const { return sum_tree_[1]; }
 
+  // minimum positive p^alpha currently stored (neutral element +inf if no active leaf) — O(1)
+  float treeMin_() const { return min_tree_[1]; }
+
+  // neutral element for the min-tree (identity of std::min): an inactive leaf never lowers the min
+  static constexpr float kMinTreeNeutral_ = std::numeric_limits<float>::max();
+
   // circular buffer (vector for O(1) indexed access)
   std::vector<BufferEntry> buffer_;
   // 1-indexed sum-tree of size 2*n_leaves_; leaf for transition t at index n_leaves_+t
   std::vector<float> sum_tree_;
+  // 1-indexed min-tree (same layout/size) tracking the minimum positive p^alpha over active leaves
+  std::vector<float> min_tree_;
   // raw priorities (before alpha exponent), indexed per transition t = step * n_envs_ + env
   std::vector<float> priorities_;
 
@@ -745,7 +772,6 @@ private:
   float beta_increment_; // added to beta_ each call to sample()
   float epsilon_;        // priority floor (prevents zero probability)
   float max_priority_;   // maximum raw priority seen; assigned to new entries
-  float min_p_alpha_;    // minimum p^alpha currently tracked; used to normalise IS weights
 
   std::mt19937_64 rng_;
   float gamma_;

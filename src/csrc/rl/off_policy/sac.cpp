@@ -21,6 +21,7 @@
 #include "internal/exceptions.h"
 #include "internal/rl/distributions.h"
 #include "internal/rl/off_policy/sac.h"
+#include "internal/rl/setup.h"
 
 namespace torchfort {
 
@@ -115,26 +116,8 @@ SACSystem::SACSystem(const char* name, const YAML::Node& system_node, int model_
   }
 
   if (system_node["replay_buffer"]) {
-    auto rb_node = system_node["replay_buffer"];
-    std::string rb_type = sanitize(rb_node["type"].as<std::string>());
-    if (rb_node["parameters"]) {
-      auto params = get_params(rb_node["parameters"]);
-      std::set<std::string> supported_params{"type", "max_size", "min_size", "n_envs"};
-      check_params(supported_params, params.keys());
-      auto max_size = static_cast<size_t>(params.get_param<int>("max_size")[0]);
-      auto min_size = static_cast<size_t>(params.get_param<int>("min_size")[0]);
-      auto n_envs = static_cast<size_t>(params.get_param<int>("n_envs", 1)[0]);
-
-      // distinction between buffer types
-      if (rb_type == "uniform") {
-        replay_buffer_ = std::make_shared<UniformReplayBuffer>(max_size, min_size, n_envs, gamma_, nstep_,
-                                                               nstep_reward_reduction_, rb_device);
-      } else {
-        THROW_INVALID_USAGE(rb_type);
-      }
-    } else {
-      THROW_INVALID_USAGE("Missing parameters section in replay_buffer section in configuration file.");
-    }
+    replay_buffer_ =
+        rl::get_replay_buffer(system_node["replay_buffer"], gamma_, nstep_, nstep_reward_reduction_, rb_device);
   } else {
     THROW_INVALID_USAGE("Missing replay_buffer section in configuration file.");
   }
@@ -700,12 +683,12 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   train_step_count_++;
 
   // we need these
-  torch::Tensor s, a, ap, sp, r, d;
+  torch::Tensor s, a, ap, sp, r, d, is_weights, sample_indices;
   {
     torch::NoGradGuard no_grad;
 
     // get a sample from the replay buffer
-    std::tie(s, a, sp, r, d) = replay_buffer_->sample(batch_size_);
+    std::tie(s, a, sp, r, d, is_weights, sample_indices) = replay_buffer_->sample(batch_size_);
 
     // upload to device
     s = s.to(model_device_);
@@ -713,6 +696,7 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
     sp = sp.to(model_device_);
     r = r.to(model_device_);
     d = d.to(model_device_);
+    is_weights = is_weights.to(model_device_);
 
     // sync and apply state normalization
     if (state_normalizer_) {
@@ -729,8 +713,13 @@ void SACSystem::trainStep(float& p_loss_val, float& q_loss_val) {
   }
 
   // train step
-  train_sac(p_model_, q_models_, q_models_target_, s, sp, a, r, d, alpha_model_, alpha_optimizer_, alpha_lr_scheduler_,
-            target_entropy_, static_cast<float>(std::pow(gamma_, nstep_)), rho_, p_loss_val, q_loss_val);
+  torch::Tensor td_errors;
+  train_sac(p_model_, q_models_, q_models_target_, s, sp, a, r, d, is_weights, alpha_model_, alpha_optimizer_,
+            alpha_lr_scheduler_, target_entropy_, static_cast<float>(std::pow(gamma_, nstep_)), rho_, td_errors,
+            p_loss_val, q_loss_val);
+
+  // update priorities (no-op for uniform buffer)
+  replay_buffer_->update_priorities(sample_indices, td_errors);
 }
 
 } // namespace off_policy

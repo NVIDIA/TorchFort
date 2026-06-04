@@ -56,10 +56,10 @@ template <typename T>
 void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models,
                const std::vector<ModelPack>& q_models_target, torch::Tensor state_old_tensor,
                torch::Tensor state_new_tensor, torch::Tensor action_old_tensor, torch::Tensor reward_tensor,
-               torch::Tensor d_tensor, const std::shared_ptr<AlphaModel>& alpha_model,
+               torch::Tensor d_tensor, torch::Tensor is_weights, const std::shared_ptr<AlphaModel>& alpha_model,
                const std::shared_ptr<torch::optim::Optimizer>& alpha_optimizer,
                const std::shared_ptr<BaseLRScheduler>& alpha_lr_scheduler, const T& target_entropy, const T& gamma,
-               const T& rho, T& p_loss_val, T& q_loss_val) {
+               const T& rho, torch::Tensor& td_errors, T& p_loss_val, T& q_loss_val) {
 
   // nvtx marker
   torchfort::nvtx::rangePush("torchfort_train_sac");
@@ -83,10 +83,6 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   for (const auto& q_model_target : q_models_target) {
     q_model_target.model->train();
   }
-
-  // opt
-  // loss is fixed by algorithm
-  auto q_loss_func = torch::nn::MSELoss(torch::nn::MSELossOptions().reduction(torch::kMean));
 
   // if we are updating the entropy coefficient, do that first
   torch::Tensor alpha_loss;
@@ -168,9 +164,12 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
   }
 
   // backward and update step
+  // IS-weighted MSE loss: mean(w * (q - y)^2), summed across critics
+  // td_errors taken from first critic only
   torch::Tensor q_old_tensor =
       torch::squeeze(q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
-  torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
+  td_errors = torch::abs(q_old_tensor - y_tensor).detach();
+  torch::Tensor q_loss_tensor = torch::mean(is_weights * torch::square(q_old_tensor - y_tensor));
   state = q_models[0].state;
   if (state->step_train_current % q_models[0].grad_accumulation_steps == 0) {
     q_models[0].optimizer->zero_grad();
@@ -179,7 +178,7 @@ void train_sac(const PolicyPack& p_model, const std::vector<ModelPack>& q_models
     // compute loss
     q_old_tensor = torch::squeeze(
         q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
-    q_loss_tensor = q_loss_tensor + q_loss_func->forward(q_old_tensor, y_tensor);
+    q_loss_tensor = q_loss_tensor + torch::mean(is_weights * torch::square(q_old_tensor - y_tensor));
     state = q_models[i].state;
     if (state->step_train_current % q_models[i].grad_accumulation_steps == 0) {
       q_models[i].optimizer->zero_grad();

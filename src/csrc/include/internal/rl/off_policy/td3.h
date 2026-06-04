@@ -52,8 +52,8 @@ template <typename T>
 void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const std::vector<ModelPack>& q_models,
                const std::vector<ModelPack>& q_models_target, torch::Tensor state_old_tensor,
                torch::Tensor state_new_tensor, torch::Tensor action_old_tensor, torch::Tensor action_new_tensor,
-               torch::Tensor reward_tensor, torch::Tensor d_tensor, const T& gamma, const T& rho, T& p_loss_val,
-               T& q_loss_val, bool update_policy) {
+               torch::Tensor reward_tensor, torch::Tensor d_tensor, torch::Tensor is_weights, const T& gamma,
+               const T& rho, torch::Tensor& td_errors, T& p_loss_val, T& q_loss_val, bool update_policy) {
 
   // nvtx marker
   torchfort::nvtx::rangePush("torchfort_train_td3");
@@ -76,10 +76,6 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
     q_model.model->train();
   }
 
-  // opt
-  // loss is fixed by algorithm
-  auto q_loss_func = torch::nn::MSELoss(torch::nn::MSELossOptions().reduction(torch::kMean));
-
   // policy function
   // compute y: use the target models for q_new, no grads
   torch::Tensor y_tensor;
@@ -96,10 +92,12 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   }
 
   // backward and update step
-  // compute loss for critics and zero grads while we are at it
+  // IS-weighted MSE loss: mean(w * (q - y)^2), summed across critics
+  // td_errors taken from first critic only (consistent with policy update using q_models[0])
   torch::Tensor q_old_tensor =
       torch::squeeze(q_models[0].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
-  torch::Tensor q_loss_tensor = q_loss_func->forward(q_old_tensor, y_tensor);
+  td_errors = torch::abs(q_old_tensor - y_tensor).detach();
+  torch::Tensor q_loss_tensor = torch::mean(is_weights * torch::square(q_old_tensor - y_tensor));
   auto state = q_models[0].state;
   if (state->step_train_current % q_models[0].grad_accumulation_steps == 0) {
     q_models[0].optimizer->zero_grad();
@@ -107,7 +105,7 @@ void train_td3(const ModelPack& p_model, const ModelPack& p_model_target, const 
   for (int i = 1; i < q_models.size(); ++i) {
     q_old_tensor = torch::squeeze(
         q_models[i].model->forward(std::vector<torch::Tensor>{state_old_tensor, action_old_tensor})[0], 1);
-    q_loss_tensor = q_loss_tensor + q_loss_func->forward(q_old_tensor, y_tensor);
+    q_loss_tensor = q_loss_tensor + torch::mean(is_weights * torch::square(q_old_tensor - y_tensor));
     state = q_models[i].state;
     if (state->step_train_current % q_models[i].grad_accumulation_steps == 0) {
       q_models[i].optimizer->zero_grad();

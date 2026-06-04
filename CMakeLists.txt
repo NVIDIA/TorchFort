@@ -165,6 +165,7 @@ target_sources(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/models/rl/sac_model.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/policy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/running_normalizer.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/setup.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/off_policy/interface.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/csrc/rl/off_policy/ddpg.cpp

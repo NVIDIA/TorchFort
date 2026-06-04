@@ -20,6 +20,9 @@
 #include <gtest/gtest.h>
 #include <torch/torch.h>
 
+#include <limits>
+#include <map>
+
 using namespace torchfort;
 using namespace torch::indexing;
 
@@ -103,8 +106,8 @@ TEST_P(ReplayBuffer, ShapeConsistency) {
   auto rbuff = getTestReplayBuffer(buffer_size, n_envs, 0.95, 1);
 
   // sample
-  torch::Tensor stens, atens, sptens, rtens, dtens;
-  std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
+  torch::Tensor stens, atens, sptens, rtens, dtens, is_weights, sample_indices;
+  std::tie(stens, atens, sptens, rtens, dtens, is_weights, sample_indices) = rbuff->sample(batch_size);
 
   // check shapes
   EXPECT_EQ(stens.dim(), 2);
@@ -112,15 +115,25 @@ TEST_P(ReplayBuffer, ShapeConsistency) {
   EXPECT_EQ(sptens.dim(), 2);
   EXPECT_EQ(rtens.dim(), 1);
   EXPECT_EQ(dtens.dim(), 1);
+  EXPECT_EQ(is_weights.dim(), 1);
+  EXPECT_EQ(sample_indices.dim(), 1);
 
   EXPECT_EQ(stens.size(0), batch_size);
   EXPECT_EQ(atens.size(0), batch_size);
   EXPECT_EQ(sptens.size(0), batch_size);
   EXPECT_EQ(rtens.size(0), batch_size);
   EXPECT_EQ(dtens.size(0), batch_size);
+  EXPECT_EQ(is_weights.size(0), batch_size);
+  EXPECT_EQ(sample_indices.size(0), batch_size);
 
   EXPECT_EQ(stens.size(1), 1);
   EXPECT_EQ(atens.size(1), 1);
+
+  // uniform buffer: weights must be all-ones, dtype float; indices dtype long
+  EXPECT_EQ(is_weights.scalar_type(), torch::kFloat32);
+  EXPECT_EQ(sample_indices.scalar_type(), torch::kLong);
+  EXPECT_FLOAT_EQ(is_weights.min().item<float>(), 1.f);
+  EXPECT_FLOAT_EQ(is_weights.max().item<float>(), 1.f);
 }
 
 // check if entries are consistent
@@ -138,11 +151,11 @@ TEST_P(ReplayBuffer, EntryConsistency) {
   auto rbuff = getTestReplayBuffer(buffer_size, n_envs, 0.95, 1);
 
   // sample
-  torch::Tensor stens, atens, sptens, rtens, dtens;
+  torch::Tensor stens, atens, sptens, rtens, dtens, is_weights, sample_indices;
   float state_diff = 0;
   float reward_diff = 0.;
   for (unsigned int i = 0; i < 4; ++i) {
-    std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
+    std::tie(stens, atens, sptens, rtens, dtens, is_weights, sample_indices) = rbuff->sample(batch_size);
 
     // compute differences:
     state_diff += torch::sum(torch::abs(stens + atens - sptens)).item<float>();
@@ -202,10 +215,10 @@ TEST_P(ReplayBuffer, NStepConsistency) {
   auto rbuff = getTestReplayBuffer(buffer_size, n_envs, gamma, nstep);
 
   // sample a batch
-  torch::Tensor stens, atens, sptens, rtens, dtens;
+  torch::Tensor stens, atens, sptens, rtens, dtens, is_weights, sample_indices;
   float state_diff = 0;
   float reward_diff = 0.;
-  std::tie(stens, atens, sptens, rtens, dtens) = rbuff->sample(batch_size);
+  std::tie(stens, atens, sptens, rtens, dtens, is_weights, sample_indices) = rbuff->sample(batch_size);
 
   // iterate over samples in batch
   torch::Tensor stemp, atemp, sptemp, sstens, rtemp, dtemp, spfin;
@@ -339,8 +352,8 @@ TEST(RewardNormalization, UnitStdPreservedMean) {
 
   // Sample a batch and normalize rewards as trainStep does
   const int batch_size = 256;
-  torch::Tensor s, a, sp, r, d;
-  std::tie(s, a, sp, r, d) = rbuff->sample(batch_size);
+  torch::Tensor s, a, sp, r, d, is_weights, sample_indices;
+  std::tie(s, a, sp, r, d, is_weights, sample_indices) = rbuff->sample(batch_size);
 
   // mirror the system's trainStep normalization
   auto r_norm = reward_normalizer.normalize(r.unsqueeze(1)).squeeze(1);
@@ -383,8 +396,8 @@ TEST(RewardNormalization, SignPreservation) {
     state = next_state;
   }
 
-  torch::Tensor s, a, sp, r, d;
-  std::tie(s, a, sp, r, d) = rbuff->sample(buffer_size);
+  torch::Tensor s, a, sp, r, d, is_weights, sample_indices;
+  std::tie(s, a, sp, r, d, is_weights, sample_indices) = rbuff->sample(buffer_size);
   auto r_norm = reward_normalizer.normalize(r.unsqueeze(1)).squeeze(1);
 
   // all normalized rewards must remain positive
@@ -421,8 +434,8 @@ TEST(RewardNormalization, LargeScaleNormalizedToUnitStd) {
     state = next_state;
   }
 
-  torch::Tensor s, a, sp, r, d;
-  std::tie(s, a, sp, r, d) = rbuff->sample(buffer_size);
+  torch::Tensor s, a, sp, r, d, is_weights, sample_indices;
+  std::tie(s, a, sp, r, d, is_weights, sample_indices) = rbuff->sample(buffer_size);
   auto r_norm = reward_normalizer.normalize(r.unsqueeze(1)).squeeze(1);
 
   // std should be close to 1 regardless of the original reward scale
@@ -433,6 +446,248 @@ TEST(RewardNormalization, LargeScaleNormalizedToUnitStd) {
   EXPECT_NEAR(r_norm.mean().item<float>(), expected_mean, 0.5f)
       << "Mean should be preserved as ~true_mean/true_std, not removed";
 }
+
+// =============================================================================
+// PrioritizedReplayBuffer tests
+// =============================================================================
+
+class PrioritizedBuffer : public testing::TestWithParam<int> {};
+
+std::shared_ptr<rl::PrioritizedReplayBuffer> getTestPERBuffer(int buffer_size, int n_envs = 1, float gamma = 0.95f,
+                                                              int nstep = 1, float alpha = 0.6f, float beta0 = 0.4f) {
+  torch::NoGradGuard no_grad;
+
+  // beta_steps=0: no annealing, beta stays at beta0 for deterministic tests
+  auto rbuff = std::make_shared<rl::PrioritizedReplayBuffer>(buffer_size, buffer_size, n_envs, gamma, nstep,
+                                                             rl::RewardReductionMode::Sum, alpha, beta0, 1.0f, 0, -1);
+
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(1, 5);
+
+  torch::Tensor state = torch::zeros({n_envs, 1}, torch::kFloat32);
+  for (int i = 0; i < buffer_size; ++i) {
+    auto action = torch::ones({n_envs, 1}, torch::kFloat32) * static_cast<float>(dist(rng));
+    auto state_p = state + action;
+    auto rtens = action.index({"...", 0}).clone();
+    auto dtens = torch::zeros({n_envs}, torch::kFloat32);
+    rbuff->update(state, action, state_p, rtens, dtens);
+    state.copy_(state_p);
+  }
+  return rbuff;
+}
+
+// Shape and dtype checks
+TEST_P(PrioritizedBuffer, ShapeConsistency) {
+  torch::manual_seed(666);
+  unsigned int n_envs = GetParam();
+  unsigned int batch_size = 32;
+  unsigned int buffer_size = 4 * batch_size;
+
+  auto rbuff = getTestPERBuffer(buffer_size, n_envs);
+
+  torch::Tensor s, a, sp, r, d, is_weights, indices;
+  std::tie(s, a, sp, r, d, is_weights, indices) = rbuff->sample(batch_size);
+
+  EXPECT_EQ(s.dim(), 2);
+  EXPECT_EQ(a.dim(), 2);
+  EXPECT_EQ(sp.dim(), 2);
+  EXPECT_EQ(r.dim(), 1);
+  EXPECT_EQ(d.dim(), 1);
+  EXPECT_EQ(is_weights.dim(), 1);
+  EXPECT_EQ(indices.dim(), 1);
+
+  EXPECT_EQ(s.size(0), batch_size);
+  EXPECT_EQ(a.size(0), batch_size);
+  EXPECT_EQ(sp.size(0), batch_size);
+  EXPECT_EQ(r.size(0), batch_size);
+  EXPECT_EQ(d.size(0), batch_size);
+  EXPECT_EQ(is_weights.size(0), batch_size);
+  EXPECT_EQ(indices.size(0), batch_size);
+
+  EXPECT_EQ(is_weights.scalar_type(), torch::kFloat32);
+  EXPECT_EQ(indices.scalar_type(), torch::kLong);
+}
+
+// Before any update_priorities, all entries have equal (max) priority so all
+// weights must be exactly 1.0 — uniform sampling as a special case of PER.
+TEST_P(PrioritizedBuffer, InitialWeightsUniform) {
+  torch::manual_seed(666);
+  unsigned int n_envs = GetParam();
+  unsigned int batch_size = 32;
+  unsigned int buffer_size = 4 * batch_size;
+
+  auto rbuff = getTestPERBuffer(buffer_size, n_envs);
+
+  torch::Tensor s, a, sp, r, d, is_weights, indices;
+  std::tie(s, a, sp, r, d, is_weights, indices) = rbuff->sample(batch_size);
+
+  EXPECT_FLOAT_EQ(is_weights.min().item<float>(), 1.f);
+  EXPECT_FLOAT_EQ(is_weights.max().item<float>(), 1.f);
+}
+
+// After update_priorities with varied TD errors, IS weights must lie in (0, 1].
+// They are normalised by the globally-lowest priority (Schaul et al. / OpenAI baselines / SB3
+// convention), so a batch only reaches exactly 1.0 if it happens to contain the globally-lowest-
+// priority transition, which prioritized sampling rarely draws. The lowest-priority-entry => weight
+// 1.0 relationship is checked in WeightOrdering instead.
+TEST_P(PrioritizedBuffer, WeightRange) {
+  torch::manual_seed(666);
+  unsigned int n_envs = GetParam();
+  unsigned int batch_size = 32;
+  unsigned int buffer_size = 4 * batch_size;
+
+  auto rbuff = getTestPERBuffer(buffer_size, n_envs);
+
+  torch::Tensor s, a, sp, r, d, is_weights, indices;
+  std::tie(s, a, sp, r, d, is_weights, indices) = rbuff->sample(batch_size);
+
+  // set half the sampled entries to high TD, half to low TD
+  auto td_errors = torch::cat({torch::ones(batch_size / 2) * 10.f, torch::ones(batch_size / 2) * 0.01f});
+  rbuff->update_priorities(indices, td_errors);
+
+  // sample again to see updated weights
+  std::tie(s, a, sp, r, d, is_weights, indices) = rbuff->sample(batch_size);
+
+  EXPECT_GT(is_weights.min().item<float>(), 0.f);
+  EXPECT_LE(is_weights.max().item<float>(), 1.f + 1e-5f);
+}
+
+// The IS weight must decrease monotonically as priority increases: high-priority transitions are
+// over-sampled, so they are down-weighted to correct the bias. Because the weight is a deterministic
+// function of a transition's priority, we assign a spread of distinct priorities and verify the
+// ordering over whichever priority levels actually appear in the sampled batch. This does not depend
+// on any particular (possibly rarely drawn) transition being sampled.
+TEST_P(PrioritizedBuffer, WeightOrdering) {
+  torch::manual_seed(42);
+
+  unsigned int n_envs = GetParam();
+  unsigned int buffer_size = 8;
+  unsigned int batch_size = 1000;
+  float alpha = 1.0f, beta0 = 1.0f; // full prioritization + full IS for the clearest signal
+
+  auto rbuff = getTestPERBuffer(buffer_size, n_envs, 0.95f, 1, alpha, beta0);
+
+  // n_leaves_ == buffer_size, so assign every transition a distinct, moderate priority:
+  // transition t -> priority (buffer_size - t), i.e. buffer_size, ..., 1. The mild ratios ensure
+  // many different priority levels appear together in a single batch.
+  auto known_indices = torch::arange(0, static_cast<int64_t>(buffer_size), torch::kLong);
+  auto known_td_errors = (static_cast<int64_t>(buffer_size) - known_indices).to(torch::kFloat32);
+  rbuff->update_priorities(known_indices, known_td_errors);
+
+  torch::Tensor s, a, sp, r, d, is_weights, indices;
+  std::tie(s, a, sp, r, d, is_weights, indices) = rbuff->sample(batch_size);
+
+  // the IS weight only depends on the transition's priority, so record the weight observed for each
+  // priority level (= buffer_size - transition index) present in the batch.
+  std::map<int, float> weight_by_priority;
+  auto idx_acc = indices.accessor<int64_t, 1>();
+  auto w_acc = is_weights.accessor<float, 1>();
+  for (int i = 0; i < static_cast<int>(batch_size); ++i) {
+    int priority = static_cast<int>(buffer_size) - static_cast<int>(idx_acc[i]);
+    weight_by_priority[priority] = w_acc[i];
+  }
+
+  // need at least two distinct priority levels to verify an ordering
+  ASSERT_GE(weight_by_priority.size(), 2u) << "expected several priority levels to be sampled";
+
+  // std::map iterates in ascending priority order; the weight must strictly decrease
+  float prev_weight = std::numeric_limits<float>::infinity();
+  for (const auto& kv : weight_by_priority) {
+    EXPECT_LT(kv.second, prev_weight) << "IS weight must strictly decrease as priority increases (priority " << kv.first
+                                      << ")";
+    prev_weight = kv.second;
+  }
+}
+
+// Entries with high TD error should be sampled significantly more often than
+// entries with low TD error.
+TEST_P(PrioritizedBuffer, PriorityBias) {
+  torch::manual_seed(42);
+
+  unsigned int n_envs = GetParam();
+  unsigned int buffer_size = 50;
+  unsigned int batch_size = 2000;
+  float alpha = 1.0f; // full prioritization for a clear statistical signal
+
+  auto rbuff = getTestPERBuffer(buffer_size, n_envs, 0.95f, 1, alpha, 0.0f);
+
+  // positions 0–4: high TD (10.0), positions 5–49: low TD (0.001)
+  auto hi_idx = torch::arange(0, 5, torch::kLong);
+  auto lo_idx = torch::arange(5, 50, torch::kLong);
+  rbuff->update_priorities(hi_idx, torch::ones(5) * 10.f);
+  rbuff->update_priorities(lo_idx, torch::ones(45) * 0.001f);
+
+  // sample a large batch and count how often high-priority positions appear
+  torch::Tensor s, a, sp, r, d, is_weights, indices;
+  std::tie(s, a, sp, r, d, is_weights, indices) = rbuff->sample(batch_size);
+
+  int hi_count = ((indices < 5).sum()).item<int>();
+  float hi_fraction = static_cast<float>(hi_count) / static_cast<float>(batch_size);
+
+  // With alpha=1: p_hi/(p_hi*5 + p_lo*45) ≈ 10*5/(10*5+0.001*45) ≈ 99.9% expected.
+  // Use a very conservative threshold of 80% to be robust to RNG variation.
+  EXPECT_GT(hi_fraction, 0.8f) << "high-priority entries should dominate sampling";
+}
+
+// Buffer data integrity: s + a = s', r = |a| (set up by getTestPERBuffer)
+TEST_P(PrioritizedBuffer, EntryConsistency) {
+  torch::manual_seed(666);
+  unsigned int n_envs = GetParam();
+  unsigned int batch_size = 32;
+  unsigned int buffer_size = 4 * batch_size;
+
+  auto rbuff = getTestPERBuffer(buffer_size, n_envs);
+
+  torch::Tensor s, a, sp, r, d, is_weights, indices;
+  float state_diff = 0.f, reward_diff = 0.f;
+  for (int i = 0; i < 4; ++i) {
+    std::tie(s, a, sp, r, d, is_weights, indices) = rbuff->sample(batch_size);
+    state_diff += torch::sum(torch::abs(s + a - sp)).item<float>();
+    reward_diff += torch::sum(torch::abs(a.index({"...", 0}) - r)).item<float>();
+  }
+
+  EXPECT_FLOAT_EQ(state_diff, 0.f);
+  EXPECT_FLOAT_EQ(reward_diff, 0.f);
+}
+
+// Save/load must preserve buffer contents and priority state so that the same
+// IS weights are produced (given the same RNG seed) after a round-trip.
+TEST_P(PrioritizedBuffer, SaveRestore) {
+  torch::manual_seed(666);
+  unsigned int n_envs = GetParam();
+  unsigned int buffer_size = 32;
+
+  auto rbuff = getTestPERBuffer(buffer_size, n_envs);
+
+  // set varied priorities so the save is non-trivial
+  torch::Tensor s, a, sp, r, d, is_weights, indices;
+  std::tie(s, a, sp, r, d, is_weights, indices) = rbuff->sample(16);
+  auto td_errors = torch::rand(16) * 5.f + 0.01f;
+  rbuff->update_priorities(indices, td_errors);
+
+  rbuff->setSeed(42);
+  torch::Tensor s_b, a_b, sp_b, r_b, d_b, w_b, idx_b;
+  std::tie(s_b, a_b, sp_b, r_b, d_b, w_b, idx_b) = rbuff->sample(16);
+
+  // save → reset → load
+  rbuff->save("/tmp/per_buffer.pt");
+  rbuff->reset();
+  rbuff->load("/tmp/per_buffer.pt");
+
+  rbuff->setSeed(42);
+  torch::Tensor s_a, a_a, sp_a, r_a, d_a, w_a, idx_a;
+  std::tie(s_a, a_a, sp_a, r_a, d_a, w_a, idx_a) = rbuff->sample(16);
+
+  // indices and weights must be identical after round-trip
+  EXPECT_FLOAT_EQ(torch::sum(torch::abs(w_b - w_a)).item<float>(), 0.f);
+  EXPECT_FLOAT_EQ(torch::sum(torch::abs((idx_b - idx_a).to(torch::kFloat))).item<float>(), 0.f);
+  // buffer data integrity
+  EXPECT_FLOAT_EQ(torch::sum(torch::abs(s_b - s_a)).item<float>(), 0.f);
+  EXPECT_FLOAT_EQ(torch::sum(torch::abs(r_b - r_a)).item<float>(), 0.f);
+}
+
+INSTANTIATE_TEST_SUITE_P(MultiEnv, PrioritizedBuffer, testing::Range(1, 3), testing::PrintToStringParamName());
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

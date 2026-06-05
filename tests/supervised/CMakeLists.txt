@@ -72,6 +72,7 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/missing_opt.yaml DESTINATION $
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/missing_loss.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/supervised/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/supervised/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_graphs.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/supervised/configs)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_trainable.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/supervised/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiarg.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/supervised/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiarg_extra.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/supervised/configs)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/torchscript_multiarg_graphs.yaml DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/tests/supervised/configs)

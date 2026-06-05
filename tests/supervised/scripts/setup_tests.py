@@ -29,6 +29,14 @@ class Net2(torch.nn.Module):
     x = self.layer(input1)
     return input1 + 0.0 * x, input2 + 0.0 * x
 
+class TrainableNet(torch.nn.Module):
+  def __init__(self):
+    super(TrainableNet, self).__init__()
+    self.layer = torch.nn.Linear(10, 10)
+
+  def forward(self, input1):
+    return self.layer(input1)
+
 
 # Create loss functions with various argument combinations
 class Loss1(torch.nn.Module):
@@ -56,12 +64,14 @@ class Loss2Extra(torch.nn.Module):
 def main():
   model1 = Net1()
   model2 = Net2()
+  model_trainable = TrainableNet()
   loss1 = Loss1()
   loss2 = Loss2()
   loss2_extra = Loss2Extra()
 
   save_jit_module(model1, "model.pt")
   save_jit_module(model2, "model_multiarg.pt")
+  save_jit_module(model_trainable, "model_trainable.pt")
   save_jit_module(loss1, "loss.pt")
   save_jit_module(loss2, "loss_multiarg.pt")
   save_jit_module(loss2_extra, "loss_multiarg_extra.pt")

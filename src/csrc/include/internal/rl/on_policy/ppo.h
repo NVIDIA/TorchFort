@@ -258,6 +258,7 @@ public:
   // saving and loading
   void saveCheckpoint(const std::string& checkpoint_dir) const;
   void loadCheckpoint(const std::string& checkpoint_dir);
+  void loadModel(const std::string& checkpoint_dir);
 
   // info printing
   void printInfo() const;

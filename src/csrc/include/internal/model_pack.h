@@ -23,6 +23,7 @@
 #include "internal/base_loss.h"
 #include "internal/base_lr_scheduler.h"
 #include "internal/distributed.h"
+#include "internal/exceptions.h"
 #include "internal/model_state.h"
 #include "internal/model_wrapper.h"
 #ifdef ENABLE_GPU
@@ -50,5 +51,17 @@ struct ModelPack {
 
 void save_model_pack(const ModelPack& model_pack, const std::string& fname, bool save_optimizer = true);
 void load_model_pack(ModelPack& model_pack, const std::string& fname, bool load_optimizer = true);
+
+// Re-point an optimizer at the given parameter tensors, e.g. after (re)loading model weights (for JIT
+// models a load replaces the underlying tensors, so the optimizer's references have to be refreshed).
+// TorchFort constructs optimizers with a single parameter group, so we update group 0 directly; this
+// avoids the deprecated torch::optim::Optimizer::parameters() accessor.
+inline void reset_optimizer_parameters(const std::shared_ptr<torch::optim::Optimizer>& optimizer,
+                                       const std::vector<torch::Tensor>& parameters) {
+  if (optimizer->param_groups().size() != 1) {
+    THROW_NOT_SUPPORTED("reset_optimizer_parameters expects an optimizer with a single parameter group.");
+  }
+  optimizer->param_groups()[0].params() = parameters;
+}
 
 } // namespace torchfort

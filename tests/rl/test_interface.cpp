@@ -26,6 +26,8 @@
 #include <sstream>
 #include <yaml-cpp/yaml.h>
 
+#include "test_utils.h"
+
 struct CoutRedirect {
   CoutRedirect(std::streambuf* new_buffer) : old(std::cout.rdbuf(new_buffer)) {}
 
@@ -38,7 +40,7 @@ private:
 // Function to modify TD3 config and write to temporary file
 std::string createModifiedTD3Config(int state_size, int action_size) {
   // Read the original TD3 config
-  std::string config_path = "configs/td3.yaml";
+  std::string config_path = get_config_path("td3.yaml");
   YAML::Node config = YAML::LoadFile(config_path);
 
   // Modify the policy model layer sizes
@@ -64,10 +66,9 @@ std::string createModifiedTD3Config(int state_size, int action_size) {
     critic_layer_sizes[0] = state_size + action_size;
   }
 
-  // Create temporary file
-  std::string temp_filename("./tmpconfig.yaml");
-
-  // Write modified config to temporary file
+  // Write to /tmp/ so the file is always writable (install dirs may be read-only)
+  std::string temp_filename("/tmp/torchfort_tmpconfig_td3_" + std::to_string(state_size) + "_" +
+                            std::to_string(action_size) + ".yaml");
   std::ofstream temp_file(temp_filename);
   temp_file << config;
   temp_file.close();
@@ -78,7 +79,7 @@ std::string createModifiedTD3Config(int state_size, int action_size) {
 // Function to modify PPO config and write to temporary file
 std::string createModifiedPPOConfig(int state_size, int action_size) {
   // Read the original TD3 config
-  std::string config_path = "configs/ppo.yaml";
+  std::string config_path = get_config_path("ppo.yaml");
   YAML::Node config = YAML::LoadFile(config_path);
 
   // Modify the policy model layer sizes
@@ -100,10 +101,9 @@ std::string createModifiedPPOConfig(int state_size, int action_size) {
     }
   }
 
-  // Create temporary file
-  std::string temp_filename("./tmpconfig.yaml");
-
-  // Write modified config to temporary file
+  // Write to /tmp/ so the file is always writable (install dirs may be read-only)
+  std::string temp_filename("/tmp/torchfort_tmpconfig_ppo_" + std::to_string(state_size) + "_" +
+                            std::to_string(action_size) + ".yaml");
   std::ofstream temp_file(temp_filename);
   temp_file << config;
   temp_file.close();

@@ -159,6 +159,19 @@ torchfort_result_t torchfort_rl_off_policy_load_checkpoint(const char* name, con
   return TORCHFORT_RESULT_SUCCESS;
 }
 
+// load network weights only (e.g. for fine-tuning)
+torchfort_result_t torchfort_rl_off_policy_load_model(const char* name, const char* checkpoint_dir) {
+  using namespace torchfort;
+
+  try {
+    rl::off_policy::registry[name]->loadModel(checkpoint_dir);
+  } catch (const BaseException& e) {
+    std::cerr << e.what();
+    return e.getResult();
+  }
+  return TORCHFORT_RESULT_SUCCESS;
+}
+
 // ready check
 torchfort_result_t torchfort_rl_off_policy_is_ready(const char* name, bool& ready) {
   using namespace torchfort;

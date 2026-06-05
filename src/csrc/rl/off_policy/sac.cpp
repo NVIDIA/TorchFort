@@ -467,13 +467,13 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     p_model_.model->load(model_path.native());
 
     // connect model and optimizer parameters:
-    p_model_.optimizer->parameters() = p_model_.model->parameters();
+    reset_optimizer_parameters(p_model_.optimizer, p_model_.model->parameters());
 
     auto optimizer_path = root_dir / "policy" / "optimizer.pt";
     if (!std::filesystem::exists(optimizer_path)) {
       THROW_INVALID_USAGE("Could not find " + optimizer_path.native() + ".");
     }
-    torch::load(*(p_model_.optimizer), optimizer_path.native());
+    torch::load(*(p_model_.optimizer), optimizer_path.native(), p_model_.model->device());
 
     auto lr_path = root_dir / "policy" / "lr.pt";
     if (!std::filesystem::exists(lr_path)) {
@@ -513,13 +513,13 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     alpha_model_->to(model_device_);
 
     // connect model and optimizer parameters:
-    alpha_optimizer_->parameters() = alpha_model_->parameters();
+    reset_optimizer_parameters(alpha_optimizer_, alpha_model_->parameters());
 
     auto optimizer_path = root_dir / "alpha" / "optimizer.pt";
     if (!std::filesystem::exists(optimizer_path)) {
       THROW_INVALID_USAGE("Could not find " + optimizer_path.native() + ".");
     }
-    torch::load(*(alpha_optimizer_), optimizer_path.native());
+    torch::load(*(alpha_optimizer_), optimizer_path.native(), model_device_);
 
     if (alpha_lr_scheduler_) {
       auto lr_path = root_dir / "alpha" / "lr.pt";
@@ -570,6 +570,41 @@ void SACSystem::loadCheckpoint(const std::string& checkpoint_dir) {
       THROW_INVALID_USAGE("Could not find " + buffer_path.native() + ".");
     }
     replay_buffer_->load(buffer_path);
+  }
+}
+
+// loading only the network weights (e.g. for fine-tuning / transfer learning):
+// this restores the online policy and critic weights from a checkpoint directory, but
+// leaves optimizers, LR schedulers, the entropy temperature (alpha), replay buffer,
+// normalizers and step counters untouched.
+void SACSystem::loadModel(const std::string& checkpoint_dir) {
+  using namespace torchfort;
+  std::filesystem::path root_dir(checkpoint_dir);
+
+  // load only the model weights (model.pt) of a model pack, reconnecting the optimizer
+  // to the (possibly newly allocated) model parameters afterwards.
+  auto load_weights = [](auto& model_pack, const std::filesystem::path& dir) {
+    auto model_path = dir / "model.pt";
+    if (!std::filesystem::exists(model_path)) {
+      THROW_INVALID_USAGE("Could not find " + model_path.native() + ".");
+    }
+    model_pack.model->load(model_path.native());
+    if (model_pack.optimizer) {
+      reset_optimizer_parameters(model_pack.optimizer, model_pack.model->parameters());
+    }
+  };
+
+  // online policy and critics
+  load_weights(p_model_, root_dir / "policy");
+  for (int i = 0; i < q_models_.size(); ++i) {
+    load_weights(q_models_[i], root_dir / ("critic_" + std::to_string(i)));
+  }
+
+  // initialize the critic target networks from the freshly loaded online critics; the saved
+  // target weights are an artifact of the previous run and are intentionally ignored.
+  // SAC has no policy target network.
+  for (int i = 0; i < q_models_target_.size(); ++i) {
+    copy_parameters(q_models_target_[i].model, q_models_[i].model);
   }
 }
 

@@ -334,6 +334,14 @@ torchfort_rl_off_policy_load_checkpoint
 
 ------
 
+.. _torchfort_rl_off_policy_load_model-ref:
+
+torchfort_rl_off_policy_load_model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. doxygenfunction:: torchfort_rl_off_policy_load_model
+
+------
+
 
 Weights and Biases Logging
 --------------------------
@@ -480,6 +488,14 @@ torchfort_rl_on_policy_save_checkpoint
 torchfort_rl_on_policy_load_checkpoint
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. doxygenfunction:: torchfort_rl_on_policy_load_checkpoint
+
+------
+
+.. _torchfort_rl_on_policy_load_model-ref:
+
+torchfort_rl_on_policy_load_model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. doxygenfunction:: torchfort_rl_on_policy_load_model
 
 ------
 

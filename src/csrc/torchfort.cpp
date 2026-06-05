@@ -332,7 +332,7 @@ torchfort_result_t torchfort_load_model(const char* name, const char* fname) {
     }
     models[name].model->load(fname);
     if (models[name].optimizer) {
-      models[name].optimizer->parameters() = models[name].model->parameters();
+      reset_optimizer_parameters(models[name].optimizer, models[name].model->parameters());
     }
   } catch (const BaseException& e) {
     std::cerr << e.what();

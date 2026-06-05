@@ -16,16 +16,51 @@
  */
 #pragma once
 
+// Keep this header self-contained: it references TORCHFORT_DEVICE_CPU (from torchfort.h) and, in GPU
+// builds, CHECK_CUDA (from internal/defines.h). Including them here lets test_utils.h be included in
+// any order relative to those headers.
+#include "torchfort.h"
+#ifdef ENABLE_GPU
+#include "internal/defines.h"
+#endif
+
 #include <chrono>
+#include <cstdlib>
+#include <filesystem>
 #include <functional>
 #include <numeric>
 #include <random>
 #include <string>
+#include <system_error>
 #include <vector>
 
 #ifdef ENABLE_GPU
 #include <cuda_runtime.h>
 #endif
+
+// Resolve the path to a test config file independently of the current working directory.
+// Resolution order:
+//   1. $TORCHFORT_TEST_CONFIG_DIR/<name> if that environment variable is set,
+//   2. <directory-of-the-test-executable>/configs/<name>,
+//   3. configs/<name> (legacy behavior, relative to the current working directory).
+// This keeps the tests runnable from any directory, in both the build tree and the install tree.
+inline std::string get_config_path(const std::string& name) {
+  namespace fs = std::filesystem;
+
+  if (const char* env_dir = std::getenv("TORCHFORT_TEST_CONFIG_DIR")) {
+    return (fs::path(env_dir) / name).string();
+  }
+
+#if defined(__linux__)
+  std::error_code ec;
+  fs::path exe = fs::read_symlink("/proc/self/exe", ec);
+  if (!ec) {
+    return (exe.parent_path() / "configs" / name).string();
+  }
+#endif
+
+  return (fs::path("configs") / name).string();
+}
 
 // Generate random vector data for testing
 template <typename T> std::vector<T> generate_random(const std::vector<int64_t>& shape) {

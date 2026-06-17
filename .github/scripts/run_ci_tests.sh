@@ -15,5 +15,6 @@ cd /opt/torchfort/bin/tests/rl
 ./test_distributions
 ./test_replay_buffer
 ./test_rollout_buffer
+./test_checkpoint_rl
 ./test_off_policy --gtest_filter=*L0*
 ./test_on_policy --gtest_filter=*L0*

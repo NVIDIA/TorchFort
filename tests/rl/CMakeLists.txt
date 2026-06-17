@@ -8,6 +8,7 @@ set(test_targets
   test_interface
   test_off_policy
   test_on_policy
+  test_checkpoint_rl
   )
 
 add_executable(test_replay_buffer)
@@ -52,12 +53,19 @@ target_sources(test_on_policy
   test_on_policy.cpp
   )
 
+add_executable(test_checkpoint_rl)
+target_sources(test_checkpoint_rl
+  PRIVATE
+  test_checkpoint.cpp
+  )
+
 
 find_package(Python 3.6 COMPONENTS Interpreter Development REQUIRED)
 
 foreach(tgt ${test_targets})
   target_include_directories(${tgt}
     PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../
     ${YAML_CPP_INCLUDE_DIR}
     ${MPI_CXX_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}/include
@@ -82,6 +90,13 @@ foreach(tgt ${test_targets})
   # discover tests: we have an issue with the work dir of gtest so disable that for now
   #gtest_discover_tests(${tgt})
   add_test(NAME ${tgt} COMMAND ${tgt} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+  # copy the config files next to the built test binary so the tests can be run directly from the
+  # build tree (the tests resolve their configs relative to the executable location)
+  add_custom_command(TARGET ${tgt} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/configs $<TARGET_FILE_DIR:${tgt}>/configs
+  )
 endforeach()
 
 # installation

@@ -19,6 +19,7 @@
 #include <torch/torch.h>
 
 #include "internal/exceptions.h"
+#include "internal/model_pack.h"
 #include "internal/rl/distributions.h"
 #include "internal/rl/on_policy/ppo.h"
 
@@ -293,13 +294,13 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
     pq_model_.model->load(model_path.native());
 
     // connect model and optimizer parameters:
-    pq_model_.optimizer->parameters() = pq_model_.model->parameters();
+    reset_optimizer_parameters(pq_model_.optimizer, pq_model_.model->parameters());
 
     auto optimizer_path = root_dir / "actor_critic" / "optimizer.pt";
     if (!std::filesystem::exists(optimizer_path)) {
       THROW_INVALID_USAGE("Could not find " + optimizer_path.native() + ".");
     }
-    torch::load(*(pq_model_.optimizer), optimizer_path.native());
+    torch::load(*(pq_model_.optimizer), optimizer_path.native(), pq_model_.model->device());
 
     auto lr_path = root_dir / "actor_critic" / "lr.pt";
     if (!std::filesystem::exists(lr_path)) {
@@ -354,6 +355,25 @@ void PPOSystem::loadCheckpoint(const std::string& checkpoint_dir) {
       THROW_INVALID_USAGE("Could not find " + buffer_path.native() + ".");
     }
     rollout_buffer_->load(buffer_path);
+  }
+}
+
+// loading only the network weights (e.g. for fine-tuning / transfer learning):
+// this restores the actor-critic network weights from a checkpoint directory, but leaves the optimizer,
+// LR scheduler, rollout buffer, normalizers and step counters in their freshly created state.
+void PPOSystem::loadModel(const std::string& checkpoint_dir) {
+  using namespace torchfort;
+  std::filesystem::path root_dir(checkpoint_dir);
+
+  auto model_path = root_dir / "actor_critic" / "model.pt";
+  if (!std::filesystem::exists(model_path)) {
+    THROW_INVALID_USAGE("Could not find " + model_path.native() + ".");
+  }
+  pq_model_.model->load(model_path.native());
+
+  // reconnect the optimizer to the (possibly newly allocated) model parameters
+  if (pq_model_.optimizer) {
+    reset_optimizer_parameters(pq_model_.optimizer, pq_model_.model->parameters());
   }
 }
 

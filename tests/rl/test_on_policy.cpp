@@ -21,6 +21,7 @@
 #include <sstream>
 
 #include "internal/defines.h"
+#include "test_utils.h"
 
 enum EnvMode { Constant, Predictable, Delayed, Action, ActionState };
 
@@ -89,7 +90,7 @@ std::tuple<float, float, float> TestSystem(const EnvMode mode, const std::string
   num_episodes = (num_train_iters + num_eval_iters) / episode_length;
 
   // set up td3 learning systems
-  std::string filename = "configs/" + system + ".yaml";
+  std::string filename = get_config_path(system + ".yaml");
   CHECK_TORCHFORT(
       torchfort_rl_on_policy_create_system("test", filename.c_str(), TORCHFORT_DEVICE_CPU, TORCHFORT_DEVICE_CPU));
 

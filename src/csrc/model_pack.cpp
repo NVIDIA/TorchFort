@@ -75,7 +75,7 @@ void load_model_pack(ModelPack& model_pack, const std::string& dir, bool load_op
   // we need to check if the optimizer is initialized before doing so
   // (some RL models do not have an optimizer attached to them):
   if (model_pack.optimizer) {
-    model_pack.optimizer->parameters() = model_pack.model->parameters();
+    reset_optimizer_parameters(model_pack.optimizer, model_pack.model->parameters());
   }
 
   if (load_optimizer) {

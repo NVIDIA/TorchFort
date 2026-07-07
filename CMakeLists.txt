@@ -8,7 +8,9 @@ endif()
 cmake_policy(SET CMP0057 NEW)
 
 # User-defined build options
-set(TORCHFORT_CUDA_CC_LIST "70;80;90" CACHE STRING "List of CUDA compute capabilities to build torchfort for.")
+# TORCHFORT_CUDA_CC_LIST default is set based on the detected CUDA Toolkit
+# version further below (after find_package(CUDAToolkit)). It can still be
+# overridden here on the command line via -DTORCHFORT_CUDA_CC_LIST=...
 set(TORCHFORT_NCCL_ROOT CACHE STRING "Path to search for NCCL installation. Default NVIDA HPC SDK provided NCCL version if available.")
 set(TORCHFORT_YAML_CPP_ROOT CACHE STRING "Path to search for yaml-cpp installation.")
 option(TORCHFORT_BUILD_FORTRAN "Build Fortran bindings" ON)
@@ -61,6 +63,22 @@ find_package(MPI REQUIRED)
 # CUDA
 if (TORCHFORT_ENABLE_GPU)
   find_package(CUDAToolkit REQUIRED)
+
+  # Set default CUDA compute capabilities based on the detected CUDA Toolkit
+  # version if not provided by the user. Note: CUDA 13.0 dropped support for
+  # Volta (sm_70).
+  if (NOT TORCHFORT_CUDA_CC_LIST)
+    if (CUDAToolkit_VERSION VERSION_GREATER_EQUAL 13.0)
+      set(TORCHFORT_CUDA_CC_LIST_DEFAULTS "75;80;90;100")
+    elseif (CUDAToolkit_VERSION VERSION_GREATER_EQUAL 12.8)
+      set(TORCHFORT_CUDA_CC_LIST_DEFAULTS "70;80;90;100")
+    elseif (CUDAToolkit_VERSION VERSION_GREATER_EQUAL 11.8)
+      set(TORCHFORT_CUDA_CC_LIST_DEFAULTS "70;80;90")
+    else()
+      set(TORCHFORT_CUDA_CC_LIST_DEFAULTS "70;80")
+    endif()
+    set(TORCHFORT_CUDA_CC_LIST ${TORCHFORT_CUDA_CC_LIST_DEFAULTS} CACHE STRING "List of CUDA compute capabilities to build torchfort for.")
+  endif()
 
   # HPC SDK
   # Locate and append NVHPC CMake configuration if available

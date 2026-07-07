@@ -46,7 +46,6 @@ RUN cd /torchfort && mkdir build && cd build && \
     -DCMAKE_CXX_COMPILER=`which g++` \
     -DTORCHFORT_YAML_CPP_ROOT=/opt/yaml-cpp \
     -DTORCHFORT_NCCL_ROOT=/usr/local/lib/python3.10/dist-packages/nvidia/nccl \
-    -DTORCHFORT_CUDA_CC_LIST="80;90;100" \
     -DTORCHFORT_BUILD_EXAMPLES=1 \
     -DTORCHFORT_BUILD_TESTS=1 \
     -DCMAKE_PREFIX_PATH="`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`" \

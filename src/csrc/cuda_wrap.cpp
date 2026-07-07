@@ -26,7 +26,7 @@
   do {                                                                                                                 \
     cudaDriverEntryPointQueryResult driverStatus = cudaDriverEntryPointSymbolNotFound;                                 \
     cudaError_t err = cudaGetDriverEntryPointByVersion(#symbol, (void**)(&cuFnTable.pfn_##symbol), version,   \
-                                                       cudaEnableDefault, &driverStatus));                             \
+                                                       cudaEnableDefault, &driverStatus);                              \
     if ((driverStatus != cudaDriverEntryPointSuccess || err != cudaSuccess) && !optional) {                            \
       THROW_CUDA_ERROR("cudaGetDriverEntryPointByVersion failed.");                                                    \
     }                                                                                                                  \

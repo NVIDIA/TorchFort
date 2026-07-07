@@ -25,7 +25,7 @@
 #define LOAD_SYM(symbol, version, optional)                                                                            \
   do {                                                                                                                 \
     cudaDriverEntryPointQueryResult driverStatus = cudaDriverEntryPointSymbolNotFound;                                 \
-    cudaError_t err = cudaGetDriverEntryPointByVersion(#symbol, (void**)(&cuFnTable.pfn_##symbol), version,   \
+    cudaError_t err = cudaGetDriverEntryPointByVersion(#symbol, (void**)(&cuFnTable.pfn_##symbol), version,            \
                                                        cudaEnableDefault, &driverStatus);                              \
     if ((driverStatus != cudaDriverEntryPointSuccess || err != cudaSuccess) && !optional) {                            \
       THROW_CUDA_ERROR("cudaGetDriverEntryPointByVersion failed.");                                                    \

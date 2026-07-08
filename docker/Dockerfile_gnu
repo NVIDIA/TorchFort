@@ -27,7 +27,12 @@ RUN echo "source /opt/hpcx/hpcx-init.sh; hpcx_load" >>  /root/.bashrc
 # Install PyTorch (and select dependencies)
 RUN pip3 install --break-system-packages typing_extensions && \
     pip3 install --break-system-packages --no-deps torch==2.12.1 --index-url https://download.pytorch.org/whl/cu132 && \
-    pip3 install --break-system-packages --no-deps nvidia-cudnn-cu13==9.20.0.48 nvidia-cusparselt-cu13==0.8.1 nvidia-cufile==1.18.1.6
+    pip3 install --break-system-packages --no-deps nvidia-cudnn-cu13==9.20.0.48 nvidia-cusparselt-cu13==0.8.1 nvidia-nccl-cu13==2.29.7 nvidia-cufile==1.18.1.6
+
+# Add libnccl.so symlink to pip installed NCCL (CUDA devel image ships no NCCL)
+RUN cd /usr/local/lib/python3.12/dist-packages/nvidia/nccl/lib && \
+    ln -s libnccl.so.2 libnccl.so
+ENV LD_LIBRARY_PATH /usr/local/lib/python3.12/dist-packages/nvidia/nccl/lib:$LD_LIBRARY_PATH
 
 # Install yaml-cpp
 RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \
@@ -50,6 +55,7 @@ RUN source /opt/hpcx/hpcx-init.sh &&  hpcx_load && \
     cd /torchfort && mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/torchfort \
     -DTORCHFORT_YAML_CPP_ROOT=/opt/yaml-cpp \
+    -DTORCHFORT_NCCL_ROOT=/usr/local/lib/python3.12/dist-packages/nvidia/nccl \
     -DTORCHFORT_BUILD_EXAMPLES=1 \
     -DTORCHFORT_BUILD_TESTS=1 \
     -DCMAKE_PREFIX_PATH="`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`" \

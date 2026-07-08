@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 SHELL ["/bin/bash", "-c"]
 
@@ -13,7 +13,7 @@ RUN apt update -y && \
     apt install -y openmpi-bin libopenmpi-dev
 
 # Install PyTorch
-RUN pip3 install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+RUN pip3 install --break-system-packages torch==2.12.1 --index-url https://download.pytorch.org/whl/cpu
 
 # Install yaml-cpp
 RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \
@@ -27,7 +27,7 @@ RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \
 ENV LD_LIBRARY_PATH /opt/yaml-cpp/lib:${LD_LIBRARY_PATH}
 
 # Install additional Python dependencies
-RUN pip3 install wandb ruamel-yaml matplotlib pygame moviepy
+RUN pip3 install --break-system-packages wandb ruamel-yaml matplotlib pygame moviepy
 
 # Install TorchFort without GPU support
 ENV FC=gfortran
@@ -43,4 +43,4 @@ RUN cd /torchfort && mkdir build && cd build && \
     make -j$(nproc) install && \
     cd / && rm -rf torchfort
 ENV LD_LIBRARY_PATH /opt/torchfort/lib:${LD_LIBRARY_PATH}
-ENV LD_LIBRARY_PATH /usr/local/lib/python3.10/dist-packages/torch/lib:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH /usr/local/lib/python3.12/dist-packages/torch/lib:${LD_LIBRARY_PATH}

@@ -2,11 +2,6 @@ FROM ubuntu:24.04
 
 SHELL ["/bin/bash", "-c"]
 
-# Target architecture (x86_64 or aarch64). Pass via --build-arg ARCH=$(uname -m).
-# Not used for arch-specific paths here (the CPU torch wheel resolves per-arch),
-# declared only to accept the shared build-arg from build_docker.sh.
-ARG ARCH=x86_64
-
 # Install System Dependencies
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update -y && \
@@ -29,7 +24,7 @@ RUN git clone https://github.com/jbeder/yaml-cpp.git --branch 0.8.0 && \
           -DBUILD_SHARED_LIBS=OFF \
           -DCMAKE_POSITION_INDEPENDENT_CODE=ON .. && \
     make -j$(nproc) && make install
-ENV LD_LIBRARY_PATH=/opt/yaml-cpp/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+ENV LD_LIBRARY_PATH=/opt/yaml-cpp/lib
 
 # Install additional Python dependencies
 RUN pip3 install --break-system-packages wandb ruamel-yaml matplotlib pygame moviepy

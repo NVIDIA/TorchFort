@@ -1,9 +1,14 @@
-FROM  nvcr.io/nvidia/nvhpc:26.5-devel-cuda13.2-ubuntu24.04
+FROM nvcr.io/nvidia/nvhpc:26.5-devel-cuda13.2-ubuntu24.04 AS base
+
+FROM base AS arch-amd64
+ENV ARCH=x86_64
+
+FROM base AS arch-arm64
+ENV ARCH=aarch64
+
+FROM arch-${TARGETARCH} AS final
 
 SHELL ["/bin/bash", "-c"]
-
-# Target architecture (x86_64 or aarch64). Pass via --build-arg ARCH=$(uname -m).
-ARG ARCH=x86_64
 
 ENV CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_${ARCH}/26.5/cuda
 ENV LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_${ARCH}/26.5/cuda/13.2/extras/CUPTI/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}

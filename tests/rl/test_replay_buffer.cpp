@@ -258,7 +258,14 @@ TEST_P(ReplayBuffer, NStepConsistency) {
   }
 
   EXPECT_FLOAT_EQ(sdiff, 0.);
-  EXPECT_FLOAT_EQ(rdiff, 0.);
+  // rdiff accumulates float32 rounding from the n-step discounted reward sum
+  // (r0 + r1*gamma + r2*gamma^2 + ...) over the whole batch. The buffer and this
+  // manual recomputation use mathematically equivalent but differently-rounded
+  // paths (std::pow + torch tensor ops vs. repeated scalar float multiply), which
+  // diverge by a few ULP per term and differ across architectures (e.g. FMA
+  // contraction on aarch64). Compare against a small absolute tolerance rather
+  // than exact float equality.
+  EXPECT_NEAR(rdiff, 0., 1e-4);
 }
 
 TEST_P(ReplayBuffer, SaveRestore) {

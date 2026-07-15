@@ -2,8 +2,11 @@ FROM  nvcr.io/nvidia/nvhpc:26.5-devel-cuda13.2-ubuntu24.04
 
 SHELL ["/bin/bash", "-c"]
 
-ENV CUDA_HOME /opt/nvidia/hpc_sdk/Linux_x86_64/26.5/cuda
-ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_x86_64/26.5/cuda/13.2/extras/CUPTI/lib64:$LD_LIBRARY_PATH
+# Target architecture (x86_64 or aarch64). Pass via --build-arg ARCH=$(uname -m).
+ARG ARCH=x86_64
+
+ENV CUDA_HOME /opt/nvidia/hpc_sdk/Linux_${ARCH}/26.5/cuda
+ENV LD_LIBRARY_PATH /opt/nvidia/hpc_sdk/Linux_${ARCH}/26.5/cuda/13.2/extras/CUPTI/lib64:$LD_LIBRARY_PATH
 
 # Install System Dependencies
 ENV DEBIAN_FRONTEND noninteractive
@@ -18,7 +21,7 @@ RUN pip3 install --break-system-packages typing_extensions && \
     pip3 install --break-system-packages --no-deps nvidia-cudnn-cu13==9.20.0.48 nvidia-cusparselt-cu13==0.8.1 nvidia-nccl-cu13==2.29.7 nvidia-cufile==1.18.1.6
 
 # Remove conflicting NCCL version from NVHPC SDK, add libnccl.so symlink to pip installed NCCL
-RUN rm -rf /opt/nvidia/hpc_sdk/Linux_x86_64/26.5/comm_libs/nccl/ && \
+RUN rm -rf /opt/nvidia/hpc_sdk/Linux_${ARCH}/26.5/comm_libs/nccl/ && \
     cd /usr/local/lib/python3.12/dist-packages/nvidia/nccl/lib && \
     ln -s libnccl.so.2 libnccl.so
 ENV LD_LIBRARY_PATH /usr/local/lib/python3.12/dist-packages/nvidia/nccl/lib:$LD_LIBRARY_PATH

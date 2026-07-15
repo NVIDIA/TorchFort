@@ -2,6 +2,11 @@ FROM ubuntu:24.04
 
 SHELL ["/bin/bash", "-c"]
 
+# Target architecture (x86_64 or aarch64). Pass via --build-arg ARCH=$(uname -m).
+# Not used for arch-specific paths here (the CPU torch wheel resolves per-arch),
+# declared only to accept the shared build-arg from build_docker.sh.
+ARG ARCH=x86_64
+
 # Install System Dependencies
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt update -y && \

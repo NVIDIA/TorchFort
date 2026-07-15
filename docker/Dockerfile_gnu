@@ -23,7 +23,7 @@ RUN cd /opt && \
     cd /opt && rm hpcx-v2.24.1-gcc-doca_ofed-ubuntu24.04-cuda13-${ARCH}.tbz
 
 ENV PATH=/opt/hpcx/ompi/bin:$PATH
-ENV LD_LIBRARY_PATH=/opt/hpcx/ompi/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/opt/hpcx/ompi/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
 RUN echo "source /opt/hpcx/hpcx-init.sh; hpcx_load" >>  /root/.bashrc
 

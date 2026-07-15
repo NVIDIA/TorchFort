@@ -6,7 +6,7 @@ SHELL ["/bin/bash", "-c"]
 ARG ARCH=x86_64
 
 ENV CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_${ARCH}/26.5/cuda
-ENV LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_${ARCH}/26.5/cuda/13.2/extras/CUPTI/lib64:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_${ARCH}/26.5/cuda/13.2/extras/CUPTI/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
 # Install System Dependencies
 ENV DEBIAN_FRONTEND=noninteractive

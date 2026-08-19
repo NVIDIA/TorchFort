@@ -382,3 +382,27 @@ collected transitions (e.g. generated under the modified reward function) are no
 On-policy systems provide the equivalent function ``torchfort_rl_on_policy_load_model``, which restores only the actor-critic network weights and leaves the
 optimizer, learning-rate scheduler, rollout buffer, normalizer statistics and step counters in their freshly created state.
 
+.. _model_file_trust-ref:
+
+Model and Checkpoint File Trust
+===============================
+
+TorchFort loads TorchScript models, TorchScript losses and saved checkpoints through LibTorch's deserialization routines, either from the ``filename``
+parameter of a YAML configuration file or from a path passed directly to functions such as ``torchfort_load_model`` and ``torchfort_load_checkpoint``.
+A TorchScript archive is executable content, not plain data: it carries a serialized computation graph that may invoke any operator registered in the
+host process. Loading such a file is therefore equivalent to loading code into your program, and TorchFort applies no integrity or provenance checking
+beyond verifying that the file exists.
+
+The same consideration applies to every component of a checkpoint directory, not only to the network weights. Optimizer state, learning-rate scheduler
+state, model training state, running normalizer statistics and the replay and rollout buffers of the reinforcement learning systems are all restored
+through the same LibTorch deserialization path, since ``torch::load`` and ``torch::serialize::InputArchive`` are themselves implemented on top of the
+TorchScript module reader. A checkpoint directory should therefore be treated as a single trusted unit: it is not the case that only the model file is
+sensitive and the remaining tensor files are inert data.
+
+.. note::
+   Model files, loss files, checkpoints and the YAML configuration files that reference them must be treated as trusted input, at the same level of
+   trust as the simulation binary itself. Establishing that trust is the responsibility of the calling application and its deployment environment,
+   for example by restricting write access to model directories, transferring artifacts over authenticated channels, or verifying signatures or
+   checksums against a manifest before invoking TorchFort. Do not point TorchFort at model or checkpoint files obtained from untrusted or
+   unauthenticated sources.
+

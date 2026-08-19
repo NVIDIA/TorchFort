@@ -20,10 +20,16 @@ Set up Environment
 ------------------
 
 You need to specify your `wandb api token <https://docs.wandb.ai/guides/track/public-api-guide#authentication>`_ via the environment variable ``WANDB_API_KEY`` (see the `wandb documentation on available environment variables <https://docs.wandb.ai/guides/track/environment-variables#multiple-wandb-users-on-shared-machines>`_ for details).
-Furthermore, the daemon needs to know where the the wandb logging data from the TorchFort application will be stored. This can be done by defining the environment variable ``TORCHFORT_LOGDIR``. Lastly, a user0defined wandb logging directory ``WANDB_LOGGING_DIR`` can be created to gather all wandb information as well as the config file in a place specific to the run. 
+Furthermore, the daemon needs to know where the the wandb logging data from the TorchFort application will be stored. This can be done by defining the environment variable ``TORCHFORT_LOGDIR``. Lastly, a user-defined wandb logging directory ``WANDB_LOGGING_DIR`` can be created to gather all wandb information as well as the config file in a place specific to the run. 
 
 .. note::
     The logging directory ``TORCHFORT_LOGDIR`` needs to be specified before the daemon and TorchFort application are launched.
+
+.. note::
+    When ``enable_wandb_hook`` is set, TorchFort writes a copy of the run configuration and the metrics log file into ``TORCHFORT_LOGDIR``. The variable
+    is used as given, so it should point at a directory that is writeable by, and appropriate for, the user running the application. As with any
+    environment variable, it is part of the process launch environment and carries the privileges of the launching user; TorchFort does not run with
+    elevated privileges and does not attempt to restrict the location further.
 
 Start Background Watcher Process
 --------------------------------
